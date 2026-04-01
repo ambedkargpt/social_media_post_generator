@@ -1,0 +1,13 @@
+Summarize the following video transcript in Hindi in about {word_min}-{word_max} words.
+
+Requirements:
+- Capture the central thesis, major arguments, key examples/evidence, and closing takeaway.
+- Keep it factual and faithful to the transcript.
+- Do not add outside facts.
+- Avoid bullet points; write one coherent paragraph.
+
+Video Title: {video_title}
+Video Link: {video_link}
+
+Transcript:
+{full_text}

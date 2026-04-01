@@ -1,0 +1,213 @@
+import os
+from dataclasses import dataclass
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+
+load_dotenv()
+
+_PROJECT_ROOT = Path(__file__).resolve().parent
+
+
+@dataclass
+class Settings:
+    openai_api_key: str
+    openai_model: str
+    gemini_api_key: str
+    embedding_model: str
+    # News configuration (either URLs or API)
+    news_urls: list
+    news_api_key: str
+    news_country: str
+    news_page_size: int
+    # Retrieval configuration
+    retrieval_top_k: int
+    retrieval_candidate_k: int
+    retrieval_per_video_cap: int
+    retrieval_use_bm25: bool
+    retrieval_bm25_top_n: int
+    retrieval_dense_top_n: int
+    retrieval_rrf_k: int
+    retrieval_enable_rerank: bool
+    retrieval_rerank_top_n: int
+    # LLM generation configuration
+    openai_temperature: float
+    # Embedding configuration
+    embedding_batch_size: int
+    embedding_chunk_cache_enabled: bool
+    embedding_chunk_cache_path: Path
+    # Video summarization configuration (DeepSeek OpenAI-compatible API)
+    summary_batch_size: int
+    summary_sleep_seconds: float
+    deepseek_api_key: str
+    deepseek_base_url: str
+    deepseek_model: str
+    deepseek_summary_model: str
+    # Prompt templates (video summarizer, etc.)
+    prompts_dir: Path
+    # Generated news headlines (from video summaries + DeepSeek reasoner)
+    news_generator_top_n: int
+    generated_news_path: Path
+    generated_news_legacy_path: Path
+    news_headline_prompt_system: str
+    news_headline_prompt_user: str
+    # User profiles on disk (Parquet)
+    user_profiles_parquet_path: Path
+
+
+def get_settings() -> Settings:
+    """
+    Load configuration from environment variables.
+
+    Expected variables:
+    - OPENAI_API_KEY
+    - OPENAI_MODEL (optional, defaults to gpt-5-nano)
+    - GEMINI_API_KEY (for embeddings)
+    - EMBEDDING_MODEL (optional, defaults to gemini-embedding-001)
+    - NEWS_URLS (optional, comma-separated list of URLs)
+    - NEWS_API_KEY (optional, only if using NewsAPI)
+    - NEWS_COUNTRY (optional, defaults to 'in')
+    - NEWS_PAGE_SIZE (optional, defaults to 5)
+    - RETRIEVAL_TOP_K (optional, defaults to 5)
+    - RETRIEVAL_CANDIDATE_K (optional, defaults to 80)
+    - RETRIEVAL_PER_VIDEO_CAP (optional, defaults to 2)
+    - RETRIEVAL_USE_BM25 (optional, defaults to true)
+    - RETRIEVAL_BM25_TOP_N (optional, defaults to 250)
+    - RETRIEVAL_DENSE_TOP_N (optional, defaults to 250)
+    - RETRIEVAL_RRF_K (optional, defaults to 60)
+    - RETRIEVAL_ENABLE_RERANK (optional, defaults to true)
+    - RETRIEVAL_RERANK_TOP_N (optional, defaults to 50)
+    - OPENAI_TEMPERATURE (optional, defaults to 1)
+    - EMBEDDING_BATCH_SIZE (optional, defaults to 25)
+    - EMBEDDING_CHUNK_CACHE (optional, defaults to true) — reuse chunk embeddings on disk
+    - EMBEDDING_CHUNK_CACHE_PATH (optional, defaults to data/chunk_embedding_cache.json)
+    - SUMMARY_BATCH_SIZE (optional, defaults to 50)
+    - SUMMARY_SLEEP_SECONDS (optional, defaults to 2)
+    - DEEPSEEK_API_KEY (required when running video summarization: Fetch mirror step, build_video_summaries, test_retrieval)
+    - DEEPSEEK_BASE_URL or DEEPSEEK_API_URL (optional, defaults to https://api.deepseek.com)
+    - DEEPSEEK_MODEL (optional, defaults to deepseek-chat)
+    - DEEPSEEK_MODEL_SUMMARY (optional; video summarization uses this if set, else DEEPSEEK_MODEL)
+    - PROMPTS_DIR (optional, defaults to ./prompts next to config.py)
+      Post generation: post_generation_system.txt + post_generation_user.txt
+    - NEWS_GENERATOR_TOP_N (optional, defaults to 10)
+    - GENERATED_NEWS_PATH (optional, defaults to ./outputs/generated_news.json)
+    - GENERATED_NEWS_LEGACY_PATH (optional, defaults to ./outputs/generated_news_legacy.json)
+    - NEWS_HEADLINE_SYSTEM / NEWS_HEADLINE_USER (optional prompt filenames under PROMPTS_DIR)
+    - USER_PROFILES_PARQUET (optional, defaults to ./data/user_profiles.parquet)
+    """
+    openai_api_key = os.getenv("OPENAI_API_KEY", "")
+    openai_model = os.getenv("OPENAI_MODEL", "gpt-5-nano")
+    gemini_api_key = os.getenv("GEMINI_API_KEY", "")
+    embedding_model = os.getenv("EMBEDDING_MODEL", "gemini-embedding-001")
+    news_urls_raw = os.getenv("NEWS_URLS", "")
+    news_urls = [u.strip() for u in news_urls_raw.split(",") if u.strip()]
+    news_api_key = os.getenv("NEWS_API_KEY") or os.getenv("news_api_key", "")
+    news_country = os.getenv("NEWS_COUNTRY", "in")
+    news_page_size = int(os.getenv("NEWS_PAGE_SIZE", "5"))
+    retrieval_top_k = int(os.getenv("RETRIEVAL_TOP_K", "5"))
+    retrieval_candidate_k = int(os.getenv("RETRIEVAL_CANDIDATE_K", "80"))
+    retrieval_per_video_cap = int(os.getenv("RETRIEVAL_PER_VIDEO_CAP", "2"))
+    retrieval_use_bm25 = os.getenv("RETRIEVAL_USE_BM25", "true").lower() in {"1", "true", "yes", "on"}
+    retrieval_bm25_top_n = int(os.getenv("RETRIEVAL_BM25_TOP_N", "250"))
+    retrieval_dense_top_n = int(os.getenv("RETRIEVAL_DENSE_TOP_N", "250"))
+    retrieval_rrf_k = int(os.getenv("RETRIEVAL_RRF_K", "60"))
+    retrieval_enable_rerank = os.getenv("RETRIEVAL_ENABLE_RERANK", "true").lower() in {"1", "true", "yes", "on"}
+    retrieval_rerank_top_n = int(os.getenv("RETRIEVAL_RERANK_TOP_N", "50"))
+    openai_temperature = float(os.getenv("OPENAI_TEMPERATURE", "1"))
+    embedding_batch_size = int(os.getenv("EMBEDDING_BATCH_SIZE", "25"))
+    embedding_chunk_cache_enabled = os.getenv("EMBEDDING_CHUNK_CACHE", "true").lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    _emb_cache_raw = (os.getenv("EMBEDDING_CHUNK_CACHE_PATH") or "").strip()
+    embedding_chunk_cache_path = (
+        Path(_emb_cache_raw).expanduser()
+        if _emb_cache_raw
+        else (_PROJECT_ROOT / "data" / "chunk_embedding_cache.json")
+    )
+    embedding_chunk_cache_path = embedding_chunk_cache_path.resolve()
+    summary_batch_size = int(os.getenv("SUMMARY_BATCH_SIZE", "50"))
+    summary_sleep_seconds = float(os.getenv("SUMMARY_SLEEP_SECONDS", "2"))
+    deepseek_api_key = (os.getenv("DEEPSEEK_API_KEY") or os.getenv("DEEPSEEK_KEY") or "").strip()
+    deepseek_base_url = (
+        (
+            os.getenv("DEEPSEEK_BASE_URL")
+            or os.getenv("DEEPSEEK_API_URL")
+            or "https://api.deepseek.com"
+        )
+        .strip()
+        .rstrip("/")
+    )
+    deepseek_model = (os.getenv("DEEPSEEK_MODEL") or "deepseek-chat").strip()
+    _summary_model_raw = (os.getenv("DEEPSEEK_MODEL_SUMMARY") or "").strip()
+    deepseek_summary_model = _summary_model_raw or deepseek_model
+    prompts_dir_raw = (os.getenv("PROMPTS_DIR") or "").strip()
+    prompts_dir = Path(prompts_dir_raw).expanduser() if prompts_dir_raw else (_PROJECT_ROOT / "prompts")
+    prompts_dir = prompts_dir.resolve()
+    news_generator_top_n = int(os.getenv("NEWS_GENERATOR_TOP_N", "10"))
+    _gen_news_raw = (os.getenv("GENERATED_NEWS_PATH") or "").strip()
+    generated_news_path = (
+        Path(_gen_news_raw).expanduser()
+        if _gen_news_raw
+        else (_PROJECT_ROOT / "outputs" / "generated_news.json")
+    ).resolve()
+    _gen_news_legacy_raw = (os.getenv("GENERATED_NEWS_LEGACY_PATH") or "").strip()
+    generated_news_legacy_path = (
+        Path(_gen_news_legacy_raw).expanduser()
+        if _gen_news_legacy_raw
+        else (_PROJECT_ROOT / "outputs" / "generated_news_legacy.json")
+    ).resolve()
+    news_headline_prompt_system = (os.getenv("NEWS_HEADLINE_SYSTEM") or "news_headline_system.txt").strip()
+    news_headline_prompt_user = (os.getenv("NEWS_HEADLINE_USER") or "news_headline_user.txt").strip()
+    _profiles_parquet_raw = (os.getenv("USER_PROFILES_PARQUET") or "").strip()
+    user_profiles_parquet_path = (
+        Path(_profiles_parquet_raw).expanduser()
+        if _profiles_parquet_raw
+        else (_PROJECT_ROOT / "data" / "user_profiles.parquet")
+    ).resolve()
+
+    if not openai_api_key:
+        raise ValueError("OPENAI_API_KEY is not set in the environment.")
+    if not gemini_api_key:
+        raise ValueError("GEMINI_API_KEY is not set in the environment (required for embeddings).")
+
+    return Settings(
+        openai_api_key=openai_api_key,
+        openai_model=openai_model,
+        gemini_api_key=gemini_api_key,
+        embedding_model=embedding_model,
+        news_urls=news_urls,
+        news_api_key=news_api_key,
+        news_country=news_country,
+        news_page_size=news_page_size,
+        retrieval_top_k=retrieval_top_k,
+        retrieval_candidate_k=retrieval_candidate_k,
+        retrieval_per_video_cap=retrieval_per_video_cap,
+        retrieval_use_bm25=retrieval_use_bm25,
+        retrieval_bm25_top_n=retrieval_bm25_top_n,
+        retrieval_dense_top_n=retrieval_dense_top_n,
+        retrieval_rrf_k=retrieval_rrf_k,
+        retrieval_enable_rerank=retrieval_enable_rerank,
+        retrieval_rerank_top_n=retrieval_rerank_top_n,
+        openai_temperature=openai_temperature,
+        embedding_batch_size=embedding_batch_size,
+        embedding_chunk_cache_enabled=embedding_chunk_cache_enabled,
+        embedding_chunk_cache_path=embedding_chunk_cache_path,
+        summary_batch_size=summary_batch_size,
+        summary_sleep_seconds=summary_sleep_seconds,
+        deepseek_api_key=deepseek_api_key,
+        deepseek_base_url=deepseek_base_url,
+        deepseek_model=deepseek_model,
+        deepseek_summary_model=deepseek_summary_model,
+        prompts_dir=prompts_dir,
+        news_generator_top_n=news_generator_top_n,
+        generated_news_path=generated_news_path,
+        generated_news_legacy_path=generated_news_legacy_path,
+        news_headline_prompt_system=news_headline_prompt_system,
+        news_headline_prompt_user=news_headline_prompt_user,
+        user_profiles_parquet_path=user_profiles_parquet_path,
+    )
+

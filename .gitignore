@@ -1,0 +1,122 @@
+# =============================================================================
+# SemRAG / Scrap — gitignore
+# Core product entrypoints: main.py, generate_posts_from_news.py, Fetch.py
+# Everything below is either generated at runtime, secrets, tooling outside
+# those flows, or local scratch — not required to ship the main pipeline.
+# =============================================================================
+
+# --- Python / packaging ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+
+# --- Virtual environments ---
+venv/
+.venv/
+env/
+ENV/
+
+# --- Secrets / local env ---
+.env
+.env.*
+!.env.example
+
+# --- IDE / OS ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Cursor / local agent artifacts (not product) ---
+.cursor/
+agent-transcripts/
+
+# =============================================================================
+# outputs/ — tracked for Streamlit Cloud: faiss_index.bin, generated_news.json
+# Ignore other generated files under outputs/
+# =============================================================================
+outputs/transcripts/
+outputs/streamlit_runs/
+outputs/generated_posts.json
+outputs/generated_posts_from_news.json
+outputs/retrieval_output.json
+outputs/video_summary_checkpoint.json
+outputs/generated_news_legacy.json
+outputs/**/verification_report.json
+outputs/bulk_retrieval*
+outputs/embedding_checkpoint*
+outputs/video_summary_batch*
+
+# =============================================================================
+# data/ — RAG bundle tracked for deploy (chunks, context, titles, summaries, profiles)
+# Optional: embedding cache is often huge; remove next line to commit it too.
+# Title embeddings exceed GitHub's 100 MB limit — rebuild on deploy (main.py / pipeline).
+# =============================================================================
+data/chunk_embedding_cache.json
+data/video_title_embeddings.json
+
+# Transcript corpora (local / fetched — do not commit)
+data/ravishkumar_all_transcripts.txt
+data/*_all_transcripts.txt
+
+# =============================================================================
+# Streamlit — app is tracked for Streamlit Cloud; never commit user passwords
+# =============================================================================
+streamlit_app/auth/users.json
+
+# =============================================================================
+# Auxiliary scripts & one-offs (not imported by the three entrypoints)
+# =============================================================================
+scripts/
+build_video_summaries.py
+generate_news.py
+test_retrieval.py
+bulk_retrieval_test.py
+export_bulk_retrieval_pdf.py
+rebuild_embeddings_safe.py
+
+# =============================================================================
+# Local scratch / ad-hoc files at repo root
+# =============================================================================
+input.txt
+Output.txt
+bhbhbhbs.txt
+
+# =============================================================================
+# Optional: legacy / archive folders (add your own paths here)
+# =============================================================================
+legacy/
+**/legacy/

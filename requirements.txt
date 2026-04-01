@@ -1,0 +1,17 @@
+newsapi-python
+requests
+beautifulsoup4
+faiss-cpu
+openai
+pandas
+tqdm
+python-dotenv
+google-genai
+yt-dlp
+youtube-transcript-api
+python-docx
+pyarrow
+pyspellchecker
+dotenv
+bs4
+streamlit
