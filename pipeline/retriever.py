@@ -1,16 +1,19 @@
 from typing import List, Dict, Tuple, Set, Optional
 from pathlib import Path
 import json
+import unicodedata
 
 import numpy as np
 
 from .embedder import ChunkEmbedder
 from .vector_store import VectorStore, search
 from .query_expander import expand_queries_from_news
-from .bm25_store import BM25Store
+from .bm25_store import BM25Store, tokenize
 
 
 MIN_SIMILARITY = 0.3  # cosine similarity threshold
+MIN_SIMILARITY_RARE_QUERY = 0.2
+BM25_NORM_KEEP_FLOOR = 0.15
 TITLE_TOP_N = 5
 STAGE2_SEARCH_K = 250
 TITLE_EMB_PATH = Path(__file__).resolve().parents[1] / "data" / "video_title_embeddings.json"
@@ -20,6 +23,9 @@ BM25_TOP_N = 250
 FINAL_CANDIDATE_K = 80
 PER_VIDEO_CAP = 2
 RERANK_TOP_N = 50
+RARE_TERM_PROTECT = True
+RARE_TERM_MIN_IDF = 6.0
+RARE_TERM_FORCE_K = 20
 
 _BM25_CACHE: Dict[int, BM25Store] = {}
 
@@ -32,7 +38,52 @@ def _rank_score(similarity: float) -> float:
 
 
 def _normalize_for_lexical(text: str) -> str:
-    return " ".join((text or "").lower().split())
+    normalized = unicodedata.normalize("NFKC", text or "").casefold()
+    for ch in ["“", "”", "‘", "’", "'", '"', "।", "॥"]:
+        normalized = normalized.replace(ch, " ")
+    return " ".join(normalized.split())
+
+
+def _select_rare_terms(query: str, bm25_store: Optional[BM25Store], min_idf: float) -> List[str]:
+    if bm25_store is None:
+        return []
+    tokens = tokenize(query)
+    if not tokens:
+        return []
+    terms = []
+    seen = set()
+    for tok in tokens:
+        if tok in seen:
+            continue
+        seen.add(tok)
+        idf = float(bm25_store.idf.get(tok, 0.0))
+        if idf >= min_idf:
+            terms.append(tok)
+    return terms
+
+
+def _rare_term_candidate_indices(
+    rare_terms: List[str],
+    bm25_store: Optional[BM25Store],
+    force_k: int,
+) -> Set[int]:
+    """
+    Force-include lexical candidates that contain rare query terms.
+    """
+    if bm25_store is None or not rare_terms or force_k <= 0:
+        return set()
+    scored: List[Tuple[float, int]] = []
+    for idx, tf_doc in enumerate(bm25_store.doc_freqs):
+        score = 0.0
+        for tok in rare_terms:
+            tf = float(tf_doc.get(tok, 0))
+            if tf <= 0:
+                continue
+            score += tf * float(bm25_store.idf.get(tok, 0.0))
+        if score > 0:
+            scored.append((score, idx))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return {idx for _, idx in scored[:force_k]}
 
 
 def _strict_title_matches(query: str, all_titles: List[str], top_n: int = STRICT_TITLE_TOP_N) -> List[str]:
@@ -156,6 +207,9 @@ def retrieve_relevant_chunks(
     per_video_cap = int(cfg.get("per_video_cap", PER_VIDEO_CAP))
     enable_rerank = bool(cfg.get("enable_rerank", True))
     rerank_top_n = int(cfg.get("rerank_top_n", RERANK_TOP_N))
+    rare_term_protect = bool(cfg.get("rare_term_protect", RARE_TERM_PROTECT))
+    rare_term_min_idf = float(cfg.get("rare_term_min_idf", RARE_TERM_MIN_IDF))
+    rare_term_force_k = int(cfg.get("rare_term_force_k", RARE_TERM_FORCE_K))
 
     expanded_queries = expand_queries_from_news(news_text)
 
@@ -179,14 +233,20 @@ def retrieve_relevant_chunks(
 
     # Stage 1: candidate videos by title matching/similarity
     all_titles = sorted({c.get("video_title", "") for c in store.chunks if c.get("video_title")})
-    strict_titles = _strict_title_matches(news_text, all_titles, top_n=STRICT_TITLE_TOP_N)
-    strict_title_mode = len(strict_titles) > 0
-    if strict_title_mode:
-        # Exact/contains match path: lock retrieval to these videos.
-        candidate_titles = strict_titles
-    else:
-        candidate_titles = _select_candidate_titles(news_text, embedder, all_titles, top_n=TITLE_TOP_N)
+    strict_title_mode = False
+    candidate_titles = _select_candidate_titles(news_text, embedder, all_titles, top_n=TITLE_TOP_N)
     candidate_set: Set[str] = set(candidate_titles)
+
+    rare_terms = (
+        _select_rare_terms(news_text, bm25_store, min_idf=rare_term_min_idf)
+        if rare_term_protect
+        else []
+    )
+    rare_force_indices = (
+        _rare_term_candidate_indices(rare_terms, bm25_store, force_k=rare_term_force_k)
+        if rare_terms
+        else set()
+    )
 
     for q_text, weight in weighted_queries:
         if not q_text.strip():
@@ -220,9 +280,12 @@ def retrieve_relevant_chunks(
 
         # Rank-fusion score over union of candidates.
         candidate_indices = set(dense_rank_by_idx.keys()) | set(bm25_rank_by_idx.keys())
+        # Ensure rare-keyword lexical matches are represented in candidate pool.
+        if q_text == news_text and rare_force_indices:
+            candidate_indices |= rare_force_indices
         for idx in candidate_indices:
             chunk = store.chunks[idx]
-            if candidate_set and chunk.get("video_title") not in candidate_set:
+            if strict_title_mode and candidate_set and chunk.get("video_title") not in candidate_set:
                 continue
 
             # RRF contribution for this query
@@ -233,6 +296,9 @@ def retrieve_relevant_chunks(
                 rrf_score += 1.0 / (rrf_k + d_rank)
             if b_rank is not None:
                 rrf_score += 1.0 / (rrf_k + b_rank)
+            # B mode: soft title bias without hard exclusion.
+            if candidate_set and chunk.get("video_title") in candidate_set:
+                rrf_score += 0.01
             rrf_score *= weight
 
             chunk_id = chunk.get("chunk_id") or f"idx_{idx}"
@@ -273,12 +339,6 @@ def retrieve_relevant_chunks(
                 existing_payload["final_score"] = new_score
                 results_by_chunk[chunk_id] = (existing_payload, max(existing_final, new_score))
 
-    # Fallback: if non-strict title-routing filtered too hard, rerun without title restriction
-    if (not strict_title_mode) and candidate_set and len(results_by_chunk) < top_k:
-        candidate_set = set()
-        for payload, _ in results_by_chunk.values():
-            payload["final_score"] = payload.get("hybrid_score", payload.get("final_score", 0.0))
-
     ranked = sorted(
         (val[0] for val in results_by_chunk.values()),
         key=lambda c: c["final_score"],
@@ -317,10 +377,15 @@ def retrieve_relevant_chunks(
         item["relevance_score"] = float(max(0.0, min(1.0, relevance)))
 
     # Remove very low-similarity dense matches in broad mode.
+    effective_min_similarity = (
+        MIN_SIMILARITY_RARE_QUERY if rare_terms else MIN_SIMILARITY
+    )
     filtered: List[Dict] = []
     for item in ranked:
-        if item.get("similarity_score", 0.0) < MIN_SIMILARITY and not strict_title_mode:
-            continue
+        if not strict_title_mode and item.get("similarity_score", 0.0) < effective_min_similarity:
+            # Keep lexically strong candidates even if dense similarity is lower.
+            if float(item.get("bm25_norm_score", 0.0)) < BM25_NORM_KEEP_FLOOR:
+                continue
         filtered.append(item)
 
     # Per-video cap to avoid one video dominating.

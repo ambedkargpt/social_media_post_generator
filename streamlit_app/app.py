@@ -12,9 +12,9 @@ if str(ROOT) not in sys.path:
 from streamlit_app.components.auth import require_login
 
 
-require_login("SemRAG Pipeline Console")
+require_login("RAG Pipeline Testing Console")
 
-st.title("SemRAG Pipeline Console")
+st.title("RAG Pipeline Testing Console")
 st.markdown(
     """
 Use the left sidebar to open:

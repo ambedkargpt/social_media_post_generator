@@ -1,4 +1,6 @@
 from typing import List
+import re
+import unicodedata
 
 
 BASE_THEMES_EN = [
@@ -54,6 +56,41 @@ def _contains_devanagari(text: str) -> bool:
     return any("\u0900" <= ch <= "\u097f" for ch in text)
 
 
+_PUNCT_TO_SPACE = str.maketrans(
+    {
+        "“": " ",
+        "”": " ",
+        "‘": " ",
+        "’": " ",
+        "'": " ",
+        '"': " ",
+        ",": " ",
+        ".": " ",
+        "(": " ",
+        ")": " ",
+        "[": " ",
+        "]": " ",
+        "{": " ",
+        "}": " ",
+        "-": " ",
+        "_": " ",
+        "/": " ",
+        "\\": " ",
+        ":": " ",
+        ";": " ",
+        "?": " ",
+        "!": " ",
+        "।": " ",
+        "॥": " ",
+    }
+)
+
+
+def _tokenize_query(text: str) -> set[str]:
+    norm = unicodedata.normalize("NFKC", text or "").translate(_PUNCT_TO_SPACE).casefold()
+    return set(re.findall(r"[\u0900-\u097F]+|\w+", norm, flags=re.UNICODE))
+
+
 def expand_queries_from_news(news_text: str, max_queries: int = 10) -> List[str]:
     """
     Expand a news title/summary into a set of political themes.
@@ -64,8 +101,7 @@ def expand_queries_from_news(news_text: str, max_queries: int = 10) -> List[str]
     - Always include some base themes for coverage
     """
     raw_text = news_text or ""
-    text = raw_text.lower()
-    tokens = set(text.split())
+    tokens = _tokenize_query(raw_text)
 
     is_hindi = _contains_devanagari(raw_text)
     themes: List[str] = []

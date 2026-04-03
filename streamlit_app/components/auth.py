@@ -185,7 +185,7 @@ def require_login(page_title: str) -> bool:
                 st.session_state["auth_role"] = ""
                 st.rerun()
         return True
-    st.title("SemRAG Pipeline Console")
+    st.title("RAG Pipeline Testing Console")
     st.info("Authenticated access only.")
     login_ui()
     st.stop()

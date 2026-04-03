@@ -31,6 +31,9 @@ class Settings:
     retrieval_rrf_k: int
     retrieval_enable_rerank: bool
     retrieval_rerank_top_n: int
+    retrieval_rare_term_protect: bool
+    retrieval_rare_term_min_idf: float
+    retrieval_rare_term_force_k: int
     # LLM generation configuration
     openai_temperature: float
     # Embedding configuration
@@ -78,6 +81,9 @@ def get_settings() -> Settings:
     - RETRIEVAL_RRF_K (optional, defaults to 60)
     - RETRIEVAL_ENABLE_RERANK (optional, defaults to true)
     - RETRIEVAL_RERANK_TOP_N (optional, defaults to 50)
+    - RETRIEVAL_RARE_TERM_PROTECT (optional, defaults to true)
+    - RETRIEVAL_RARE_TERM_MIN_IDF (optional, defaults to 6.0)
+    - RETRIEVAL_RARE_TERM_FORCE_K (optional, defaults to 20)
     - OPENAI_TEMPERATURE (optional, defaults to 1)
     - EMBEDDING_BATCH_SIZE (optional, defaults to 25)
     - EMBEDDING_CHUNK_CACHE (optional, defaults to true) — reuse chunk embeddings on disk
@@ -114,6 +120,14 @@ def get_settings() -> Settings:
     retrieval_rrf_k = int(os.getenv("RETRIEVAL_RRF_K", "60"))
     retrieval_enable_rerank = os.getenv("RETRIEVAL_ENABLE_RERANK", "true").lower() in {"1", "true", "yes", "on"}
     retrieval_rerank_top_n = int(os.getenv("RETRIEVAL_RERANK_TOP_N", "50"))
+    retrieval_rare_term_protect = os.getenv("RETRIEVAL_RARE_TERM_PROTECT", "true").lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    retrieval_rare_term_min_idf = float(os.getenv("RETRIEVAL_RARE_TERM_MIN_IDF", "6.0"))
+    retrieval_rare_term_force_k = int(os.getenv("RETRIEVAL_RARE_TERM_FORCE_K", "20"))
     openai_temperature = float(os.getenv("OPENAI_TEMPERATURE", "1"))
     embedding_batch_size = int(os.getenv("EMBEDDING_BATCH_SIZE", "25"))
     embedding_chunk_cache_enabled = os.getenv("EMBEDDING_CHUNK_CACHE", "true").lower() in {
@@ -192,6 +206,9 @@ def get_settings() -> Settings:
         retrieval_rrf_k=retrieval_rrf_k,
         retrieval_enable_rerank=retrieval_enable_rerank,
         retrieval_rerank_top_n=retrieval_rerank_top_n,
+        retrieval_rare_term_protect=retrieval_rare_term_protect,
+        retrieval_rare_term_min_idf=retrieval_rare_term_min_idf,
+        retrieval_rare_term_force_k=retrieval_rare_term_force_k,
         openai_temperature=openai_temperature,
         embedding_batch_size=embedding_batch_size,
         embedding_chunk_cache_enabled=embedding_chunk_cache_enabled,
