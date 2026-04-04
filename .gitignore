@@ -79,6 +79,7 @@ outputs/**/verification_report.json
 outputs/bulk_retrieval*
 outputs/embedding_checkpoint*
 outputs/video_summary_batch*
+outputs/tts/
 
 # =============================================================================
 # data/ — RAG bundle tracked for deploy (chunks, context, titles, summaries, profiles)

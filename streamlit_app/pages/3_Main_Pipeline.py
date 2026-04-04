@@ -12,14 +12,23 @@ from pathlib import Path
 
 import streamlit as st
 
+from config import get_settings
 from pipeline.profiles import get_user_profiles
 from streamlit_app.components.auth import require_login
+from streamlit_app.components.tts_playback import (
+    gtts_lang_widget,
+    render_gtts_native_player,
+    store_gtts_batch,
+)
 from streamlit_app.services.main_service import GENERATED_NEWS_PATH, run_main_flow
 
 
 require_login("Main Pipeline")
 
 st.title("Main Pipeline")
+settings = get_settings()
+with st.expander("Text-to-speech (gTTS)", expanded=False):
+    tts_lang = gtts_lang_widget(settings.gtts_lang)
 all_roles = sorted(
     {
         str(p.get("user_role", "")).strip()
@@ -105,5 +114,49 @@ if st.button("Run Main Flow", width="stretch"):
             pick_idx=int(pick_idx),
             selected_profile_roles=(selected_roles if profile_mode == "selected" else None),
         )
+    st.session_state["main_run"] = int(st.session_state.get("main_run", 0)) + 1
+    mrun = int(st.session_state["main_run"])
     st.success(f"Generated output for {len(outputs)} news item(s).")
-    st.json(outputs)
+
+    tts_pairs: list[tuple[str, str]] = []
+    for bi, block in enumerate(outputs):
+        for i, ref in enumerate(block.get("references") or []):
+            tts_pairs.append((ref.get("chunk_text") or "", f"main_b{bi}_r_{mrun}_{i}"))
+        for j, po in enumerate(block.get("profiles") or []):
+            role = str(po.get("profile", {}).get("user_role") or f"profile_{j + 1}")
+            post_text = po.get("post") or ""
+            safe = "".join(c if c.isalnum() else "_" for c in role)[:40]
+            tts_pairs.append((post_text, f"main_b{bi}_p_{mrun}_{j}_{safe}"))
+    if tts_pairs:
+        tts_bar = st.progress(0, text="Synthesizing speech…")
+
+        def _tts_progress(frac: float, msg: str) -> None:
+            tts_bar.progress(min(max(frac, 0.0), 1.0), text=msg)
+
+        store_gtts_batch(tts_pairs, tts_lang, set_progress=_tts_progress)
+
+    for bi, block in enumerate(outputs):
+        st.markdown(f"### Block {bi + 1}")
+        st.markdown("#### Retrieved chunks (TTS)")
+        for i, ref in enumerate(block.get("references") or []):
+            t = (ref.get("video_title") or "").strip() or f"reference {i + 1}"
+            with st.expander(f"Ref {i + 1}: {t[:80]}{'…' if len(t) > 80 else ''}", expanded=False):
+                st.text_area(
+                    "chunk",
+                    value=ref.get("chunk_text") or "",
+                    height=200,
+                    key=f"main_b{bi}_ref_{mrun}_{i}",
+                    label_visibility="collapsed",
+                )
+                render_gtts_native_player(f"main_b{bi}_r_{mrun}_{i}", heading="Chunk audio")
+        st.markdown("#### Generated posts (TTS)")
+        for j, po in enumerate(block.get("profiles") or []):
+            role = str(po.get("profile", {}).get("user_role") or f"profile_{j + 1}")
+            post_text = po.get("post") or ""
+            with st.expander(f"Post: {role}", expanded=(j == 0 and bi == 0)):
+                st.markdown(post_text)
+                safe = "".join(c if c.isalnum() else "_" for c in role)[:40]
+                render_gtts_native_player(f"main_b{bi}_p_{mrun}_{j}_{safe}", heading="Post audio")
+
+    with st.expander("Raw JSON"):
+        st.json(outputs)

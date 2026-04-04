@@ -36,6 +36,9 @@ def run_retrieval(query: str, top_k: int = 5) -> Dict[str, Any]:
         "per_video_cap": settings.retrieval_per_video_cap,
         "enable_rerank": settings.retrieval_enable_rerank,
         "rerank_top_n": settings.retrieval_rerank_top_n,
+        "rare_term_protect": settings.retrieval_rare_term_protect,
+        "rare_term_min_idf": settings.retrieval_rare_term_min_idf,
+        "rare_term_force_k": settings.retrieval_rare_term_force_k,
     }
     rows = retrieve_relevant_chunks(
         news_text=query.strip(),

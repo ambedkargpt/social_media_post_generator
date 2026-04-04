@@ -57,6 +57,8 @@ class Settings:
     news_headline_prompt_user: str
     # User profiles on disk (Parquet)
     user_profiles_parquet_path: Path
+    # gTTS (optional; Streamlit / test_retrieval --tts)
+    gtts_lang: str
 
 
 def get_settings() -> Settings:
@@ -101,6 +103,7 @@ def get_settings() -> Settings:
     - GENERATED_NEWS_LEGACY_PATH (optional, defaults to ./outputs/generated_news_legacy.json)
     - NEWS_HEADLINE_SYSTEM / NEWS_HEADLINE_USER (optional prompt filenames under PROMPTS_DIR)
     - USER_PROFILES_PARQUET (optional, defaults to ./data/user_profiles.parquet)
+    - GTTS_LANG (optional, ISO 639-1 code for gTTS, defaults to hi)
     """
     openai_api_key = os.getenv("OPENAI_API_KEY", "")
     openai_model = os.getenv("OPENAI_MODEL", "gpt-5-nano")
@@ -182,6 +185,7 @@ def get_settings() -> Settings:
         if _profiles_parquet_raw
         else (_PROJECT_ROOT / "data" / "user_profiles.parquet")
     ).resolve()
+    gtts_lang = (os.getenv("GTTS_LANG") or "hi").strip() or "hi"
 
     if not openai_api_key:
         raise ValueError("OPENAI_API_KEY is not set in the environment.")
@@ -226,5 +230,6 @@ def get_settings() -> Settings:
         news_headline_prompt_system=news_headline_prompt_system,
         news_headline_prompt_user=news_headline_prompt_user,
         user_profiles_parquet_path=user_profiles_parquet_path,
+        gtts_lang=gtts_lang,
     )
 

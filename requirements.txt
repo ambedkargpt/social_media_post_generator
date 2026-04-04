@@ -15,3 +15,4 @@ pyspellchecker
 dotenv
 bs4
 streamlit
+gTTS
