@@ -210,6 +210,19 @@ def retrieve_relevant_chunks(
     rare_term_protect = bool(cfg.get("rare_term_protect", RARE_TERM_PROTECT))
     rare_term_min_idf = float(cfg.get("rare_term_min_idf", RARE_TERM_MIN_IDF))
     rare_term_force_k = int(cfg.get("rare_term_force_k", RARE_TERM_FORCE_K))
+    semrag_enabled = bool(cfg.get("semrag_enabled", False))
+    semrag_weight = float(cfg.get("semrag_weight", 0.5))
+    semrag_candidates = cfg.get("semrag_candidates", []) or []
+    semrag_rank_by_chunk: Dict[str, int] = {}
+    semrag_score_by_chunk: Dict[str, float] = {}
+    for rank, item in enumerate(semrag_candidates, start=1):
+        if not isinstance(item, (tuple, list)) or len(item) < 2:
+            continue
+        chunk_id = str(item[0] or "").strip()
+        if not chunk_id:
+            continue
+        semrag_rank_by_chunk[chunk_id] = rank
+        semrag_score_by_chunk[chunk_id] = float(item[1] or 0.0)
 
     expanded_queries = expand_queries_from_news(news_text)
 
@@ -220,6 +233,11 @@ def retrieve_relevant_chunks(
 
     results_by_chunk: Dict[str, Tuple[Dict, float]] = {}
     dense_similarity_by_idx: Dict[int, float] = {}
+    chunk_by_id: Dict[str, Dict] = {
+        str(chunk.get("chunk_id") or ""): chunk
+        for chunk in store.chunks
+        if str(chunk.get("chunk_id") or "").strip()
+    }
 
     bm25_store = None
     if use_bm25:
@@ -318,6 +336,7 @@ def retrieve_relevant_chunks(
                     "bm25_score": bm25_score,
                     "bm25_norm_score": bm25_norm_score,
                     "argument_score": argument_score,
+                    "semrag_score": float(semrag_score_by_chunk.get(str(chunk_id), 0.0)),
                     "hybrid_score": float(rrf_score),
                     "final_score": float(rrf_score),
                 }
@@ -336,8 +355,43 @@ def retrieve_relevant_chunks(
                 existing_payload["bm25_norm_score"] = max(
                     float(existing_payload.get("bm25_norm_score", 0.0)), bm25_norm_score
                 )
+                existing_payload["semrag_score"] = max(
+                    float(existing_payload.get("semrag_score", 0.0)),
+                    float(semrag_score_by_chunk.get(str(chunk_id), 0.0)),
+                )
                 existing_payload["final_score"] = new_score
                 results_by_chunk[chunk_id] = (existing_payload, max(existing_final, new_score))
+
+    if semrag_enabled and semrag_rank_by_chunk:
+        for chunk_id, raw_score in semrag_score_by_chunk.items():
+            if chunk_id in results_by_chunk:
+                continue
+            chunk = chunk_by_id.get(chunk_id)
+            if not chunk:
+                continue
+            payload = {
+                "chunk_id": chunk_id,
+                "video_title": chunk.get("video_title", ""),
+                "video_link": chunk.get("video_link", ""),
+                "chunk_text": chunk.get("chunk_text", ""),
+                "similarity_score": 0.0,
+                "bm25_score": 0.0,
+                "bm25_norm_score": 0.0,
+                "argument_score": float(chunk.get("argument_score", 0.0)),
+                "semrag_score": float(raw_score),
+                "hybrid_score": 0.0,
+                "final_score": 0.0,
+            }
+            results_by_chunk[chunk_id] = (payload, 0.0)
+
+        for chunk_id, (payload, _) in list(results_by_chunk.items()):
+            rank = semrag_rank_by_chunk.get(str(chunk_id))
+            if rank is None:
+                continue
+            rrf_bonus = (1.0 / (rrf_k + rank)) * semrag_weight
+            payload["hybrid_score"] = float(payload.get("hybrid_score", 0.0) + rrf_bonus)
+            payload["final_score"] = float(payload.get("hybrid_score", 0.0))
+            results_by_chunk[chunk_id] = (payload, float(payload["final_score"]))
 
     ranked = sorted(
         (val[0] for val in results_by_chunk.values()),

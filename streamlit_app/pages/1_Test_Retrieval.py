@@ -56,6 +56,10 @@ if st.button("Run Retrieval", width="stretch"):
             label = title if len(title) <= 96 else title[:93] + "..."
             with st.expander(f"Chunk {i + 1}: {label}", expanded=(i == 0)):
                 st.markdown(f"**Similarity** `{row.get('similarity_score', 0):.3f}`")
+                if row.get("semrag_score") is not None:
+                    st.markdown(f"**SEMRAG score** `{row.get('semrag_score', 0):.3f}`")
+                if row.get("relevance_score") is not None:
+                    st.markdown(f"**Relevance** `{row.get('relevance_score', 0):.3f}`")
                 if row.get("video_link"):
                     st.markdown(f"[Video link]({row['video_link']})")
                 st.markdown("**Chunk text**")
@@ -69,3 +73,6 @@ if st.button("Run Retrieval", width="stretch"):
                 render_gtts_native_player(f"tr_c_{rid}_{i}", heading="Chunk audio")
         with st.expander("Raw JSON"):
             st.json(payload)
+        if payload.get("semrag_query_extraction"):
+            with st.expander("SEMRAG query extraction"):
+                st.json(payload["semrag_query_extraction"])

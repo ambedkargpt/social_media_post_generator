@@ -336,6 +336,36 @@ def rebuild_rag_artifacts_from_data_file(data_txt_path: Path) -> None:
     save_title_embeddings(title_emb, RAG_TITLE_EMB_PATH)
 
 
+def rebuild_semrag_artifacts_from_data_file(data_txt_path: Path) -> None:
+    """
+    Refresh SEMRAG chunks + KG from the latest transcript master file.
+    Uses extraction cache, so only truly new/changed chunks are processed.
+    """
+    if not data_txt_path.exists():
+        return
+
+    from config import get_settings
+    from pipeline.transcript_parser import parse_transcripts
+    from semrag.build import build_semrag_graph, save_semrag_chunks
+    from semrag.chunking import chunk_videos_for_semrag
+
+    settings = get_settings()
+    raw_text = data_txt_path.read_text(encoding="utf-8")
+    videos = parse_transcripts(raw_text)
+    if not videos:
+        return
+
+    semrag_chunks = chunk_videos_for_semrag(videos, settings=settings, embedder=None)
+    save_semrag_chunks(settings.semrag_chunks_path, semrag_chunks)
+    build_semrag_graph(
+        chunks=semrag_chunks,
+        settings=settings,
+        graph_path=settings.semrag_graph_path,
+        cache_path=settings.semrag_cache_path,
+        force_rebuild=False,
+    )
+
+
 def summarize_fetched_entries(entries: list[dict], summary_path: Path, settings) -> tuple[int, list[dict]]:
     """
     Append DeepSeek summaries for fetch entries into data/video_summaries.json (cache by title+URL).
@@ -577,6 +607,11 @@ def parse_args() -> argparse.Namespace:
         help="Rebuild RAG (chunks, embeddings cache, FAISS, title embeddings) from "
         "data/ravishkumar_all_transcripts.txt and exit. Use after a failed/interrupted rebuild.",
     )
+    parser.add_argument(
+        "--rebuild-semrag-only",
+        action="store_true",
+        help="Rebuild SEMRAG chunks+KG from data/ravishkumar_all_transcripts.txt and exit.",
+    )
     return parser.parse_args()
 
 
@@ -588,6 +623,12 @@ def main() -> int:
         print(" Rebuilding RAG from master transcript file (no fetch)…")
         rebuild_rag_artifacts_from_data_file(RAVISH_DATA_TXT)
         print(" RAG rebuild finished.")
+        return 0
+
+    if args.rebuild_semrag_only:
+        print(" Rebuilding SEMRAG from master transcript file (no fetch)…")
+        rebuild_semrag_artifacts_from_data_file(RAVISH_DATA_TXT)
+        print(" SEMRAG rebuild finished.")
         return 0
 
     try:
@@ -746,6 +787,9 @@ def main() -> int:
         print(" Rebuilding RAG artifacts from updated Ravish dataset...")
         rebuild_rag_artifacts_from_data_file(RAVISH_DATA_TXT)
         print(" RAG artifacts refreshed (chunks, FAISS index, title embeddings).")
+        print(" Rebuilding SEMRAG artifacts from updated Ravish dataset...")
+        rebuild_semrag_artifacts_from_data_file(RAVISH_DATA_TXT)
+        print(" SEMRAG artifacts refreshed (semrag chunks + graph/cache).")
         from config import get_settings as _get_settings
         from pipeline.news_generator import update_generated_news_rolling
 

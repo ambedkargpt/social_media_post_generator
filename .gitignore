@@ -93,6 +93,16 @@ data/video_title_embeddings.json
 data/ravishkumar_all_transcripts.txt
 data/*_all_transcripts.txt
 
+# SEMRAG generated artifacts (large/runtime)
+data/semrag/checkpoints/
+data/semrag/semrag_graph.json
+data/semrag/semrag_chunks.json
+data/semrag/semrag_extraction_cache.json
+data/semrag/temp_semrag_search_results.json
+data/semrag/semrag_batch_test_results.json
+data/semrag/semrag_headline_batch_test_results.json
+data/semrag/semrag_cli_local_all_runs.json
+
 # =============================================================================
 # Streamlit — app is tracked for Streamlit Cloud; never commit user passwords
 # =============================================================================
@@ -101,7 +111,6 @@ streamlit_app/auth/users.json
 # =============================================================================
 # Auxiliary scripts & one-offs (not imported by the three entrypoints)
 # =============================================================================
-scripts/
 build_video_summaries.py
 generate_news.py
 test_retrieval.py
@@ -115,6 +124,12 @@ rebuild_embeddings_safe.py
 input.txt
 Output.txt
 bhbhbhbs.txt
+DB_TEST.txt
+*.pdf
+
+# Test files / test folders (local only)
+tests/
+test_*.py
 
 # =============================================================================
 # Optional: legacy / archive folders (add your own paths here)

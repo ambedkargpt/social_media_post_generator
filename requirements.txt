@@ -16,3 +16,12 @@ dotenv
 bs4
 streamlit
 gTTS
+pymongo
+fastapi
+uvicorn
+PyJWT
+google-auth
+email-validator
+pytest
+httpx
+mongomock

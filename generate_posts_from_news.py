@@ -35,6 +35,7 @@ from main import BASE_DIR, _retrieval_cfg_from_settings, ensure_rag_stack
 from pipeline.generator import generate_post
 from pipeline.profiles import get_user_profiles
 from pipeline.retriever import retrieve_relevant_chunks
+from semrag.runtime import semrag_candidates_for_query
 
 DEFAULT_NEWS_JSON = BASE_DIR / "outputs" / "generated_news.json"
 DEFAULT_OUTPUT = BASE_DIR / "outputs" / "generated_posts_from_news.json"
@@ -125,12 +126,16 @@ def main(argv: Sequence[str] | None = None) -> None:
         ]
     ).strip()
 
+    retrieval_cfg = _retrieval_cfg_from_settings(settings)
+    if settings.semrag_enabled:
+        semrag_candidates, _ = semrag_candidates_for_query(news_text_for_query, settings)
+        retrieval_cfg["semrag_candidates"] = semrag_candidates
     retrieved_chunks = retrieve_relevant_chunks(
         news_text=news_text_for_query,
         embedder=embedder,
         store=store,
         top_k=settings.retrieval_top_k,
-        retrieval_cfg=_retrieval_cfg_from_settings(settings),
+        retrieval_cfg=retrieval_cfg,
     )
 
     full_contexts: List[Dict[str, Any]] = []

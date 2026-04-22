@@ -12,6 +12,7 @@ from main import _retrieval_cfg_from_settings, ensure_rag_stack
 from pipeline.generator import generate_post
 from pipeline.profiles import get_user_profiles
 from pipeline.retriever import retrieve_relevant_chunks
+from semrag.runtime import semrag_candidates_for_query
 
 
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -72,12 +73,16 @@ def run_main_flow(
                 article.get("content") or "",
             ]
         ).strip()
+        retrieval_cfg = _retrieval_cfg_from_settings(settings)
+        if settings.semrag_enabled:
+            semrag_candidates, _ = semrag_candidates_for_query(query, settings)
+            retrieval_cfg["semrag_candidates"] = semrag_candidates
         chunks = retrieve_relevant_chunks(
             news_text=query,
             embedder=embedder,
             store=store,
             top_k=settings.retrieval_top_k,
-            retrieval_cfg=_retrieval_cfg_from_settings(settings),
+            retrieval_cfg=retrieval_cfg,
         )
         full_contexts = []
         seen = set()

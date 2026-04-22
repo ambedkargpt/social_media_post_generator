@@ -7,6 +7,7 @@ from typing import Any, Dict
 from config import get_settings
 from pipeline.embedder import ChunkEmbedder
 from pipeline.retriever import retrieve_relevant_chunks
+from semrag.runtime import semrag_candidates_for_query
 from pipeline.vector_store import load_vector_store
 
 
@@ -39,7 +40,12 @@ def run_retrieval(query: str, top_k: int = 5) -> Dict[str, Any]:
         "rare_term_protect": settings.retrieval_rare_term_protect,
         "rare_term_min_idf": settings.retrieval_rare_term_min_idf,
         "rare_term_force_k": settings.retrieval_rare_term_force_k,
+        "semrag_enabled": settings.semrag_enabled,
+        "semrag_weight": settings.semrag_weight,
     }
+    if settings.semrag_enabled:
+        semrag_candidates, query_extraction = semrag_candidates_for_query(query.strip(), settings)
+        retrieval_cfg["semrag_candidates"] = semrag_candidates
     rows = retrieve_relevant_chunks(
         news_text=query.strip(),
         embedder=embedder,
@@ -48,6 +54,8 @@ def run_retrieval(query: str, top_k: int = 5) -> Dict[str, Any]:
         retrieval_cfg=retrieval_cfg,
     )
     payload = {"query": query.strip(), "results": rows}
+    if settings.semrag_enabled:
+        payload["semrag_query_extraction"] = query_extraction
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     return payload

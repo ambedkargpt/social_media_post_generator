@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from dotenv import load_dotenv
+from semrag.semrag_config import load_semrag_config
 
 
 load_dotenv()
@@ -34,6 +35,13 @@ class Settings:
     retrieval_rare_term_protect: bool
     retrieval_rare_term_min_idf: float
     retrieval_rare_term_force_k: int
+    semrag_enabled: bool
+    semrag_graph_path: Path
+    semrag_cache_path: Path
+    semrag_chunks_path: Path
+    semrag_weight: float
+    semrag_top_n: int
+    semrag_model: str
     # LLM generation configuration
     openai_temperature: float
     # Embedding configuration
@@ -59,6 +67,19 @@ class Settings:
     user_profiles_parquet_path: Path
     # gTTS (optional; Streamlit / test_retrieval --tts)
     gtts_lang: str
+    # Backend / MongoDB configuration
+    mongodb_uri: str
+    mongodb_database: str
+    # Auth / security configuration
+    jwt_secret: str
+    jwt_algorithm: str
+    access_token_expiry_minutes: int
+    refresh_token_expiry_days: int
+    otp_expiry_minutes: int
+    otp_max_attempts: int
+    google_client_id: str
+    auth_debug_return_otp: bool
+    app_env: str
 
 
 def get_settings() -> Settings:
@@ -86,6 +107,23 @@ def get_settings() -> Settings:
     - RETRIEVAL_RARE_TERM_PROTECT (optional, defaults to true)
     - RETRIEVAL_RARE_TERM_MIN_IDF (optional, defaults to 6.0)
     - RETRIEVAL_RARE_TERM_FORCE_K (optional, defaults to 20)
+    - SEMRAG_ENABLED (optional, defaults to false)
+    - SEMRAG_GRAPH_PATH (optional, defaults to ./data/semrag_graph.json)
+    - SEMRAG_CACHE_PATH (optional, defaults to ./data/semrag_extraction_cache.json)
+    - SEMRAG_CHUNKS_PATH (optional, defaults to ./data/semrag/semrag_chunks.json)
+    - SEMRAG_WEIGHT (optional, defaults to 0.5)
+    - SEMRAG_TOP_N (optional, defaults to 120)
+    - SEMRAG_MODEL (optional, defaults to DEEPSEEK_MODEL)
+    - SEMRAG_CHUNKING_MODE (optional, defaults to semantic)
+    - SEMRAG_SIMILARITY_THRESHOLD (optional, defaults to 0.60)
+    - SEMRAG_MIN_CHUNK_SENTENCES (optional, defaults to 3)
+    - SEMRAG_MAX_CHUNK_SENTENCES (optional, defaults to 30)
+    - SEMRAG_BUFFER_SENTENCES (optional, defaults to 7)
+    - SEMRAG_TOKEN_LIMIT (optional, defaults to 1024)
+    - SEMRAG_OVERLAP_TOKENS (optional, defaults to 128)
+    - SEMRAG_MIN_CHUNK_CHARS (optional, defaults to 600)
+    - SEMRAG_MAX_CHUNK_CHARS (optional, defaults to 2000)
+    - SEMRAG_MIN_SENTENCE_LENGTH (optional, defaults to 10)
     - OPENAI_TEMPERATURE (optional, defaults to 1)
     - EMBEDDING_BATCH_SIZE (optional, defaults to 25)
     - EMBEDDING_CHUNK_CACHE (optional, defaults to true) — reuse chunk embeddings on disk
@@ -104,6 +142,17 @@ def get_settings() -> Settings:
     - NEWS_HEADLINE_SYSTEM / NEWS_HEADLINE_USER (optional prompt filenames under PROMPTS_DIR)
     - USER_PROFILES_PARQUET (optional, defaults to ./data/user_profiles.parquet)
     - GTTS_LANG (optional, ISO 639-1 code for gTTS, defaults to hi)
+    - MONGODB_URI (required for backend MongoDB connection)
+    - MONGODB_DATABASE (optional, defaults to ambedkargpt)
+    - JWT_SECRET (required for auth token signing)
+    - JWT_ALGORITHM (optional, defaults to HS256)
+    - ACCESS_TOKEN_EXPIRY_MINUTES (optional, defaults to 30)
+    - REFRESH_TOKEN_EXPIRY_DAYS (optional, defaults to 30)
+    - OTP_EXPIRY_MINUTES (optional, defaults to 10)
+    - OTP_MAX_ATTEMPTS (optional, defaults to 5)
+    - GOOGLE_CLIENT_ID (optional, required for strict Google ID token validation)
+    - AUTH_DEBUG_RETURN_OTP (optional, defaults to false)
+    - APP_ENV (optional, defaults to development)
     """
     openai_api_key = os.getenv("OPENAI_API_KEY", "")
     openai_model = os.getenv("OPENAI_MODEL", "gpt-5-nano")
@@ -131,6 +180,12 @@ def get_settings() -> Settings:
     }
     retrieval_rare_term_min_idf = float(os.getenv("RETRIEVAL_RARE_TERM_MIN_IDF", "6.0"))
     retrieval_rare_term_force_k = int(os.getenv("RETRIEVAL_RARE_TERM_FORCE_K", "20"))
+    semrag_cfg = load_semrag_config(_PROJECT_ROOT)
+    semrag_enabled = semrag_cfg.semrag_enabled
+    semrag_graph_path = semrag_cfg.semrag_graph_path
+    semrag_cache_path = semrag_cfg.semrag_cache_path
+    semrag_weight = semrag_cfg.semrag_weight
+    semrag_top_n = semrag_cfg.semrag_top_n
     openai_temperature = float(os.getenv("OPENAI_TEMPERATURE", "1"))
     embedding_batch_size = int(os.getenv("EMBEDDING_BATCH_SIZE", "25"))
     embedding_chunk_cache_enabled = os.getenv("EMBEDDING_CHUNK_CACHE", "true").lower() in {
@@ -159,11 +214,10 @@ def get_settings() -> Settings:
         .rstrip("/")
     )
     deepseek_model = (os.getenv("DEEPSEEK_MODEL") or "deepseek-chat").strip()
+    semrag_model = semrag_cfg.semrag_model
     _summary_model_raw = (os.getenv("DEEPSEEK_MODEL_SUMMARY") or "").strip()
     deepseek_summary_model = _summary_model_raw or deepseek_model
-    prompts_dir_raw = (os.getenv("PROMPTS_DIR") or "").strip()
-    prompts_dir = Path(prompts_dir_raw).expanduser() if prompts_dir_raw else (_PROJECT_ROOT / "prompts")
-    prompts_dir = prompts_dir.resolve()
+    prompts_dir = semrag_cfg.prompts_dir
     news_generator_top_n = int(os.getenv("NEWS_GENERATOR_TOP_N", "10"))
     _gen_news_raw = (os.getenv("GENERATED_NEWS_PATH") or "").strip()
     generated_news_path = (
@@ -186,11 +240,26 @@ def get_settings() -> Settings:
         else (_PROJECT_ROOT / "data" / "user_profiles.parquet")
     ).resolve()
     gtts_lang = (os.getenv("GTTS_LANG") or "hi").strip() or "hi"
+    mongodb_uri = (os.getenv("MONGODB_URI") or "").strip()
+    mongodb_database = (os.getenv("MONGODB_DATABASE") or "ambedkargpt").strip() or "ambedkargpt"
+    jwt_secret = (os.getenv("JWT_SECRET") or "").strip()
+    jwt_algorithm = (os.getenv("JWT_ALGORITHM") or "HS256").strip() or "HS256"
+    access_token_expiry_minutes = int(os.getenv("ACCESS_TOKEN_EXPIRY_MINUTES", "30"))
+    refresh_token_expiry_days = int(os.getenv("REFRESH_TOKEN_EXPIRY_DAYS", "30"))
+    otp_expiry_minutes = int(os.getenv("OTP_EXPIRY_MINUTES", "10"))
+    otp_max_attempts = int(os.getenv("OTP_MAX_ATTEMPTS", "5"))
+    google_client_id = (os.getenv("GOOGLE_CLIENT_ID") or "").strip()
+    auth_debug_return_otp = (os.getenv("AUTH_DEBUG_RETURN_OTP", "false").lower() in {"1", "true", "yes", "on"})
+    app_env = (os.getenv("APP_ENV") or "development").strip().lower() or "development"
 
     if not openai_api_key:
         raise ValueError("OPENAI_API_KEY is not set in the environment.")
     if not gemini_api_key:
         raise ValueError("GEMINI_API_KEY is not set in the environment (required for embeddings).")
+    if not mongodb_uri:
+        raise ValueError("MONGODB_URI is not set in the environment.")
+    if not jwt_secret:
+        raise ValueError("JWT_SECRET is not set in the environment.")
 
     return Settings(
         openai_api_key=openai_api_key,
@@ -213,6 +282,13 @@ def get_settings() -> Settings:
         retrieval_rare_term_protect=retrieval_rare_term_protect,
         retrieval_rare_term_min_idf=retrieval_rare_term_min_idf,
         retrieval_rare_term_force_k=retrieval_rare_term_force_k,
+        semrag_enabled=semrag_enabled,
+        semrag_graph_path=semrag_graph_path,
+        semrag_cache_path=semrag_cache_path,
+        semrag_chunks_path=semrag_cfg.semrag_chunks_path,
+        semrag_weight=semrag_weight,
+        semrag_top_n=semrag_top_n,
+        semrag_model=semrag_model,
         openai_temperature=openai_temperature,
         embedding_batch_size=embedding_batch_size,
         embedding_chunk_cache_enabled=embedding_chunk_cache_enabled,
@@ -231,5 +307,16 @@ def get_settings() -> Settings:
         news_headline_prompt_user=news_headline_prompt_user,
         user_profiles_parquet_path=user_profiles_parquet_path,
         gtts_lang=gtts_lang,
+        mongodb_uri=mongodb_uri,
+        mongodb_database=mongodb_database,
+        jwt_secret=jwt_secret,
+        jwt_algorithm=jwt_algorithm,
+        access_token_expiry_minutes=access_token_expiry_minutes,
+        refresh_token_expiry_days=refresh_token_expiry_days,
+        otp_expiry_minutes=otp_expiry_minutes,
+        otp_max_attempts=otp_max_attempts,
+        google_client_id=google_client_id,
+        auth_debug_return_otp=auth_debug_return_otp,
+        app_env=app_env,
     )
 

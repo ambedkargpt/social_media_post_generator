@@ -18,6 +18,10 @@ from pipeline.retriever import retrieve_relevant_chunks
 from pipeline.generator import generate_post
 from pipeline.profiles import get_user_profiles
 from pipeline.title_embeddings import build_title_embeddings, save_title_embeddings, load_title_embeddings
+from semrag.build import build_semrag_graph, save_semrag_chunks
+from semrag.chunking import chunk_videos_for_semrag
+from semrag.runtime import semrag_candidates_for_query
+from semrag.semrag_config import load_semrag_config
 
 
 BASE_DIR = Path(__file__).parent
@@ -42,6 +46,8 @@ def _retrieval_cfg_from_settings(settings) -> Dict[str, Any]:
         "rare_term_protect": settings.retrieval_rare_term_protect,
         "rare_term_min_idf": settings.retrieval_rare_term_min_idf,
         "rare_term_force_k": settings.retrieval_rare_term_force_k,
+        "semrag_enabled": settings.semrag_enabled,
+        "semrag_weight": settings.semrag_weight,
     }
 
 
@@ -137,6 +143,16 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         type=str,
         default="",
         help="Non-interactive: sub-headline (optional if --headline is set).",
+    )
+    parser.add_argument(
+        "--build-semrag",
+        action="store_true",
+        help="Build or update SEMRAG graph from current argument chunks before retrieval.",
+    )
+    parser.add_argument(
+        "--rebuild-semrag",
+        action="store_true",
+        help="Force re-extraction for all chunks when building SEMRAG graph.",
     )
     return parser.parse_args(argv)
 
@@ -255,6 +271,7 @@ def _interactive_choose_primary_mode() -> str:
 def main(argv: Sequence[str] | None = None) -> None:
     args = parse_args(argv)
     settings = get_settings()
+    semrag_cfg = load_semrag_config(BASE_DIR)
 
     # Initial mode selection when no explicit direct-news CLI args are provided.
     if _should_prompt_primary_mode(args):
@@ -269,6 +286,21 @@ def main(argv: Sequence[str] | None = None) -> None:
     client = OpenAI(api_key=settings.openai_api_key)
 
     embedder, store, context_by_title = ensure_rag_stack(settings)
+    if settings.semrag_enabled and (args.build_semrag or not settings.semrag_graph_path.exists()):
+        if args.rebuild_semrag or not settings.semrag_chunks_path.exists():
+            video_context = json.loads(VIDEO_CONTEXT_PATH.read_text(encoding="utf-8"))
+            semrag_chunks = chunk_videos_for_semrag(video_context, embedder, semrag_cfg)
+            semrag_chunks = score_argument_chunks(semrag_chunks)
+            save_semrag_chunks(settings.semrag_chunks_path, semrag_chunks)
+        else:
+            semrag_chunks = json.loads(settings.semrag_chunks_path.read_text(encoding="utf-8"))
+        build_semrag_graph(
+            chunks=semrag_chunks,
+            settings=settings,
+            graph_path=settings.semrag_graph_path,
+            cache_path=settings.semrag_cache_path,
+            force_rebuild=bool(args.rebuild_semrag),
+        )
 
     # 5. Fetch latest news or use CLI / interactive input
     if args.news_texts:
@@ -309,12 +341,16 @@ def main(argv: Sequence[str] | None = None) -> None:
         ).strip()
 
         # Shared retrieval at news level
+        retrieval_cfg = _retrieval_cfg_from_settings(settings)
+        if settings.semrag_enabled:
+            semrag_candidates, _ = semrag_candidates_for_query(news_text_for_query, settings)
+            retrieval_cfg["semrag_candidates"] = semrag_candidates
         retrieved_chunks = retrieve_relevant_chunks(
             news_text=news_text_for_query,
             embedder=embedder,
             store=store,
             top_k=settings.retrieval_top_k,
-            retrieval_cfg=_retrieval_cfg_from_settings(settings),
+            retrieval_cfg=retrieval_cfg,
         )
 
         # Context expansion: gather full transcripts for retrieved chunk videos
