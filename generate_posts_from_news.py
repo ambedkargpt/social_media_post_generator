@@ -127,9 +127,18 @@ def main(argv: Sequence[str] | None = None) -> None:
     ).strip()
 
     retrieval_cfg = _retrieval_cfg_from_settings(settings)
-    if settings.semrag_enabled:
-        semrag_candidates, _ = semrag_candidates_for_query(news_text_for_query, settings)
+    retrieval_cfg["semrag_enabled"] = True
+    try:
+        semrag_candidates, _ = semrag_candidates_for_query(
+            news_text_for_query,
+            settings,
+            mode=settings.semrag_search_mode,
+        )
         retrieval_cfg["semrag_candidates"] = semrag_candidates
+    except Exception as exc:
+        retrieval_cfg["semrag_enabled"] = False
+        retrieval_cfg.pop("semrag_candidates", None)
+        print(f"SEMRAG retrieval fallback in generate_posts_from_news: {exc}")
     retrieved_chunks = retrieve_relevant_chunks(
         news_text=news_text_for_query,
         embedder=embedder,

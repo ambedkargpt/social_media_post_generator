@@ -29,17 +29,33 @@ with st.expander("Text-to-speech (gTTS)", expanded=False):
 
 query = st.text_area("Query", height=140, placeholder="Enter a query/news summary")
 top_k = st.slider("Top K", min_value=1, max_value=25, value=5, step=1)
+semrag_mode = st.selectbox(
+    "SEMRAG mode",
+    options=["hybrid", "local", "global"],
+    index=["hybrid", "local", "global"].index(settings.semrag_search_mode)
+    if settings.semrag_search_mode in {"hybrid", "local", "global"}
+    else 0,
+)
 
 if st.button("Run Retrieval", width="stretch"):
     if not query.strip():
         st.warning("Please provide a query.")
     else:
         with st.spinner("Running retrieval..."):
-            payload = run_retrieval(query=query.strip(), top_k=int(top_k))
+            payload = run_retrieval(query=query.strip(), top_k=int(top_k), semrag_mode=semrag_mode)
         st.session_state["tr_run"] = int(st.session_state.get("tr_run", 0)) + 1
         rid = int(st.session_state["tr_run"])
         n = len(payload.get("results", []))
         st.success(f"Retrieved {n} chunk(s).")
+        st.caption(
+            "SEMRAG mode: `{mode}` | effective: `{enabled}` | fallback used: `{fallback}`".format(
+                mode=payload.get("semrag_mode", semrag_mode),
+                enabled=payload.get("semrag_enabled_effective", False),
+                fallback=payload.get("semrag_fallback_used", False),
+            )
+        )
+        if payload.get("semrag_error"):
+            st.warning(f"SEMRAG fallback reason: {payload['semrag_error']}")
         results = payload.get("results") or []
         if not results:
             st.info("No chunks matched this query.")

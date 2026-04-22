@@ -47,9 +47,17 @@ def generate_posts_for_generated_item(
         ]
     ).strip()
     retrieval_cfg = _retrieval_cfg_from_settings(settings)
-    if settings.semrag_enabled:
-        semrag_candidates, _ = semrag_candidates_for_query(query, settings)
+    retrieval_cfg["semrag_enabled"] = True
+    try:
+        semrag_candidates, _ = semrag_candidates_for_query(
+            query,
+            settings,
+            mode=settings.semrag_search_mode,
+        )
         retrieval_cfg["semrag_candidates"] = semrag_candidates
+    except Exception:
+        retrieval_cfg["semrag_enabled"] = False
+        retrieval_cfg.pop("semrag_candidates", None)
     chunks = retrieve_relevant_chunks(
         news_text=query,
         embedder=embedder,

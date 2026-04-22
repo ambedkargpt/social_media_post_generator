@@ -32,6 +32,8 @@ class SemragConfig:
     semrag_enabled: bool
     semrag_weight: float
     semrag_top_n: int
+    semrag_search_mode: str
+    semrag_streamlit_force: bool
     semrag_graph_path: Path
     semrag_cache_path: Path
     semrag_chunks_path: Path
@@ -60,6 +62,9 @@ def load_semrag_config(project_root: Path) -> SemragConfig:
     semrag_graph_raw = (os.getenv("SEMRAG_GRAPH_PATH") or "").strip()
     semrag_cache_raw = (os.getenv("SEMRAG_CACHE_PATH") or "").strip()
     semrag_chunks_raw = (os.getenv("SEMRAG_CHUNKS_PATH") or "").strip()
+    semrag_search_mode = (os.getenv("SEMRAG_SEARCH_MODE") or "hybrid").strip().lower()
+    if semrag_search_mode not in {"local", "global", "hybrid"}:
+        semrag_search_mode = "hybrid"
     return SemragConfig(
         deepseek_api_key=(os.getenv("DEEPSEEK_API_KEY") or os.getenv("DEEPSEEK_KEY") or "").strip(),
         deepseek_base_url=deepseek_base_url,
@@ -68,6 +73,8 @@ def load_semrag_config(project_root: Path) -> SemragConfig:
         semrag_enabled=semrag_enabled,
         semrag_weight=float(os.getenv("SEMRAG_WEIGHT", "0.5")),
         semrag_top_n=int(os.getenv("SEMRAG_TOP_N", "120")),
+        semrag_search_mode=semrag_search_mode,
+        semrag_streamlit_force=os.getenv("SEMRAG_STREAMLIT_FORCE", "true").lower() in {"1", "true", "yes", "on"},
         semrag_graph_path=Path(semrag_graph_raw).expanduser().resolve()
         if semrag_graph_raw
         else (data_semrag_dir / "semrag_graph.json"),

@@ -42,6 +42,8 @@ class Settings:
     semrag_weight: float
     semrag_top_n: int
     semrag_model: str
+    semrag_search_mode: str
+    semrag_streamlit_force: bool
     # LLM generation configuration
     openai_temperature: float
     # Embedding configuration
@@ -114,6 +116,8 @@ def get_settings() -> Settings:
     - SEMRAG_WEIGHT (optional, defaults to 0.5)
     - SEMRAG_TOP_N (optional, defaults to 120)
     - SEMRAG_MODEL (optional, defaults to DEEPSEEK_MODEL)
+    - SEMRAG_SEARCH_MODE (optional, local/global/hybrid; defaults to hybrid)
+    - SEMRAG_STREAMLIT_FORCE (optional, defaults to true)
     - SEMRAG_CHUNKING_MODE (optional, defaults to semantic)
     - SEMRAG_SIMILARITY_THRESHOLD (optional, defaults to 0.60)
     - SEMRAG_MIN_CHUNK_SENTENCES (optional, defaults to 3)
@@ -186,6 +190,8 @@ def get_settings() -> Settings:
     semrag_cache_path = semrag_cfg.semrag_cache_path
     semrag_weight = semrag_cfg.semrag_weight
     semrag_top_n = semrag_cfg.semrag_top_n
+    semrag_search_mode = semrag_cfg.semrag_search_mode
+    semrag_streamlit_force = semrag_cfg.semrag_streamlit_force
     openai_temperature = float(os.getenv("OPENAI_TEMPERATURE", "1"))
     embedding_batch_size = int(os.getenv("EMBEDDING_BATCH_SIZE", "25"))
     embedding_chunk_cache_enabled = os.getenv("EMBEDDING_CHUNK_CACHE", "true").lower() in {
@@ -289,6 +295,8 @@ def get_settings() -> Settings:
         semrag_weight=semrag_weight,
         semrag_top_n=semrag_top_n,
         semrag_model=semrag_model,
+        semrag_search_mode=semrag_search_mode,
+        semrag_streamlit_force=semrag_streamlit_force,
         openai_temperature=openai_temperature,
         embedding_batch_size=embedding_batch_size,
         embedding_chunk_cache_enabled=embedding_chunk_cache_enabled,
