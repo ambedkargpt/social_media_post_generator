@@ -262,10 +262,10 @@ def get_settings() -> Settings:
         raise ValueError("OPENAI_API_KEY is not set in the environment.")
     if not gemini_api_key:
         raise ValueError("GEMINI_API_KEY is not set in the environment (required for embeddings).")
-    if not mongodb_uri:
-        raise ValueError("MONGODB_URI is not set in the environment.")
-    if not jwt_secret:
-        raise ValueError("JWT_SECRET is not set in the environment.")
+    # NOTE:
+    # MONGODB_URI and JWT_SECRET are required for backend auth/API runtime,
+    # but Streamlit retrieval/testing flows should still load settings without
+    # those backend-only env vars present.
 
     return Settings(
         openai_api_key=openai_api_key,
