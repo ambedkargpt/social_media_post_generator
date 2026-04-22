@@ -79,7 +79,7 @@ def run_main_flow(
             semrag_candidates, _ = semrag_candidates_for_query(
                 query,
                 settings,
-                mode=settings.semrag_search_mode,
+                mode=getattr(settings, "semrag_search_mode", "hybrid"),
             )
             retrieval_cfg["semrag_candidates"] = semrag_candidates
         except Exception:

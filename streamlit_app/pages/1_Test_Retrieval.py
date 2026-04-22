@@ -32,8 +32,8 @@ top_k = st.slider("Top K", min_value=1, max_value=25, value=5, step=1)
 semrag_mode = st.selectbox(
     "SEMRAG mode",
     options=["hybrid", "local", "global"],
-    index=["hybrid", "local", "global"].index(settings.semrag_search_mode)
-    if settings.semrag_search_mode in {"hybrid", "local", "global"}
+    index=["hybrid", "local", "global"].index(getattr(settings, "semrag_search_mode", "hybrid"))
+    if getattr(settings, "semrag_search_mode", "hybrid") in {"hybrid", "local", "global"}
     else 0,
 )
 

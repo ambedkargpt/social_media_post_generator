@@ -132,7 +132,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         semrag_candidates, _ = semrag_candidates_for_query(
             news_text_for_query,
             settings,
-            mode=settings.semrag_search_mode,
+            mode=getattr(settings, "semrag_search_mode", "hybrid"),
         )
         retrieval_cfg["semrag_candidates"] = semrag_candidates
     except Exception as exc:

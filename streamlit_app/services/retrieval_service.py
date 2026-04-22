@@ -28,10 +28,10 @@ def run_retrieval(query: str, top_k: int = 5, semrag_mode: str | None = None) ->
         model_name=settings.embedding_model,
         batch_size=settings.embedding_batch_size,
     )
-    chosen_mode = (semrag_mode or settings.semrag_search_mode or "hybrid").strip().lower()
+    chosen_mode = (semrag_mode or getattr(settings, "semrag_search_mode", "hybrid") or "hybrid").strip().lower()
     if chosen_mode not in {"local", "global", "hybrid"}:
         chosen_mode = "hybrid"
-    semrag_first = bool(settings.semrag_streamlit_force)
+    semrag_first = bool(getattr(settings, "semrag_streamlit_force", True))
 
     retrieval_cfg = {
         "use_bm25": settings.retrieval_use_bm25,
