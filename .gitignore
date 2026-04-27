@@ -75,6 +75,7 @@ outputs/generated_posts_from_news.json
 outputs/retrieval_output.json
 outputs/video_summary_checkpoint.json
 outputs/generated_news_legacy.json
+outputs/questions_with_ids.docx
 outputs/**/verification_report.json
 outputs/bulk_retrieval*
 outputs/embedding_checkpoint*
@@ -95,9 +96,13 @@ data/*_all_transcripts.txt
 
 # SEMRAG generated artifacts (large/runtime)
 data/semrag/checkpoints/
+data/semrag/backups/
+data/semrag/progress/
 data/semrag/semrag_graph.json
 data/semrag/semrag_chunks.json
 data/semrag/semrag_extraction_cache.json
+data/semrag/semrag_entities_backup.json
+data/semrag/semrag_relations_backup.json
 data/semrag/temp_semrag_search_results.json
 data/semrag/semrag_batch_test_results.json
 data/semrag/semrag_headline_batch_test_results.json
