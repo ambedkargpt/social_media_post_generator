@@ -37,6 +37,7 @@ class QuestionsService:
             category=doc.get("category"),
             answer_type=doc["answer_type"],
             options=doc.get("options", []),
+            is_required=bool(doc.get("is_required", False)),
             is_active=bool(doc.get("is_active", True)),
             version=int(doc.get("version", 1)),
             created_at=doc["created_at"],

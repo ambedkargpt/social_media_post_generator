@@ -13,6 +13,12 @@ class ProfileAnswerUpsertRequest(BaseModel):
     source: ProfileAnswerSource = "profile_update"
 
 
+class ProfileAnswersBatchUpsertRequest(BaseModel):
+    user_id: str
+    answers: dict[str, Any]
+    source: ProfileAnswerSource = "profile_update"
+
+
 class ProfileAnswerResponse(BaseModel):
     id: str
     user_id: str

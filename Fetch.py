@@ -348,15 +348,26 @@ def rebuild_semrag_artifacts_from_data_file(data_txt_path: Path) -> None:
     from pipeline.transcript_parser import parse_transcripts
     from semrag.build import build_semrag_graph, save_semrag_chunks
     from semrag.chunking import chunk_videos_for_semrag
+    from semrag.semrag_config import load_semrag_config
 
     settings = get_settings()
-    raw_text = data_txt_path.read_text(encoding="utf-8")
-    videos = parse_transcripts(raw_text)
-    if not videos:
-        return
+    semrag_cfg = load_semrag_config(PROJECT_ROOT)
+    semrag_chunks = []
+    if settings.semrag_chunks_path.exists():
+        try:
+            semrag_chunks = json.loads(settings.semrag_chunks_path.read_text(encoding="utf-8"))
+            if semrag_chunks:
+                print(f" Using existing SEMRAG chunks from: {settings.semrag_chunks_path}")
+        except Exception:
+            semrag_chunks = []
 
-    semrag_chunks = chunk_videos_for_semrag(videos, settings=settings, embedder=None)
-    save_semrag_chunks(settings.semrag_chunks_path, semrag_chunks)
+    if not semrag_chunks:
+        raw_text = data_txt_path.read_text(encoding="utf-8")
+        videos = parse_transcripts(raw_text)
+        if not videos:
+            return
+        semrag_chunks = chunk_videos_for_semrag(videos, embedder=None, cfg=semrag_cfg)
+        save_semrag_chunks(settings.semrag_chunks_path, semrag_chunks)
     build_semrag_graph(
         chunks=semrag_chunks,
         settings=settings,
@@ -364,6 +375,68 @@ def rebuild_semrag_artifacts_from_data_file(data_txt_path: Path) -> None:
         cache_path=settings.semrag_cache_path,
         force_rebuild=False,
     )
+
+
+def build_semrag_graph_from_backups_only() -> None:
+    """
+    Rebuild semrag_graph.json strictly from extracted backup files without running extraction.
+    """
+    from config import get_settings
+    from semrag.store import normalize_text, rebuild_indexes, save_semrag_graph
+
+    settings = get_settings()
+    semrag_dir = settings.semrag_graph_path.parent
+    entities_path = semrag_dir / "semrag_entities_backup.json"
+    relations_path = semrag_dir / "semrag_relations_backup.json"
+    if not entities_path.exists() or not relations_path.exists():
+        raise FileNotFoundError(
+            "Missing backup files. Expected semrag_entities_backup.json and semrag_relations_backup.json."
+        )
+
+    entities_payload = json.loads(entities_path.read_text(encoding="utf-8"))
+    relations_payload = json.loads(relations_path.read_text(encoding="utf-8"))
+    entities = entities_payload.get("entities") if isinstance(entities_payload, dict) else []
+    relations = relations_payload.get("relations") if isinstance(relations_payload, dict) else []
+    if not isinstance(entities, list) or not isinstance(relations, list):
+        raise ValueError("Backup files are malformed: entities/relations arrays are required.")
+
+    graph = {
+        "version": 1,
+        "updated_at": entities_payload.get("updated_at") or relations_payload.get("updated_at"),
+        "entities": entities,
+        "relations": relations,
+        "entity_name_to_id": {},
+        "chunk_entities": {},
+        "entity_to_chunks": {},
+        "relation_to_chunks": {},
+    }
+
+    for ent in entities:
+        if not isinstance(ent, dict):
+            continue
+        entity_id = str(ent.get("entity_id") or "").strip()
+        name = str(ent.get("canonical_name") or "").strip()
+        entity_type = str(ent.get("entity_type") or "").strip().lower()
+        if entity_id and name and entity_type:
+            graph["entity_name_to_id"][f"{normalize_text(name)}::{normalize_text(entity_type)}"] = entity_id
+
+    chunk_entities: dict[str, set[str]] = {}
+    for rel in relations:
+        if not isinstance(rel, dict):
+            continue
+        cid = str(rel.get("evidence_chunk_id") or "").strip()
+        if not cid:
+            continue
+        bucket = chunk_entities.setdefault(cid, set())
+        head = str(rel.get("head_entity_id") or "").strip()
+        tail = str(rel.get("tail_entity_id") or "").strip()
+        if head:
+            bucket.add(head)
+        if tail:
+            bucket.add(tail)
+    graph["chunk_entities"] = {k: sorted(v) for k, v in chunk_entities.items()}
+    rebuild_indexes(graph)
+    save_semrag_graph(settings.semrag_graph_path, graph)
 
 
 def summarize_fetched_entries(entries: list[dict], summary_path: Path, settings) -> tuple[int, list[dict]]:
@@ -612,6 +685,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Rebuild SEMRAG chunks+KG from data/ravishkumar_all_transcripts.txt and exit.",
     )
+    parser.add_argument(
+        "--graph-only-from-backup",
+        action="store_true",
+        help="Build semrag_graph.json only from semrag_entities_backup.json and semrag_relations_backup.json.",
+    )
     return parser.parse_args()
 
 
@@ -629,6 +707,12 @@ def main() -> int:
         print(" Rebuilding SEMRAG from master transcript file (no fetch)…")
         rebuild_semrag_artifacts_from_data_file(RAVISH_DATA_TXT)
         print(" SEMRAG rebuild finished.")
+        return 0
+
+    if args.graph_only_from_backup:
+        print(" Rebuilding SEMRAG graph only from extracted backup files…")
+        build_semrag_graph_from_backups_only()
+        print(" SEMRAG graph-only rebuild finished.")
         return 0
 
     try:

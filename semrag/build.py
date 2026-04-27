@@ -21,6 +21,9 @@ from .store import (
 
 ENTITY_EXTRACTION_SYSTEM_NAME = "entity_extraction_system.txt"
 ENTITY_EXTRACTION_USER_NAME = "entity_extraction_user.txt"
+ENTITY_EXTRACTION_CHECKPOINTS_NAME = "entity_extraction_checkpoints.json"
+ENTITY_BACKUP_NAME = "semrag_entities_backup.json"
+RELATION_BACKUP_NAME = "semrag_relations_backup.json"
 EXTRACTION_WORKERS = 4
 EXTRACTION_BATCH_SIZE = 4
 EXTRACTION_MAX_RETRIES = 3
@@ -177,7 +180,6 @@ def _write_extraction_checkpoint(
     is_final: bool = False,
 ) -> None:
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
-    name = "entity_extraction_final.json" if is_final else f"entity_extraction_ckpt_{processed:06d}.json"
     payload = {
         "processed_chunks": int(processed),
         "total_chunks": int(total),
@@ -186,7 +188,145 @@ def _write_extraction_checkpoint(
         "last_chunk_id": last_chunk_id,
         "is_final": bool(is_final),
     }
-    (checkpoint_dir / name).write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    checkpoints_path = checkpoint_dir / ENTITY_EXTRACTION_CHECKPOINTS_NAME
+    history_payload = {"checkpoints": []}
+    if checkpoints_path.exists():
+        try:
+            loaded = json.loads(checkpoints_path.read_text(encoding="utf-8"))
+            if isinstance(loaded, dict) and isinstance(loaded.get("checkpoints"), list):
+                history_payload = loaded
+        except Exception:
+            history_payload = {"checkpoints": []}
+    checkpoints = history_payload.setdefault("checkpoints", [])
+    if not checkpoints or checkpoints[-1] != payload:
+        checkpoints.append(payload)
+    history_payload["latest"] = payload
+    checkpoints_path.write_text(json.dumps(history_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    # Keep a compact final snapshot for tooling that expects this file.
+    if is_final:
+        (checkpoint_dir / "entity_extraction_final.json").write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+
+
+def _sync_extraction_state(
+    *,
+    graph_path: Path,
+    graph: Dict,
+    cache_path: Path,
+    cache: Dict[str, Dict],
+    checkpoint_dir: Path,
+    processed: int,
+    total: int,
+    extracted: int,
+    skipped_cached: int,
+    last_chunk_id: str,
+    is_final: bool,
+) -> None:
+    """
+    Persist graph + cache + checkpoint as one synchronized progress step.
+    """
+    save_semrag_graph(graph_path, graph)
+    save_extraction_cache(cache_path, cache)
+    _write_extraction_checkpoint(
+        checkpoint_dir,
+        processed=processed,
+        total=total,
+        extracted=extracted,
+        skipped_cached=skipped_cached,
+        last_chunk_id=last_chunk_id,
+        is_final=is_final,
+    )
+    _write_entity_relation_backups(graph=graph, output_dir=graph_path.parent)
+
+
+def _write_entity_relation_backups(*, graph: Dict, output_dir: Path) -> None:
+    """
+    Store entities and relations in separate backup files so graph content
+    remains recoverable even if semrag_graph.json is later overwritten.
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+    entities = graph.get("entities", []) or []
+    relations = graph.get("relations", []) or []
+
+    entities_payload = {
+        "updated_at": graph.get("updated_at"),
+        "count": len(entities),
+        "entities": entities,
+    }
+    relations_payload = {
+        "updated_at": graph.get("updated_at"),
+        "count": len(relations),
+        "relations": relations,
+    }
+
+    (output_dir / ENTITY_BACKUP_NAME).write_text(
+        json.dumps(entities_payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    (output_dir / RELATION_BACKUP_NAME).write_text(
+        json.dumps(relations_payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+
+def _read_backup_payloads(output_dir: Path) -> tuple[list[Dict], list[Dict]]:
+    entities_path = output_dir / ENTITY_BACKUP_NAME
+    relations_path = output_dir / RELATION_BACKUP_NAME
+    if not entities_path.exists() or not relations_path.exists():
+        return [], []
+    try:
+        entities_payload = json.loads(entities_path.read_text(encoding="utf-8"))
+        relations_payload = json.loads(relations_path.read_text(encoding="utf-8"))
+    except Exception:
+        return [], []
+    entities = entities_payload.get("entities") if isinstance(entities_payload, dict) else []
+    relations = relations_payload.get("relations") if isinstance(relations_payload, dict) else []
+    if not isinstance(entities, list) or not isinstance(relations, list):
+        return [], []
+    return entities, relations
+
+
+def _graph_from_backups(*, entities: list[Dict], relations: list[Dict]) -> Dict:
+    graph: Dict = {
+        "version": 1,
+        "updated_at": "",
+        "entities": entities,
+        "relations": relations,
+        "entity_name_to_id": {},
+        "chunk_entities": {},
+        "entity_to_chunks": {},
+        "relation_to_chunks": {},
+    }
+
+    for ent in entities:
+        if not isinstance(ent, dict):
+            continue
+        entity_id = str(ent.get("entity_id") or "").strip()
+        name = str(ent.get("canonical_name") or "").strip()
+        entity_type = str(ent.get("entity_type") or "").strip().lower()
+        if entity_id and name and entity_type:
+            graph["entity_name_to_id"][f"{normalize_text(name)}::{normalize_text(entity_type)}"] = entity_id
+
+    chunk_entities: Dict[str, set] = {}
+    for rel in relations:
+        if not isinstance(rel, dict):
+            continue
+        cid = str(rel.get("evidence_chunk_id") or "").strip()
+        if not cid:
+            continue
+        bucket = chunk_entities.setdefault(cid, set())
+        head = str(rel.get("head_entity_id") or "").strip()
+        tail = str(rel.get("tail_entity_id") or "").strip()
+        if head:
+            bucket.add(head)
+        if tail:
+            bucket.add(tail)
+    graph["chunk_entities"] = {k: sorted(v) for k, v in chunk_entities.items()}
+    rebuild_indexes(graph)
+    return graph
 
 
 def _worker_client(settings) -> OpenAI:
@@ -319,15 +459,33 @@ def build_semrag_graph(*, chunks: List[Dict], settings, graph_path: Path, cache_
     checkpoint_dir = graph_path.parent / "checkpoints"
     pending: List[Dict] = []
     system_prompt, user_template = _load_prompts(settings.prompts_dir)
+    last_chunk_id = str(chunks[0].get("chunk_id") if chunks else "")
 
     # Pre-filter cached chunks first (and count them in progress).
+    # If cache contains extraction payloads, rehydrate graph directly from cache.
     for chunk in chunks:
         chunk_id = str(chunk.get("chunk_id") or "").strip()
         if not chunk_id:
             continue
         h = chunk_hash(chunk)
-        if (not force_rebuild) and cache.get(chunk_id, {}).get("hash") == h:
+        cached = cache.get(chunk_id, {}) if isinstance(cache.get(chunk_id), dict) else {}
+        hash_match = (not force_rebuild) and cached.get("hash") == h
+        cached_extraction = cached.get("extraction")
+
+        if hash_match and isinstance(cached_extraction, dict):
+            try:
+                # Ensure graph always reflects cached extractions for matching chunks.
+                reset_chunk_entries(graph, chunk_id)
+                add_chunk_extraction(graph, chunk, cached_extraction)
+                skipped_cached += 1
+                last_chunk_id = chunk_id
+            except Exception:
+                # If cache payload is malformed, re-extract this chunk.
+                pending.append(chunk)
+        elif hash_match:
+            # Hash-only cache entry (legacy format): treat as processed, but no graph rehydrate available.
             skipped_cached += 1
+            last_chunk_id = chunk_id
         else:
             pending.append(chunk)
 
@@ -337,6 +495,20 @@ def build_semrag_graph(*, chunks: List[Dict], settings, graph_path: Path, cache_
             processed += skipped_cached
             pbar.update(skipped_cached)
             pbar.set_postfix(extracted=extracted, skipped=skipped_cached, failed=failed, retried=retried, in_flight=0)
+            # Persist a synchronized snapshot immediately, so restarts begin from cache-backed progress.
+            _sync_extraction_state(
+                graph_path=graph_path,
+                graph=graph,
+                cache_path=cache_path,
+                cache=cache,
+                checkpoint_dir=checkpoint_dir,
+                processed=processed,
+                total=total,
+                extracted=extracted,
+                skipped_cached=skipped_cached,
+                last_chunk_id=last_chunk_id,
+                is_final=False,
+            )
 
         future_map = {}
         with ThreadPoolExecutor(max_workers=EXTRACTION_WORKERS) as pool:
@@ -367,7 +539,10 @@ def build_semrag_graph(*, chunks: List[Dict], settings, graph_path: Path, cache_
                         if extraction is not None and cid and chunk_ref is not None:
                             reset_chunk_entries(graph, cid)
                             add_chunk_extraction(graph, chunk_ref, extraction)
-                            cache[cid] = {"hash": h}
+                            cache[cid] = {
+                                "hash": h,
+                                "extraction": extraction,
+                            }
                             extracted += 1
                             last_chunk_id = cid
                         else:
@@ -385,10 +560,12 @@ def build_semrag_graph(*, chunks: List[Dict], settings, graph_path: Path, cache_
                         )
 
                         if processed % checkpoint_every == 0:
-                            save_semrag_graph(graph_path, graph)
-                            save_extraction_cache(cache_path, cache)
-                            _write_extraction_checkpoint(
-                                checkpoint_dir,
+                            _sync_extraction_state(
+                                graph_path=graph_path,
+                                graph=graph,
+                                cache_path=cache_path,
+                                cache=cache,
+                                checkpoint_dir=checkpoint_dir,
                                 processed=processed,
                                 total=total,
                                 extracted=extracted,
@@ -396,10 +573,18 @@ def build_semrag_graph(*, chunks: List[Dict], settings, graph_path: Path, cache_
                                 last_chunk_id=last_chunk_id,
                                 is_final=False,
                             )
-    save_semrag_graph(graph_path, graph)
-    save_extraction_cache(cache_path, cache)
-    _write_extraction_checkpoint(
-        checkpoint_dir,
+    # Guard: never overwrite graph with empty content when backups have valid extracted knowledge.
+    if not graph.get("entities") and not graph.get("relations"):
+        backup_entities, backup_relations = _read_backup_payloads(graph_path.parent)
+        if backup_entities or backup_relations:
+            graph = _graph_from_backups(entities=backup_entities, relations=backup_relations)
+
+    _sync_extraction_state(
+        graph_path=graph_path,
+        graph=graph,
+        cache_path=cache_path,
+        cache=cache,
+        checkpoint_dir=checkpoint_dir,
         processed=processed,
         total=total,
         extracted=extracted,

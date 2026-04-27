@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from backend.core.dependencies import get_current_user_id
-from backend.schemas.profile import ProfileAnswerResponse, ProfileAnswerUpsertRequest
+from backend.schemas.profile import ProfileAnswerResponse, ProfileAnswersBatchUpsertRequest, ProfileAnswerUpsertRequest
 from backend.services.profile_service import ProfileService
 
 
@@ -21,6 +21,15 @@ def upsert_profile_answer(
         answer=payload.answer,
         source=payload.source,
     )
+
+
+@router.put("/answers", response_model=list[ProfileAnswerResponse])
+def upsert_profile_answers_batch(
+    payload: ProfileAnswersBatchUpsertRequest, current_user_id: str = Depends(get_current_user_id)
+) -> list[ProfileAnswerResponse]:
+    if payload.user_id != current_user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot update another user's profile.")
+    return service.upsert_answers_batch(user_id=payload.user_id, answers=payload.answers, source=payload.source)
 
 
 @router.get("/answers", response_model=list[ProfileAnswerResponse])

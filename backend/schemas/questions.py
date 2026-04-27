@@ -13,6 +13,7 @@ class QuestionCreateRequest(BaseModel):
     category: Optional[str] = None
     answer_type: AnswerType
     options: list[str] = Field(default_factory=list)
+    is_required: bool = False
     is_active: bool = True
     version: int = 1
 
@@ -22,6 +23,7 @@ class QuestionUpdateRequest(BaseModel):
     category: Optional[str] = None
     answer_type: Optional[AnswerType] = None
     options: Optional[list[str]] = None
+    is_required: Optional[bool] = None
     is_active: Optional[bool] = None
     version: Optional[int] = None
 
@@ -33,6 +35,7 @@ class QuestionResponse(BaseModel):
     category: Optional[str]
     answer_type: AnswerType
     options: list[str]
+    is_required: bool
     is_active: bool
     version: int
     created_at: datetime

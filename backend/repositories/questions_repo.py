@@ -16,6 +16,7 @@ class QuestionsRepository:
             "category": payload.get("category"),
             "answer_type": payload["answer_type"],
             "options": payload.get("options", []),
+            "is_required": bool(payload.get("is_required", False)),
             "is_active": payload.get("is_active", True),
             "version": payload.get("version", 1),
             "created_at": now,
