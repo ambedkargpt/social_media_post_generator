@@ -693,7 +693,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main() -> int:
+def legacy_main() -> int:
     args = parse_args()
     print("\n=== Fetch pipeline started ===")
 
@@ -906,6 +906,21 @@ def main() -> int:
 
     print("\n All transcripts fetched successfully.")
     return 0
+
+
+def main() -> int:
+    import sys
+
+    # Temporary compatibility shim: default orchestration is now run_pipeline.py.
+    # Operators can still force the legacy path while rollout is ongoing.
+    if "--legacy-fetch" in sys.argv:
+        sys.argv = [arg for arg in sys.argv if arg != "--legacy-fetch"]
+        return legacy_main()
+
+    from run_pipeline import main as orchestrator_main
+
+    passthrough_args = sys.argv[1:]
+    return orchestrator_main(passthrough_args)
 
 
 if __name__ == "__main__":

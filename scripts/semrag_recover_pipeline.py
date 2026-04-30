@@ -122,7 +122,19 @@ def main() -> int:
     steps.extend(
         [
             ("Merge Backups", [str(PYTHON), "scripts/semrag_merge_backups.py"]),
-            ("Graph From Backup", [str(PYTHON), "Fetch.py", "--graph-only-from-backup"]),
+            (
+                "Graph From Backup",
+                [
+                    str(PYTHON),
+                    "scripts/build_semrag_graph_from_extracted.py",
+                    "--entities-file",
+                    "data/semrag/semrag_entities_backup.json",
+                    "--relations-file",
+                    "data/semrag/semrag_relations_backup.json",
+                    "--output-graph",
+                    "data/semrag/semrag_graph.json",
+                ],
+            ),
             ("Validate Run", [str(PYTHON), "scripts/semrag_validate_run.py"]),
         ]
     )

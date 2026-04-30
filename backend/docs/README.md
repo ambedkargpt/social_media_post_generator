@@ -17,3 +17,4 @@ This directory is the central place for backend documentation.
 - `PHASE3_POSTS_SAMPLE_DOCUMENTS.md` - sample post documents (including variants)
 - `NEWS_MIGRATION_NEWS_ID.md` - news_id strategy and current/legacy migration process
 - `PHASE4_HARDENING.md` - balanced security/performance/reliability hardening summary
+- `DEPLOYMENT_PLAN.md` - end-to-end production deployment proposal (infra, storage, CI/CD, DR)

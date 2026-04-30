@@ -9,6 +9,7 @@ class SignupRequest(BaseModel):
     password: str = Field(min_length=8, max_length=128)
     email: Optional[EmailStr] = None
     phone: Optional[str] = Field(default=None, min_length=8, max_length=20)
+    political_party: Optional[str] = Field(default=None, min_length=1, max_length=120)
 
     @model_validator(mode="after")
     def validate_contact(self) -> "SignupRequest":
@@ -46,6 +47,7 @@ class UserPublic(BaseModel):
     username: str
     email: Optional[str] = None
     phone: Optional[str] = None
+    political_party: Optional[str] = None
     is_email_verified: bool
     is_phone_verified: bool
     auth_providers: list[str]

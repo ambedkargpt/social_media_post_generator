@@ -1,0 +1,54 @@
+{
+  "graph_updated_at": "2026-04-30T11:34:48.656096+00:00",
+  "node_count": 5563,
+  "edge_count": 28960,
+  "chunk_entity_mappings": 12672,
+  "entity_to_chunks_keys": 4155,
+  "relation_to_chunks_keys": 9412,
+  "possible_directed_edges": 30941406,
+  "directed_density": 0.0009359626385433163,
+  "avg_degree": 10.41164839115585,
+  "relation_type_count": 115,
+  "top_relation_types": [
+    {
+      "relation": "linked_to",
+      "count": 6409
+    },
+    {
+      "relation": "about",
+      "count": 5796
+    },
+    {
+      "relation": "announces",
+      "count": 4192
+    },
+    {
+      "relation": "criticizes",
+      "count": 2919
+    },
+    {
+      "relation": "supports",
+      "count": 2137
+    },
+    {
+      "relation": "opposes",
+      "count": 1460
+    },
+    {
+      "relation": "affects",
+      "count": 1345
+    },
+    {
+      "relation": "requests",
+      "count": 1200
+    },
+    {
+      "relation": "investigates",
+      "count": 987
+    },
+    {
+      "relation": "accuses",
+      "count": 612
+    }
+  ]
+}

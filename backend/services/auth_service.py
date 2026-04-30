@@ -23,7 +23,14 @@ class AuthService:
         self.otp_repo = OtpRepository()
         self.sessions_repo = SessionsRepository()
 
-    def signup(self, username: str, password: str, email: str | None, phone: str | None) -> AuthResponse:
+    def signup(
+        self,
+        username: str,
+        password: str,
+        email: str | None,
+        phone: str | None,
+        political_party: str | None,
+    ) -> AuthResponse:
         if self.users_repo.find_by_username(username):
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username already exists.")
         if email and self.users_repo.find_by_email(email):
@@ -36,6 +43,7 @@ class AuthService:
             password_hash=hash_password(password),
             email=email,
             phone=phone,
+            political_party=political_party,
             auth_providers=[AUTH_PROVIDER_PASSWORD],
         )
 
@@ -167,6 +175,7 @@ class AuthService:
             username=user["username"],
             email=user.get("email"),
             phone=user.get("phone"),
+            political_party=user.get("political_party"),
             is_email_verified=bool(user.get("is_email_verified")),
             is_phone_verified=bool(user.get("is_phone_verified")),
             auth_providers=user.get("auth_providers", []),
