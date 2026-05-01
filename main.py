@@ -27,10 +27,6 @@ from semrag.semrag_config import load_semrag_config
 BASE_DIR = Path(__file__).parent
 DATA_PATH = BASE_DIR / "data" / "ravishkumar_all_transcripts.txt"
 OUTPUT_PATH = BASE_DIR / "outputs" / "generated_posts.json"
-INDEX_PATH = BASE_DIR / "outputs" / "faiss_index.bin"
-CHUNKS_PATH = BASE_DIR / "data" / "argument_chunks.json"
-VIDEO_CONTEXT_PATH = BASE_DIR / "data" / "video_context.json"
-TITLE_EMB_PATH = BASE_DIR / "data" / "video_title_embeddings.json"
 
 
 def _retrieval_cfg_from_settings(settings) -> Dict[str, Any]:
@@ -61,15 +57,21 @@ def ensure_rag_stack(settings) -> Tuple[ChunkEmbedder, Any, Dict[str, Dict[str, 
     """
     Load or build FAISS store + chunk JSON, return embedder and title→video_context map.
     Also refreshes title embeddings when the embedding model changes.
+    Paths come from settings (FAISS_INDEX_PATH, RAG_CHUNKS_PATH, etc.).
     """
-    store = load_vector_store(INDEX_PATH, CHUNKS_PATH)
+    index_path = settings.faiss_index_path
+    chunks_path = settings.rag_chunks_path
+    video_context_path = settings.rag_video_context_path
+    title_emb_path = settings.rag_title_embeddings_path
+
+    store = load_vector_store(index_path, chunks_path)
 
     if store is None:
         raw_transcripts = load_transcript_file()
         videos = parse_transcripts(raw_transcripts)
 
-        VIDEO_CONTEXT_PATH.parent.mkdir(parents=True, exist_ok=True)
-        VIDEO_CONTEXT_PATH.write_text(
+        video_context_path.parent.mkdir(parents=True, exist_ok=True)
+        video_context_path.write_text(
             json.dumps(videos, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
@@ -77,8 +79,8 @@ def ensure_rag_stack(settings) -> Tuple[ChunkEmbedder, Any, Dict[str, Dict[str, 
         chunks = chunk_videos(videos)
         chunks = score_argument_chunks(chunks)
 
-        CHUNKS_PATH.parent.mkdir(parents=True, exist_ok=True)
-        CHUNKS_PATH.write_text(
+        chunks_path.parent.mkdir(parents=True, exist_ok=True)
+        chunks_path.write_text(
             json.dumps(chunks, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
@@ -95,7 +97,7 @@ def ensure_rag_stack(settings) -> Tuple[ChunkEmbedder, Any, Dict[str, Dict[str, 
         )
 
         store = build_index(embeddings, chunks)
-        save_vector_store(store, INDEX_PATH, CHUNKS_PATH)
+        save_vector_store(store, index_path, chunks_path)
     else:
         embedder = ChunkEmbedder(
             api_key=settings.gemini_api_key,
@@ -103,13 +105,13 @@ def ensure_rag_stack(settings) -> Tuple[ChunkEmbedder, Any, Dict[str, Dict[str, 
             batch_size=settings.embedding_batch_size,
         )
 
-    video_context = json.loads(VIDEO_CONTEXT_PATH.read_text(encoding="utf-8"))
+    video_context = json.loads(video_context_path.read_text(encoding="utf-8"))
     context_by_title = {v["video_title"]: v for v in video_context}
 
-    te = load_title_embeddings(TITLE_EMB_PATH)
+    te = load_title_embeddings(title_emb_path)
     if te is None or te.model != settings.embedding_model:
         te = build_title_embeddings(video_context, embedder)
-        save_title_embeddings(te, TITLE_EMB_PATH)
+        save_title_embeddings(te, title_emb_path)
 
     return embedder, store, context_by_title
 
@@ -288,7 +290,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     embedder, store, context_by_title = ensure_rag_stack(settings)
     if settings.semrag_enabled and (args.build_semrag or not settings.semrag_graph_path.exists()):
         if args.rebuild_semrag or not settings.semrag_chunks_path.exists():
-            video_context = json.loads(VIDEO_CONTEXT_PATH.read_text(encoding="utf-8"))
+            video_context = json.loads(settings.rag_video_context_path.read_text(encoding="utf-8"))
             semrag_chunks = chunk_videos_for_semrag(video_context, embedder, semrag_cfg)
             semrag_chunks = score_argument_chunks(semrag_chunks)
             save_semrag_chunks(settings.semrag_chunks_path, semrag_chunks)

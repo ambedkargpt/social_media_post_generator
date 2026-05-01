@@ -134,7 +134,9 @@ DB_TEST.txt
 
 # Test files / test folders (local only)
 tests/
+!tests/
 test_*.py
+!tests/test_*.py
 
 # =============================================================================
 # Optional: legacy / archive folders (add your own paths here)

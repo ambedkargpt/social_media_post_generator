@@ -1,27 +1,2 @@
-newsapi-python
-requests
-beautifulsoup4
-faiss-cpu
-openai
-pandas
-tqdm
-python-dotenv
-google-genai
-yt-dlp
-youtube-transcript-api
-python-docx
-pyarrow
-pyspellchecker
-dotenv
-bs4
-streamlit
-gTTS
-pymongo
-fastapi
-uvicorn
-PyJWT
-google-auth
-email-validator
-pytest
-httpx
-mongomock
+# Repo root compatibility — delegates to backend API requirements.
+-r backend/requirements-api.txt

@@ -131,7 +131,9 @@ DB_TEST.txt
 
 # --- Test files ---
 tests/
+!backend/tests/
 test_*.py
+!backend/tests/test_*.py
 
 # --- Legacy ---
 legacy/

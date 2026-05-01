@@ -1,0 +1,12 @@
+[Unit]
+Description=AmbedkarGPT artifact rebuild (oneshot)
+After=network.target
+
+[Service]
+Type=oneshot
+User=ambedkar
+Group=ambedkar
+WorkingDirectory=/srv/ambedkar/app
+EnvironmentFile=-/etc/ambedkar/worker.env
+Environment=PYTHONPATH=/srv/ambedkar/app
+ExecStart=/srv/ambedkar/venv/bin/python -m backend.worker.build_artifacts --once

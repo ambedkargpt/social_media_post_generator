@@ -1,0 +1,10 @@
+[Unit]
+Description=Nightly AmbedkarGPT artifact build
+
+[Timer]
+Unit=ambedkar-worker.service
+OnCalendar=*-*-* 02:30:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

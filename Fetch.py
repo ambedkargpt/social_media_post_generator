@@ -33,10 +33,6 @@ OUTPUT_BASE_DIR = PROJECT_ROOT / "outputs" / "transcripts"
 DATA_DIR = PROJECT_ROOT / "data"
 RAVISH_CHANNEL_SLUG = "ravishkumar.official"
 RAVISH_DATA_TXT = DATA_DIR / "ravishkumar_all_transcripts.txt"
-RAG_INDEX_PATH = PROJECT_ROOT / "outputs" / "faiss_index.bin"
-RAG_CHUNKS_PATH = DATA_DIR / "argument_chunks.json"
-RAG_VIDEO_CONTEXT_PATH = DATA_DIR / "video_context.json"
-RAG_TITLE_EMB_PATH = DATA_DIR / "video_title_embeddings.json"
 VIDEO_SUMMARIES_PATH = DATA_DIR / "video_summaries.json"
 
 INPUT_TXT.parent.mkdir(parents=True, exist_ok=True)
@@ -281,10 +277,20 @@ def append_entries_to_consolidated(target_path: Path, entries: list[dict]) -> in
     return appended
 
 
-def rebuild_rag_artifacts_from_data_file(data_txt_path: Path) -> None:
+def rebuild_rag_artifacts_from_data_file(
+    data_txt_path: Path,
+    *,
+    index_path: Path | None = None,
+    chunks_path: Path | None = None,
+    video_context_path: Path | None = None,
+    title_emb_path: Path | None = None,
+) -> None:
     """
     Rebuild RAG artifacts after transcript data grows.
     This keeps chunks/index/title embeddings up to date automatically.
+
+    Optional path overrides write into a versioned build directory (worker); defaults use
+    :func:`config.get_settings` (``FAISS_INDEX_PATH``, ``RAG_CHUNKS_PATH``, etc.).
     """
     if not data_txt_path.exists():
         return
@@ -298,14 +304,19 @@ def rebuild_rag_artifacts_from_data_file(data_txt_path: Path) -> None:
     from pipeline.title_embeddings import build_title_embeddings, save_title_embeddings
 
     settings = get_settings()
+    idx_path = index_path or settings.faiss_index_path
+    chk_path = chunks_path or settings.rag_chunks_path
+    vc_path = video_context_path or settings.rag_video_context_path
+    te_path = title_emb_path or settings.rag_title_embeddings_path
+
     raw_text = data_txt_path.read_text(encoding="utf-8")
     videos = parse_transcripts(raw_text)
     if not videos:
         return
 
     # Persist latest full video context
-    RAG_VIDEO_CONTEXT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    RAG_VIDEO_CONTEXT_PATH.write_text(
+    vc_path.parent.mkdir(parents=True, exist_ok=True)
+    vc_path.write_text(
         json.dumps(videos, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
@@ -313,8 +324,8 @@ def rebuild_rag_artifacts_from_data_file(data_txt_path: Path) -> None:
     chunks = chunk_videos(videos)
     chunks = score_argument_chunks(chunks)
 
-    RAG_CHUNKS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    RAG_CHUNKS_PATH.write_text(
+    chk_path.parent.mkdir(parents=True, exist_ok=True)
+    chk_path.write_text(
         json.dumps(chunks, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
@@ -330,20 +341,29 @@ def rebuild_rag_artifacts_from_data_file(data_txt_path: Path) -> None:
         use_cache=settings.embedding_chunk_cache_enabled,
     )
     store = build_index(embeddings, chunks)
-    save_vector_store(store, RAG_INDEX_PATH, RAG_CHUNKS_PATH)
+    save_vector_store(store, idx_path, chk_path)
 
     title_emb = build_title_embeddings(videos, embedder)
-    save_title_embeddings(title_emb, RAG_TITLE_EMB_PATH)
+    save_title_embeddings(title_emb, te_path)
 
 
-def rebuild_semrag_artifacts_from_data_file(data_txt_path: Path) -> None:
+def rebuild_semrag_artifacts_from_data_file(
+    data_txt_path: Path,
+    *,
+    graph_path: Path | None = None,
+    cache_path: Path | None = None,
+    chunks_path: Path | None = None,
+) -> None:
     """
     Refresh SEMRAG chunks + KG from the latest transcript master file.
     Uses extraction cache, so only truly new/changed chunks are processed.
+
+    Optional ``graph_path`` / ``cache_path`` / ``chunks_path`` override env defaults for worker builds.
     """
     if not data_txt_path.exists():
         return
 
+    from backend.config import REPO_ROOT
     from config import get_settings
     from pipeline.transcript_parser import parse_transcripts
     from semrag.build import build_semrag_graph, save_semrag_chunks
@@ -351,13 +371,16 @@ def rebuild_semrag_artifacts_from_data_file(data_txt_path: Path) -> None:
     from semrag.semrag_config import load_semrag_config
 
     settings = get_settings()
-    semrag_cfg = load_semrag_config(PROJECT_ROOT)
+    gp = graph_path or settings.semrag_graph_path
+    cp = cache_path or settings.semrag_cache_path
+    chp = chunks_path or settings.semrag_chunks_path
+    semrag_cfg = load_semrag_config(REPO_ROOT)
     semrag_chunks = []
-    if settings.semrag_chunks_path.exists():
+    if chp.exists():
         try:
-            semrag_chunks = json.loads(settings.semrag_chunks_path.read_text(encoding="utf-8"))
+            semrag_chunks = json.loads(chp.read_text(encoding="utf-8"))
             if semrag_chunks:
-                print(f" Using existing SEMRAG chunks from: {settings.semrag_chunks_path}")
+                print(f" Using existing SEMRAG chunks from: {chp}")
         except Exception:
             semrag_chunks = []
 
@@ -367,12 +390,12 @@ def rebuild_semrag_artifacts_from_data_file(data_txt_path: Path) -> None:
         if not videos:
             return
         semrag_chunks = chunk_videos_for_semrag(videos, embedder=None, cfg=semrag_cfg)
-        save_semrag_chunks(settings.semrag_chunks_path, semrag_chunks)
+        save_semrag_chunks(chp, semrag_chunks)
     build_semrag_graph(
         chunks=semrag_chunks,
         settings=settings,
-        graph_path=settings.semrag_graph_path,
-        cache_path=settings.semrag_cache_path,
+        graph_path=gp,
+        cache_path=cp,
         force_rebuild=False,
     )
 

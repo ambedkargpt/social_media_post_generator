@@ -15,7 +15,7 @@
 
 - MongoDB Atlas URI wired through `config.py` (`MONGODB_URI`, `MONGODB_DATABASE`).
 - Mongo client and connectivity check implemented in `backend/db/mongo.py`.
-- Health endpoint available at `/api/v1/health/` that reports DB ping status.
+- Health: `/api/v1/health/live` (liveness), `/api/v1/health/ready` (DB + indexes + artifacts), `/api/v1/health/` (same as ready).
 - Database design draft documented in `backend/DATABASE_DESIGN.md`.
 - Auth Phase 1 endpoints and contracts documented in `backend/auth/README.md`.
 - Centralized backend docs index available at `backend/docs/README.md`.
