@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 PostStatus = Literal["draft", "published", "archived"]
@@ -33,6 +33,41 @@ class PostResponse(BaseModel):
     generation_meta: Optional[dict[str, Any]]
     created_at: datetime
     updated_at: datetime
+
+
+class RetrievedChunkReference(BaseModel):
+    chunk_id: str
+    video_title: str
+    video_link: str
+    chunk_text: str
+    similarity_score: float = 0.0
+    relevance_score: Optional[float] = None
+    argument_score: float = 0.0
+    final_score: float = 0.0
+
+
+class PostGenerateRequest(BaseModel):
+    user_id: str
+    news_id: str
+    tone: Optional[str] = None
+    temperature: Optional[float] = Field(default=None, ge=0.0, le=2.0)
+
+
+class PostRegenerateRequest(BaseModel):
+    temperature: Optional[float] = Field(default=None, ge=0.0, le=2.0)
+
+
+class PostGenerateResponse(BaseModel):
+    post: PostResponse
+    references: list[RetrievedChunkReference] = Field(default_factory=list)
+    retrieval_snapshot_id: str
+    retrieval_reused: bool = False
+
+    @model_validator(mode="after")
+    def validate_snapshot_id(self):
+        if not self.retrieval_snapshot_id.strip():
+            raise ValueError("retrieval_snapshot_id must be non-empty.")
+        return self
 
 
 class PostsDashboardItem(BaseModel):

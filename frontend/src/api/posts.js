@@ -13,6 +13,25 @@ export async function createPost({ userId, newsId, content, hashtags = [], statu
   return data;
 }
 
+// POST /posts/generate — run retrieval + LLM generation on backend
+export async function generatePostForNews({ userId, newsId, tone, temperature }) {
+  const payload = {
+    user_id: userId,
+    news_id: newsId,
+    tone,
+    temperature,
+  };
+  const { data } = await client.post('/posts/generate', payload);
+  return data;
+}
+
+// POST /posts/:id/regenerate — rerun LLM only using stored retrieval snapshot
+export async function regeneratePostFromSnapshot(postId, { temperature } = {}) {
+  const payload = { temperature };
+  const { data } = await client.post(`/posts/${postId}/regenerate`, payload);
+  return data;
+}
+
 // GET /posts — list user's posts
 export async function getPosts({ newsId, status, limit = 50, skip = 0 } = {}) {
   const { data } = await client.get('/posts', {

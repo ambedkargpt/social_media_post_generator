@@ -2,7 +2,15 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from backend.core.dependencies import get_current_user_id
 from backend.schemas.auth import MessageResponse
-from backend.schemas.posts import PostCreateRequest, PostResponse, PostsDashboardItem, PostUpdateRequest
+from backend.schemas.posts import (
+    PostCreateRequest,
+    PostGenerateRequest,
+    PostGenerateResponse,
+    PostRegenerateRequest,
+    PostResponse,
+    PostsDashboardItem,
+    PostUpdateRequest,
+)
 from backend.services.posts_service import PostsService
 
 
@@ -21,6 +29,34 @@ def create_post(payload: PostCreateRequest, current_user_id: str = Depends(get_c
     if payload.user_id != current_user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot create post for another user.")
     return service.create(payload)
+
+
+@router.post("/generate", response_model=PostGenerateResponse)
+def generate_post(
+    payload: PostGenerateRequest,
+    current_user_id: str = Depends(get_current_user_id),
+) -> PostGenerateResponse:
+    if payload.user_id != current_user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot generate post for another user.")
+    return service.generate_post_for_news(
+        user_id=payload.user_id,
+        news_id=payload.news_id,
+        tone=payload.tone,
+        temperature=payload.temperature,
+    )
+
+
+@router.post("/{post_id}/regenerate", response_model=PostGenerateResponse)
+def regenerate_post(
+    post_id: str,
+    payload: PostRegenerateRequest,
+    current_user_id: str = Depends(get_current_user_id),
+) -> PostGenerateResponse:
+    return service.regenerate_from_snapshot(
+        source_post_id=post_id,
+        current_user_id=current_user_id,
+        payload=payload,
+    )
 
 
 @router.get("/", response_model=list[PostResponse])

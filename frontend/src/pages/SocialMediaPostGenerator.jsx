@@ -6,12 +6,10 @@ import {
 } from 'lucide-react';
 
 import PreferencesPanel from '../components/generate/PreferencesPanel';
-import { generateSocialPost } from '../utils/socialPostGenerator';
 import logoSrc from '../assets/images/logo-animation.png';
 import { useAuth } from '../context/AuthContext';
 import { getNews } from '../api/news';
-import { createPost } from '../api/posts';
-import { getProfileAnswers } from '../api/profile';
+import { generatePostForNews, regeneratePostFromSnapshot } from '../api/posts';
 
 const TONES = ['Professional', 'Inspirational', 'Creative', 'Casual', 'Motivational'];
 const ALSO_GENERATE = ['Audio', 'Shorts', 'Image'];
@@ -113,9 +111,9 @@ export default function SocialMediaPostGenerator() {
   const [generating,      setGenerating]      = useState(false);
   const [generatedPost,   setGeneratedPost]   = useState('');
   const [selectedArticle, setSelectedArticle] = useState(null);
+  const [selectedPostId,  setSelectedPostId]  = useState(null);
   const [copied,          setCopied]          = useState(false);
   const [panelWidth,      setPanelWidth]      = useState(300);
-  const [preferences,     setPreferences]     = useState({});
   const filterRef = useRef(null);
 
   // Fetch news + user preferences on mount
@@ -124,17 +122,6 @@ export default function SocialMediaPostGenerator() {
       .then((data) => { if (data?.length) setArticles(data.map(adaptNews)); })
       .catch(() => {});
   }, []);
-
-  useEffect(() => {
-    if (!currentUser?.id) return;
-    getProfileAnswers(currentUser.id)
-      .then((answers) => {
-        const prefs = {};
-        (answers || []).forEach(({ question_id, answer }) => { prefs[question_id] = answer; });
-        setPreferences(prefs);
-      })
-      .catch(() => {});
-  }, [currentUser?.id]);
 
   // Resize drag refs
   const resizing  = useRef(false);
@@ -182,38 +169,37 @@ export default function SocialMediaPostGenerator() {
     setSelectedArticle(article);
     setGenerating(true);
     setView('generated');
-    const post = generateSocialPost({ topic: article.topic, tone, preferences });
-    setGeneratedPost(post);
-    setGenerating(false);
-
-    if (article._backendId && currentUser?.id) {
-      createPost({
-        userId:   currentUser.id,
-        newsId:   article._backendId,
-        content:  post,
-        hashtags: [],
-        status:   'draft',
-        generationMeta: { tone, preferences },
-      }).catch(() => {});
+    try {
+      if (!article?._backendId || !currentUser?.id) {
+        throw new Error('Missing news or user context for generation.');
+      }
+      const response = await generatePostForNews({
+        userId: currentUser.id,
+        newsId: article._backendId,
+        tone,
+      });
+      setGeneratedPost(response?.post?.content || '');
+      setSelectedPostId(response?.post?.id || null);
+    } catch (err) {
+      console.error('Generate failed:', err);
+      setGeneratedPost('Could not generate post right now. Please try again.');
+    } finally {
+      setGenerating(false);
     }
   }
 
-  function handleRegenerate() {
-    if (!selectedArticle) return;
+  async function handleRegenerate() {
+    if (!selectedArticle || !selectedPostId) return;
     setGenerating(true);
-    const post = generateSocialPost({ topic: selectedArticle.topic, tone, preferences });
-    setGeneratedPost(post);
-    setGenerating(false);
-
-    if (selectedArticle._backendId && currentUser?.id) {
-      createPost({
-        userId:   currentUser.id,
-        newsId:   selectedArticle._backendId,
-        content:  post,
-        hashtags: [],
-        status:   'draft',
-        generationMeta: { tone, preferences },
-      }).catch(() => {});
+    try {
+      const response = await regeneratePostFromSnapshot(selectedPostId);
+      setGeneratedPost(response?.post?.content || '');
+      setSelectedPostId(response?.post?.id || selectedPostId);
+    } catch (err) {
+      console.error('Regenerate failed:', err);
+      setGeneratedPost('Could not regenerate post right now. Please try again.');
+    } finally {
+      setGenerating(false);
     }
   }
 

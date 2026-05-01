@@ -14,8 +14,8 @@ class ProfileService:
         question = self.questions_repo.get_by_question_id(question_id)
         if not question:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Question not found.")
-        self._validate_answer_against_question(question, answer)
-        doc = self.repo.upsert_answer(user_id=user_id, question_id=question_id, answer=answer, source=source)
+        normalized_answer = self._validate_answer_against_question(question, answer)
+        doc = self.repo.upsert_answer(user_id=user_id, question_id=question_id, answer=normalized_answer, source=source)
         return self._to_response(doc)
 
     def upsert_answers_batch(self, user_id: str, answers: dict, source: str) -> list[ProfileAnswerResponse]:
@@ -23,8 +23,17 @@ class ProfileService:
         active_questions = [q for q in all_questions if bool(q.get("is_active", True))]
         question_map = {str(q["question_id"]): q for q in active_questions}
 
+        # Merge incoming payload with existing persisted answers so partial profile
+        # updates don't fail required validation when required answers are already saved.
+        existing_answers = {
+            str(doc.get("question_id")): doc.get("answer")
+            for doc in self.repo.list_by_user(user_id=user_id, limit=1000, skip=0)
+            if doc.get("question_id") is not None
+        }
+        effective_answers = {**existing_answers, **answers}
+
         required_ids = [str(q["question_id"]) for q in active_questions if bool(q.get("is_required", False))]
-        missing_required = [qid for qid in required_ids if self._is_empty_answer(answers.get(qid))]
+        missing_required = [qid for qid in required_ids if self._is_empty_answer(effective_answers.get(qid))]
         if missing_required:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -39,8 +48,13 @@ class ProfileService:
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"Question not found or inactive: {question_id}",
                 )
-            self._validate_answer_against_question(question, answer)
-            doc = self.repo.upsert_answer(user_id=user_id, question_id=str(question_id), answer=answer, source=source)
+            normalized_answer = self._validate_answer_against_question(question, answer)
+            doc = self.repo.upsert_answer(
+                user_id=user_id,
+                question_id=str(question_id),
+                answer=normalized_answer,
+                source=source,
+            )
             out.append(self._to_response(doc))
         return out
 
@@ -75,7 +89,7 @@ class ProfileService:
             return len(answer) == 0
         return False
 
-    def _validate_answer_against_question(self, question: dict, answer) -> None:
+    def _validate_answer_against_question(self, question: dict, answer):
         options = question.get("options") or []
         answer_type = str(question.get("answer_type") or "")
         question_id = str(question.get("question_id") or "")
@@ -86,11 +100,13 @@ class ProfileService:
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Answer for {question_id} must be a non-empty string.",
                 )
-            if options and answer not in options:
+            normalized = self._normalize_single_select_answer(answer, options)
+            if options and normalized is None:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Invalid option for {question_id}: {answer}",
                 )
+            return normalized or answer.strip()
         elif answer_type == "multi_select":
             if not isinstance(answer, list) or not answer:
                 raise HTTPException(
@@ -102,3 +118,43 @@ class ProfileService:
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Invalid multi-select option for {question_id}.",
                 )
+            return answer
+        return answer
+
+    @staticmethod
+    def _normalize_single_select_answer(answer: str, options: list) -> str | None:
+        def _soft_norm(text: str) -> str:
+            return "".join(ch.lower() for ch in text if ch.isalnum())
+
+        if not options:
+            return answer.strip()
+        raw = answer.strip()
+        if raw in options:
+            return raw
+
+        raw_fold = raw.casefold()
+        for opt in options:
+            if isinstance(opt, str) and opt.casefold() == raw_fold:
+                return opt
+
+        raw_soft = _soft_norm(raw)
+        for opt in options:
+            if isinstance(opt, str) and _soft_norm(opt) == raw_soft:
+                return opt
+
+        # Backward compatibility: UI may send short label, while DB stores:
+        # "Label -> Description". Accept short label and map to canonical option.
+        for opt in options:
+            if not isinstance(opt, str):
+                continue
+            label = opt.split("->", 1)[0].strip()
+            if label.casefold() == raw_fold:
+                return opt
+            label_soft = _soft_norm(label)
+            if label_soft == raw_soft:
+                return opt
+            # Accept expanded UI labels like "High (4-6)" for DB label "High",
+            # and variants like "Real imagery" for label "Real".
+            if label_soft and (raw_soft.startswith(label_soft) or label_soft.startswith(raw_soft)):
+                return opt
+        return None
