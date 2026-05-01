@@ -1,0 +1,17 @@
+{
+  "name": "channel_name",
+  "channel_url": "https://www.youtube.com/@channel/videos",
+  "channel_slug": "channel_slug",
+  "transcripts_dir": "outputs/transcripts/channel_slug",
+  "consolidated_txt_path": "outputs/transcripts/channel_slug/channel_all_transcripts.txt",
+  "processed_json_path": "outputs/transcripts/channel_slug/processed.json",
+  "master_transcript_path": "data/channel_all_transcripts.txt",
+  "video_summaries_path": "data/video_summaries_channel.json",
+  "generated_news_path": "outputs/generated_news_channel.json",
+  "generated_news_legacy_path": "outputs/generated_news_legacy_channel.json",
+  "rebuild_rag": true,
+  "rebuild_semrag": true,
+  "run_summarizer": true,
+  "run_news_generator": true,
+  "run_news_publish": true
+}

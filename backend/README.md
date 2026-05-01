@@ -1,67 +1,38 @@
-# Political RAG Content Generator (Prototype)
+# Backend Starter
 
-This is a prototype Retrieval-Augmented Generation (RAG) pipeline for generating political social media content responding to the latest news using arguments from a Ravish Kumar transcript dataset.
+## Folder Structure
 
-## Features
+- `backend/main.py` - FastAPI app entrypoint
+- `backend/core/` - shared config and application-level utilities
+- `backend/db/` - MongoDB connection and DB helpers
+- `backend/api/v1/` - versioned route modules
+- `backend/models/` - database models/documents
+- `backend/schemas/` - request/response schemas
+- `backend/repositories/` - data access layer
+- `backend/services/` - business logic layer
 
-- Fetches latest India news using NewsAPI
-- Parses Ravish Kumar transcripts into argument chunks
-- Embeds chunks using **Gemini** embedding models (e.g. `gemini-embedding-001`)
-- Stores embeddings in a FAISS vector index
-- Retrieves relevant chunks per news item
-- Generates profile-specific social media posts using **OpenAI** (default: `gpt-5-nano`)
-- Outputs posts plus explicit transcript chunk references
+## Current Status
 
-## Project Structure
+- MongoDB Atlas URI wired through `config.py` (`MONGODB_URI`, `MONGODB_DATABASE`).
+- Mongo client and connectivity check implemented in `backend/db/mongo.py`.
+- Health endpoint available at `/api/v1/health/` that reports DB ping status.
+- Database design draft documented in `backend/DATABASE_DESIGN.md`.
+- Auth Phase 1 endpoints and contracts documented in `backend/auth/README.md`.
+- Centralized backend docs index available at `backend/docs/README.md`.
+- Phase 2 modules (`news`, `questions`, `user_profile_answers`) are implemented with APIs and tests.
+- Phase 3 `posts` module is implemented with dashboard fetch APIs and indexing.
 
-See `main.py` and the `pipeline/` package for the full pipeline implementation.
+## Backend Implementation Plan
 
-## Setup
-
-1. Create and activate a virtual environment (recommended).
-2. Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-3. Create a `.env` file (or edit the existing one) with:
-
-```bash
-NEWS_API_KEY=your_newsapi_key_here
-OPENAI_API_KEY=your_openai_key_here
-OPENAI_MODEL=gpt-5-nano
-GEMINI_API_KEY=your_gemini_key_here
-# Optional: EMBEDDING_MODEL=gemini-embedding-001
-```
-
-4. Place your Ravish Kumar transcript dataset at:
-
-```text
-data/ravish_transcripts.txt
-```
-
-Format:
-
-```text
-===== VIDEO TITLE =====
-Transcript text...
-
-===== ANOTHER VIDEO =====
-More transcript text...
-```
-
-## Running
-
-```bash
-python main.py
-```
-
-The script will:
-
-- Build the transcript index
-- Fetch latest India news
-- Generate posts per news item and user profile
-- Save all outputs to `outputs/generated_posts.json`
-- Print a sample post and its references to the terminal
-
+1. **Auth + user foundation**
+   - Add user schema, repository, and auth service.
+   - Add JWT/session strategy and role guards.
+2. **Core domain modules**
+   - Add source modules (news, posts, retrieval artifacts) with CRUD APIs.
+   - Define indexes and validation rules per collection.
+3. **RAG integration layer**
+   - Connect existing pipelines (`Fetch.py`, `main.py`, generation scripts) through service APIs.
+   - Persist run metadata and generated outputs in MongoDB.
+4. **Quality and operations**
+   - Add logging, centralized error handling, and request validation.
+   - Add tests (unit + API integration) and environment-based deployment config.

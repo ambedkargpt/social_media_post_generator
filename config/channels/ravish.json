@@ -1,0 +1,17 @@
+{
+  "name": "ravish",
+  "channel_url": "https://www.youtube.com/@ravishkumar.official/videos",
+  "channel_slug": "ravishkumar.official",
+  "transcripts_dir": "outputs/transcripts/ravishkumar.official",
+  "consolidated_txt_path": "outputs/transcripts/ravishkumar.official/ravishkumar_all_transcripts.txt",
+  "processed_json_path": "outputs/transcripts/ravishkumar.official/processed.json",
+  "master_transcript_path": "data/ravishkumar_all_transcripts.txt",
+  "video_summaries_path": "data/video_summaries.json",
+  "generated_news_path": "outputs/generated_news.json",
+  "generated_news_legacy_path": "outputs/generated_news_legacy.json",
+  "rebuild_rag": true,
+  "rebuild_semrag": true,
+  "run_summarizer": true,
+  "run_news_generator": true,
+  "run_news_publish": true
+}

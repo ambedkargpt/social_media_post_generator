@@ -1,0 +1,11 @@
+Extract entities and relations from the transcript chunk below.
+Return JSON only, following the required schema exactly.
+
+Metadata:
+- chunk_id: {chunk_id}
+- video_title: {video_title}
+- video_link: {video_link}
+- language_hint: {language_hint}
+
+Transcript chunk:
+{chunk_text}

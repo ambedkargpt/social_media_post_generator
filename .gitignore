@@ -1,31 +1,138 @@
-# Dependencies
+# --- Node.js / Frontend ---
 node_modules/
-
-# Build output
 dist/
 dist-ssr/
 *.tsbuildinfo
-
-# Logs
-*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Env / local config
+# --- Python / packaging ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+
+# --- Virtual environments ---
+venv/
+.venv/
+env/
+ENV/
+
+# --- Secrets / local env ---
 .env
 .env.local
 .env.*.local
+.env.*
+!.env.example
 *.local
 
-# Editor / OS
+# --- Logs ---
+*.log
+
+# --- Editor / OS ---
 .vscode/*
 !.vscode/extensions.json
 .idea/
 .DS_Store
 *.swp
 *.swo
+*~
+Thumbs.db
+desktop.ini
 
-# Claude workspace
+# --- Claude workspace ---
 .claude/settings.local.json
+
+# --- Cursor / local agent artifacts ---
+.cursor/
+agent-transcripts/
+
+# --- outputs/ ---
+outputs/transcripts/
+outputs/streamlit_runs/
+outputs/generated_posts.json
+outputs/generated_posts_from_news.json
+outputs/retrieval_output.json
+outputs/video_summary_checkpoint.json
+outputs/generated_news_legacy.json
+outputs/questions_with_ids.docx
+outputs/**/verification_report.json
+outputs/bulk_retrieval*
+outputs/embedding_checkpoint*
+outputs/video_summary_batch*
+outputs/tts/
+
+# --- data/ ---
+data/chunk_embedding_cache.json
+data/video_title_embeddings.json
+data/ravishkumar_all_transcripts.txt
+data/*_all_transcripts.txt
+
+# --- SEMRAG generated artifacts ---
+data/semrag/checkpoints/
+data/semrag/backups/
+data/semrag/progress/
+data/semrag/semrag_graph.json
+data/semrag/semrag_chunks.json
+data/semrag/semrag_extraction_cache.json
+data/semrag/semrag_entities_backup.json
+data/semrag/semrag_relations_backup.json
+data/semrag/temp_semrag_search_results.json
+data/semrag/semrag_batch_test_results.json
+data/semrag/semrag_headline_batch_test_results.json
+data/semrag/semrag_cli_local_all_runs.json
+
+# --- Streamlit ---
+streamlit_app/auth/users.json
+
+# --- Auxiliary scripts (not part of main pipeline) ---
+build_video_summaries.py
+generate_news.py
+test_retrieval.py
+bulk_retrieval_test.py
+export_bulk_retrieval_pdf.py
+rebuild_embeddings_safe.py
+
+# --- Local scratch ---
+input.txt
+Output.txt
+bhbhbhbs.txt
+DB_TEST.txt
+*.pdf
+
+# --- Test files ---
+tests/
+test_*.py
+
+# --- Legacy ---
+legacy/
+**/legacy/

@@ -1,0 +1,17 @@
+Video title: {video_title}
+Video URL: {video_link}
+
+Summary (source):
+{summary_text}
+
+Rules to follow STRICTLY:
+- Headline: EXACTLY 12–15 words (space-delimited) and nothing else.
+- Sub-headline: EXACTLY 25–35 words (space-delimited) and nothing else.
+- Language must match the summary (usually Hindi/Hinglish).
+- Do not add facts beyond the summary.
+
+Quality step (do internally):
+- Generate 3 variations, then choose the best one.
+
+Return JSON only:
+{"headline": "...", "subheadline": "..."}
