@@ -31,7 +31,8 @@ class LoginRequest(BaseModel):
 
 
 class GoogleLoginRequest(BaseModel):
-    id_token: str
+    access_token: str
+    political_party: Optional[str] = None
 
 
 class RefreshRequest(BaseModel):

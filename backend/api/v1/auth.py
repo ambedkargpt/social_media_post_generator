@@ -48,7 +48,7 @@ def login(payload: LoginRequest) -> AuthResponse:
 
 @router.post("/google-login", response_model=AuthResponse, responses={400: {"model": ErrorResponse}, 401: {"model": ErrorResponse}})
 def google_login(payload: GoogleLoginRequest) -> AuthResponse:
-    return service.google_login(payload.id_token)
+    return service.google_login(payload.access_token, payload.political_party)
 
 
 @router.post("/refresh", response_model=AuthResponse, responses={401: {"model": ErrorResponse}})

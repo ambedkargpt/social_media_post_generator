@@ -71,7 +71,7 @@ class UsersRepository:
             {"$set": {"last_login_at": datetime.now(timezone.utc), "updated_at": datetime.now(timezone.utc)}},
         )
 
-    def upsert_google_user(self, email: str, username_seed: str) -> dict:
+    def upsert_google_user(self, email: str, username_seed: str, political_party: Optional[str] = None) -> dict:
         existing = self.find_by_email(email)
         now = datetime.now(timezone.utc)
         if existing:
@@ -96,7 +96,7 @@ class UsersRepository:
             password_hash=None,
             email=email,
             phone=None,
-            political_party=None,
+            political_party=political_party,
             auth_providers=["google"],
             is_email_verified=True,
             is_phone_verified=False,

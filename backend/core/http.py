@@ -1,10 +1,12 @@
 import logging
+import os
 import time
 import uuid
 from dataclasses import dataclass
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -47,6 +49,16 @@ async def catch_http_exceptions(request: Request, call_next):
 
 
 def register_http_layer(app: FastAPI) -> None:
+    _raw = os.getenv("CORS_ORIGINS", "").strip()
+    origins = [o.strip() for o in _raw.split(",") if o.strip()] if _raw else ["*"]
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
     app.middleware("http")(catch_http_exceptions)
 
     @app.exception_handler(StarletteHTTPException)

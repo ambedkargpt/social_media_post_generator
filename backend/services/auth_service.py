@@ -11,7 +11,7 @@ from backend.repositories.otp_repo import OtpRepository
 from backend.repositories.sessions_repo import SessionsRepository
 from backend.repositories.users_repo import UsersRepository
 from backend.schemas.auth import AuthResponse, AuthTokens, UserPublic
-from backend.services.google_auth import verify_google_id_token
+from backend.services.google_auth import fetch_google_userinfo
 from backend.services.otp_service import build_hashed_otp, otp_expiry_time
 from backend.services.security import hash_password, verify_otp_hash, verify_password
 from backend.services.token_service import create_access_token, create_refresh_token, decode_token
@@ -111,12 +111,16 @@ class AuthService:
 
         return self._issue_session(user)
 
-    def google_login(self, id_token: str) -> AuthResponse:
-        payload = verify_google_id_token(id_token)
+    def google_login(self, access_token: str, political_party: str | None = None) -> AuthResponse:
+        payload = fetch_google_userinfo(access_token)
         email = payload.get("email")
         if not email:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Google account email missing.")
-        user = self.users_repo.upsert_google_user(email=email, username_seed=payload.get("name") or email.split("@")[0])
+        user = self.users_repo.upsert_google_user(
+            email=email,
+            username_seed=payload.get("name") or email.split("@")[0],
+            political_party=political_party,
+        )
         if AUTH_PROVIDER_GOOGLE not in user.get("auth_providers", []):
             user["auth_providers"] = sorted(set(user.get("auth_providers", []) + [AUTH_PROVIDER_GOOGLE]))
         return self._issue_session(user)

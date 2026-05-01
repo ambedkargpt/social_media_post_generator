@@ -69,7 +69,10 @@
       "Bash(python -c ' *)",
       "Bash(findstr /i \"requests httpx\" \"D:\\\\Comdur\\\\Ambedkar Gpt\\\\backend\\\\requirements.txt\")",
       "Bash(findstr /i \"requests httpx\" \"D:\\\\Comdur\\\\Ambedkar Gpt\\\\backend\\\\pyproject.toml\")",
-      "Bash(findstr *)"
+      "Bash(findstr *)",
+      "Bash(gh repo *)",
+      "Bash(Get-ChildItem -Path \"D:\\\\Comdur\\\\Ambedkar Gpt\" -Recurse -Force)",
+      "Bash(Select-Object FullName)"
     ]
   }
 }
