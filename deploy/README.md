@@ -2,6 +2,24 @@
 
 This guide targets **one Ubuntu 22.04 droplet** with a **200 GB block volume** mounted at `/data`, **MongoDB Atlas**, optional **Spaces** for artifact backups, and TLS via **Certbot**.
 
+On **Ubuntu 24.04**, use `python3` / `python3-venv` (3.12) instead of `python3.11` for the venv.
+
+## Pre-domain rollout (HTTP / droplet IP, no TLS yet)
+
+Automated sequence (run scripts from the repo on the server after checkout at `/srv/ambedkar/app`):
+
+1. `sudo bash deploy/scripts/01-storage-layout.sh` — dirs + `ambedkar` ownership under `/data`, `/srv/ambedkar`, `/var/www/ambedkar`.
+2. `sudo bash deploy/scripts/02-migrate-opt-to-srv.sh` — optional; moves `/opt/ambedkar/app/semrag` → `/srv/ambedkar/app` if present.
+3. Install env files: `sudo cp deploy/env/api.env.example /etc/ambedkar/api.env` and `worker.env.example` → `worker.env`; edit secrets; `sudo chmod 600 /etc/ambedkar/*.env`. For IP testing, set `ALLOWED_ORIGINS=http://<DROPLET_IP>`.
+4. `sudo bash deploy/scripts/03-python-deps.sh` — `/srv/ambedkar/venv` + API + worker Python deps.
+5. Seed `/data/artifacts/builds/v0-bootstrap/` with artifact files (see §5), then `sudo BUILD_DIR=/data/artifacts/builds/v0-bootstrap bash deploy/scripts/04-bootstrap-promote.sh`.
+6. `sudo bash deploy/scripts/05-install-systemd.sh` then `sudo systemctl start ambedkar-api.service`.
+7. `sudo bash deploy/scripts/06-install-nginx-http.sh` — installs [`deploy/nginx/ambedkar-http-ip.conf`](nginx/ambedkar-http-ip.conf) (SPA + `/api/` proxy, no HTTPS redirect).
+8. On your laptop: `bash deploy/scripts/build-frontend-for-droplet.sh http://<DROPLET_IP>/api/v1` then `bash deploy/scripts/08-sync-frontend-dist.sh root@<DROPLET_IP>`.
+9. `sudo bash deploy/scripts/07-smoke-http.sh` or `BASE_URL=http://<DROPLET_IP> bash deploy/scripts/07-smoke-http.sh`.
+
+Enable `ambedkar-worker.timer` only after `/etc/ambedkar/worker.env` and `TRANSCRIPT_MASTER_PATH` are valid.
+
 ## 1. Provision infrastructure
 
 1. Create droplet (e.g. 4 vCPU / 8 GB RAM), Ubuntu 22.04 LTS.
@@ -100,7 +118,10 @@ sudo systemctl enable --now ambedkar-worker.timer
 
 ## 7. Nginx + TLS
 
+After DNS points at the droplet, switch from the HTTP-only site to TLS:
+
 ```bash
+sudo rm -f /etc/nginx/sites-enabled/ambedkar-http-ip.conf
 sudo cp /srv/ambedkar/app/deploy/nginx/ambedkar.conf /etc/nginx/sites-available/ambedkar
 sudo ln -sf /etc/nginx/sites-available/ambedkar /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
