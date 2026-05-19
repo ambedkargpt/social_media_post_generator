@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -85,6 +86,23 @@ _LANGUAGE_INSTRUCTIONS: dict[str, str] = {
 }
 
 
+_SECTION_HEADERS = re.compile(
+    r'\n(?:Optional Visual Suggestion|Hashtags)\s*:',
+    re.IGNORECASE,
+)
+_POST_HEADER = re.compile(r'^Social Media Post\s*:\s*\n', re.IGNORECASE)
+
+
+def _extract_post_body(raw: str) -> str:
+    """Strip the structured wrapper and return only the post text."""
+    text = _POST_HEADER.sub("", raw).strip()
+    # Cut off at any trailing section header (Optional Visual Suggestion / Hashtags)
+    cut = _SECTION_HEADERS.search(text)
+    if cut:
+        text = text[: cut.start()].strip()
+    return text or raw.strip()
+
+
 def generate_post(
     client: OpenAI,
     model: str,
@@ -141,4 +159,4 @@ def generate_post(
     )
 
     text = (response.choices[0].message.content or "").strip()
-    return text
+    return _extract_post_body(text)
