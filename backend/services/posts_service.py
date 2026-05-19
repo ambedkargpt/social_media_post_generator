@@ -184,6 +184,7 @@ class PostsService:
             retrieved_chunks=chunks,
             full_contexts=full_contexts,
             temperature=payload.temperature,
+            language=payload.language,
         )
         model_used = self._current_generation_model()
 

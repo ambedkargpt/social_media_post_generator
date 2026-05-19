@@ -221,7 +221,9 @@ export default function SocialMediaPostGenerator() {
     if (!selectedArticle || !selectedPostId) return;
     setGenerating(true);
     try {
-      const response = await regeneratePostFromSnapshot(selectedPostId);
+      const response = await regeneratePostFromSnapshot(selectedPostId, {
+        language: getSiteLanguage() ?? 'en',
+      });
       setGeneratedPost(response?.post?.content || '');
       setSelectedPostId(response?.post?.id || selectedPostId);
     } catch (err) {
