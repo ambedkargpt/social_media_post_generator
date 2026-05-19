@@ -230,7 +230,7 @@ export default function SocialMediaPostGenerator() {
         userId: currentUser.id,
         newsId: selectedArticle._backendId,
         tone,
-        language: siteLang,
+        language: 'hi', // always generate in Hindi (source material is Hindi)
       });
       setGeneratedPost(response?.post?.content || '');
       setSelectedPostId(response?.post?.id || null);
@@ -250,7 +250,7 @@ export default function SocialMediaPostGenerator() {
       setTranslatedPost('');
       setShowTranslated(false);
       const response = await regeneratePostFromSnapshot(selectedPostId, {
-        language: siteLang,
+        language: 'hi', // always regenerate in Hindi
       });
       setGeneratedPost(response?.post?.content || '');
       setSelectedPostId(response?.post?.id || selectedPostId);
@@ -266,8 +266,8 @@ export default function SocialMediaPostGenerator() {
     if (!selectedPostId || translating) return;
     setTranslating(true);
     try {
-      const targetLang = siteLang === 'hi' ? 'en' : 'hi';
-      const result = await translatePost(selectedPostId, targetLang);
+      // Translate to site language (post is always generated in Hindi)
+      const result = await translatePost(selectedPostId, siteLang);
       setTranslatedPost(result.translated_content);
       setShowTranslated(true);
     } catch (err) {
@@ -525,8 +525,9 @@ export default function SocialMediaPostGenerator() {
                 <h2 className="font-display text-[18px] font-semibold text-white">Generated Post</h2>
               </div>
               <div className="flex items-center gap-2">
-                {/* Translate button */}
-                {selectedPostId && !generating && (
+                {/* Translate button — only shown when site language is English
+                    (post is always in Hindi; Hindi users already have it in their language) */}
+                {selectedPostId && !generating && siteLang !== 'hi' && (
                   <button
                     type="button"
                     onClick={showTranslated ? () => setShowTranslated(false) : handleTranslate}
@@ -540,7 +541,7 @@ export default function SocialMediaPostGenerator() {
                         <path d="M5 8l6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6" />
                       </svg>
                     )}
-                    {showTranslated ? 'Original' : translating ? 'Translating…' : `Translate to ${siteLang === 'hi' ? 'English' : 'हिंदी'}`}
+                    {showTranslated ? 'Show Hindi' : translating ? 'Translating…' : 'Translate to English'}
                   </button>
                 )}
                 <button
@@ -566,7 +567,7 @@ export default function SocialMediaPostGenerator() {
             {showTranslated && translatedPost && (
               <div className="mb-2 flex items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-[#1e3a6e]/60 bg-[#0d1840]/60 px-3 py-1 font-count text-[10.5px] uppercase tracking-widest text-[#6aa8ff]">
-                  Translated · {siteLang === 'hi' ? 'English' : 'हिंदी'}
+                  Translated · English
                 </span>
               </div>
             )}
