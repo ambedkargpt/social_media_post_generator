@@ -193,6 +193,7 @@ class PostsService:
             full_contexts=full_contexts,
             temperature=payload.temperature,
             language=payload.language,
+            refinement_note=payload.refinement_note,
         )
         model_used = self._current_generation_model()
 
@@ -401,6 +402,7 @@ class PostsService:
         full_contexts: list[dict[str, Any]],
         temperature: float | None,
         language: str | None = None,
+        refinement_note: str | None = None,
     ) -> str:
         try:
             if not settings.deepseek_api_key:
@@ -418,6 +420,7 @@ class PostsService:
                 full_video_contexts=full_contexts,
                 temperature=temperature if temperature is not None else settings.openai_temperature,
                 language=language,
+                refinement_note=refinement_note,
             )
         except OpenAIRateLimitError as exc:
             raise HTTPException(

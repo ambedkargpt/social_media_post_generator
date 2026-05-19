@@ -60,6 +60,7 @@ class PostRegenerateRequest(BaseModel):
     temperature: Optional[float] = Field(default=None, ge=0.0, le=2.0)
     language: Optional[str] = None
     profile_overrides: Optional[dict[str, str]] = None
+    refinement_note: Optional[str] = None  # "make it more aggressive", "add Periyar reference", etc.
 
 
 class PostGenerateResponse(BaseModel):

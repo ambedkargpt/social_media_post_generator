@@ -28,8 +28,8 @@ export async function generatePostForNews({ userId, newsId, tone, temperature, l
 }
 
 // POST /posts/:id/regenerate — rerun LLM only using stored retrieval snapshot
-export async function regeneratePostFromSnapshot(postId, { temperature, language, profileOverrides } = {}) {
-  const payload = { temperature, language, profile_overrides: profileOverrides };
+export async function regeneratePostFromSnapshot(postId, { temperature, language, profileOverrides, refinementNote } = {}) {
+  const payload = { temperature, language, profile_overrides: profileOverrides, refinement_note: refinementNote || undefined };
   const { data } = await client.post(`/posts/${postId}/regenerate`, payload);
   return data;
 }

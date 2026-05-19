@@ -134,6 +134,7 @@ def generate_post(
     prompts_dir: Optional[Path] = None,
     summaries_cache_path: Optional[Path] = None,
     language: Optional[str] = None,
+    refinement_note: Optional[str] = None,
 ) -> str:
     """
     Generate a social media post for a news item, profile, and retrieved chunks.
@@ -156,6 +157,9 @@ def generate_post(
     lang_instruction = _LANGUAGE_INSTRUCTIONS.get(language or "en", "")
     if lang_instruction:
         system_msg = f"{system_msg}\n\n---\n\n{lang_instruction}"
+
+    if refinement_note and refinement_note.strip():
+        system_msg = f"{system_msg}\n\n---\n\nREFINEMENT INSTRUCTION: The user wants the following change in this post: {refinement_note.strip()}"
 
     profile_desc = "\n".join(f"{k}: {v}" for k, v in profile.items())
 

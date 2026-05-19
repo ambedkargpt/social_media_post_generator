@@ -2,10 +2,11 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Search, Filter, Sparkles,
-  Copy, Check, RefreshCw, ChevronDown,
+  Copy, Check, RefreshCw, ChevronDown, Eye, FileText,
 } from 'lucide-react';
 
 import PreferencesPanel from '../components/generate/PreferencesPanel';
+import PostContent from '../components/generate/PostContent';
 import logoSrc from '../assets/images/logo-animation.png';
 import { useAuth } from '../context/AuthContext';
 import { getNews } from '../api/news';
@@ -13,11 +14,18 @@ import { generatePostForNews, regeneratePostFromSnapshot, translatePost, updateP
 import { getQuestions } from '../api/questions';
 import { getProfileAnswers, saveProfileAnswers } from '../api/profile';
 import { getSiteLanguage, SITE_LANGUAGES } from '../utils/siteLanguage';
+import { parsePost, hashtagsText } from '../utils/parsePost';
 
 const TONES = ['Professional', 'Inspirational', 'Creative', 'Casual', 'Motivational'];
 const ALSO_GENERATE = ['Audio', 'Shorts', 'Image'];
-
 const CATEGORIES = ['All', 'Legacy', 'Policy', 'Education', 'Research', 'Grassroots'];
+
+const PLATFORMS = [
+  { id: 'twitter',   label: 'Twitter / X',  short: '𝕏',   limit: 280,  color: '#1d9bf0' },
+  { id: 'instagram', label: 'Instagram',     short: 'IG',  limit: 2200, color: '#e1306c' },
+  { id: 'linkedin',  label: 'LinkedIn',      short: 'in',  limit: 3000, color: '#0a66c2' },
+  { id: 'whatsapp',  label: 'WhatsApp',      short: 'WA',  limit: 5000, color: '#25d366' },
+];
 
 const NEWS_ARTICLES = [
   {
@@ -126,6 +134,10 @@ export default function SocialMediaPostGenerator() {
   const [translating,     setTranslating]     = useState(false);
   const [postStatus,      setPostStatus]      = useState('draft');
   const [publishing,      setPublishing]      = useState(false);
+  const [platform,        setPlatform]        = useState('twitter');
+  const [postView,        setPostView]        = useState('post'); // 'post' | 'preview'
+  const [refinementNote,  setRefinementNote]  = useState('');
+  const [copiedHashtags,  setCopiedHashtags]  = useState(false);
   const filterRef = useRef(null);
 
   const siteLang = getSiteLanguage() ?? 'en';
@@ -206,8 +218,13 @@ export default function SocialMediaPostGenerator() {
     return matchSearch && matchFilter;
   });
 
-  const chars = generatedPost.trim().length;
-  const words = generatedPost.trim() ? generatedPost.trim().split(/\s+/).length : 0;
+  const activeContent = showTranslated && translatedPost ? translatedPost : generatedPost;
+  const chars = activeContent.trim().length;
+  const words = activeContent.trim() ? activeContent.trim().split(/\s+/).length : 0;
+  const activePlatform = PLATFORMS.find((p) => p.id === platform) ?? PLATFORMS[0];
+  const charPct = activePlatform.limit ? chars / activePlatform.limit : 0;
+  const charOverLimit = chars > activePlatform.limit;
+  const charWarning = charPct > 0.85 && !charOverLimit;
 
   function handlePreview(article) {
     setSelectedArticle(article);
@@ -230,16 +247,19 @@ export default function SocialMediaPostGenerator() {
       if (currentUser?.id && Object.keys(preferences).length > 0) {
         saveProfileAnswers(currentUser.id, preferences).catch(() => {});
       }
+      const platformObj = PLATFORMS.find((p) => p.id === platform);
       const response = await generatePostForNews({
         userId: currentUser.id,
         newsId: selectedArticle._backendId,
         tone,
         language: 'hi',
-        profileOverrides: preferences,
+        profileOverrides: { ...preferences, target_platform: platformObj?.label ?? platform },
       });
       setGeneratedPost(response?.post?.content || '');
       setSelectedPostId(response?.post?.id || null);
       setPostStatus('draft');
+      setPostView('post');
+      setRefinementNote('');
       setTranslatedPost(response?.post?.translations?.[siteLang] || '');
       setShowTranslated(false);
     } catch (err) {
@@ -260,10 +280,13 @@ export default function SocialMediaPostGenerator() {
       const response = await regeneratePostFromSnapshot(selectedPostId, {
         language: 'hi',
         profileOverrides: preferences,
+        refinementNote,
       });
       setGeneratedPost(response?.post?.content || '');
       setSelectedPostId(response?.post?.id || selectedPostId);
       setPostStatus('draft');
+      setPostView('post');
+      setRefinementNote('');
       setTranslatedPost(response?.post?.translations?.[siteLang] || '');
       setShowTranslated(false);
     } catch (err) {
@@ -294,6 +317,17 @@ export default function SocialMediaPostGenerator() {
     } finally {
       setTranslating(false);
     }
+  }
+
+  async function handleCopyHashtags() {
+    const activeContent = showTranslated && translatedPost ? translatedPost : generatedPost;
+    const { hashtags } = parsePost(activeContent);
+    if (!hashtags.length) return;
+    try {
+      await navigator.clipboard.writeText(hashtags.join(' '));
+      setCopiedHashtags(true);
+      setTimeout(() => setCopiedHashtags(false), 1600);
+    } catch { /* ignore */ }
   }
 
   async function handlePublish() {
@@ -530,10 +564,36 @@ export default function SocialMediaPostGenerator() {
               </p>
             </div>
 
+            {/* Platform selector */}
+            <div className="mt-5">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#6aa8ff]">Platform</p>
+              <div className="grid grid-cols-4 gap-2">
+                {PLATFORMS.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setPlatform(p.id)}
+                    className="flex flex-col items-center gap-1 rounded-xl border py-2.5 text-center transition"
+                    style={{
+                      borderColor: platform === p.id ? p.color : 'rgba(30,50,100,0.5)',
+                      backgroundColor: platform === p.id ? `${p.color}18` : 'rgba(10,17,48,0.6)',
+                    }}
+                  >
+                    <span className="font-bold text-[13px]" style={{ color: platform === p.id ? p.color : '#5a6e9a' }}>
+                      {p.short}
+                    </span>
+                    <span className="text-[9.5px] font-medium" style={{ color: platform === p.id ? p.color : '#3d4e70' }}>
+                      {p.limit.toLocaleString()}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <button
               type="button"
               onClick={handleGenerate}
-              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl btn-gradient py-3.5 text-[14px] font-semibold text-white shadow-[0_6px_24px_rgba(17,122,255,0.35)] transition hover:brightness-110"
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl btn-gradient py-3.5 text-[14px] font-semibold text-white shadow-[0_6px_24px_rgba(17,122,255,0.35)] transition hover:brightness-110"
             >
               <Sparkles size={15} strokeWidth={2} />
               Generate Post
@@ -612,13 +672,42 @@ export default function SocialMediaPostGenerator() {
               </div>
             </div>
 
-            {showTranslated && translatedPost && (
-              <div className="mb-2 flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#1e3a6e]/60 bg-[#0d1840]/60 px-3 py-1 font-count text-[10.5px] uppercase tracking-widest text-[#6aa8ff]">
-                  Translated · English
-                </span>
+            {/* Post / Preview toggle + translation badge */}
+            {!generating && !translating && generatedPost && (
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {showTranslated && translatedPost && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#1e3a6e]/60 bg-[#0d1840]/60 px-2.5 py-0.5 font-count text-[10px] uppercase tracking-widest text-[#6aa8ff]">
+                      Translated · English
+                    </span>
+                  )}
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-count text-[10px] uppercase tracking-wider"
+                    style={{ borderColor: `${activePlatform.color}55`, color: activePlatform.color, backgroundColor: `${activePlatform.color}12` }}
+                  >
+                    {activePlatform.short} · {activePlatform.label}
+                  </span>
+                </div>
+                <div className="flex rounded-lg border border-[#1e3260]/60 overflow-hidden">
+                  {[{ id: 'post', Icon: FileText, label: 'Post' }, { id: 'preview', Icon: Eye, label: 'Preview' }].map(({ id, Icon, label }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setPostView(id)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11.5px] font-medium transition"
+                      style={{
+                        backgroundColor: postView === id ? 'rgba(63,159,255,0.15)' : 'transparent',
+                        color: postView === id ? '#6aa8ff' : '#4a5a80',
+                      }}
+                    >
+                      <Icon size={11} strokeWidth={2} />
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
+
             {(generating || translating) ? (
               <div className="flex min-h-[260px] flex-col items-center justify-center gap-4 rounded-2xl border border-[#1e3260]/60 bg-[#0a1130]/70 p-5">
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#1e3260] border-t-[#3f9fff]" />
@@ -627,17 +716,54 @@ export default function SocialMediaPostGenerator() {
                     {generating ? 'Generating your post…' : 'Translating…'}
                   </p>
                   {generating && (
-                    <p className="mt-1 font-count text-[11px] text-[#3a4e70]">
-                      {genSeconds}s elapsed
-                    </p>
+                    <p className="mt-1 font-count text-[11px] text-[#3a4e70]">{genSeconds}s elapsed</p>
                   )}
                 </div>
               </div>
+            ) : postView === 'preview' ? (
+              /* ── Mock social card preview ── */
+              <div className="rounded-2xl border border-[#1e3260]/60 bg-[#0a1130]/70 p-5">
+                {/* Platform chrome */}
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#3f9fff] to-[#7b5cff] text-[15px] font-bold text-white">
+                    {(currentUser?.username?.[0] ?? 'A').toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-[13.5px] font-semibold text-white">{currentUser?.username ?? 'You'}</p>
+                    <p className="text-[11.5px]" style={{ color: activePlatform.color }}>
+                      @{currentUser?.username?.toLowerCase() ?? 'user'} · {activePlatform.short}
+                    </p>
+                  </div>
+                </div>
+                <div className="border-t border-[#141d3a]/60 pt-4">
+                  <PostContent content={showTranslated && translatedPost ? translatedPost : generatedPost} />
+                </div>
+                {/* Mock engagement row */}
+                <div className="mt-4 flex items-center gap-5 border-t border-[#141d3a]/60 pt-3 text-[11.5px] text-[#3a4e70]">
+                  <span>💬 Reply</span>
+                  <span>🔁 Repost</span>
+                  <span>❤️ Like</span>
+                  <span>📤 Share</span>
+                </div>
+              </div>
             ) : (
-              <div
-                className="min-h-[260px] rounded-2xl border border-[#1e3260]/60 bg-[#0a1130]/70 p-5 text-[13.5px] leading-[1.75] text-[#c7d1eb] whitespace-pre-wrap"
-              >
-                {showTranslated && translatedPost ? translatedPost : generatedPost}
+              /* ── Styled post text ── */
+              <div className="min-h-[260px] rounded-2xl border border-[#1e3260]/60 bg-[#0a1130]/70 p-5">
+                <PostContent content={showTranslated && translatedPost ? translatedPost : generatedPost} />
+              </div>
+            )}
+
+            {/* Refinement note */}
+            {!generating && !translating && generatedPost && (
+              <div className="mt-3">
+                <input
+                  type="text"
+                  value={refinementNote}
+                  onChange={(e) => setRefinementNote(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && refinementNote.trim() && handleRegenerate()}
+                  placeholder="What should be different? (optional — press Enter or click Regenerate)"
+                  className="w-full rounded-xl border border-[#1e3260]/50 bg-[#0a1130]/60 px-4 py-2.5 text-[12.5px] text-white placeholder-[#3a4e70] outline-none transition focus:border-[#3f9fff]/50 focus:shadow-[0_0_0_3px_rgba(63,159,255,0.1)]"
+                />
               </div>
             )}
 
@@ -649,15 +775,56 @@ export default function SocialMediaPostGenerator() {
               </div>
             )}
 
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <div className="rounded-xl border border-[#1e3260]/60 bg-[#0a1130]/60 px-4 py-3 text-center">
-                <div className="text-[11px] text-[#8b94b8]">Characters</div>
-                <div className="mt-1 font-count text-[22px] font-bold tabular-nums text-white">{chars}</div>
+            <div className="mt-4 grid grid-cols-3 gap-3">
+              {/* Platform-aware char counter */}
+              <div
+                className="rounded-xl border px-4 py-3 text-center transition"
+                style={{
+                  borderColor: charOverLimit ? 'rgba(239,68,68,0.5)' : charWarning ? 'rgba(251,191,36,0.4)' : 'rgba(30,50,100,0.6)',
+                  backgroundColor: charOverLimit ? 'rgba(239,68,68,0.08)' : 'rgba(10,17,48,0.6)',
+                }}
+              >
+                <div className="text-[10.5px]" style={{ color: charOverLimit ? '#ef4444' : charWarning ? '#fbbf24' : '#8b94b8' }}>
+                  Chars · {activePlatform.short} limit {activePlatform.limit.toLocaleString()}
+                </div>
+                <div
+                  className="mt-1 font-count text-[22px] font-bold tabular-nums"
+                  style={{ color: charOverLimit ? '#ef4444' : charWarning ? '#fbbf24' : 'white' }}
+                >
+                  {chars}
+                </div>
+                {activePlatform.limit && (
+                  <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-[#1e3260]/60">
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{
+                        width: `${Math.min(charPct * 100, 100)}%`,
+                        backgroundColor: charOverLimit ? '#ef4444' : charWarning ? '#fbbf24' : '#3f9fff',
+                      }}
+                    />
+                  </div>
+                )}
               </div>
+              {/* Words */}
               <div className="rounded-xl border border-[#1e3260]/60 bg-[#0a1130]/60 px-4 py-3 text-center">
                 <div className="text-[11px] text-[#8b94b8]">Words</div>
                 <div className="mt-1 font-count text-[22px] font-bold tabular-nums text-white">{words}</div>
               </div>
+              {/* Hashtags copy */}
+              <button
+                type="button"
+                onClick={handleCopyHashtags}
+                disabled={!generatedPost}
+                className="rounded-xl border border-[#1e3260]/60 bg-[#0a1130]/60 px-4 py-3 text-center transition hover:border-[#3f9fff]/40 hover:bg-[#0d1635]/70 disabled:opacity-40"
+              >
+                <div className="text-[11px] text-[#8b94b8]">Hashtags</div>
+                <div className="mt-1 flex items-center justify-center gap-1.5">
+                  {copiedHashtags
+                    ? <><Check size={14} strokeWidth={2.5} className="text-[#22c55e]" /><span className="font-count text-[13px] font-bold text-[#22c55e]">Copied!</span></>
+                    : <><Copy size={13} strokeWidth={2} className="text-[#5fa5ff]" /><span className="font-count text-[13px] font-bold text-[#5fa5ff]">Copy</span></>
+                  }
+                </div>
+              </button>
             </div>
 
             {/* You Can Also Generate — card with grid buttons */}
