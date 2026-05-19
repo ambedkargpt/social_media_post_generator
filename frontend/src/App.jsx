@@ -27,19 +27,11 @@ import ScrollProgress      from './components/ScrollProgress';
 import OpeningSplash       from './components/OpeningSplash';
 import TransitionCurtain   from './components/TransitionCurtain';
 import ErrorBoundary       from './components/ErrorBoundary';
-import { getSiteLanguage } from './utils/siteLanguage';
-import { markAppReady } from './utils/appReady';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 export default function App() {
-  const [splashDone, setSplashDone] = useState(() => {
-    if (getSiteLanguage()) {
-      markAppReady();
-      return true;
-    }
-    return false;
-  });
+  const [splashDone, setSplashDone] = useState(false);
   const handleSplashDone = useCallback(() => setSplashDone(true), []);
 
   return (

@@ -124,7 +124,7 @@ def main() -> int:
                 print("Deleted:", p.name)
 
     if summary_path.exists():
-        from pipeline.video_summarizer import load_summary_cache, save_summary_cache, summary_cache_key
+        from backend.pipeline.video_summarizer import load_summary_cache, save_summary_cache, summary_cache_key
 
         cache = load_summary_cache(summary_path)
         to_del: set[str] = set()

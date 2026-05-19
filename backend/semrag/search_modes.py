@@ -61,8 +61,8 @@ def run_semrag_search(
     # If graph-mode returns nothing (generic mentions, unresolved entities), fall back to dense+BM25 retrieval.
     if not rows:
         fallback_used = True
-        from main import _retrieval_cfg_from_settings, ensure_rag_stack
-        from pipeline.retriever import retrieve_relevant_chunks
+        from backend.pipeline_cli import _retrieval_cfg_from_settings, ensure_rag_stack
+        from backend.pipeline.retriever import retrieve_relevant_chunks
 
         embedder, store, _ = ensure_rag_stack(settings)
         retrieval_cfg = _retrieval_cfg_from_settings(settings)

@@ -100,7 +100,7 @@ def generate_post(
         return "Insufficient information in the provided transcript chunks to generate a reliable post."
 
     if prompts_dir is None:
-        from config import get_settings
+        from backend.config import get_settings
 
         prompts_dir = get_settings().prompts_dir
 

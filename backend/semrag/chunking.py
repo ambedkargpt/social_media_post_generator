@@ -10,7 +10,7 @@ from tqdm import tqdm
 from .semrag_config import SemragConfig
 
 if TYPE_CHECKING:
-    from pipeline.embedder import ChunkEmbedder
+    from backend.pipeline.embedder import ChunkEmbedder
 
 
 _GREETING_PATTERNS = [

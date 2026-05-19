@@ -4,46 +4,9 @@ import { useCurtain } from '../context/CurtainContext';
 import { ArrowLeft, ArrowRight, BookmarkCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { saveProfileAnswers } from '../api/profile';
+import { getQuestions } from '../api/questions';
 import logoSrc     from '../assets/images/logo-animation.png';
 import ambedkarSrc from '../assets/images/qna-ambedkar.png';
-
-const QUESTIONS = [
-  {
-    id: 'profile_user_role',
-    question: "What best describes your role?",
-    options: ['Student / Researcher', 'Activist / Advocate', 'Educator / Teacher', 'Content Creator', 'Journalist / Writer', 'General Public'],
-  },
-  {
-    id: 'profile_tone',
-    question: "What tone do you prefer in responses?",
-    options: ['Academic & Formal', 'Conversational & Friendly', 'Passionate & Motivational', 'Analytical & Objective'],
-  },
-  {
-    id: 'profile_target_audience',
-    question: "Who is your primary audience?",
-    options: ['General Public', 'Students & Youth', 'Academic Community', 'Policy Makers', 'Social Media Followers', 'Activists & Organizers'],
-  },
-  {
-    id: 'profile_primary_focus',
-    question: "What is your primary focus area?",
-    options: ['Constitutional Rights', 'Social Justice', 'Education & Learning', 'History & Legacy', 'Political Thought', 'Economic Equality'],
-  },
-  {
-    id: 'profile_ambedkarite_perspective',
-    question: "Which perspective best describes you?",
-    options: ['Radical Ambedkarite', 'Reformist Ambedkarite', 'Structural Analyst', 'Institutional Advocate'],
-  },
-  {
-    id: 'profile_content_length',
-    question: "What content length do you prefer?",
-    options: ['Short & Concise (tweets / captions)', 'Medium (paragraphs)', 'Long-form (essays / articles)', 'Detailed & Comprehensive'],
-  },
-  {
-    id: 'profile_call_to_action',
-    question: "What type of action do you want to inspire?",
-    options: ['Passive Awareness', 'Mobilizing & Action-Oriented', 'Institutional Change', 'Educational & Informative'],
-  },
-];
 
 const STORAGE_KEY = 'ambedkargpt_questionnaire';
 
@@ -79,6 +42,23 @@ export default function Questionnaire() {
   const { go: curtainGo } = useCurtain();
   const { currentUser } = useAuth();
 
+  const [questions, setQuestions] = useState([]);
+  const [loadingQ,  setLoadingQ]  = useState(true);
+  const [fetchErr,  setFetchErr]  = useState(false);
+
+  useEffect(() => {
+    getQuestions(7)
+      .then((data) => {
+        setQuestions(data.map((q) => ({
+          id:       q.question_id,
+          question: q.question_text,
+          options:  q.options,
+        })));
+      })
+      .catch(() => setFetchErr(true))
+      .finally(() => setLoadingQ(false));
+  }, []);
+
   const saved = (() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch { return {}; }
   })();
@@ -88,11 +68,11 @@ export default function Questionnaire() {
   const [direction, setDir]   = useState('next');
   const { display, animate, animating } = useSlideAnim(step, direction);
 
-  const total    = QUESTIONS.length;
-  const question = QUESTIONS[display];
-  const progress = Math.round((step / total) * 100);
-  const selected = answers[question.id];
-  const isLast   = step === total - 1;
+  const total    = questions.length;
+  const question = questions[display];
+  const progress = total ? Math.round((step / total) * 100) : 0;
+  const selected = question ? answers[question.id] : undefined;
+  const isLast   = total > 0 && step === total - 1;
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, answers }));
@@ -127,6 +107,26 @@ export default function Questionnaire() {
       saveProfileAnswers(currentUser.id, answers).catch(() => {});
     }
     curtainGo('/dashboard', { replace: true });
+  }
+
+  if (loadingQ || fetchErr || !question) {
+    return (
+      <div
+        className="flex min-h-screen flex-col items-center justify-center"
+        style={{ background: 'linear-gradient(160deg,#0d1535 0%,#080e22 100%)' }}
+      >
+        {fetchErr ? (
+          <p className="font-count text-[14px] text-[#e55555]">
+            Failed to load questions. Please refresh and try again.
+          </p>
+        ) : (
+          <div className="flex flex-col items-center gap-4">
+            <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#1e3260] border-t-[#3f9fff]" />
+            <p className="font-count text-[13px] text-[#5a6e9a]">Loading questions…</p>
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (

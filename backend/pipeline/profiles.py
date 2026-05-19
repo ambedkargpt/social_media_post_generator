@@ -329,7 +329,7 @@ def get_user_profiles() -> List[Dict[str, str]]:
     """
     import pandas as pd
 
-    from config import get_settings
+    from backend.config import get_settings
 
     path = get_settings().user_profiles_parquet_path
     _ensure_user_profiles_parquet(path)

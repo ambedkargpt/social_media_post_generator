@@ -289,13 +289,13 @@ def rebuild_rag_artifacts_from_data_file(data_txt_path: Path) -> None:
     if not data_txt_path.exists():
         return
 
-    from config import get_settings
-    from pipeline.transcript_parser import parse_transcripts
-    from pipeline.chunker import chunk_videos
-    from pipeline.argument_scorer import score_argument_chunks
-    from pipeline.embedder import ChunkEmbedder
-    from pipeline.vector_store import build_index, save_vector_store
-    from pipeline.title_embeddings import build_title_embeddings, save_title_embeddings
+    from backend.config import get_settings
+    from backend.pipeline.transcript_parser import parse_transcripts
+    from backend.pipeline.chunker import chunk_videos
+    from backend.pipeline.argument_scorer import score_argument_chunks
+    from backend.pipeline.embedder import ChunkEmbedder
+    from backend.pipeline.vector_store import build_index, save_vector_store
+    from backend.pipeline.title_embeddings import build_title_embeddings, save_title_embeddings
 
     settings = get_settings()
     raw_text = data_txt_path.read_text(encoding="utf-8")
@@ -344,11 +344,11 @@ def rebuild_semrag_artifacts_from_data_file(data_txt_path: Path) -> None:
     if not data_txt_path.exists():
         return
 
-    from config import get_settings
-    from pipeline.transcript_parser import parse_transcripts
-    from semrag.build import build_semrag_graph, save_semrag_chunks
-    from semrag.chunking import chunk_videos_for_semrag
-    from semrag.semrag_config import load_semrag_config
+    from backend.config import get_settings
+    from backend.pipeline.transcript_parser import parse_transcripts
+    from backend.semrag.build import build_semrag_graph, save_semrag_chunks
+    from backend.semrag.chunking import chunk_videos_for_semrag
+    from backend.semrag.semrag_config import load_semrag_config
 
     settings = get_settings()
     semrag_cfg = load_semrag_config(PROJECT_ROOT)
@@ -381,8 +381,8 @@ def build_semrag_graph_from_backups_only() -> None:
     """
     Rebuild semrag_graph.json strictly from extracted backup files without running extraction.
     """
-    from config import get_settings
-    from semrag.store import normalize_text, rebuild_indexes, save_semrag_graph
+    from backend.config import get_settings
+    from backend.semrag.store import normalize_text, rebuild_indexes, save_semrag_graph
 
     settings = get_settings()
     semrag_dir = settings.semrag_graph_path.parent
@@ -449,7 +449,7 @@ def summarize_fetched_entries(entries: list[dict], summary_path: Path, settings)
     if not entries:
         return 0, []
 
-    from pipeline.video_summarizer import (
+    from backend.pipeline.video_summarizer import (
         deepseek_chat_client,
         get_or_create_video_summary,
         load_summary_cache,
@@ -874,8 +874,8 @@ def legacy_main() -> int:
         print(" Rebuilding SEMRAG artifacts from updated Ravish dataset...")
         rebuild_semrag_artifacts_from_data_file(RAVISH_DATA_TXT)
         print(" SEMRAG artifacts refreshed (semrag chunks + graph/cache).")
-        from config import get_settings as _get_settings
-        from pipeline.news_generator import update_generated_news_rolling
+        from backend.config import get_settings as _get_settings
+        from backend.pipeline.news_generator import update_generated_news_rolling
 
         fetch_settings = _get_settings()
         n_summaries, new_summary_rows = summarize_fetched_entries(

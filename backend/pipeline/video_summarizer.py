@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Dict, Optional
 from openai import OpenAI
 
 if TYPE_CHECKING:
-    from config import Settings
+    from backend.config import Settings
 
 VIDEO_SUMMARY_SYSTEM_NAME = "video_summary_system.txt"
 VIDEO_SUMMARY_USER_NAME = "video_summary_user.txt"
@@ -93,7 +93,7 @@ def summarize_video_context(
     Prompts are loaded from prompts_dir (see config Settings.prompts_dir).
     """
     if prompts_dir is None:
-        from config import get_settings
+        from backend.config import get_settings
 
         prompts_dir = get_settings().prompts_dir
 

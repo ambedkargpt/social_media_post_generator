@@ -10,6 +10,8 @@ import logoSrc from '../assets/images/logo-animation.png';
 import { useAuth } from '../context/AuthContext';
 import { getNews } from '../api/news';
 import { generatePostForNews, regeneratePostFromSnapshot } from '../api/posts';
+import { getQuestions } from '../api/questions';
+import { getProfileAnswers } from '../api/profile';
 
 const TONES = ['Professional', 'Inspirational', 'Creative', 'Casual', 'Motivational'];
 const ALSO_GENERATE = ['Audio', 'Shorts', 'Image'];
@@ -114,14 +116,39 @@ export default function SocialMediaPostGenerator() {
   const [selectedPostId,  setSelectedPostId]  = useState(null);
   const [copied,          setCopied]          = useState(false);
   const [panelWidth,      setPanelWidth]      = useState(300);
+  const [prefQuestions,   setPrefQuestions]   = useState([]);
+  const [preferences,     setPreferences]     = useState({});
+  const [savedPrefs,      setSavedPrefs]      = useState({});
   const filterRef = useRef(null);
 
-  // Fetch news + user preferences on mount
+  // Fetch news, questions, and user's saved answers on mount
   useEffect(() => {
     getNews({ limit: 100 })
       .then((data) => { if (data?.length) setArticles(data.map(adaptNews)); })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!currentUser?.id) return;
+
+    Promise.all([
+      getQuestions(7),
+      getProfileAnswers(currentUser.id).catch(() => []),
+    ]).then(([qs, saved]) => {
+      setPrefQuestions(qs);
+
+      // Build a { question_id: answer } map from the saved answers array
+      const savedMap = Object.fromEntries(
+        (saved ?? []).map((a) => [a.question_id, a.answer])
+      );
+      // Fill any missing question with first available option
+      const initial = Object.fromEntries(
+        qs.map((q) => [q.question_id, savedMap[q.question_id] ?? q.options[0] ?? ''])
+      );
+      setPreferences(initial);
+      setSavedPrefs(initial);
+    }).catch(() => {});
+  }, [currentUser?.id]);
 
   // Resize drag refs
   const resizing  = useRef(false);
@@ -481,7 +508,12 @@ export default function SocialMediaPostGenerator() {
 
         {/* Preferences panel */}
         <div className="h-full flex-1 overflow-hidden">
-          <PreferencesPanel />
+          <PreferencesPanel
+            questions={prefQuestions}
+            value={preferences}
+            onChange={setPreferences}
+            defaultValues={savedPrefs}
+          />
         </div>
       </div>
     </div>
