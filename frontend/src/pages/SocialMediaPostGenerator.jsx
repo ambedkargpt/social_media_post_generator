@@ -232,10 +232,9 @@ export default function SocialMediaPostGenerator() {
       });
       setGeneratedPost(response?.post?.content || '');
       setSelectedPostId(response?.post?.id || null);
-      // Pre-populate translation cache if the post already has one stored
-      const cachedTranslation = response?.post?.translations?.[siteLang];
-      setTranslatedPost(cachedTranslation || '');
-      setShowTranslated(Boolean(cachedTranslation) && siteLang !== 'hi');
+      // Pre-load cached translation into state (instant on click) but always show Hindi first
+      setTranslatedPost(response?.post?.translations?.[siteLang] || '');
+      setShowTranslated(false);
     } catch (err) {
       console.error('Generate failed:', err);
       setGeneratedPost('Could not generate post right now. Please try again.');
@@ -254,9 +253,9 @@ export default function SocialMediaPostGenerator() {
       });
       setGeneratedPost(response?.post?.content || '');
       setSelectedPostId(response?.post?.id || selectedPostId);
-      const cachedTranslation = response?.post?.translations?.[siteLang];
-      setTranslatedPost(cachedTranslation || '');
-      setShowTranslated(Boolean(cachedTranslation) && siteLang !== 'hi');
+      // Pre-load cached translation into state (instant on click) but always show Hindi first
+      setTranslatedPost(response?.post?.translations?.[siteLang] || '');
+      setShowTranslated(false);
     } catch (err) {
       console.error('Regenerate failed:', err);
       setGeneratedPost('Could not regenerate post right now. Please try again.');
