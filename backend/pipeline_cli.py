@@ -6,22 +6,22 @@ from typing import Any, Dict, List, Sequence, Tuple
 from openai import OpenAI
 from tqdm import tqdm
 
-from config import get_settings
-from pipeline.news_fetcher import fetch_latest_news
-from pipeline.news_scraper import scrape_article
-from pipeline.transcript_parser import parse_transcripts
-from pipeline.chunker import chunk_videos
-from pipeline.argument_scorer import score_argument_chunks
-from pipeline.embedder import ChunkEmbedder
-from pipeline.vector_store import build_index, save_vector_store, load_vector_store
-from pipeline.retriever import retrieve_relevant_chunks
-from pipeline.generator import generate_post
-from pipeline.profiles import get_user_profiles
-from pipeline.title_embeddings import build_title_embeddings, save_title_embeddings, load_title_embeddings
-from semrag.build import build_semrag_graph, save_semrag_chunks
-from semrag.chunking import chunk_videos_for_semrag
-from semrag.runtime import semrag_candidates_for_query
-from semrag.semrag_config import load_semrag_config
+from backend.config import get_settings
+from backend.pipeline.news_fetcher import fetch_latest_news
+from backend.pipeline.news_scraper import scrape_article
+from backend.pipeline.transcript_parser import parse_transcripts
+from backend.pipeline.chunker import chunk_videos
+from backend.pipeline.argument_scorer import score_argument_chunks
+from backend.pipeline.embedder import ChunkEmbedder
+from backend.pipeline.vector_store import build_index, save_vector_store, load_vector_store
+from backend.pipeline.retriever import retrieve_relevant_chunks
+from backend.pipeline.generator import generate_post
+from backend.pipeline.profiles import get_user_profiles
+from backend.pipeline.title_embeddings import build_title_embeddings, save_title_embeddings, load_title_embeddings
+from backend.semrag.build import build_semrag_graph, save_semrag_chunks
+from backend.semrag.chunking import chunk_videos_for_semrag
+from backend.semrag.runtime import semrag_candidates_for_query
+from backend.semrag.semrag_config import load_semrag_config
 
 
 BASE_DIR = Path(__file__).parent

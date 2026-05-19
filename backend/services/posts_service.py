@@ -23,11 +23,11 @@ from backend.schemas.posts import (
     PostUpdateRequest,
     RetrievedChunkReference,
 )
-from main import _retrieval_cfg_from_settings, ensure_rag_stack
-from pipeline.generator import generate_post
-from pipeline.profiles import PROFILE_FIELDS, get_user_profiles
-from pipeline.retriever import retrieve_relevant_chunks
-from semrag.runtime import semrag_candidates_for_query
+from backend.pipeline_cli import _retrieval_cfg_from_settings, ensure_rag_stack
+from backend.pipeline.generator import generate_post
+from backend.pipeline.profiles import PROFILE_FIELDS, get_user_profiles
+from backend.pipeline.retriever import retrieve_relevant_chunks
+from backend.semrag.runtime import semrag_candidates_for_query
 
 
 class PostsService:

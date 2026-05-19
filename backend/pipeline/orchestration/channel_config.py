@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from pipeline.orchestration.contracts import ChannelConfig
+from backend.pipeline.orchestration.contracts import ChannelConfig
 
 
 def _to_bool(value: Any, default: bool) -> bool:

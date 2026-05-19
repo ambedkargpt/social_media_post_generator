@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from semrag.store import normalize_text, rebuild_indexes, save_semrag_graph
+from backend.semrag.store import normalize_text, rebuild_indexes, save_semrag_graph
 
 
 def _entity_key(name: str, entity_type: str) -> str:

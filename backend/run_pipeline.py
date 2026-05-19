@@ -4,10 +4,10 @@ import argparse
 from datetime import datetime, timezone
 from pathlib import Path
 
-from config import get_settings
-from pipeline.orchestration import load_channel_config, resolve_stage_selection, run_pipeline
-from pipeline.orchestration.contracts import PipelineContext
-from pipeline.orchestration.stages import STAGE_DEPENDENCIES, STAGE_HANDLERS
+from backend.config import get_settings
+from backend.pipeline.orchestration import load_channel_config, resolve_stage_selection, run_pipeline
+from backend.pipeline.orchestration.contracts import PipelineContext
+from backend.pipeline.orchestration.stages import STAGE_DEPENDENCIES, STAGE_HANDLERS
 
 
 def _build_parser() -> argparse.ArgumentParser:

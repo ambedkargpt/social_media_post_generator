@@ -1,61 +1,99 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import logoSrc from '../assets/images/logo-animation.png';
 import { markAppReady } from '../utils/appReady';
+import {
+  SITE_LANGUAGES,
+  setSiteLanguage,
+  getSiteLanguageLabel,
+} from '../utils/siteLanguage';
+
+const EXIT_MS = 700;
 
 export default function OpeningSplash({ onDone }) {
   const [phase, setPhase] = useState('enter'); // 'enter' | 'exit' | 'gone'
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [selectedCode, setSelectedCode] = useState(null);
+  const langRef = useRef(null);
 
   useEffect(() => {
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const holdMs = reduce ? 400 : 3000;
-
-    const t1 = setTimeout(() => setPhase('exit'), holdMs);
-    const t2 = setTimeout(() => {
-      setPhase('gone');
-      markAppReady();
-      onDone?.();
-    }, holdMs + 700);
-
     const prev = document.documentElement.style.overflow;
     document.documentElement.style.overflow = 'hidden';
     return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
       document.documentElement.style.overflow = prev;
     };
-  }, [onDone]);
+  }, []);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+
+    function onPointerDown(e) {
+      if (langRef.current && !langRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    }
+
+    function onKeyDown(e) {
+      if (e.key === 'Escape') setMenuOpen(false);
+    }
+
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [menuOpen]);
+
+  function handleSelect(code) {
+    if (phase !== 'enter' || selectedCode) return;
+
+    setSiteLanguage(code);
+    setSelectedCode(code);
+    setMenuOpen(false);
+    setPhase('exit');
+
+    setTimeout(() => {
+      setPhase('gone');
+      markAppReady();
+      onDone?.();
+    }, EXIT_MS);
+  }
 
   if (phase === 'gone') return null;
 
+  const selectedLabel = selectedCode ? getSiteLanguageLabel(selectedCode) : null;
+
   return (
     <div
-      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Welcome to AmbedkarGPT"
       className={`fixed inset-0 z-[200] flex flex-col items-center justify-center overflow-hidden transition-opacity duration-[700ms] ease-out ${
         phase === 'exit' ? 'pointer-events-none opacity-0' : 'opacity-100'
       }`}
       style={{ background: 'radial-gradient(ellipse at 50% 30%, #0e1d4a 0%, #080e22 45%, #04080f 100%)' }}
     >
-      {/* ── Spotlight radial glow ── */}
+      {/* ΓöÇΓöÇ Spotlight radial glow ΓöÇΓöÇ */}
       <div
         className="splash-glow pointer-events-none absolute left-1/2 top-[22%] h-[500px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[90px]"
         style={{ background: 'radial-gradient(ellipse, rgba(30,90,210,0.45) 0%, rgba(10,40,130,0.25) 45%, transparent 75%)' }}
       />
 
-      {/* ── Expanding rings ── */}
+      {/* ΓöÇΓöÇ Expanding rings ΓöÇΓöÇ */}
       <div className="pointer-events-none absolute left-1/2 top-[30%] -translate-x-1/2 -translate-y-1/2">
         <span className="splash-ring splash-ring--1" />
         <span className="splash-ring splash-ring--2" />
         <span className="splash-ring splash-ring--3" />
       </div>
 
-      {/* ── Radar logo ── */}
+      {/* ΓöÇΓöÇ Radar logo ΓöÇΓöÇ */}
       <img
         src={logoSrc}
         alt=""
         className="splash-logo relative z-10 h-20 w-20 object-contain drop-shadow-[0_0_32px_rgba(63,159,255,0.7)] md:h-28 md:w-28"
       />
 
-      {/* ── Wordmark: AMBEDKARGPT ── */}
+      {/* ΓöÇΓöÇ Wordmark: AMBEDKARGPT ΓöÇΓöÇ */}
       <h1
         className="splash-wordmark relative z-10 mt-6 font-serif text-[52px] font-bold uppercase leading-none tracking-[0.08em] md:text-[80px] lg:text-[96px]"
         style={{
@@ -70,7 +108,7 @@ export default function OpeningSplash({ onDone }) {
         AmbedkarGPT
       </h1>
 
-      {/* ── Divider + tagline ── */}
+      {/* ΓöÇΓöÇ Divider + tagline ΓöÇΓöÇ */}
       <div className="splash-tagline relative z-10 mt-6 flex items-center gap-4">
         <div
           className="h-px w-16 md:w-24"
@@ -88,7 +126,7 @@ export default function OpeningSplash({ onDone }) {
         />
       </div>
 
-      {/* ── ESTD. 2026 ── */}
+      {/* ΓöÇΓöÇ ESTD. 2026 ΓöÇΓöÇ */}
       <p
         className="splash-estd relative z-10 mt-3 font-count text-[10px] uppercase tracking-[0.35em]"
         style={{ color: '#2d5080' }}
@@ -96,22 +134,59 @@ export default function OpeningSplash({ onDone }) {
         ESTD. 2026
       </p>
 
-      {/* ── Language selector ── */}
-      <div className="splash-lang relative z-10 mt-6">
-        <button
-          type="button"
-          className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 font-count text-[12px] font-medium transition hover:brightness-110"
-          style={{
-            borderColor: 'rgba(63,120,220,0.5)',
-            backgroundColor: 'rgba(15,35,90,0.6)',
-            color: '#7aabea',
-          }}
-        >
-          English
-          <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
-            <path d="M1 1l4 4 4-4" stroke="#7aabea" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
+      {/* ΓöÇΓöÇ Language selector ΓöÇΓöÇ */}
+      <div ref={langRef} className="splash-lang relative z-10 mt-6 flex flex-col items-center gap-2">
+        <div className="relative">
+          <button
+            type="button"
+            aria-haspopup="listbox"
+            aria-expanded={menuOpen}
+            aria-label="Select site language"
+            disabled={Boolean(selectedCode)}
+            onClick={() => setMenuOpen((open) => !open)}
+            className="inline-flex min-w-[168px] items-center justify-between gap-3 rounded-full border px-4 py-1.5 font-count text-[12px] font-medium transition hover:brightness-110 disabled:cursor-default disabled:opacity-90"
+            style={{
+              borderColor: 'rgba(63,120,220,0.5)',
+              backgroundColor: 'rgba(15,35,90,0.6)',
+              color: '#7aabea',
+            }}
+          >
+            <span>{selectedLabel ?? 'Select language'}</span>
+            <svg width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true">
+              <path d="M1 1l4 4 4-4" stroke="#7aabea" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+
+          {menuOpen && !selectedCode && (
+            <ul
+              role="listbox"
+              aria-label="Site language"
+              className="absolute left-0 right-0 top-[calc(100%+8px)] overflow-hidden rounded-2xl border py-1 shadow-[0_16px_40px_rgba(0,0,0,0.45)]"
+              style={{
+                borderColor: 'rgba(63,120,220,0.45)',
+                backgroundColor: 'rgba(8,18,48,0.98)',
+              }}
+            >
+              {SITE_LANGUAGES.map((lang) => (
+                <li key={lang.code} role="presentation">
+                  <button
+                    type="button"
+                    role="option"
+                    className="w-full px-4 py-2 text-left font-count text-[12px] font-medium transition hover:bg-[rgba(63,120,220,0.2)]"
+                    style={{ color: '#9ec4f5' }}
+                    onClick={() => handleSelect(lang.code)}
+                  >
+                    {lang.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <p className="font-count text-[10px] uppercase tracking-[0.28em]" style={{ color: '#3d6a9e' }}>
+          Choose a language to continue
+        </p>
       </div>
     </div>
   );

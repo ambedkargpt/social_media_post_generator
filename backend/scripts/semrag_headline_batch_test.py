@@ -10,10 +10,10 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from config import get_settings
-from semrag.build import extract_query_entities, extraction_chat_client
-from semrag.retriever import semrag_global_rank_chunks, semrag_hybrid_rank_chunks, semrag_local_rank_chunks
-from semrag.store import load_semrag_graph
+from backend.config import get_settings
+from backend.semrag.build import extract_query_entities, extraction_chat_client
+from backend.semrag.retriever import semrag_global_rank_chunks, semrag_hybrid_rank_chunks, semrag_local_rank_chunks
+from backend.semrag.store import load_semrag_graph
 
 
 DEFAULT_OUTPUT_PATH = ROOT_DIR / "data" / "semrag" / "semrag_headline_batch_test_results.json"

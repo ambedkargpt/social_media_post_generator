@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 
 from openai import OpenAI
 
-from pipeline.video_summarizer import load_summary_cache, summary_cache_key
+from backend.pipeline.video_summarizer import load_summary_cache, summary_cache_key
 
 POST_GENERATION_SYSTEM_NAME = "post_generation_system.txt"
 DEFAULT_SUMMARIES_PATH = Path(__file__).resolve().parents[1] / "data" / "video_summaries.json"

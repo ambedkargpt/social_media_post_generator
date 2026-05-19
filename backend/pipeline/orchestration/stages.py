@@ -5,9 +5,9 @@ from pathlib import Path
 
 from backend.repositories.news_repo import NewsRepository
 from backend.services.news_migration import migrate_news
-from pipeline.news_generator import update_generated_news_rolling
-from pipeline.orchestration.contracts import PipelineContext, StageResult
-from pipeline.video_summarizer import (
+from backend.pipeline.news_generator import update_generated_news_rolling
+from backend.pipeline.orchestration.contracts import PipelineContext, StageResult
+from backend.pipeline.video_summarizer import (
     deepseek_chat_client,
     get_or_create_video_summary,
     load_summary_cache,

@@ -19,9 +19,9 @@ from typing import Any, Dict, List, Optional, Tuple
 from openai import OpenAI
 from tqdm import tqdm
 
-from config import Settings
-from pipeline.transcript_parser import parse_transcripts
-from pipeline.video_summarizer import deepseek_chat_client, load_summary_cache, summary_cache_key
+from backend.config import Settings
+from backend.pipeline.transcript_parser import parse_transcripts
+from backend.pipeline.video_summarizer import deepseek_chat_client, load_summary_cache, summary_cache_key
 
 
 def _fill_template(template: str, replacements: Dict[str, str]) -> str:

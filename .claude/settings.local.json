@@ -72,7 +72,13 @@
       "Bash(findstr *)",
       "Bash(gh repo *)",
       "Bash(Get-ChildItem -Path \"D:\\\\Comdur\\\\Ambedkar Gpt\" -Recurse -Force)",
-      "Bash(Select-Object FullName)"
+      "Bash(Select-Object FullName)",
+      "Bash(Get-ChildItem \"D:\\\\Comdur\\\\Ambedkar Gpt\" -Recurse -Depth 3)",
+      "Bash(Select-Object FullName, PSIsContainer)",
+      "Bash(Format-Table -AutoSize)",
+      "Bash(git mv *)",
+      "Bash(python -c \"import backend.main\")",
+      "Bash(python -c \"import backend.main; print\\('OK'\\)\")"
     ]
   }
 }

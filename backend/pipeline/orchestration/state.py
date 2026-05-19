@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from pipeline.orchestration.contracts import StageResult, utc_now_iso
+from backend.pipeline.orchestration.contracts import StageResult, utc_now_iso
 
 
 def _fingerprint_paths(paths: list[Path]) -> str:

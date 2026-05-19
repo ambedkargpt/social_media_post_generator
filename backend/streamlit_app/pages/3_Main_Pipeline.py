@@ -12,8 +12,8 @@ from pathlib import Path
 
 import streamlit as st
 
-from config import get_settings
-from pipeline.profiles import get_user_profiles
+from backend.config import get_settings
+from backend.pipeline.profiles import get_user_profiles
 from streamlit_app.components.auth import require_login
 from streamlit_app.components.tts_playback import (
     gtts_lang_widget,

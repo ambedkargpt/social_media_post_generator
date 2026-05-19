@@ -5,8 +5,8 @@ from typing import List, Dict
 
 import pandas as pd
 
-from config import get_settings
-from pipeline.profiles import PROFILE_FIELDS, _ensure_user_profiles_parquet
+from backend.config import get_settings
+from backend.pipeline.profiles import PROFILE_FIELDS, _ensure_user_profiles_parquet
 
 
 def profiles_path() -> Path:

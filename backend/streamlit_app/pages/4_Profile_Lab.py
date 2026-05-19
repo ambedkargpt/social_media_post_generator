@@ -10,7 +10,7 @@ if str(ROOT) not in sys.path:
 import pandas as pd
 import streamlit as st
 
-from pipeline.profiles import PROFILE_FIELDS
+from backend.pipeline.profiles import PROFILE_FIELDS
 from streamlit_app.components.auth import is_admin
 from streamlit_app.components.auth import require_login
 from streamlit_app.services.profile_service import load_profiles, profiles_path, save_profiles

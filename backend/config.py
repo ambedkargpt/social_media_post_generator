@@ -3,12 +3,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from dotenv import load_dotenv
-from semrag.semrag_config import load_semrag_config
+from backend.semrag.semrag_config import load_semrag_config
 
-
-load_dotenv()
 
 _PROJECT_ROOT = Path(__file__).resolve().parent
+load_dotenv(_PROJECT_ROOT / ".env")
 
 
 @dataclass

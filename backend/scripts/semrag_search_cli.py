@@ -7,8 +7,8 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from config import get_settings
-from semrag.search_modes import run_semrag_search
+from backend.config import get_settings
+from backend.semrag.search_modes import run_semrag_search
 
 LATEST_RESULTS_PATH = ROOT_DIR / "data" / "semrag" / "temp_semrag_search_results.json"
 

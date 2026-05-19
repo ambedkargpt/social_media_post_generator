@@ -4,14 +4,14 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Iterable
 
-from pipeline.orchestration.contracts import PipelineContext, StageResult
-from pipeline.orchestration.state import (
+from backend.pipeline.orchestration.contracts import PipelineContext, StageResult
+from backend.pipeline.orchestration.state import (
     init_state,
     save_state,
     should_skip_stage,
     update_stage_state,
 )
-from pipeline.orchestration.stages import STAGE_DEPENDENCIES, STAGE_HANDLERS, stage_input_fingerprints
+from backend.pipeline.orchestration.stages import STAGE_DEPENDENCIES, STAGE_HANDLERS, stage_input_fingerprints
 
 
 def _expand_dependencies(stages: Iterable[str]) -> list[str]:

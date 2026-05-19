@@ -4,11 +4,11 @@ import json
 from pathlib import Path
 from typing import Any, Dict
 
-from config import get_settings
-from pipeline.embedder import ChunkEmbedder
-from pipeline.retriever import retrieve_relevant_chunks
-from semrag.runtime import semrag_candidates_for_query
-from pipeline.vector_store import load_vector_store
+from backend.config import get_settings
+from backend.pipeline.embedder import ChunkEmbedder
+from backend.pipeline.retriever import retrieve_relevant_chunks
+from backend.semrag.runtime import semrag_candidates_for_query
+from backend.pipeline.vector_store import load_vector_store
 
 
 BASE_DIR = Path(__file__).resolve().parents[2]

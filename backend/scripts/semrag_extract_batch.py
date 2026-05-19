@@ -12,9 +12,9 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from config import get_settings
-from semrag.build import build_semrag_graph
-from semrag.store import load_extraction_cache
+from backend.config import get_settings
+from backend.semrag.build import build_semrag_graph
+from backend.semrag.store import load_extraction_cache
 
 
 def _now_utc() -> str:

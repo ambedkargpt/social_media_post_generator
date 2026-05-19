@@ -4,7 +4,7 @@ from typing import Callable, Sequence, Tuple
 
 import streamlit as st
 
-from pipeline.gtts_util import synthesize_gtts_mp3
+from backend.pipeline.gtts_util import synthesize_gtts_mp3
 
 
 def gtts_lang_widget(default_lang: str) -> str:

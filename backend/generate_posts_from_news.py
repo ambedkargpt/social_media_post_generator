@@ -30,12 +30,12 @@ if hasattr(sys.stdout, "reconfigure"):
 from openai import OpenAI
 from tqdm import tqdm
 
-from config import get_settings
-from main import BASE_DIR, _retrieval_cfg_from_settings, ensure_rag_stack
-from pipeline.generator import generate_post
-from pipeline.profiles import get_user_profiles
-from pipeline.retriever import retrieve_relevant_chunks
-from semrag.runtime import semrag_candidates_for_query
+from backend.config import get_settings
+from backend.pipeline_cli import BASE_DIR, _retrieval_cfg_from_settings, ensure_rag_stack
+from backend.pipeline.generator import generate_post
+from backend.pipeline.profiles import get_user_profiles
+from backend.pipeline.retriever import retrieve_relevant_chunks
+from backend.semrag.runtime import semrag_candidates_for_query
 
 DEFAULT_NEWS_JSON = BASE_DIR / "outputs" / "generated_news.json"
 DEFAULT_OUTPUT = BASE_DIR / "outputs" / "generated_posts_from_news.json"

@@ -6,13 +6,13 @@ from typing import Any, Callable, Dict, List, Optional
 
 from openai import OpenAI
 
-from config import get_settings
+from backend.config import get_settings
 from generate_posts_from_news import generated_item_to_article
-from main import _retrieval_cfg_from_settings, ensure_rag_stack
-from pipeline.generator import generate_post
-from pipeline.profiles import get_user_profiles
-from pipeline.retriever import retrieve_relevant_chunks
-from semrag.runtime import semrag_candidates_for_query
+from backend.pipeline_cli import _retrieval_cfg_from_settings, ensure_rag_stack
+from backend.pipeline.generator import generate_post
+from backend.pipeline.profiles import get_user_profiles
+from backend.pipeline.retriever import retrieve_relevant_chunks
+from backend.semrag.runtime import semrag_candidates_for_query
 
 
 BASE_DIR = Path(__file__).resolve().parents[2]

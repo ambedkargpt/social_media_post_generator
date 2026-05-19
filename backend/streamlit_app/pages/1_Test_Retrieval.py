@@ -9,7 +9,7 @@ if str(ROOT) not in sys.path:
 
 import streamlit as st
 
-from config import get_settings
+from backend.config import get_settings
 from streamlit_app.components.auth import require_login
 from streamlit_app.components.tts_playback import (
     gtts_lang_widget,
