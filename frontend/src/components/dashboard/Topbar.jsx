@@ -1,5 +1,6 @@
 import { Sparkles, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import LanguageSwitcher from '../LanguageSwitcher';
 
 export default function Topbar({ user }) {
   const navigate = useNavigate();
@@ -20,8 +21,9 @@ export default function Topbar({ user }) {
         </button>
       </div>
 
-      {/* notifications + user */}
+      {/* language + notifications + user */}
       <div className="flex items-center gap-4">
+        <LanguageSwitcher />
         <button
           type="button"
           aria-label="Notifications"
