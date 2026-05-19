@@ -99,8 +99,9 @@ class PostsService:
         article = self._news_doc_to_article(news_doc)
         query_text = self._query_from_article(article)
         profile = self._profile_for_user(user_id, tone=tone)
-        retrieved_chunks = self._retrieve_chunks(query_text)
-        full_contexts = self._full_contexts_for_chunks(retrieved_chunks)
+        embedder, store, context_by_title = ensure_rag_stack(settings)
+        retrieved_chunks = self._retrieve_chunks(query_text, embedder, store)
+        full_contexts = self._full_contexts_for_chunks(retrieved_chunks, context_by_title)
 
         post_text = self._generate_with_llm(
             article=article,
@@ -173,7 +174,8 @@ class PostsService:
         if not isinstance(profile, dict) or not profile:
             profile = self._profile_for_user(current_user_id, tone=None)
 
-        full_contexts = self._full_contexts_for_chunks(chunks)
+        _, _, context_by_title = ensure_rag_stack(settings)
+        full_contexts = self._full_contexts_for_chunks(chunks, context_by_title)
         post_text = self._generate_with_llm(
             article=article,
             profile=profile,
@@ -289,8 +291,7 @@ class PostsService:
             default_profile["tone"] = tone.strip()
         return default_profile
 
-    def _retrieve_chunks(self, query_text: str) -> list[dict[str, Any]]:
-        embedder, store, _ = ensure_rag_stack(settings)
+    def _retrieve_chunks(self, query_text: str, embedder: Any, store: Any) -> list[dict[str, Any]]:
         retrieval_cfg = _retrieval_cfg_from_settings(settings)
         retrieval_cfg["semrag_enabled"] = True
         try:
@@ -311,8 +312,7 @@ class PostsService:
             retrieval_cfg=retrieval_cfg,
         )
 
-    def _full_contexts_for_chunks(self, chunks: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        _, _, context_by_title = ensure_rag_stack(settings)
+    def _full_contexts_for_chunks(self, chunks: list[dict[str, Any]], context_by_title: dict[str, Any]) -> list[dict[str, Any]]:
         contexts: list[dict[str, Any]] = []
         seen: set[str] = set()
         for chunk in chunks:
@@ -404,8 +404,7 @@ class PostsService:
 
     @staticmethod
     def _current_generation_model() -> str:
-        # Post generation is intentionally on DeepSeek Reasoner for backend parity.
-        return "deepseek-reasoner"
+        return settings.deepseek_model
 
     def _to_response(self, doc: dict) -> PostResponse:
         return PostResponse(

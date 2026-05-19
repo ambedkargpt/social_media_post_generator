@@ -57,11 +57,18 @@ def load_transcript_file() -> str:
     return DATA_PATH.read_text(encoding="utf-8")
 
 
+_RAG_CACHE: tuple | None = None
+
+
 def ensure_rag_stack(settings) -> Tuple[ChunkEmbedder, Any, Dict[str, Dict[str, Any]]]:
     """
     Load or build FAISS store + chunk JSON, return embedder and title→video_context map.
-    Also refreshes title embeddings when the embedding model changes.
+    Result is cached in-process so disk/embedding setup only runs once per server start.
     """
+    global _RAG_CACHE
+    if _RAG_CACHE is not None:
+        return _RAG_CACHE
+
     store = load_vector_store(INDEX_PATH, CHUNKS_PATH)
 
     if store is None:
@@ -111,7 +118,8 @@ def ensure_rag_stack(settings) -> Tuple[ChunkEmbedder, Any, Dict[str, Dict[str, 
         te = build_title_embeddings(video_context, embedder)
         save_title_embeddings(te, TITLE_EMB_PATH)
 
-    return embedder, store, context_by_title
+    _RAG_CACHE = (embedder, store, context_by_title)
+    return _RAG_CACHE
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
