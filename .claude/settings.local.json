@@ -81,7 +81,12 @@
       "Bash(python -c \"import backend.main; print\\('OK'\\)\")",
       "Bash(xargs -0 sed -i 's/from config import/from backend.config import/g')",
       "Bash(xargs -0 sed -i 's/from semrag\\\\./from backend.semrag./g')",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Bash(sed -i 's/\"content_length\": \"Short to moderate \\(3–4 sharp sentences\\)\"/\"content_length\": \"Long-form and comprehensive \\(4–6 paragraphs: open with the news event, build political analysis, ground in historical Ambedkarite context, cite facts from the material, close with a strong call to action\\)\"/' backend/pipeline/profiles.py)",
+      "Bash(sed -i 's/\"content_length\": \"Moderate to long \\(4–6 sentences\\)\"/\"content_length\": \"Long-form analytical \\(4–5 paragraphs: factual summary, constitutional\\\\/legal analysis, historical parallel, implication, and call for institutional accountability\\)\"/g' backend/pipeline/profiles.py)",
+      "Bash(sed -i 's/\"content_length\": \"Short \\(2–3 crisp paragraphs\\)\"/\"content_length\": \"Long-form and energetic \\(3–5 paragraphs: hook the reader with the news, connect to campus\\\\/movement context, include stats, motivate with Ambedkarite reference, close with a concrete action ask\\)\"/' backend/pipeline/profiles.py)",
+      "Bash(sed -i 's/\"content_length\": \"Moderate \\(4–5 sentences\\)\"/\"content_length\": \"Long-form reflective \\(4–5 paragraphs: open with philosophical framing, connect news to caste ethics, bring in Ambedkar or Dhamma reference, draw a structural conclusion, close with dignified call to action\\)\"/' backend/pipeline/profiles.py)",
+      "Bash(sed -i 's/\"content_length\": \"Moderate \\(3–5 sentences\\)\"/\"content_length\": \"Long-form and rights-focused \\(4–5 paragraphs: state the violation, provide factual context, reference the law or precedent, humanise the impact, demand specific accountability\\)\"/g' backend/pipeline/profiles.py)"
     ]
   }
 }

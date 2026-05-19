@@ -120,14 +120,24 @@ export default function SocialMediaPostGenerator() {
   const [prefQuestions,   setPrefQuestions]   = useState([]);
   const [preferences,     setPreferences]     = useState({});
   const [savedPrefs,      setSavedPrefs]      = useState({});
+  const [postLang,        setPostLang]        = useState(getSiteLanguage() ?? 'en');
   const filterRef = useRef(null);
 
-  // Fetch news, questions, and user's saved answers on mount
+  // Fetch news filtered by the current post language
   useEffect(() => {
-    getNews({ limit: 100 })
-      .then((data) => { if (data?.length) setArticles(data.map(adaptNews)); })
+    getNews({ limit: 100, language: postLang })
+      .then((data) => {
+        if (data?.length) {
+          setArticles(data.map(adaptNews));
+        } else {
+          // No news for this language — fall back to unfiltered
+          getNews({ limit: 100 }).then((all) => {
+            if (all?.length) setArticles(all.map(adaptNews));
+          }).catch(() => {});
+        }
+      })
       .catch(() => {});
-  }, []);
+  }, [postLang]);
 
   useEffect(() => {
     if (!currentUser?.id) return;
@@ -212,7 +222,7 @@ export default function SocialMediaPostGenerator() {
         userId: currentUser.id,
         newsId: selectedArticle._backendId,
         tone,
-        language: getSiteLanguage() ?? 'en',
+        language: postLang,
       });
       setGeneratedPost(response?.post?.content || '');
       setSelectedPostId(response?.post?.id || null);
@@ -229,7 +239,7 @@ export default function SocialMediaPostGenerator() {
     setGenerating(true);
     try {
       const response = await regeneratePostFromSnapshot(selectedPostId, {
-        language: getSiteLanguage() ?? 'en',
+        language: postLang,
       });
       setGeneratedPost(response?.post?.content || '');
       setSelectedPostId(response?.post?.id || selectedPostId);
@@ -292,6 +302,27 @@ export default function SocialMediaPostGenerator() {
         </div>
 
         <div className="mx-5 border-t border-[#141d3a]/70" />
+
+        {/* Language toggle */}
+        <div className="px-5 pt-5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-[#6aa8ff]">Post Language</p>
+          <div className="mt-2 flex rounded-lg border border-[#1e3260]/70 bg-[#0a1130]/80 p-0.5">
+            {[{ code: 'en', label: 'English' }, { code: 'hi', label: 'हिंदी' }].map(({ code, label }) => (
+              <button
+                key={code}
+                type="button"
+                onClick={() => { setPostLang(code); setView('feed'); setSelectedArticle(null); }}
+                className={`flex-1 rounded-md py-1.5 text-[12px] font-medium transition-all duration-200 ${
+                  postLang === code
+                    ? 'bg-gradient-to-r from-[#0a7dff] to-[#3a9fff] text-white shadow-sm'
+                    : 'text-[#6b78a0] hover:text-white'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* Tone selector */}
         <div className="px-5 pt-5">
@@ -489,6 +520,19 @@ export default function SocialMediaPostGenerator() {
                 <h2 className="font-display text-[18px] font-semibold text-white">Generated Post</h2>
               </div>
               <div className="flex items-center gap-2">
+                {/* Language pill — click to toggle and regenerate */}
+                <button
+                  type="button"
+                  disabled={generating}
+                  onClick={() => {
+                    const next = postLang === 'en' ? 'hi' : 'en';
+                    setPostLang(next);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg border border-[#1e3260]/70 bg-[#0d1531]/60 px-2.5 py-2 text-[11px] font-semibold text-[#6aa8ff] transition hover:border-[#3f9fff]/60 hover:text-white disabled:opacity-40"
+                  title="Switch post language"
+                >
+                  {postLang === 'en' ? 'EN' : 'हि'}
+                </button>
                 <button
                   type="button"
                   onClick={handleRegenerate}

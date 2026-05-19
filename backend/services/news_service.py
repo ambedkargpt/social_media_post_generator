@@ -25,8 +25,8 @@ class NewsService:
         doc = self.repo.create(data)
         return self._to_response(doc)
 
-    def list(self, limit: int = 100, skip: int = 0, include_summary: bool = True) -> list[NewsResponse]:
-        return [self._to_response(doc, include_summary=include_summary) for doc in self.repo.list(limit=limit, skip=skip)]
+    def list(self, limit: int = 100, skip: int = 0, include_summary: bool = True, language: str | None = None) -> list[NewsResponse]:
+        return [self._to_response(doc, include_summary=include_summary) for doc in self.repo.list(limit=limit, skip=skip, language=language)]
 
     def get(self, news_id: str) -> NewsResponse:
         doc = self.repo.get_by_id(news_id)

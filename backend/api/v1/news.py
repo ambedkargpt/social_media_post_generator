@@ -19,8 +19,9 @@ def list_news(
     limit: int = Query(default=100, ge=1, le=500),
     skip: int = Query(default=0, ge=0),
     include_summary: bool = Query(default=True),
+    language: str | None = Query(default=None),
 ) -> list[NewsResponse]:
-    return service.list(limit=limit, skip=skip, include_summary=include_summary)
+    return service.list(limit=limit, skip=skip, include_summary=include_summary, language=language)
 
 
 @router.get("/by-news-id/{news_id}", response_model=NewsResponse)

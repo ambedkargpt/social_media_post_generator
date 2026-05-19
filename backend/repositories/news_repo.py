@@ -33,8 +33,15 @@ class NewsRepository:
         doc["_id"] = result.inserted_id
         return doc
 
-    def list(self, limit: int = 100, skip: int = 0) -> list[dict]:
-        return list(self.collection.find().sort("created_at", -1).skip(skip).limit(limit))
+    def list(self, limit: int = 100, skip: int = 0, language: str | None = None) -> list[dict]:
+        query: dict = {}
+        if language:
+            if language == "en":
+                # English: include articles tagged "en" OR with no language tag
+                query = {"$or": [{"language": "en"}, {"language": None}, {"language": {"$exists": False}}]}
+            else:
+                query = {"language": language}
+        return list(self.collection.find(query).sort("created_at", -1).skip(skip).limit(limit))
 
     def get_by_id(self, news_id: str) -> Optional[dict]:
         return self.collection.find_one({"_id": ObjectId(news_id)})
