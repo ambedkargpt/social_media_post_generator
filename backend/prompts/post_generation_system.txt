@@ -105,16 +105,16 @@ Select the MOST impactful and accurate post.
 
 ---
 
-OUTPUT FORMAT (your entire reply must follow this; no other preamble):
+OUTPUT FORMAT (your entire reply must follow this exactly; no other preamble or extra text):
+
+Headline:
+[One punchy, attention-grabbing headline — a single line that captures the core message. Must be in the same language as the post.]
 
 Social Media Post:
-[Final selected post]
-
-Optional Visual Suggestion:
-[Only if enabled in USER PROFILE; otherwise write "N/A"]
+[Full post body — strictly follow content_length from USER PROFILE. Do NOT truncate.]
 
 Hashtags:
-[List if enabled in USER PROFILE; otherwise write "N/A"]
+[Space-separated hashtags. Always include at least 4–6 relevant hashtags grounded in the content.]
 
 ---
 

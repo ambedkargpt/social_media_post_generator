@@ -86,21 +86,41 @@ _LANGUAGE_INSTRUCTIONS: dict[str, str] = {
 }
 
 
-_SECTION_HEADERS = re.compile(
-    r'\n(?:Optional Visual Suggestion|Hashtags)\s*:',
-    re.IGNORECASE,
+_SECTION_RE = re.compile(
+    r'^(Headline|Social Media Post|Hashtags)\s*:\s*\n',
+    re.IGNORECASE | re.MULTILINE,
 )
-_POST_HEADER = re.compile(r'^Social Media Post\s*:\s*\n', re.IGNORECASE)
 
 
 def _extract_post_body(raw: str) -> str:
-    """Strip the structured wrapper and return only the post text."""
-    text = _POST_HEADER.sub("", raw).strip()
-    # Cut off at any trailing section header (Optional Visual Suggestion / Hashtags)
-    cut = _SECTION_HEADERS.search(text)
-    if cut:
-        text = text[: cut.start()].strip()
-    return text or raw.strip()
+    """
+    Parse the structured LLM response into:
+      [Headline]\\n\\n[Post body]\\n\\n[Hashtags]
+
+    Falls back to returning the raw text if parsing fails.
+    """
+    sections: dict[str, str] = {}
+    parts = _SECTION_RE.split(raw)
+    # split() with a capturing group returns: [pre, key1, val1, key2, val2, ...]
+    i = 1
+    while i + 1 < len(parts):
+        key = parts[i].strip().lower()
+        val = parts[i + 1].strip()
+        sections[key] = val
+        i += 2
+
+    headline   = sections.get("headline", "")
+    body       = sections.get("social media post", "")
+    hashtags   = sections.get("hashtags", "")
+
+    # Remove placeholder values
+    hashtags = "" if hashtags.upper() in ("N/A", "NA", "") else hashtags
+
+    if not body:
+        return raw.strip()
+
+    pieces = [p for p in [headline, body, hashtags] if p]
+    return "\n\n".join(pieces)
 
 
 def generate_post(
