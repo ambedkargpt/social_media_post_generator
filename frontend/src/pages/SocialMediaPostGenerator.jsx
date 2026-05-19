@@ -9,9 +9,9 @@ import PreferencesPanel from '../components/generate/PreferencesPanel';
 import logoSrc from '../assets/images/logo-animation.png';
 import { useAuth } from '../context/AuthContext';
 import { getNews } from '../api/news';
-import { generatePostForNews, regeneratePostFromSnapshot, translatePost } from '../api/posts';
+import { generatePostForNews, regeneratePostFromSnapshot, translatePost, updatePost } from '../api/posts';
 import { getQuestions } from '../api/questions';
-import { getProfileAnswers } from '../api/profile';
+import { getProfileAnswers, saveProfileAnswers } from '../api/profile';
 import { getSiteLanguage, SITE_LANGUAGES } from '../utils/siteLanguage';
 
 const TONES = ['Professional', 'Inspirational', 'Creative', 'Casual', 'Motivational'];
@@ -124,6 +124,8 @@ export default function SocialMediaPostGenerator() {
   const [translatedPost,  setTranslatedPost]  = useState('');
   const [showTranslated,  setShowTranslated]  = useState(false);
   const [translating,     setTranslating]     = useState(false);
+  const [postStatus,      setPostStatus]      = useState('draft');
+  const [publishing,      setPublishing]      = useState(false);
   const filterRef = useRef(null);
 
   const siteLang = getSiteLanguage() ?? 'en';
@@ -224,6 +226,10 @@ export default function SocialMediaPostGenerator() {
       if (!selectedArticle._backendId || !currentUser?.id) {
         throw new Error('Missing news or user context for generation.');
       }
+      // Save preferences to DB so "Preferences Set" count is accurate
+      if (currentUser?.id && Object.keys(preferences).length > 0) {
+        saveProfileAnswers(currentUser.id, preferences).catch(() => {});
+      }
       const response = await generatePostForNews({
         userId: currentUser.id,
         newsId: selectedArticle._backendId,
@@ -233,7 +239,7 @@ export default function SocialMediaPostGenerator() {
       });
       setGeneratedPost(response?.post?.content || '');
       setSelectedPostId(response?.post?.id || null);
-      // Pre-load cached translation into state (instant on click) but always show Hindi first
+      setPostStatus('draft');
       setTranslatedPost(response?.post?.translations?.[siteLang] || '');
       setShowTranslated(false);
     } catch (err) {
@@ -257,6 +263,7 @@ export default function SocialMediaPostGenerator() {
       });
       setGeneratedPost(response?.post?.content || '');
       setSelectedPostId(response?.post?.id || selectedPostId);
+      setPostStatus('draft');
       setTranslatedPost(response?.post?.translations?.[siteLang] || '');
       setShowTranslated(false);
     } catch (err) {
@@ -286,6 +293,19 @@ export default function SocialMediaPostGenerator() {
       console.error('Translation failed:', err);
     } finally {
       setTranslating(false);
+    }
+  }
+
+  async function handlePublish() {
+    if (!selectedPostId || publishing || postStatus === 'published') return;
+    setPublishing(true);
+    try {
+      await updatePost(selectedPostId, { status: 'published' });
+      setPostStatus('published');
+    } catch (err) {
+      console.error('Publish failed:', err);
+    } finally {
+      setPublishing(false);
     }
   }
 
@@ -573,6 +593,22 @@ export default function SocialMediaPostGenerator() {
                   {copied ? <Check size={12} strokeWidth={2.4} /> : <Copy size={12} strokeWidth={2} />}
                   {copied ? 'Copied' : 'Copy'}
                 </button>
+                {selectedPostId && !generating && (
+                  <button
+                    type="button"
+                    onClick={handlePublish}
+                    disabled={publishing || postStatus === 'published'}
+                    className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[12px] font-medium transition disabled:cursor-default disabled:opacity-70"
+                    style={{
+                      borderColor: postStatus === 'published' ? 'rgba(34,197,94,0.5)' : 'rgba(34,197,94,0.35)',
+                      backgroundColor: postStatus === 'published' ? 'rgba(34,197,94,0.12)' : 'rgba(34,197,94,0.08)',
+                      color: postStatus === 'published' ? '#22c55e' : '#4ade80',
+                    }}
+                  >
+                    <Check size={12} strokeWidth={2.4} />
+                    {postStatus === 'published' ? 'Published' : publishing ? 'Publishing…' : 'Publish'}
+                  </button>
+                )}
               </div>
             </div>
 
