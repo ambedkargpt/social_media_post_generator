@@ -160,7 +160,7 @@ export default function SocialMediaPostGenerator() {
   const filterRef = useRef(null);
 
   const siteLang = getSiteLanguage() ?? 'en';
-  const atDailyLimit = quota?.remaining === 0;
+  const atDailyLimit = quota?.daily_remaining === 0;
   const quotaCountdown = useCountdown(atDailyLimit ? quota?.reset_at : null);
 
   // Fetch daily quota on mount
@@ -371,8 +371,15 @@ export default function SocialMediaPostGenerator() {
     try {
       await updatePost(selectedPostId, { status: 'published' });
       setPostStatus('published');
+      // Refresh quota so streak + daily count update immediately
+      getDailyQuota().then(setQuota).catch(() => {});
     } catch (err) {
       console.error('Publish failed:', err);
+      if (err?.response?.status === 429) {
+        const detail = err.response.data?.detail;
+        alert(detail?.message ?? "You've used all 5 posts for today. Come back tomorrow!");
+        getDailyQuota().then(setQuota).catch(() => {});
+      }
     } finally {
       setPublishing(false);
     }
@@ -628,16 +635,25 @@ export default function SocialMediaPostGenerator() {
             {/* Quota indicator */}
             {quota && (
               <div className="mt-4 flex items-center justify-between rounded-xl border border-[#1e3260]/50 bg-[#0a1130]/60 px-4 py-2.5">
-                <span className="text-[12px] text-[#8b94b8]">
-                  {atDailyLimit ? "Daily limit reached" : `${quota.used} of ${quota.limit} posts used today`}
-                </span>
+                <div>
+                  <span className="text-[12px] text-[#8b94b8]">
+                    {atDailyLimit
+                      ? "You've used all 5 posts for today"
+                      : `${quota.daily_used} of ${quota.daily_limit ?? 5} published today`}
+                  </span>
+                  {quota.streak_days > 0 && (
+                    <span className="ml-2 text-[11px] font-semibold text-amber-400">
+                      🔥 {quota.streak_days}-day streak
+                    </span>
+                  )}
+                </div>
                 {atDailyLimit ? (
                   <span className="font-count text-[12px] font-bold tabular-nums text-red-400">
                     Resets {quotaCountdown}
                   </span>
                 ) : (
                   <span className="font-count text-[12px] font-semibold text-[#6aa8ff]">
-                    {quota.remaining} left
+                    {quota.daily_remaining} left
                   </span>
                 )}
               </div>

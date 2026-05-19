@@ -14,6 +14,7 @@ from backend.db.mongo import db
 from backend.repositories.news_repo import NewsRepository
 from backend.repositories.posts_repo import PostsRepository
 from backend.repositories.profile_answers_repo import ProfileAnswersRepository
+from backend.repositories.streak_repo import StreakRepository
 from backend.schemas.posts import (
     DAILY_POST_LIMIT,
     MILESTONE_TARGET,
@@ -39,6 +40,7 @@ class PostsService:
         self.repo = PostsRepository()
         self.news_repo = NewsRepository()
         self.profile_answers_repo = ProfileAnswersRepository()
+        self.streak_repo = StreakRepository()
 
     def create(self, payload: PostCreateRequest) -> PostResponse:
         self._validate_references(payload.user_id, payload.news_id)
@@ -65,7 +67,7 @@ class PostsService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found.")
         return self._to_response(doc)
 
-    def update(self, post_id: str, payload: PostUpdateRequest) -> PostResponse:
+    def update(self, post_id: str, payload: PostUpdateRequest, current_user_id: str | None = None) -> PostResponse:
         self._ensure_object_id(post_id, "post_id")
         existing = self.repo.get_by_id(post_id)
         if not existing:
@@ -73,8 +75,34 @@ class PostsService:
         updates = payload.model_dump(exclude_unset=True)
         if "hashtags" in updates and updates["hashtags"] is not None:
             updates["hashtags"] = self._normalize_hashtags(updates["hashtags"])
-        if "status" in updates and updates["status"] is not None:
+        is_publishing = (
+            updates.get("status") == "published"
+            and existing.get("status") != "published"
+        )
+        if is_publishing:
+            self._validate_status_transition(existing["status"], "published")
+            # ── Daily publish rate limit (server-side) ───────────────────────
+            user_id = current_user_id or str(existing["user_id"])
+            published_today = self.repo.count_published_today(user_id)
+            if published_today >= DAILY_POST_LIMIT:
+                next_midnight = (datetime.now(timezone.utc) + timedelta(days=1)).replace(
+                    hour=0, minute=0, second=0, microsecond=0
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail={
+                        "error": "daily_limit_reached",
+                        "message": f"You've used all {DAILY_POST_LIMIT} posts for today. Come back tomorrow!",
+                        "reset_at": next_midnight.isoformat(),
+                    },
+                )
+            # Stamp published_at before updating status
+            self.repo.set_published_at(post_id)
+            # Update streak
+            self.streak_repo.on_publish(user_id)
+        elif "status" in updates and updates["status"] is not None:
             self._validate_status_transition(existing["status"], updates["status"])
+
         doc = self.repo.update(post_id, updates)
         if not doc:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found.")
@@ -98,21 +126,6 @@ class PostsService:
         profile_overrides: dict[str, str] | None = None,
     ) -> PostGenerateResponse:
         self._validate_references(user_id, news_id)
-
-        # ── Daily rate limit (server-side enforcement) ─────────────────────
-        used_today = self.repo.count_today(user_id)
-        if used_today >= DAILY_POST_LIMIT:
-            next_midnight = (datetime.now(timezone.utc) + timedelta(days=1)).replace(
-                hour=0, minute=0, second=0, microsecond=0
-            )
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail={
-                    "error": "daily_limit_reached",
-                    "message": f"You've reached your {DAILY_POST_LIMIT} posts/day limit. Come back tomorrow!",
-                    "reset_at": next_midnight.isoformat(),
-                },
-            )
 
         news_doc = self.news_repo.get_by_id(news_id)
         if not news_doc:
@@ -246,15 +259,21 @@ class PostsService:
 
     def get_daily_quota(self, *, user_id: str) -> DailyQuotaResponse:
         self._ensure_object_id(user_id, "user_id")
-        used = self.repo.count_today(user_id)
+        daily_used = self.repo.count_published_today(user_id)
         total = self.repo.count_all_time(user_id)
         now = datetime.now(timezone.utc)
         next_midnight = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+        streak = self.streak_repo.get_streak_info(user_id)
         return DailyQuotaResponse(
-            used=used,
-            remaining=max(0, DAILY_POST_LIMIT - used),
+            daily_used=daily_used,
+            daily_remaining=max(0, DAILY_POST_LIMIT - daily_used),
             reset_at=next_midnight,
             total_posts=total,
+            streak_days=streak["streak_days"],
+            streak_start_date=streak["streak_start_date"],
+            total_streak_posts=streak["total_streak_posts"],
+            streak_at_risk=streak["streak_at_risk"],
+            streak_broken=streak["streak_broken"],
         )
 
     def translate_post(self, *, post_id: str, current_user_id: str, target_language: str) -> PostTranslateResponse:
@@ -520,6 +539,7 @@ class PostsService:
             status=doc.get("status", "draft"),
             generation_meta=doc.get("generation_meta"),
             translations=doc.get("translations") or {},
+            published_at=doc.get("published_at"),
             created_at=doc["created_at"],
             updated_at=doc["updated_at"],
         )

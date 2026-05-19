@@ -68,6 +68,21 @@ class PostsRepository:
             "created_at": {"$gte": _today_midnight_utc()},
         })
 
+    def count_published_today(self, user_id: str) -> int:
+        """Count posts published by user since midnight UTC today."""
+        return self.collection.count_documents({
+            "user_id": ObjectId(user_id),
+            "status": "published",
+            "published_at": {"$gte": _today_midnight_utc()},
+        })
+
+    def set_published_at(self, post_id: str) -> None:
+        """Stamp published_at on the post (called exactly once when status → published)."""
+        self.collection.update_one(
+            {"_id": ObjectId(post_id), "published_at": {"$exists": False}},
+            {"$set": {"published_at": datetime.now(timezone.utc)}},
+        )
+
     def count_all_time(self, user_id: str) -> int:
         """Total posts ever created by user (for milestone tracking)."""
         return self.collection.count_documents({"user_id": ObjectId(user_id)})

@@ -159,7 +159,12 @@ export default function PostHistory() {
     try {
       const updated = await updatePost(id, { status: 'published' });
       setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, ...updated } : p)));
-    } catch { /* ignore */ }
+    } catch (err) {
+      if (err?.response?.status === 429) {
+        const detail = err.response?.data?.detail;
+        alert(detail?.message ?? "You've used all 5 posts for today. Come back tomorrow!");
+      }
+    }
   }
 
   async function handleArchive(id) {

@@ -31,7 +31,8 @@ class PostResponse(BaseModel):
     hashtags: list[str]
     status: PostStatus
     generation_meta: Optional[dict[str, Any]]
-    translations: dict[str, str] = {}  # { "en": "...", "hi": "..." }
+    translations: dict[str, str] = {}
+    published_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
 
@@ -81,12 +82,31 @@ MILESTONE_TARGET = 200
 
 
 class DailyQuotaResponse(BaseModel):
-    used: int
-    limit: int = DAILY_POST_LIMIT
-    remaining: int
-    reset_at: datetime        # next midnight UTC
-    total_posts: int          # all-time count (for milestone)
+    # Daily publish count (only published posts count toward the limit)
+    daily_used: int
+    daily_limit: int = DAILY_POST_LIMIT
+    daily_remaining: int
+    reset_at: datetime
+
+    # All-time generated count (kept for backward compat)
+    total_posts: int
+
+    # Streak fields
+    streak_days: int = 0
+    streak_start_date: Optional[datetime] = None
+    total_streak_posts: int = 0   # resets when streak breaks — used for milestone
+    streak_at_risk: bool = False  # active streak but no publish yet today
+    streak_broken: bool = False   # just broke streak (reset to 0 this session)
+
     milestone_target: int = MILESTONE_TARGET
+
+    # Legacy aliases so existing frontend code still works
+    @property
+    def used(self) -> int: return self.daily_used
+    @property
+    def limit(self) -> int: return self.daily_limit
+    @property
+    def remaining(self) -> int: return self.daily_remaining
 
 
 class PostTranslateRequest(BaseModel):

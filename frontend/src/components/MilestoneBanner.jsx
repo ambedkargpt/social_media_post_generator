@@ -7,7 +7,8 @@ const MILESTONE   = 200;
 /**
  * Slim full-width promotional banner.
  * Props:
- *   totalPosts  — current all-time post count (pass null/undefined when not logged in)
+ *   totalPosts  — streak-based post count (total_streak_posts from quota API)
+ *                 Pass null/undefined when not logged in
  *   className   — optional extra classes on the outer wrapper
  */
 export default function MilestoneBanner({ totalPosts, className = '' }) {

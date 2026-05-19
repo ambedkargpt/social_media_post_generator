@@ -121,7 +121,7 @@ def update_post(post_id: str, payload: PostUpdateRequest, current_user_id: str =
     existing = service.get(post_id)
     if _owner_id(existing) != current_user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot update another user's post.")
-    return service.update(post_id, payload)
+    return service.update(post_id, payload, current_user_id=current_user_id)
 
 
 @router.delete("/{post_id}", response_model=MessageResponse)
