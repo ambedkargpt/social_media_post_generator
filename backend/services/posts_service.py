@@ -90,6 +90,7 @@ class PostsService:
         news_id: str,
         tone: str | None = None,
         temperature: float | None = None,
+        language: str | None = None,
     ) -> PostGenerateResponse:
         self._validate_references(user_id, news_id)
         news_doc = self.news_repo.get_by_id(news_id)
@@ -109,6 +110,7 @@ class PostsService:
             retrieved_chunks=retrieved_chunks,
             full_contexts=full_contexts,
             temperature=temperature,
+            language=language,
         )
         model_used = self._current_generation_model()
         snapshot_id = f"rs_{uuid4().hex}"
@@ -333,6 +335,7 @@ class PostsService:
         retrieved_chunks: list[dict[str, Any]],
         full_contexts: list[dict[str, Any]],
         temperature: float | None,
+        language: str | None = None,
     ) -> str:
         try:
             if not settings.deepseek_api_key:
@@ -349,6 +352,7 @@ class PostsService:
                 retrieved_chunks=retrieved_chunks,
                 full_video_contexts=full_contexts,
                 temperature=temperature if temperature is not None else settings.openai_temperature,
+                language=language,
             )
         except OpenAIRateLimitError as exc:
             raise HTTPException(

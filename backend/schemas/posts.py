@@ -51,6 +51,7 @@ class PostGenerateRequest(BaseModel):
     news_id: str
     tone: Optional[str] = None
     temperature: Optional[float] = Field(default=None, ge=0.0, le=2.0)
+    language: Optional[str] = None  # e.g. "en", "hi"
 
 
 class PostRegenerateRequest(BaseModel):

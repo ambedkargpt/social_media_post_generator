@@ -79,6 +79,12 @@ def _video_summaries_str(
     return "\n\n".join(blocks)
 
 
+_LANGUAGE_INSTRUCTIONS: dict[str, str] = {
+    "hi": "LANGUAGE REQUIREMENT: Write the entire Social Media Post (and hashtags if included) in Hindi (Devanagari script). Do NOT write in English or Hinglish — pure Hindi only.",
+    "en": "",
+}
+
+
 def generate_post(
     client: OpenAI,
     model: str,
@@ -89,6 +95,7 @@ def generate_post(
     temperature: float = 0.7,
     prompts_dir: Optional[Path] = None,
     summaries_cache_path: Optional[Path] = None,
+    language: Optional[str] = None,
 ) -> str:
     """
     Generate a social media post for a news item, profile, and retrieved chunks.
@@ -107,6 +114,11 @@ def generate_post(
     cache_path = summaries_cache_path or DEFAULT_SUMMARIES_PATH
 
     system_msg, user_tpl = _load_post_prompts(prompts_dir)
+
+    lang_instruction = _LANGUAGE_INSTRUCTIONS.get(language or "en", "")
+    if lang_instruction:
+        system_msg = f"{system_msg}\n\n---\n\n{lang_instruction}"
+
     profile_desc = "\n".join(f"{k}: {v}" for k, v in profile.items())
 
     user_content = _fill_template(

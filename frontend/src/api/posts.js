@@ -14,12 +14,13 @@ export async function createPost({ userId, newsId, content, hashtags = [], statu
 }
 
 // POST /posts/generate — run retrieval + LLM generation on backend
-export async function generatePostForNews({ userId, newsId, tone, temperature }) {
+export async function generatePostForNews({ userId, newsId, tone, temperature, language }) {
   const payload = {
     user_id: userId,
     news_id: newsId,
     tone,
     temperature,
+    language,
   };
   const { data } = await client.post('/posts/generate', payload);
   return data;

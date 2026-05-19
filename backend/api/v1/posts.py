@@ -43,6 +43,7 @@ def generate_post(
         news_id=payload.news_id,
         tone=payload.tone,
         temperature=payload.temperature,
+        language=payload.language,
     )
 
 

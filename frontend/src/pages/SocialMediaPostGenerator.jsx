@@ -12,6 +12,7 @@ import { getNews } from '../api/news';
 import { generatePostForNews, regeneratePostFromSnapshot } from '../api/posts';
 import { getQuestions } from '../api/questions';
 import { getProfileAnswers } from '../api/profile';
+import { getSiteLanguage } from '../utils/siteLanguage';
 
 const TONES = ['Professional', 'Inspirational', 'Creative', 'Casual', 'Motivational'];
 const ALSO_GENERATE = ['Audio', 'Shorts', 'Image'];
@@ -204,6 +205,7 @@ export default function SocialMediaPostGenerator() {
         userId: currentUser.id,
         newsId: article._backendId,
         tone,
+        language: getSiteLanguage() ?? 'en',
       });
       setGeneratedPost(response?.post?.content || '');
       setSelectedPostId(response?.post?.id || null);
