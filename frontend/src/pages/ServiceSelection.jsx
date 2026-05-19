@@ -40,12 +40,12 @@ const SERVICES = [
   {
     id: 'music',
     title: 'Music Generation',
-    description: 'Generate music, voices, and sound effects with AI precision',
+    description: 'Generate lyrics, beats, and full instrumental tracks with AI',
     icon: <Music size={20} strokeWidth={1.9} />,
     iconGradient: 'bg-gradient-to-br from-[#ffb056] to-[#ff7a2d]',
     glow: 'rgba(255,176,86,0.45)',
     badge: 'new',
-    disabled: true,
+    route: '/generate/music',
   },
   {
     id: 'speech',
@@ -82,12 +82,8 @@ export default function ServiceSelection() {
 
   function handleContinue() {
     if (selected.size === 0) return;
-    // For now only the Social Media route is wired; jump directly to it if chosen.
-    if (selected.has('social')) {
-      navigate('/generate/social-media');
-      return;
-    }
-    // Fallback — keep user on the selection page until more tools come online.
+    if (selected.has('social')) { navigate('/generate/social-media'); return; }
+    if (selected.has('music'))  { navigate('/generate/music');        return; }
   }
 
   const count = selected.size;

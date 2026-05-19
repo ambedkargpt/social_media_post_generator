@@ -19,6 +19,8 @@ import ForgotPassword  from './pages/ForgotPassword';
 import Questionnaire   from './pages/Questionnaire';
 import ServiceSelection          from './pages/ServiceSelection';
 import SocialMediaPostGenerator  from './pages/SocialMediaPostGenerator';
+import MusicGeneration           from './pages/MusicGeneration';
+import MusicGenerationStudio     from './pages/MusicGenerationStudio';
 import Preferences               from './pages/Preferences';
 import PostHistory               from './pages/PostHistory';
 
@@ -70,6 +72,12 @@ export default function App() {
             } />
             <Route path="/generate/social-media" element={
               <ProtectedRoute><SocialMediaPostGenerator /></ProtectedRoute>
+            } />
+            <Route path="/generate/music" element={
+              <ProtectedRoute><MusicGeneration /></ProtectedRoute>
+            } />
+            <Route path="/generate/music/:type" element={
+              <ProtectedRoute><MusicGenerationStudio /></ProtectedRoute>
             } />
             <Route path="/preferences" element={
               <ProtectedRoute><Preferences /></ProtectedRoute>
