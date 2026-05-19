@@ -72,6 +72,15 @@ class PostGenerateResponse(BaseModel):
         return self
 
 
+class PostTranslateRequest(BaseModel):
+    target_language: str = "en"  # "en" | "hi"
+
+
+class PostTranslateResponse(BaseModel):
+    translated_content: str
+    target_language: str
+
+
 class PostsDashboardItem(BaseModel):
     id: str
     user_id: str

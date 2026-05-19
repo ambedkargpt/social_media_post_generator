@@ -33,6 +33,14 @@ export async function regeneratePostFromSnapshot(postId, { temperature, language
   return data;
 }
 
+// POST /posts/:id/translate — translate post content to another language
+export async function translatePost(postId, targetLanguage = 'en') {
+  const { data } = await client.post(`/posts/${postId}/translate`, {
+    target_language: targetLanguage,
+  });
+  return data; // { translated_content, target_language }
+}
+
 // GET /posts — list user's posts
 export async function getPosts({ newsId, status, limit = 50, skip = 0 } = {}) {
   const { data } = await client.get('/posts', {

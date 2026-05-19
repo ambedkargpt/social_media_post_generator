@@ -8,6 +8,8 @@ from backend.schemas.posts import (
     PostGenerateResponse,
     PostRegenerateRequest,
     PostResponse,
+    PostTranslateRequest,
+    PostTranslateResponse,
     PostsDashboardItem,
     PostUpdateRequest,
 )
@@ -44,6 +46,19 @@ def generate_post(
         tone=payload.tone,
         temperature=payload.temperature,
         language=payload.language,
+    )
+
+
+@router.post("/{post_id}/translate", response_model=PostTranslateResponse)
+def translate_post(
+    post_id: str,
+    payload: PostTranslateRequest,
+    current_user_id: str = Depends(get_current_user_id),
+) -> PostTranslateResponse:
+    return service.translate_post(
+        post_id=post_id,
+        current_user_id=current_user_id,
+        target_language=payload.target_language,
     )
 
 

@@ -19,6 +19,7 @@ from backend.schemas.posts import (
     PostGenerateResponse,
     PostRegenerateRequest,
     PostResponse,
+    PostTranslateResponse,
     PostsDashboardItem,
     PostUpdateRequest,
     RetrievedChunkReference,
@@ -215,6 +216,40 @@ class PostsService:
             retrieval_snapshot_id=snapshot_id,
             retrieval_reused=True,
         )
+
+    def translate_post(self, *, post_id: str, current_user_id: str, target_language: str) -> PostTranslateResponse:
+        self._ensure_object_id(post_id, "post_id")
+        doc = self.repo.get_by_id(post_id)
+        if not doc:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found.")
+        if str(doc["user_id"]) != current_user_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot translate another user's post.")
+
+        content = doc.get("content", "")
+        lang_name = "English" if target_language == "en" else "Hindi (Devanagari script)"
+
+        if not settings.deepseek_api_key:
+            raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Translation service not configured.")
+
+        client = OpenAI(api_key=settings.deepseek_api_key, base_url=settings.deepseek_base_url)
+        response = client.chat.completions.create(
+            model=settings.deepseek_model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        f"You are a precise translator. Translate the following social media post to {lang_name}. "
+                        "Preserve the structure exactly: headline on the first line, then the body paragraphs, "
+                        "then hashtags at the end. Translate hashtag labels too where appropriate. "
+                        "Output ONLY the translated post — no explanations, no preamble."
+                    ),
+                },
+                {"role": "user", "content": content},
+            ],
+            temperature=0.3,
+        )
+        translated = (response.choices[0].message.content or "").strip()
+        return PostTranslateResponse(translated_content=translated, target_language=target_language)
 
     def dashboard(self, user_id: str | None = None, limit: int = 50) -> list[PostsDashboardItem]:
         if user_id:

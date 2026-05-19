@@ -9,10 +9,10 @@ import PreferencesPanel from '../components/generate/PreferencesPanel';
 import logoSrc from '../assets/images/logo-animation.png';
 import { useAuth } from '../context/AuthContext';
 import { getNews } from '../api/news';
-import { generatePostForNews, regeneratePostFromSnapshot } from '../api/posts';
+import { generatePostForNews, regeneratePostFromSnapshot, translatePost } from '../api/posts';
 import { getQuestions } from '../api/questions';
 import { getProfileAnswers } from '../api/profile';
-import { getSiteLanguage } from '../utils/siteLanguage';
+import { getSiteLanguage, SITE_LANGUAGES } from '../utils/siteLanguage';
 
 const TONES = ['Professional', 'Inspirational', 'Creative', 'Casual', 'Motivational'];
 const ALSO_GENERATE = ['Audio', 'Shorts', 'Image'];
@@ -120,24 +120,27 @@ export default function SocialMediaPostGenerator() {
   const [prefQuestions,   setPrefQuestions]   = useState([]);
   const [preferences,     setPreferences]     = useState({});
   const [savedPrefs,      setSavedPrefs]      = useState({});
-  const [postLang,        setPostLang]        = useState(getSiteLanguage() ?? 'en');
+  const [translatedPost,  setTranslatedPost]  = useState('');
+  const [showTranslated,  setShowTranslated]  = useState(false);
+  const [translating,     setTranslating]     = useState(false);
   const filterRef = useRef(null);
 
-  // Fetch news filtered by the current post language
+  const siteLang = getSiteLanguage() ?? 'en';
+
+  // Fetch news filtered by site language; fall back to all if empty
   useEffect(() => {
-    getNews({ limit: 100, language: postLang })
+    getNews({ limit: 100, language: siteLang })
       .then((data) => {
         if (data?.length) {
           setArticles(data.map(adaptNews));
         } else {
-          // No news for this language — fall back to unfiltered
           getNews({ limit: 100 }).then((all) => {
             if (all?.length) setArticles(all.map(adaptNews));
           }).catch(() => {});
         }
       })
       .catch(() => {});
-  }, [postLang]);
+  }, []);
 
   useEffect(() => {
     if (!currentUser?.id) return;
@@ -218,11 +221,13 @@ export default function SocialMediaPostGenerator() {
       if (!selectedArticle._backendId || !currentUser?.id) {
         throw new Error('Missing news or user context for generation.');
       }
+      setTranslatedPost('');
+      setShowTranslated(false);
       const response = await generatePostForNews({
         userId: currentUser.id,
         newsId: selectedArticle._backendId,
         tone,
-        language: postLang,
+        language: siteLang,
       });
       setGeneratedPost(response?.post?.content || '');
       setSelectedPostId(response?.post?.id || null);
@@ -238,8 +243,10 @@ export default function SocialMediaPostGenerator() {
     if (!selectedArticle || !selectedPostId) return;
     setGenerating(true);
     try {
+      setTranslatedPost('');
+      setShowTranslated(false);
       const response = await regeneratePostFromSnapshot(selectedPostId, {
-        language: postLang,
+        language: siteLang,
       });
       setGeneratedPost(response?.post?.content || '');
       setSelectedPostId(response?.post?.id || selectedPostId);
@@ -248,6 +255,21 @@ export default function SocialMediaPostGenerator() {
       setGeneratedPost('Could not regenerate post right now. Please try again.');
     } finally {
       setGenerating(false);
+    }
+  }
+
+  async function handleTranslate() {
+    if (!selectedPostId || translating) return;
+    setTranslating(true);
+    try {
+      const targetLang = siteLang === 'hi' ? 'en' : 'hi';
+      const result = await translatePost(selectedPostId, targetLang);
+      setTranslatedPost(result.translated_content);
+      setShowTranslated(true);
+    } catch (err) {
+      console.error('Translation failed:', err);
+    } finally {
+      setTranslating(false);
     }
   }
 
@@ -302,27 +324,6 @@ export default function SocialMediaPostGenerator() {
         </div>
 
         <div className="mx-5 border-t border-[#141d3a]/70" />
-
-        {/* Language toggle */}
-        <div className="px-5 pt-5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-[#6aa8ff]">Post Language</p>
-          <div className="mt-2 flex rounded-lg border border-[#1e3260]/70 bg-[#0a1130]/80 p-0.5">
-            {[{ code: 'en', label: 'English' }, { code: 'hi', label: 'हिंदी' }].map(({ code, label }) => (
-              <button
-                key={code}
-                type="button"
-                onClick={() => { setPostLang(code); setView('feed'); setSelectedArticle(null); }}
-                className={`flex-1 rounded-md py-1.5 text-[12px] font-medium transition-all duration-200 ${
-                  postLang === code
-                    ? 'bg-gradient-to-r from-[#0a7dff] to-[#3a9fff] text-white shadow-sm'
-                    : 'text-[#6b78a0] hover:text-white'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
 
         {/* Tone selector */}
         <div className="px-5 pt-5">
@@ -520,19 +521,24 @@ export default function SocialMediaPostGenerator() {
                 <h2 className="font-display text-[18px] font-semibold text-white">Generated Post</h2>
               </div>
               <div className="flex items-center gap-2">
-                {/* Language pill — click to toggle and regenerate */}
-                <button
-                  type="button"
-                  disabled={generating}
-                  onClick={() => {
-                    const next = postLang === 'en' ? 'hi' : 'en';
-                    setPostLang(next);
-                  }}
-                  className="inline-flex items-center gap-1 rounded-lg border border-[#1e3260]/70 bg-[#0d1531]/60 px-2.5 py-2 text-[11px] font-semibold text-[#6aa8ff] transition hover:border-[#3f9fff]/60 hover:text-white disabled:opacity-40"
-                  title="Switch post language"
-                >
-                  {postLang === 'en' ? 'EN' : 'हि'}
-                </button>
+                {/* Translate button */}
+                {selectedPostId && !generating && (
+                  <button
+                    type="button"
+                    onClick={showTranslated ? () => setShowTranslated(false) : handleTranslate}
+                    disabled={translating}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#1e3a6e]/80 bg-[#0d1840]/80 px-3 py-2 text-[12px] font-medium text-[#6aa8ff] transition hover:border-[#3f9fff]/60 hover:text-white disabled:opacity-40"
+                  >
+                    {translating ? (
+                      <RefreshCw size={12} strokeWidth={2} className="animate-spin" />
+                    ) : (
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M5 8l6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6" />
+                      </svg>
+                    )}
+                    {showTranslated ? 'Original' : translating ? 'Translating…' : `Translate to ${siteLang === 'hi' ? 'English' : 'हिंदी'}`}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={handleRegenerate}
@@ -553,11 +559,24 @@ export default function SocialMediaPostGenerator() {
               </div>
             </div>
 
+            {showTranslated && translatedPost && (
+              <div className="mb-2 flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#1e3a6e]/60 bg-[#0d1840]/60 px-3 py-1 font-count text-[10.5px] uppercase tracking-widest text-[#6aa8ff]">
+                  Translated · {siteLang === 'hi' ? 'English' : 'हिंदी'}
+                </span>
+              </div>
+            )}
             <div
               className="min-h-[260px] rounded-2xl border border-[#1e3260]/60 bg-[#0a1130]/70 p-5 text-[13.5px] leading-[1.75] text-[#c7d1eb] whitespace-pre-wrap transition-opacity duration-300"
-              style={{ opacity: generating ? 0.35 : 1 }}
+              style={{ opacity: generating || translating ? 0.35 : 1 }}
             >
-              {generating ? 'Generating your post…' : generatedPost}
+              {generating
+                ? 'Generating your post…'
+                : translating
+                  ? 'Translating…'
+                  : showTranslated && translatedPost
+                    ? translatedPost
+                    : generatedPost}
             </div>
 
             {/* Watermark */}
