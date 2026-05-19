@@ -1,3 +1,4 @@
+import threading
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -10,7 +11,20 @@ from backend.api.v1.posts import router as posts_router
 from backend.api.v1.profile import router as profile_router
 from backend.api.v1.questions import router as questions_router
 from backend.core.http import register_http_layer
+from backend.core.config import settings
 from backend.db.indexes import ensure_auth_indexes, ensure_phase2_indexes, ensure_phase3_indexes
+
+
+def _warm_rag_cache() -> None:
+    """Load FAISS + chunks + title embeddings into memory in the background
+    so the first user request doesn't pay the ~40-50s cold-start cost."""
+    try:
+        from backend.pipeline_cli import ensure_rag_stack
+        ensure_rag_stack(settings)
+    except Exception as exc:
+        # Non-fatal — first request will warm the cache instead
+        import logging
+        logging.getLogger(__name__).warning("RAG pre-warm failed: %s", exc)
 
 
 @asynccontextmanager
@@ -18,6 +32,8 @@ async def app_lifespan(_: FastAPI):
     ensure_auth_indexes()
     ensure_phase2_indexes()
     ensure_phase3_indexes()
+    # Pre-warm the RAG stack in the background so the first generate request is fast
+    threading.Thread(target=_warm_rag_cache, daemon=True).start()
     yield
 
 

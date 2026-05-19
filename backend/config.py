@@ -173,7 +173,7 @@ def get_settings() -> Settings:
     retrieval_bm25_top_n = int(os.getenv("RETRIEVAL_BM25_TOP_N", "250"))
     retrieval_dense_top_n = int(os.getenv("RETRIEVAL_DENSE_TOP_N", "250"))
     retrieval_rrf_k = int(os.getenv("RETRIEVAL_RRF_K", "60"))
-    retrieval_enable_rerank = os.getenv("RETRIEVAL_ENABLE_RERANK", "true").lower() in {"1", "true", "yes", "on"}
+    retrieval_enable_rerank = os.getenv("RETRIEVAL_ENABLE_RERANK", "false").lower() in {"1", "true", "yes", "on"}
     retrieval_rerank_top_n = int(os.getenv("RETRIEVAL_RERANK_TOP_N", "50"))
     retrieval_rare_term_protect = os.getenv("RETRIEVAL_RARE_TERM_PROTECT", "true").lower() in {
         "1",
