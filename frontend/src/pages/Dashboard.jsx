@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { FileText, Send, SlidersHorizontal, LogOut } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
-import { getPosts } from '../api/posts';
+import { getPosts, getDailyQuota } from '../api/posts';
 import { getProfileAnswers } from '../api/profile';
+import MilestoneBanner from '../components/MilestoneBanner';
+import DailyQuotaWidget from '../components/dashboard/DailyQuotaWidget';
 
 import Sidebar              from '../components/dashboard/Sidebar';
 import Topbar               from '../components/dashboard/Topbar';
@@ -28,6 +30,8 @@ export default function Dashboard() {
   const [posts,            setPosts]           = useState([]);
   const [profileAnswers,   setProfileAnswers]  = useState([]);
   const [dataLoading,      setDataLoading]     = useState(true);
+  const [quota,            setQuota]           = useState(null);
+  const [quotaLoading,     setQuotaLoading]    = useState(true);
 
   useEffect(() => {
     if (!currentUser?.id) return;
@@ -38,6 +42,8 @@ export default function Dashboard() {
       setPosts(p ?? []);
       setProfileAnswers(a ?? []);
     }).finally(() => setDataLoading(false));
+
+    getDailyQuota().then(setQuota).catch(() => {}).finally(() => setQuotaLoading(false));
   }, [currentUser?.id]);
 
   async function handleLogout() {
@@ -71,7 +77,9 @@ export default function Dashboard() {
     >
       <Sidebar active={active} onSelect={setActive} />
 
-      <div className="relative flex-1 min-w-0 overflow-y-auto px-6 md:px-10">
+      <div className="relative flex-1 min-w-0 overflow-y-auto">
+        <MilestoneBanner totalPosts={quota?.total_posts} />
+        <div className="px-6 md:px-10">
         <div className="pointer-events-none fixed top-0 right-0 h-[420px] w-[420px] rounded-full bg-[#3f9fff]/10 blur-[130px]" />
         <div className="pointer-events-none fixed bottom-0 left-[22%] h-[360px] w-[360px] rounded-full bg-[#7b5cff]/10 blur-[130px]" />
 
@@ -144,9 +152,12 @@ export default function Dashboard() {
           <ImageGenerationCard postCount={totalPosts} />
         </div>
 
-        {/* ── Profile + Preferences ── */}
+        {/* ── Profile + Quota + Preferences ── */}
         <div className="mt-5 grid gap-5 grid-cols-1 lg:grid-cols-3">
-          <ProfileCard user={profileUser} />
+          <div className="flex flex-col gap-5">
+            <ProfileCard user={profileUser} />
+            <DailyQuotaWidget quota={quota} loading={quotaLoading} />
+          </div>
           <div className="lg:col-span-2">
             <PreferencesCard answers={profileAnswers} />
           </div>
@@ -168,6 +179,7 @@ export default function Dashboard() {
         </div>
 
         <DashboardFooter />
+        </div>{/* end px wrapper */}
       </div>
     </div>
   );

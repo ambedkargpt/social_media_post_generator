@@ -42,6 +42,12 @@ export async function translatePost(postId, targetLanguage = 'en') {
   return data; // { translated_content, target_language }
 }
 
+// GET /posts/daily-quota — used/remaining/reset_at + all-time total
+export async function getDailyQuota() {
+  const { data } = await client.get('/posts/daily-quota');
+  return data; // { used, limit, remaining, reset_at, total_posts, milestone_target }
+}
+
 // GET /posts — list user's posts
 export async function getPosts({ newsId, status, limit = 50, skip = 0 } = {}) {
   const { data } = await client.get('/posts', {

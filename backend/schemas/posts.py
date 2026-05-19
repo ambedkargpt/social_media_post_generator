@@ -76,6 +76,19 @@ class PostGenerateResponse(BaseModel):
         return self
 
 
+DAILY_POST_LIMIT = 5
+MILESTONE_TARGET = 200
+
+
+class DailyQuotaResponse(BaseModel):
+    used: int
+    limit: int = DAILY_POST_LIMIT
+    remaining: int
+    reset_at: datetime        # next midnight UTC
+    total_posts: int          # all-time count (for milestone)
+    milestone_target: int = MILESTONE_TARGET
+
+
 class PostTranslateRequest(BaseModel):
     target_language: str = "en"  # "en" | "hi"
 

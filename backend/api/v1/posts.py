@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from backend.core.dependencies import get_current_user_id
 from backend.schemas.auth import MessageResponse
 from backend.schemas.posts import (
+    DailyQuotaResponse,
     PostCreateRequest,
     PostGenerateRequest,
     PostGenerateResponse,
@@ -31,6 +32,11 @@ def create_post(payload: PostCreateRequest, current_user_id: str = Depends(get_c
     if payload.user_id != current_user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot create post for another user.")
     return service.create(payload)
+
+
+@router.get("/daily-quota", response_model=DailyQuotaResponse)
+def get_daily_quota(current_user_id: str = Depends(get_current_user_id)) -> DailyQuotaResponse:
+    return service.get_daily_quota(user_id=current_user_id)
 
 
 @router.post("/generate", response_model=PostGenerateResponse)

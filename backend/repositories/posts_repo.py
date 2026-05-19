@@ -8,6 +8,11 @@ from bson import ObjectId
 from backend.db.mongo import db
 
 
+def _today_midnight_utc() -> datetime:
+    now = datetime.now(timezone.utc)
+    return now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+
 class PostsRepository:
     def __init__(self) -> None:
         self.collection = db["posts"]
@@ -55,6 +60,17 @@ class PostsRepository:
         updates["updated_at"] = datetime.now(timezone.utc)
         self.collection.update_one({"_id": ObjectId(post_id)}, {"$set": updates})
         return self.get_by_id(post_id)
+
+    def count_today(self, user_id: str) -> int:
+        """Count posts created by user since midnight UTC today."""
+        return self.collection.count_documents({
+            "user_id": ObjectId(user_id),
+            "created_at": {"$gte": _today_midnight_utc()},
+        })
+
+    def count_all_time(self, user_id: str) -> int:
+        """Total posts ever created by user (for milestone tracking)."""
+        return self.collection.count_documents({"user_id": ObjectId(user_id)})
 
     def save_translation(self, post_id: str, language: str, content: str) -> None:
         """Store a translation under translations.{language} on the post document."""

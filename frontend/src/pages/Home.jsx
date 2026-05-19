@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 
 import MainLayout from '../layouts/MainLayout';
+import MilestoneBanner from '../components/MilestoneBanner';
 import RevealOnScroll from '../components/ui/RevealOnScroll';
 
 import HeroSection         from '../components/landing/HeroSection';
@@ -26,6 +27,7 @@ export default function Home() {
 
   return (
     <MainLayout>
+      <MilestoneBanner />
       <HeroSection />
 
       <RevealOnScroll delayMs={60}>

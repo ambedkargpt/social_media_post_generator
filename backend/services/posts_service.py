@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import uuid4
 
@@ -15,6 +15,9 @@ from backend.repositories.news_repo import NewsRepository
 from backend.repositories.posts_repo import PostsRepository
 from backend.repositories.profile_answers_repo import ProfileAnswersRepository
 from backend.schemas.posts import (
+    DAILY_POST_LIMIT,
+    MILESTONE_TARGET,
+    DailyQuotaResponse,
     PostCreateRequest,
     PostGenerateResponse,
     PostRegenerateRequest,
@@ -95,6 +98,22 @@ class PostsService:
         profile_overrides: dict[str, str] | None = None,
     ) -> PostGenerateResponse:
         self._validate_references(user_id, news_id)
+
+        # ── Daily rate limit (server-side enforcement) ─────────────────────
+        used_today = self.repo.count_today(user_id)
+        if used_today >= DAILY_POST_LIMIT:
+            next_midnight = (datetime.now(timezone.utc) + timedelta(days=1)).replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail={
+                    "error": "daily_limit_reached",
+                    "message": f"You've reached your {DAILY_POST_LIMIT} posts/day limit. Come back tomorrow!",
+                    "reset_at": next_midnight.isoformat(),
+                },
+            )
+
         news_doc = self.news_repo.get_by_id(news_id)
         if not news_doc:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="News not found.")
@@ -223,6 +242,19 @@ class PostsService:
             references=references,
             retrieval_snapshot_id=snapshot_id,
             retrieval_reused=True,
+        )
+
+    def get_daily_quota(self, *, user_id: str) -> DailyQuotaResponse:
+        self._ensure_object_id(user_id, "user_id")
+        used = self.repo.count_today(user_id)
+        total = self.repo.count_all_time(user_id)
+        now = datetime.now(timezone.utc)
+        next_midnight = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+        return DailyQuotaResponse(
+            used=used,
+            remaining=max(0, DAILY_POST_LIMIT - used),
+            reset_at=next_midnight,
+            total_posts=total,
         )
 
     def translate_post(self, *, post_id: str, current_user_id: str, target_language: str) -> PostTranslateResponse:

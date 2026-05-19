@@ -10,7 +10,7 @@ import PostContent from '../components/generate/PostContent';
 import logoSrc from '../assets/images/logo-animation.png';
 import { useAuth } from '../context/AuthContext';
 import { getNews } from '../api/news';
-import { generatePostForNews, regeneratePostFromSnapshot, translatePost, updatePost } from '../api/posts';
+import { generatePostForNews, regeneratePostFromSnapshot, translatePost, updatePost, getDailyQuota } from '../api/posts';
 import { getQuestions } from '../api/questions';
 import { getProfileAnswers, saveProfileAnswers } from '../api/profile';
 import { getSiteLanguage, SITE_LANGUAGES } from '../utils/siteLanguage';
@@ -19,6 +19,24 @@ import { parsePost, hashtagsText } from '../utils/parsePost';
 const TONES = ['Professional', 'Inspirational', 'Creative', 'Casual', 'Motivational'];
 const ALSO_GENERATE = ['Audio', 'Shorts', 'Image'];
 const CATEGORIES = ['All', 'Legacy', 'Policy', 'Education', 'Research', 'Grassroots'];
+
+function useCountdown(resetAt) {
+  const [label, setLabel] = useState('');
+  useEffect(() => {
+    if (!resetAt) return;
+    function tick() {
+      const diff = Math.max(0, Math.floor((new Date(resetAt) - Date.now()) / 1000));
+      const h = Math.floor(diff / 3600);
+      const m = Math.floor((diff % 3600) / 60);
+      const s = diff % 60;
+      setLabel(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`);
+    }
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [resetAt]);
+  return label;
+}
 
 const PLATFORMS = [
   { id: 'twitter',   label: 'Twitter / X',  short: '𝕏',   limit: 280,  color: '#1d9bf0' },
@@ -132,6 +150,7 @@ export default function SocialMediaPostGenerator() {
   const [translatedPost,  setTranslatedPost]  = useState('');
   const [showTranslated,  setShowTranslated]  = useState(false);
   const [translating,     setTranslating]     = useState(false);
+  const [quota,           setQuota]           = useState(null);
   const [postStatus,      setPostStatus]      = useState('draft');
   const [publishing,      setPublishing]      = useState(false);
   const [platform,        setPlatform]        = useState('twitter');
@@ -141,6 +160,14 @@ export default function SocialMediaPostGenerator() {
   const filterRef = useRef(null);
 
   const siteLang = getSiteLanguage() ?? 'en';
+  const atDailyLimit = quota?.remaining === 0;
+  const quotaCountdown = useCountdown(atDailyLimit ? quota?.reset_at : null);
+
+  // Fetch daily quota on mount
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    getDailyQuota().then(setQuota).catch(() => {});
+  }, [currentUser?.id]);
 
   // Fetch news filtered by site language; fall back to all if empty
   useEffect(() => {
@@ -264,7 +291,15 @@ export default function SocialMediaPostGenerator() {
       setShowTranslated(false);
     } catch (err) {
       console.error('Generate failed:', err);
-      setGeneratedPost('Could not generate post right now. Please try again.');
+      if (err?.response?.status === 429) {
+        const detail = err.response.data?.detail;
+        const msg = detail?.message ?? "You've reached your 5 posts/day limit. Come back tomorrow!";
+        setGeneratedPost(`⚠️ ${msg}`);
+        // Refresh quota so the UI reflects the limit
+        getDailyQuota().then(setQuota).catch(() => {});
+      } else {
+        setGeneratedPost('Could not generate post right now. Please try again.');
+      }
     } finally {
       clearInterval(timer);
       setGenerating(false);
@@ -590,13 +625,37 @@ export default function SocialMediaPostGenerator() {
               </div>
             </div>
 
+            {/* Quota indicator */}
+            {quota && (
+              <div className="mt-4 flex items-center justify-between rounded-xl border border-[#1e3260]/50 bg-[#0a1130]/60 px-4 py-2.5">
+                <span className="text-[12px] text-[#8b94b8]">
+                  {atDailyLimit ? "Daily limit reached" : `${quota.used} of ${quota.limit} posts used today`}
+                </span>
+                {atDailyLimit ? (
+                  <span className="font-count text-[12px] font-bold tabular-nums text-red-400">
+                    Resets {quotaCountdown}
+                  </span>
+                ) : (
+                  <span className="font-count text-[12px] font-semibold text-[#6aa8ff]">
+                    {quota.remaining} left
+                  </span>
+                )}
+              </div>
+            )}
+
             <button
               type="button"
               onClick={handleGenerate}
-              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl btn-gradient py-3.5 text-[14px] font-semibold text-white shadow-[0_6px_24px_rgba(17,122,255,0.35)] transition hover:brightness-110"
+              disabled={atDailyLimit}
+              className={`mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-[14px] font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 ${atDailyLimit ? '' : 'btn-gradient shadow-[0_6px_24px_rgba(17,122,255,0.35)]'}`}
+              style={{ background: atDailyLimit ? 'rgba(30,50,100,0.4)' : undefined }}
+              title={atDailyLimit ? `Come back in ${quotaCountdown}` : undefined}
             >
-              <Sparkles size={15} strokeWidth={2} />
-              Generate Post
+              {atDailyLimit ? (
+                <>⏳ Come back in {quotaCountdown}</>
+              ) : (
+                <><Sparkles size={15} strokeWidth={2} /> Generate Post</>
+              )}
             </button>
           </div>
         )}
