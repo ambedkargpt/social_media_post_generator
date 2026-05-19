@@ -82,7 +82,7 @@ def _video_summaries_str(
 
 _LANGUAGE_INSTRUCTIONS: dict[str, str] = {
     "hi": "LANGUAGE REQUIREMENT: Write the entire Social Media Post (and hashtags if included) in Hindi (Devanagari script). Do NOT write in English or Hinglish — pure Hindi only.",
-    "en": "",
+    "en": "LANGUAGE REQUIREMENT: Write the entire Social Media Post (headline, body, and hashtags) in English. The source material may be in Hindi — synthesise ideas from it but express everything in English. Do NOT write in Hindi, Devanagari script, or Hinglish.",
 }
 
 
