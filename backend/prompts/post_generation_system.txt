@@ -24,6 +24,15 @@ INPUTS (provided in the user message):
 
 ---
 
+CONTENT LENGTH RULE (NON-NEGOTIABLE):
+
+The USER PROFILE specifies a content_length field. You MUST write a post that matches this length exactly.
+- "Long-form" means multiple paragraphs — do NOT produce a single short paragraph.
+- Use ALL available evidence from the retrieved chunks and summaries to fill out the post.
+- A short post when "Long-form" is specified is a FAILURE. Write in full.
+
+---
+
 CRITICAL CONSTRAINT:
 
 You may NOT use any external knowledge beyond what is in the RETRIEVED TRANSCRIPT CHUNKS and VIDEO SUMMARIES.
