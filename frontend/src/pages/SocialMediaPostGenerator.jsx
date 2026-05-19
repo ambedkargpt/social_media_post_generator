@@ -228,7 +228,8 @@ export default function SocialMediaPostGenerator() {
         userId: currentUser.id,
         newsId: selectedArticle._backendId,
         tone,
-        language: 'hi', // always generate in Hindi (source material is Hindi)
+        language: 'hi',
+        profileOverrides: preferences,
       });
       setGeneratedPost(response?.post?.content || '');
       setSelectedPostId(response?.post?.id || null);
@@ -247,19 +248,22 @@ export default function SocialMediaPostGenerator() {
   async function handleRegenerate() {
     if (!selectedArticle || !selectedPostId) return;
     setGenerating(true);
+    setGenSeconds(0);
+    const timer = setInterval(() => setGenSeconds((s) => s + 1), 1000);
     try {
       const response = await regeneratePostFromSnapshot(selectedPostId, {
-        language: 'hi', // always regenerate in Hindi
+        language: 'hi',
+        profileOverrides: preferences,
       });
       setGeneratedPost(response?.post?.content || '');
       setSelectedPostId(response?.post?.id || selectedPostId);
-      // Pre-load cached translation into state (instant on click) but always show Hindi first
       setTranslatedPost(response?.post?.translations?.[siteLang] || '');
       setShowTranslated(false);
     } catch (err) {
       console.error('Regenerate failed:', err);
       setGeneratedPost('Could not regenerate post right now. Please try again.');
     } finally {
+      clearInterval(timer);
       setGenerating(false);
     }
   }

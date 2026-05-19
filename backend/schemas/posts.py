@@ -52,12 +52,14 @@ class PostGenerateRequest(BaseModel):
     news_id: str
     tone: Optional[str] = None
     temperature: Optional[float] = Field(default=None, ge=0.0, le=2.0)
-    language: Optional[str] = None  # e.g. "en", "hi"
+    language: Optional[str] = None
+    profile_overrides: Optional[dict[str, str]] = None  # preferences panel values
 
 
 class PostRegenerateRequest(BaseModel):
     temperature: Optional[float] = Field(default=None, ge=0.0, le=2.0)
     language: Optional[str] = None
+    profile_overrides: Optional[dict[str, str]] = None
 
 
 class PostGenerateResponse(BaseModel):

@@ -92,6 +92,7 @@ class PostsService:
         tone: str | None = None,
         temperature: float | None = None,
         language: str | None = None,
+        profile_overrides: dict[str, str] | None = None,
     ) -> PostGenerateResponse:
         self._validate_references(user_id, news_id)
         news_doc = self.news_repo.get_by_id(news_id)
@@ -100,7 +101,7 @@ class PostsService:
 
         article = self._news_doc_to_article(news_doc)
         query_text = self._query_from_article(article)
-        profile = self._profile_for_user(user_id, tone=tone)
+        profile = self._profile_for_user(user_id, tone=tone, profile_overrides=profile_overrides)
         embedder, store, context_by_title = ensure_rag_stack(settings)
         retrieved_chunks = self._retrieve_chunks(query_text, embedder, store)
         full_contexts = self._full_contexts_for_chunks(retrieved_chunks, context_by_title)
@@ -176,6 +177,12 @@ class PostsService:
         profile = meta.get("profile_used")
         if not isinstance(profile, dict) or not profile:
             profile = self._profile_for_user(current_user_id, tone=None)
+        # Apply any panel overrides on top of the stored profile
+        if payload.profile_overrides:
+            for qid, value in payload.profile_overrides.items():
+                field = qid.replace("profile_", "", 1) if qid.startswith("profile_") else qid
+                if field in PROFILE_FIELDS and value:
+                    profile[field] = value
 
         _, _, context_by_title = ensure_rag_stack(settings)
         full_contexts = self._full_contexts_for_chunks(chunks, context_by_title)
@@ -324,8 +331,15 @@ class PostsService:
             ]
         ).strip()
 
-    def _profile_for_user(self, user_id: str, *, tone: str | None) -> dict[str, Any]:
+    def _profile_for_user(
+        self,
+        user_id: str,
+        *,
+        tone: str | None,
+        profile_overrides: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
         default_profile = dict(get_user_profiles()[0])
+        # Apply saved DB answers
         answers = self.profile_answers_repo.list_by_user(user_id=user_id, limit=500, skip=0)
         for row in answers:
             qid = str(row.get("question_id") or "").strip()
@@ -334,6 +348,12 @@ class PostsService:
             field = qid.replace("profile_", "", 1)
             if field in PROFILE_FIELDS:
                 default_profile[field] = row.get("answer")
+        # Apply preferences-panel overrides (highest priority — user just changed them)
+        if profile_overrides:
+            for qid, value in profile_overrides.items():
+                field = qid.replace("profile_", "", 1) if qid.startswith("profile_") else qid
+                if field in PROFILE_FIELDS and value:
+                    default_profile[field] = value
         if tone and tone.strip():
             default_profile["tone"] = tone.strip()
         return default_profile

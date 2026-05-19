@@ -46,6 +46,7 @@ def generate_post(
         tone=payload.tone,
         temperature=payload.temperature,
         language=payload.language,
+        profile_overrides=payload.profile_overrides,
     )
 
 
