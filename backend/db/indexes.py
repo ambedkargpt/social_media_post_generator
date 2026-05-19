@@ -53,7 +53,13 @@ def ensure_phase2_indexes() -> None:
         partialFilterExpression={"source_url": {"$type": "string"}},
         name="uq_news_source_url",
     )
-    news.create_index([("headline", "text"), ("description", "text")], name="idx_news_text")
+    news.create_index(
+        [("headline", "text"), ("description", "text")],
+        name="idx_news_text",
+        default_language="none",
+        language_override="text_search_lang",
+        weights={"headline": 2, "description": 1},
+    )
 
     questions = db["questions"]
     questions.create_index([("question_id", ASCENDING)], unique=True, name="uq_questions_question_id")
