@@ -39,10 +39,9 @@ def _validate_profile_list(profiles: List[Dict[str, str]]) -> None:
 
 
 def _ensure_user_profiles_parquet(path: Path) -> None:
+    """Always regenerate from DEFAULT_USER_PROFILES so code is the source of truth."""
     import pandas as pd
 
-    if path.exists():
-        return
     path.parent.mkdir(parents=True, exist_ok=True)
     _validate_profile_list(DEFAULT_USER_PROFILES)
     pd.DataFrame(DEFAULT_USER_PROFILES).to_parquet(path, index=False)
