@@ -113,10 +113,12 @@ def _select_candidate_titles(
     embedder: ChunkEmbedder,
     all_titles: List[str],
     top_n: int = TITLE_TOP_N,
+    query_embedding: Optional[np.ndarray] = None,
 ) -> List[str]:
     """
     Stage 1: pick candidate videos by title relevance.
     Uses a lexical exact/contains boost + embedding cosine similarity over titles.
+    Accepts a pre-computed query_embedding to avoid a redundant API call.
     """
     if not all_titles:
         return []
@@ -124,8 +126,11 @@ def _select_candidate_titles(
     q_norm = _normalize_for_lexical(query)
     titles_norm = [_normalize_for_lexical(t) for t in all_titles]
 
-    # Embed query, compute cosine against pre-embedded titles (if available)
-    q_emb = embedder.embed_query(query).astype("float32")
+    # Reuse pre-computed embedding when available, otherwise embed now
+    if query_embedding is not None:
+        q_emb = query_embedding.astype("float32").copy()
+    else:
+        q_emb = embedder.embed_query(query).astype("float32")
     q_emb /= (float((q_emb @ q_emb) ** 0.5) + 1e-12)
 
     title_embs = None
@@ -224,12 +229,23 @@ def retrieve_relevant_chunks(
         semrag_rank_by_chunk[chunk_id] = rank
         semrag_score_by_chunk[chunk_id] = float(item[1] or 0.0)
 
-    expanded_queries = expand_queries_from_news(news_text)
+    # Pre-compute news_text embedding once — reused for title selection,
+    # dense retrieval, and reranking to avoid redundant API calls.
+    news_emb = embedder.embed_query(news_text).astype("float32")
+
+    expanded_queries = expand_queries_from_news(news_text, max_queries=3)
 
     # Raw query has highest weight, expansions are softer signals
     weighted_queries: List[Tuple[str, float]] = [(news_text, 1.0)]
     for q in expanded_queries:
         weighted_queries.append((q, 0.7))
+
+    # Batch-embed all queries in a single API call instead of one call per query
+    all_query_texts = [q for q, _ in weighted_queries]
+    if len(all_query_texts) > 1:
+        all_query_embs = embedder.embed_texts(all_query_texts).astype("float32")
+    else:
+        all_query_embs = news_emb[np.newaxis, :]
 
     results_by_chunk: Dict[str, Tuple[Dict, float]] = {}
     dense_similarity_by_idx: Dict[int, float] = {}
@@ -249,10 +265,12 @@ def retrieve_relevant_chunks(
             _BM25_CACHE.clear()
             _BM25_CACHE[cache_key] = bm25_store
 
-    # Stage 1: candidate videos by title matching/similarity
+    # Stage 1: candidate videos by title matching/similarity (reuse pre-computed embedding)
     all_titles = sorted({c.get("video_title", "") for c in store.chunks if c.get("video_title")})
     strict_title_mode = False
-    candidate_titles = _select_candidate_titles(news_text, embedder, all_titles, top_n=TITLE_TOP_N)
+    candidate_titles = _select_candidate_titles(
+        news_text, embedder, all_titles, top_n=TITLE_TOP_N, query_embedding=news_emb
+    )
     candidate_set: Set[str] = set(candidate_titles)
 
     rare_terms = (
@@ -266,11 +284,9 @@ def retrieve_relevant_chunks(
         else set()
     )
 
-    for q_text, weight in weighted_queries:
+    for (q_text, weight), query_embedding in zip(weighted_queries, all_query_embs):
         if not q_text.strip():
             continue
-
-        query_embedding = embedder.embed_query(q_text)
         # Dense retrieval candidates
         dense_hits = search(store, query_embedding, top_k=dense_top_n)
         dense_rank_by_idx = {idx: rank for rank, (idx, _) in enumerate(dense_hits, start=1)}
@@ -402,7 +418,7 @@ def retrieve_relevant_chunks(
 
     # Optional semantic rerank over top-N hybrid candidates.
     if enable_rerank and ranked:
-        q_emb = embedder.embed_query(news_text).astype("float32")
+        q_emb = news_emb.copy()
         q_emb /= (np.linalg.norm(q_emb) + 1e-12)
         rerank_slice = ranked[: min(rerank_top_n, len(ranked))]
         chunk_texts = [r.get("chunk_text", "") for r in rerank_slice]
