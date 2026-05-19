@@ -31,4 +31,9 @@ def create_refresh_token(user_id: str) -> tuple[str, datetime]:
 
 
 def decode_token(token: str) -> dict:
-    return jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
+    try:
+        return jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
+    except jwt.ExpiredSignatureError:
+        raise jwt.ExpiredSignatureError("Token has expired")
+    except jwt.InvalidTokenError as exc:
+        raise jwt.InvalidTokenError(f"Invalid token: {exc}") from exc
