@@ -233,7 +233,7 @@ def retrieve_relevant_chunks(
     # dense retrieval, and reranking to avoid redundant API calls.
     news_emb = embedder.embed_query(news_text).astype("float32")
 
-    expanded_queries = expand_queries_from_news(news_text, max_queries=3)
+    expanded_queries = expand_queries_from_news(news_text, max_queries=10)
 
     # Raw query has highest weight, expansions are softer signals
     weighted_queries: List[Tuple[str, float]] = [(news_text, 1.0)]
