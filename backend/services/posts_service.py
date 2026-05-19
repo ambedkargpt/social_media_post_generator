@@ -444,9 +444,7 @@ class PostsService:
 
     @staticmethod
     def _current_generation_model() -> str:
-        # Reasoner model produces significantly more elaborated, grounded posts.
-        # The extra latency (~30s) is intentional — quality over speed here.
-        return "deepseek-reasoner"
+        return settings.deepseek_model  # deepseek-chat by default (~3-5s)
 
     def _to_response(self, doc: dict) -> PostResponse:
         return PostResponse(

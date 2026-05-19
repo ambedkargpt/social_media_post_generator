@@ -112,6 +112,7 @@ export default function SocialMediaPostGenerator() {
   const [filterOpen,      setFilterOpen]      = useState(false);
   const [view,            setView]            = useState('feed'); // 'feed' | 'preview' | 'generated'
   const [generating,      setGenerating]      = useState(false);
+  const [genSeconds,      setGenSeconds]      = useState(0);
   const [generatedPost,   setGeneratedPost]   = useState('');
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [selectedPostId,  setSelectedPostId]  = useState(null);
@@ -216,7 +217,9 @@ export default function SocialMediaPostGenerator() {
   async function handleGenerate() {
     if (!selectedArticle) return;
     setGenerating(true);
+    setGenSeconds(0);
     setView('generated');
+    const timer = setInterval(() => setGenSeconds((s) => s + 1), 1000);
     try {
       if (!selectedArticle._backendId || !currentUser?.id) {
         throw new Error('Missing news or user context for generation.');
@@ -235,6 +238,7 @@ export default function SocialMediaPostGenerator() {
       console.error('Generate failed:', err);
       setGeneratedPost('Could not generate post right now. Please try again.');
     } finally {
+      clearInterval(timer);
       setGenerating(false);
     }
   }
@@ -566,18 +570,27 @@ export default function SocialMediaPostGenerator() {
                 </span>
               </div>
             )}
-            <div
-              className="min-h-[260px] rounded-2xl border border-[#1e3260]/60 bg-[#0a1130]/70 p-5 text-[13.5px] leading-[1.75] text-[#c7d1eb] whitespace-pre-wrap transition-opacity duration-300"
-              style={{ opacity: generating || translating ? 0.35 : 1 }}
-            >
-              {generating
-                ? 'Generating your post…'
-                : translating
-                  ? 'Translating…'
-                  : showTranslated && translatedPost
-                    ? translatedPost
-                    : generatedPost}
-            </div>
+            {(generating || translating) ? (
+              <div className="flex min-h-[260px] flex-col items-center justify-center gap-4 rounded-2xl border border-[#1e3260]/60 bg-[#0a1130]/70 p-5">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#1e3260] border-t-[#3f9fff]" />
+                <div className="text-center">
+                  <p className="text-[13px] font-medium text-[#6aa8ff]">
+                    {generating ? 'Generating your post…' : 'Translating…'}
+                  </p>
+                  {generating && (
+                    <p className="mt-1 font-count text-[11px] text-[#3a4e70]">
+                      {genSeconds}s elapsed
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div
+                className="min-h-[260px] rounded-2xl border border-[#1e3260]/60 bg-[#0a1130]/70 p-5 text-[13.5px] leading-[1.75] text-[#c7d1eb] whitespace-pre-wrap"
+              >
+                {showTranslated && translatedPost ? translatedPost : generatedPost}
+              </div>
+            )}
 
             {/* Watermark */}
             {!generating && generatedPost && (
