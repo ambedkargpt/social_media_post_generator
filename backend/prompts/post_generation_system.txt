@@ -26,10 +26,11 @@ INPUTS (provided in the user message):
 
 CONTENT LENGTH RULE (NON-NEGOTIABLE):
 
-The USER PROFILE specifies a content_length field. You MUST write a post that matches this length exactly.
-- "Long-form" means multiple paragraphs — do NOT produce a single short paragraph.
-- Use ALL available evidence from the retrieved chunks and summaries to fill out the post.
-- A short post when "Long-form" is specified is a FAILURE. Write in full.
+The USER PROFILE specifies a content_length field describing the exact structure. Follow it precisely.
+- Write exactly 2–3 focused paragraphs unless the profile explicitly states otherwise.
+- Each paragraph must be substantive — not a single sentence.
+- Do NOT pad with filler. Do NOT truncate to one paragraph.
+- Use the most impactful evidence from the retrieved chunks — quality over quantity.
 
 ---
 
