@@ -225,6 +225,11 @@ class PostsService:
         if str(doc["user_id"]) != current_user_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot translate another user's post.")
 
+        # Return cached translation if it already exists
+        cached = (doc.get("translations") or {}).get(target_language)
+        if cached:
+            return PostTranslateResponse(translated_content=cached, target_language=target_language)
+
         content = doc.get("content", "")
         lang_name = "English" if target_language == "en" else "Hindi (Devanagari script)"
 
@@ -249,6 +254,10 @@ class PostsService:
             temperature=0.3,
         )
         translated = (response.choices[0].message.content or "").strip()
+
+        # Persist for future requests
+        self.repo.save_translation(post_id, target_language, translated)
+
         return PostTranslateResponse(translated_content=translated, target_language=target_language)
 
     def dashboard(self, user_id: str | None = None, limit: int = 50) -> list[PostsDashboardItem]:
@@ -455,6 +464,7 @@ class PostsService:
             hashtags=doc.get("hashtags", []),
             status=doc.get("status", "draft"),
             generation_meta=doc.get("generation_meta"),
+            translations=doc.get("translations") or {},
             created_at=doc["created_at"],
             updated_at=doc["updated_at"],
         )

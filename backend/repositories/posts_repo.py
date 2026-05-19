@@ -56,6 +56,13 @@ class PostsRepository:
         self.collection.update_one({"_id": ObjectId(post_id)}, {"$set": updates})
         return self.get_by_id(post_id)
 
+    def save_translation(self, post_id: str, language: str, content: str) -> None:
+        """Store a translation under translations.{language} on the post document."""
+        self.collection.update_one(
+            {"_id": ObjectId(post_id)},
+            {"$set": {f"translations.{language}": content, "updated_at": datetime.now(timezone.utc)}},
+        )
+
     def archive(self, post_id: str) -> bool:
         result = self.collection.update_one(
             {"_id": ObjectId(post_id)},

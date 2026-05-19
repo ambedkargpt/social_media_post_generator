@@ -224,8 +224,6 @@ export default function SocialMediaPostGenerator() {
       if (!selectedArticle._backendId || !currentUser?.id) {
         throw new Error('Missing news or user context for generation.');
       }
-      setTranslatedPost('');
-      setShowTranslated(false);
       const response = await generatePostForNews({
         userId: currentUser.id,
         newsId: selectedArticle._backendId,
@@ -234,6 +232,10 @@ export default function SocialMediaPostGenerator() {
       });
       setGeneratedPost(response?.post?.content || '');
       setSelectedPostId(response?.post?.id || null);
+      // Pre-populate translation cache if the post already has one stored
+      const cachedTranslation = response?.post?.translations?.[siteLang];
+      setTranslatedPost(cachedTranslation || '');
+      setShowTranslated(Boolean(cachedTranslation) && siteLang !== 'hi');
     } catch (err) {
       console.error('Generate failed:', err);
       setGeneratedPost('Could not generate post right now. Please try again.');
@@ -247,13 +249,14 @@ export default function SocialMediaPostGenerator() {
     if (!selectedArticle || !selectedPostId) return;
     setGenerating(true);
     try {
-      setTranslatedPost('');
-      setShowTranslated(false);
       const response = await regeneratePostFromSnapshot(selectedPostId, {
         language: 'hi', // always regenerate in Hindi
       });
       setGeneratedPost(response?.post?.content || '');
       setSelectedPostId(response?.post?.id || selectedPostId);
+      const cachedTranslation = response?.post?.translations?.[siteLang];
+      setTranslatedPost(cachedTranslation || '');
+      setShowTranslated(Boolean(cachedTranslation) && siteLang !== 'hi');
     } catch (err) {
       console.error('Regenerate failed:', err);
       setGeneratedPost('Could not regenerate post right now. Please try again.');
@@ -264,9 +267,15 @@ export default function SocialMediaPostGenerator() {
 
   async function handleTranslate() {
     if (!selectedPostId || translating) return;
+
+    // Already translated in this session — just show it, no API call needed
+    if (translatedPost) {
+      setShowTranslated(true);
+      return;
+    }
+
     setTranslating(true);
     try {
-      // Translate to site language (post is always generated in Hindi)
       const result = await translatePost(selectedPostId, siteLang);
       setTranslatedPost(result.translated_content);
       setShowTranslated(true);

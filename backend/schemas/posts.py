@@ -31,6 +31,7 @@ class PostResponse(BaseModel):
     hashtags: list[str]
     status: PostStatus
     generation_meta: Optional[dict[str, Any]]
+    translations: dict[str, str] = {}  # { "en": "...", "hi": "..." }
     created_at: datetime
     updated_at: datetime
 
