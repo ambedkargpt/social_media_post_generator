@@ -110,7 +110,7 @@ export default function SocialMediaPostGenerator() {
   const [search,          setSearch]          = useState('');
   const [activeFilter,    setActiveFilter]    = useState('All');
   const [filterOpen,      setFilterOpen]      = useState(false);
-  const [view,            setView]            = useState('feed');
+  const [view,            setView]            = useState('feed'); // 'feed' | 'preview' | 'generated'
   const [generating,      setGenerating]      = useState(false);
   const [generatedPost,   setGeneratedPost]   = useState('');
   const [selectedArticle, setSelectedArticle] = useState(null);
@@ -193,17 +193,24 @@ export default function SocialMediaPostGenerator() {
   const chars = generatedPost.trim().length;
   const words = generatedPost.trim() ? generatedPost.trim().split(/\s+/).length : 0;
 
-  async function handleGenerate(article) {
+  function handlePreview(article) {
     setSelectedArticle(article);
+    setGeneratedPost('');
+    setSelectedPostId(null);
+    setView('preview');
+  }
+
+  async function handleGenerate() {
+    if (!selectedArticle) return;
     setGenerating(true);
     setView('generated');
     try {
-      if (!article?._backendId || !currentUser?.id) {
+      if (!selectedArticle._backendId || !currentUser?.id) {
         throw new Error('Missing news or user context for generation.');
       }
       const response = await generatePostForNews({
         userId: currentUser.id,
-        newsId: article._backendId,
+        newsId: selectedArticle._backendId,
         tone,
         language: getSiteLanguage() ?? 'en',
       });
@@ -406,24 +413,63 @@ export default function SocialMediaPostGenerator() {
         {view === 'feed' && (
           <div className="flex-1 space-y-3 overflow-y-auto px-6 pb-10 md:px-8">
             {filteredArticles.map((article) => (
-              <div
+              <button
                 key={article.id}
-                className="flex items-start gap-4 rounded-2xl border border-[#1e3260]/50 bg-[#0a1130]/60 p-5 transition hover:border-[#3f9fff]/30 hover:bg-[#0d1635]/70"
+                type="button"
+                onClick={() => handlePreview(article)}
+                className="flex w-full items-start gap-4 rounded-2xl border border-[#1e3260]/50 bg-[#0a1130]/60 p-5 text-left transition hover:border-[#3f9fff]/40 hover:bg-[#0d1635]/80"
               >
                 <div className="min-w-0 flex-1">
+                  <span className="mb-1.5 inline-block rounded-full border border-[#1e3a6e]/60 bg-[#0d1840]/60 px-2 py-0.5 font-count text-[10px] uppercase tracking-widest text-[#6aa8ff]">
+                    {article.category}
+                  </span>
                   <p className="font-display text-[14px] font-semibold leading-snug text-white">{article.title}</p>
                   <p className="mt-2 line-clamp-2 text-[12.5px] leading-[1.7] text-[#7a8ab0]">{article.content}</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleGenerate(article)}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg btn-gradient px-4 py-2 text-[12.5px] font-semibold text-white shadow-[0_6px_20px_rgba(17,122,255,0.3)] transition hover:brightness-110"
-                >
-                  <Sparkles size={12} strokeWidth={2} />
-                  Generate
-                </button>
-              </div>
+                <ChevronDown
+                  size={16}
+                  strokeWidth={2}
+                  className="-rotate-90 mt-1 shrink-0 text-[#3f6aaa]"
+                />
+              </button>
             ))}
+          </div>
+        )}
+
+        {/* ── Preview view ── */}
+        {view === 'preview' && selectedArticle && (
+          <div className="flex-1 overflow-y-auto px-6 pb-10 md:px-8">
+            <div className="mb-5 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setView('feed')}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#1e3260]/70 bg-[#0d1531]/60 px-3 py-1.5 text-[12px] font-medium text-[#8b94b8] transition hover:border-[#3f9fff]/50 hover:text-white"
+              >
+                <ArrowLeft size={12} strokeWidth={2} />
+                Back
+              </button>
+              <span className="inline-block rounded-full border border-[#1e3a6e]/60 bg-[#0d1840]/60 px-2.5 py-0.5 font-count text-[10px] uppercase tracking-widest text-[#6aa8ff]">
+                {selectedArticle.category}
+              </span>
+            </div>
+
+            <div className="rounded-2xl border border-[#1e3260]/60 bg-[#0a1130]/70 p-6">
+              <h2 className="font-display text-[20px] font-bold leading-snug text-white md:text-[22px]">
+                {selectedArticle.title}
+              </h2>
+              <p className="mt-4 text-[13.5px] leading-[1.8] text-[#9aafd4]">
+                {selectedArticle.content}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleGenerate}
+              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl btn-gradient py-3.5 text-[14px] font-semibold text-white shadow-[0_6px_24px_rgba(17,122,255,0.35)] transition hover:brightness-110"
+            >
+              <Sparkles size={15} strokeWidth={2} />
+              Generate Post
+            </button>
           </div>
         )}
 
@@ -431,7 +477,17 @@ export default function SocialMediaPostGenerator() {
         {view === 'generated' && (
           <div className="flex-1 overflow-y-auto px-6 pb-10 md:px-8">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-display text-[18px] font-semibold text-white">Generated Post</h2>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setView('preview')}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#1e3260]/70 bg-[#0d1531]/60 px-3 py-1.5 text-[12px] font-medium text-[#8b94b8] transition hover:border-[#3f9fff]/50 hover:text-white"
+                >
+                  <ArrowLeft size={12} strokeWidth={2} />
+                  Article
+                </button>
+                <h2 className="font-display text-[18px] font-semibold text-white">Generated Post</h2>
+              </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"

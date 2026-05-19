@@ -80,7 +80,8 @@
       "Bash(python -c \"import backend.main\")",
       "Bash(python -c \"import backend.main; print\\('OK'\\)\")",
       "Bash(xargs -0 sed -i 's/from config import/from backend.config import/g')",
-      "Bash(xargs -0 sed -i 's/from semrag\\\\./from backend.semrag./g')"
+      "Bash(xargs -0 sed -i 's/from semrag\\\\./from backend.semrag./g')",
+      "Bash(npx vite *)"
     ]
   }
 }
