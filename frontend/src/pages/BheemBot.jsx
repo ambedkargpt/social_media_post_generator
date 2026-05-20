@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { sendChatMessage } from '../api/chat';
+import logoSrc from '../assets/images/logo-animation.png';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -51,10 +52,14 @@ const WELCOME_MESSAGE = {
   timestamp: Date.now(),
 };
 
-const SESSION_KEY = 'bheembot_history';
-const CHAT_TIMEOUT_MS = 15_000;
+const SESSION_KEY        = 'bheembot_history';
+const SIDEBAR_WIDTH_KEY  = 'bheembot_sidebar_width';
+const CHAT_TIMEOUT_MS    = 15_000;
+const SIDEBAR_MIN        = 160;
+const SIDEBAR_MAX        = 420;
+const SIDEBAR_DEFAULT    = 220;
 
-// ── Small helpers ──────────────────────────────────────────────────────────────
+// ── Typing dots ────────────────────────────────────────────────────────────────
 
 function TypingDots() {
   return (
@@ -70,11 +75,12 @@ function TypingDots() {
   );
 }
 
+// ── Message bubble ─────────────────────────────────────────────────────────────
+
 function MessageBubble({ msg }) {
   const isUser = msg.role === 'user';
   const [expanded, setExpanded] = useState(false);
 
-  // Long message collapse logic (≈3 lines ≈ 240 chars)
   const isLong = !isUser && msg.content.length > 480;
   const displayContent = isLong && !expanded ? msg.content.slice(0, 480) + '…' : msg.content;
 
@@ -113,7 +119,6 @@ function MessageBubble({ msg }) {
           )}
         </div>
 
-        {/* Sources */}
         {!isUser && !msg.typing && msg.sources?.length > 0 && (
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {msg.sources.map((s, i) => (
@@ -146,26 +151,26 @@ function ChatSidebar({ onCategoryClick, searchQuery, setSearchQuery, onClose, mo
     : CATEGORIES;
 
   return (
-    <aside
-      className={[
-        'flex flex-col border-r border-[#141d3a]/70 bg-[#070c1e]',
-        mobile ? 'w-full h-full' : 'w-[220px] shrink-0',
-      ].join(' ')}
-    >
-      {/* Header */}
+    <aside className="flex h-full w-full flex-col overflow-hidden bg-[#070c1e]">
+      {/* Header — logo + name */}
       <div className="flex items-center justify-between px-4 pt-5 pb-4">
         <button
           type="button"
           onClick={() => navigate('/dashboard')}
-          className="flex items-center gap-2 transition-opacity hover:opacity-80"
+          className="flex min-w-0 items-center gap-2 transition-opacity hover:opacity-80"
         >
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#3f9fff] to-[#7b5cff] shadow-[0_0_14px_rgba(79,107,255,0.35)]">
-            <span className="font-display text-[11px] font-bold text-white">AI</span>
-          </div>
-          <span className="font-display text-[14px] font-semibold gradient-text-blue">AmbedkarGpt</span>
+          <img
+            src={logoSrc}
+            alt="AmbedkarGPT"
+            className="h-7 w-7 shrink-0 rounded-lg object-contain"
+            style={{ background: 'transparent' }}
+          />
+          <span className="truncate font-display text-[14px] font-semibold gradient-text-blue">
+            AmbedkarGpt
+          </span>
         </button>
         {mobile && (
-          <button type="button" onClick={onClose} className="text-[#5a7a9e] hover:text-white">
+          <button type="button" onClick={onClose} className="ml-2 shrink-0 text-[#5a7a9e] hover:text-white">
             <X size={18} strokeWidth={1.8} />
           </button>
         )}
@@ -186,7 +191,7 @@ function ChatSidebar({ onCategoryClick, searchQuery, setSearchQuery, onClose, mo
       </div>
 
       {/* Categories */}
-      <div className="px-3 pb-2">
+      <div className="flex-1 overflow-y-auto px-3 pb-2">
         <p className="mb-2 px-1 text-[9.5px] font-semibold uppercase tracking-[0.18em] text-[#4a6080]">
           Knowledge Categories
         </p>
@@ -218,7 +223,7 @@ function ChatSidebar({ onCategoryClick, searchQuery, setSearchQuery, onClose, mo
       </div>
 
       {/* Back to dashboard */}
-      <div className="mt-auto px-3 pb-3">
+      <div className="px-3 pb-3">
         <button
           type="button"
           onClick={() => navigate('/dashboard')}
@@ -237,43 +242,124 @@ function ChatSidebar({ onCategoryClick, searchQuery, setSearchQuery, onClose, mo
   );
 }
 
+// ── Resize handle ──────────────────────────────────────────────────────────────
+
+function ResizeHandle({ onMouseDown, isDragging }) {
+  return (
+    <div
+      onMouseDown={onMouseDown}
+      className="group relative z-20 hidden w-[5px] shrink-0 cursor-col-resize select-none md:flex md:items-center md:justify-center"
+      title="Drag to resize"
+      style={{ background: 'transparent' }}
+    >
+      {/* Visible line */}
+      <div
+        className="h-full w-px transition-all duration-150"
+        style={{
+          background: isDragging
+            ? 'linear-gradient(180deg, transparent 0%, rgba(63,159,255,0.7) 30%, rgba(63,159,255,0.7) 70%, transparent 100%)'
+            : 'linear-gradient(180deg, transparent 0%, rgba(30,50,96,0.7) 30%, rgba(30,50,96,0.7) 70%, transparent 100%)',
+        }}
+      />
+      {/* Hover/active highlight — wider invisible hit zone */}
+      <div
+        className="absolute inset-y-0 -left-1 -right-1 transition-opacity duration-150"
+        style={{
+          opacity: isDragging ? 1 : 0,
+          background:
+            'linear-gradient(180deg, transparent 0%, rgba(63,159,255,0.12) 30%, rgba(63,159,255,0.12) 70%, transparent 100%)',
+        }}
+      />
+      {/* Grab dots indicator at center */}
+      <div
+        className="absolute top-1/2 -translate-y-1/2 flex flex-col gap-[3px] opacity-0 transition-opacity group-hover:opacity-100"
+        style={{ opacity: isDragging ? 1 : undefined }}
+      >
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-[3px] w-[3px] rounded-full bg-[#3f9fff]/60" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page ──────────────────────────────────────────────────────────────────
 
 export default function BheemBot() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
 
+  // ── Sidebar width (resizable) ──
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    const stored = parseInt(localStorage.getItem(SIDEBAR_WIDTH_KEY), 10);
+    return stored >= SIDEBAR_MIN && stored <= SIDEBAR_MAX ? stored : SIDEBAR_DEFAULT;
+  });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartX   = useRef(0);
+  const dragStartW   = useRef(0);
+
   // ── Chat state ──
-  const [messages,   setMessages]   = useState(() => {
+  const [messages,     setMessages]     = useState(() => {
     try {
       const stored = sessionStorage.getItem(SESSION_KEY);
       if (stored) return JSON.parse(stored);
     } catch { /* ignore */ }
     return [WELCOME_MESSAGE];
   });
-  const [input,      setInput]      = useState('');
-  const [sending,    setSending]    = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [input,        setInput]        = useState('');
+  const [sending,      setSending]      = useState(false);
+  const [searchQuery,  setSearchQuery]  = useState('');
+  const [sidebarOpen,  setSidebarOpen]  = useState(false);
 
   const messagesEndRef = useRef(null);
   const inputRef       = useRef(null);
 
-  // ── Persist chat in sessionStorage ──
+  // ── Persist chat ──
   useEffect(() => {
     try {
-      // Don't store the typing indicator message
       const toStore = messages.filter((m) => !m.typing);
       sessionStorage.setItem(SESSION_KEY, JSON.stringify(toStore));
-    } catch { /* storage full — ignore */ }
+    } catch { /* storage full */ }
   }, [messages]);
+
+  // ── Persist sidebar width ──
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_WIDTH_KEY, String(sidebarWidth));
+  }, [sidebarWidth]);
 
   // ── Auto-scroll ──
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // ── Build history for API (last 6 real messages, no welcome) ──
+  // ── Drag-resize logic ──────────────────────────────────────────────────────
+  const handleResizeMouseDown = useCallback((e) => {
+    e.preventDefault();
+    dragStartX.current = e.clientX;
+    dragStartW.current = sidebarWidth;
+    setIsDragging(true);
+  }, [sidebarWidth]);
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const onMouseMove = (e) => {
+      const delta = e.clientX - dragStartX.current;
+      const next  = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, dragStartW.current + delta));
+      setSidebarWidth(next);
+    };
+
+    const onMouseUp = () => setIsDragging(false);
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup',   onMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup',   onMouseUp);
+    };
+  }, [isDragging]);
+
+  // ── Build history for API ──
   function buildHistory(msgs) {
     return msgs
       .filter((m) => m.id !== 'welcome' && !m.typing && (m.role === 'user' || m.role === 'assistant'))
@@ -286,31 +372,20 @@ export default function BheemBot() {
     const trimmed = (text || input).trim();
     if (!trimmed || sending) return;
 
-    // Clear input immediately
     setInput('');
-
-    // User bubble
     const userMsg = { id: Date.now(), role: 'user', content: trimmed, timestamp: Date.now() };
     setMessages((prev) => [...prev, userMsg]);
 
-    // Typing indicator
     const typingId = Date.now() + 1;
     setMessages((prev) => [...prev, { id: typingId, role: 'assistant', typing: true, content: '', sources: [] }]);
     setSending(true);
 
-    // Timeout guard
     let timedOut = false;
     const timer = setTimeout(() => {
       timedOut = true;
       setMessages((prev) => [
         ...prev.filter((m) => m.id !== typingId),
-        {
-          id: Date.now(),
-          role: 'assistant',
-          content: 'BheemBot is taking too long to respond. Please try again.',
-          sources: [],
-          timestamp: Date.now(),
-        },
+        { id: Date.now(), role: 'assistant', content: 'BheemBot is taking too long to respond. Please try again.', sources: [], timestamp: Date.now() },
       ]);
       setSending(false);
     }, CHAT_TIMEOUT_MS);
@@ -327,20 +402,11 @@ export default function BheemBot() {
     } catch (err) {
       if (timedOut) return;
       clearTimeout(timer);
-
-      // If 401, session expired
-      const status = err?.response?.status;
-      if (status === 401) {
-        setMessages((prev) => prev.filter((m) => m.id !== typingId));
+      const httpStatus = err?.response?.status;
+      if (httpStatus === 401) {
         setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now(),
-            role: 'assistant',
-            content: 'Your session has expired. Please log in again.',
-            sources: [],
-            timestamp: Date.now(),
-          },
+          ...prev.filter((m) => m.id !== typingId),
+          { id: Date.now(), role: 'assistant', content: 'Your session has expired. Please log in again.', sources: [], timestamp: Date.now() },
         ]);
         setTimeout(() => {
           sessionStorage.setItem('auth_redirect', '/bheembot');
@@ -350,13 +416,7 @@ export default function BheemBot() {
       } else {
         setMessages((prev) => [
           ...prev.filter((m) => m.id !== typingId),
-          {
-            id: Date.now(),
-            role: 'assistant',
-            content: 'Something went wrong. Please try again.',
-            sources: [],
-            timestamp: Date.now(),
-          },
+          { id: Date.now(), role: 'assistant', content: 'Something went wrong. Please try again.', sources: [], timestamp: Date.now() },
         ]);
       }
     } finally {
@@ -365,10 +425,7 @@ export default function BheemBot() {
   }, [input, sending, messages, navigate, logout]);
 
   function handleKeyDown(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      send();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
   }
 
   function handleCategoryClick(prompt) {
@@ -379,9 +436,14 @@ export default function BheemBot() {
   return (
     <div
       className="flex h-screen overflow-hidden text-[#e5e7eb]"
-      style={{ background: 'radial-gradient(1200px 700px at 20% 0%, #0d1636 0%, #070b1c 55%, #05081a 100%)' }}
+      style={{
+        background: 'radial-gradient(1200px 700px at 20% 0%, #0d1636 0%, #070b1c 55%, #05081a 100%)',
+        // Disable text selection while dragging to avoid highlighting content
+        userSelect: isDragging ? 'none' : undefined,
+        cursor: isDragging ? 'col-resize' : undefined,
+      }}
     >
-      {/* ── CSS for typing dots ── */}
+      {/* ── Keyframe CSS ── */}
       <style>{`
         @keyframes bheembot-dot {
           0%, 60%, 100% { transform: translateY(0); opacity: .5; }
@@ -389,14 +451,20 @@ export default function BheemBot() {
         }
       `}</style>
 
-      {/* ── Desktop sidebar ── */}
-      <div className="hidden md:flex">
+      {/* ── Desktop sidebar (resizable) ── */}
+      <div
+        className="hidden md:block shrink-0 border-r border-[#141d3a]/70"
+        style={{ width: sidebarWidth }}
+      >
         <ChatSidebar
           onCategoryClick={handleCategoryClick}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
         />
       </div>
+
+      {/* ── Resize handle ── */}
+      <ResizeHandle onMouseDown={handleResizeMouseDown} isDragging={isDragging} />
 
       {/* ── Mobile sidebar overlay ── */}
       {sidebarOpen && (
@@ -420,14 +488,13 @@ export default function BheemBot() {
       {/* ── Main chat area ── */}
       <div className="relative flex flex-1 min-w-0 flex-col">
 
-        {/* ── Ambient glows ── */}
+        {/* Ambient glows */}
         <div className="pointer-events-none fixed top-0 right-0 h-[380px] w-[380px] rounded-full bg-[#3f9fff]/8 blur-[130px]" />
         <div className="pointer-events-none fixed bottom-0 left-1/3 h-[320px] w-[320px] rounded-full bg-[#7b5cff]/8 blur-[130px]" />
 
         {/* ── Header ── */}
         <header className="relative z-10 flex shrink-0 items-center justify-between border-b border-[#141d3a]/70 bg-[#070b1c]/90 px-4 py-3.5 backdrop-blur-sm md:px-6">
           <div className="flex items-center gap-3">
-            {/* Mobile hamburger */}
             <button
               type="button"
               className="mr-1 flex h-8 w-8 items-center justify-center rounded-lg border border-[#1e3260]/60 text-[#5a7a9e] transition hover:text-white md:hidden"
@@ -474,17 +541,15 @@ export default function BheemBot() {
         {/* ── Input bar ── */}
         <div className="relative z-10 shrink-0 border-t border-[#141d3a]/70 bg-[#070b1c]/90 px-4 py-4 backdrop-blur-sm md:px-6">
           <div className="flex items-end gap-2.5 rounded-2xl border border-[#1e3260]/70 bg-[#0a1428] px-4 py-3 transition focus-within:border-[#3f6bd4] focus-within:shadow-[0_0_0_3px_rgba(63,107,212,0.15)]">
-            {/* Paperclip — disabled */}
             <button
               type="button"
               disabled
               title="Attachment (coming soon)"
-              className="mb-0.5 shrink-0 text-[#2a3a5e] transition"
+              className="mb-0.5 shrink-0 text-[#2a3a5e]"
             >
               <Paperclip size={16} strokeWidth={1.8} />
             </button>
 
-            {/* Textarea */}
             <textarea
               ref={inputRef}
               rows={1}
@@ -500,17 +565,15 @@ export default function BheemBot() {
               }}
             />
 
-            {/* Mic — disabled */}
             <button
               type="button"
               disabled
               title="Voice input (coming soon)"
-              className="mb-0.5 shrink-0 text-[#2a3a5e] transition"
+              className="mb-0.5 shrink-0 text-[#2a3a5e]"
             >
               <Mic size={16} strokeWidth={1.8} />
             </button>
 
-            {/* Send */}
             <button
               type="button"
               onClick={() => send()}
