@@ -81,6 +81,20 @@ class Settings:
     google_client_id: str
     auth_debug_return_otp: bool
     app_env: str
+    # Artifact paths (FAISS index + RAG chunks) used by health/readiness checks
+    faiss_index_path: Path
+    rag_chunks_path: Path
+    artifacts_root: Path | None
+    artifact_manifest_path: Path | None
+
+
+def effective_artifact_manifest_path(settings: "Settings") -> Path | None:
+    """Return the resolved manifest path if one is configured, else None."""
+    if settings.artifact_manifest_path:
+        return settings.artifact_manifest_path
+    if settings.artifacts_root:
+        return settings.artifacts_root / "manifest.json"
+    return None
 
 
 def get_settings() -> Settings:
@@ -325,5 +339,9 @@ def get_settings() -> Settings:
         google_client_id=google_client_id,
         auth_debug_return_otp=auth_debug_return_otp,
         app_env=app_env,
+        faiss_index_path=(_PROJECT_ROOT / "outputs" / "faiss_index.bin").resolve(),
+        rag_chunks_path=(_PROJECT_ROOT / "data" / "argument_chunks.json").resolve(),
+        artifacts_root=Path(os.environ["ARTIFACTS_ROOT"]).resolve() if os.getenv("ARTIFACTS_ROOT") else None,
+        artifact_manifest_path=Path(os.environ["ARTIFACT_MANIFEST_PATH"]).resolve() if os.getenv("ARTIFACT_MANIFEST_PATH") else None,
     )
 
