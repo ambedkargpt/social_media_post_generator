@@ -79,26 +79,33 @@ desktop.ini
 .cursor/
 agent-transcripts/
 
-# --- outputs/ ---
-outputs/transcripts/
-outputs/streamlit_runs/
-outputs/generated_posts.json
-outputs/generated_posts_from_news.json
-outputs/retrieval_output.json
-outputs/video_summary_checkpoint.json
-outputs/generated_news_legacy.json
-outputs/questions_with_ids.docx
-outputs/**/verification_report.json
-outputs/bulk_retrieval*
-outputs/embedding_checkpoint*
-outputs/video_summary_batch*
-outputs/tts/
+# --- outputs/ (root and backend/) ---
+outputs/
+**/outputs/faiss_index.bin
+**/outputs/transcripts/
+**/outputs/streamlit_runs/
+**/outputs/generated_posts.json
+**/outputs/generated_posts_from_news.json
+**/outputs/retrieval_output.json
+**/outputs/video_summary_checkpoint.json
+**/outputs/generated_news_legacy.json
+**/outputs/questions_with_ids.docx
+**/outputs/**/verification_report.json
+**/outputs/bulk_retrieval*
+**/outputs/embedding_checkpoint*
+**/outputs/video_summary_batch*
+**/outputs/tts/
 
-# --- data/ ---
-data/chunk_embedding_cache.json
-data/video_title_embeddings.json
-data/ravishkumar_all_transcripts.txt
-data/*_all_transcripts.txt
+# --- data/ (root and backend/) ---
+**/*.parquet
+**/*.bin
+**/data/argument_chunks.json
+**/data/chunk_embedding_cache.json
+**/data/video_title_embeddings.json
+**/data/video_context.json
+**/data/video_summaries.json
+**/data/ravishkumar_all_transcripts.txt
+**/data/*_all_transcripts.txt
 
 # --- SEMRAG generated artifacts ---
 data/semrag/checkpoints/
