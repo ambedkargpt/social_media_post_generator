@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import MainLayout from '../layouts/MainLayout';
 import RevealOnScroll from '../components/ui/RevealOnScroll';
 
+import LandingBackground   from '../components/landing/LandingBackground';
 import HeroSection         from '../components/landing/HeroSection';
 import KnowledgeSection    from '../components/landing/KnowledgeSection';
 import UseCasesGrid        from '../components/landing/UseCasesGrid';
@@ -26,6 +27,9 @@ export default function Home() {
 
   return (
     <MainLayout>
+      {/* Full-page animated background — absolute so it grows with page height */}
+      <LandingBackground />
+
       <HeroSection />
 
       <RevealOnScroll delayMs={60}>
