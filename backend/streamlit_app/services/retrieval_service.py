@@ -12,14 +12,12 @@ from backend.pipeline.vector_store import load_vector_store
 
 
 BASE_DIR = Path(__file__).resolve().parents[2]
-INDEX_PATH = BASE_DIR / "outputs" / "faiss_index.bin"
-CHUNKS_PATH = BASE_DIR / "data" / "argument_chunks.json"
 OUTPUT_PATH = BASE_DIR / "outputs" / "retrieval_output.json"
 
 
 def run_retrieval(query: str, top_k: int = 5, semrag_mode: str | None = None) -> Dict[str, Any]:
     settings = get_settings()
-    store = load_vector_store(INDEX_PATH, CHUNKS_PATH)
+    store = load_vector_store(settings.faiss_index_path, settings.rag_chunks_path)
     if store is None:
         raise RuntimeError("Vector store not found. Run main.py once to build embeddings/index.")
 

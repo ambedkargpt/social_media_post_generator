@@ -1,0 +1,17 @@
+[Unit]
+Description=AmbedkarGPT FastAPI (Gunicorn + Uvicorn workers)
+After=network.target
+
+[Service]
+Type=simple
+User=ambedkar
+Group=ambedkar
+WorkingDirectory=/srv/ambedkar/app
+EnvironmentFile=-/etc/ambedkar/api.env
+Environment=PYTHONPATH=/srv/ambedkar/app
+ExecStart=/srv/ambedkar/venv/bin/gunicorn -c /etc/ambedkar/gunicorn.conf.py backend.main:app
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

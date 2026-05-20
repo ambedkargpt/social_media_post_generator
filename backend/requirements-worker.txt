@@ -1,0 +1,11 @@
+# Worker droplet or timer host — includes heavy ingestion / rebuild deps.
+# pip install -r backend/requirements-worker.txt
+
+-r requirements-api.txt
+
+boto3==1.37.3
+yt-dlp==2025.2.19
+youtube-transcript-api==1.1.0
+python-docx==1.1.2
+pyspellchecker==0.8.2
+gTTS==2.5.4
