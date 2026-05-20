@@ -73,28 +73,7 @@ export default function LandingBackground() {
   return (
     <div className="lbg-grad-layer pointer-events-none absolute inset-0 z-0 overflow-hidden">
 
-      {/* ── 1. Animated gradient base ── */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            'linear-gradient(135deg,' +
-            '#030611 0%, #04091c 15%, #061430 30%, ' +
-            '#071838 45%, #050d28 60%, #030914 75%, #030611 100%)',
-          backgroundSize: '300% 300%',
-          animation: 'lbg-grad-shift 28s ease-in-out infinite',
-        }}
-      />
-
-      {/* Subtle top vignette so sections near the navbar have a natural fade-in */}
-      <div
-        className="absolute inset-x-0 top-0 h-48"
-        style={{
-          background: 'linear-gradient(to bottom, rgba(3,6,17,0.6), transparent)',
-        }}
-      />
-
-      {/* ── 2. Drifting orbs ── */}
+      {/* ── 1. Drifting orbs ── */}
       {ORBS.map((orb, i) => (
         <div
           key={i}
