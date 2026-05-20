@@ -14,30 +14,25 @@
 // ── Drifting orb definitions ───────────────────────────────────────────────────
 // left/top are percentages of the background element (= full page height)
 const ORBS = [
-  {
-    left: '-8%', top: '2%',
-    w: 680, h: 580,
-    color: 'rgba(29, 102, 222, 0.09)',
-    blur: 160, anim: 'lbg-drift-a', dur: 38,
-  },
-  {
-    left: '55%', top: '20%',
-    w: 750, h: 640,
-    color: 'rgba(45, 125, 251, 0.07)',
-    blur: 190, anim: 'lbg-drift-b', dur: 45, delay: 5,
-  },
-  {
-    left: '10%', top: '48%',
-    w: 600, h: 540,
-    color: 'rgba(30, 79, 181, 0.08)',
-    blur: 170, anim: 'lbg-drift-c', dur: 40, delay: 12,
-  },
-  {
-    left: '60%', top: '70%',
-    w: 640, h: 560,
-    color: 'rgba(41, 108, 255, 0.07)',
-    blur: 180, anim: 'lbg-drift-a', dur: 50, delay: 8,
-  },
+  // ── Top band ──────────────────────────────────────────────────
+  { left: '-8%',  top: '1%',  w: 680, h: 580, color: 'rgba(29,102,222,0.09)',  blur: 160, anim: 'lbg-drift-a', dur: 38 },
+  { left: '55%',  top: '3%',  w: 750, h: 640, color: 'rgba(45,125,251,0.07)',  blur: 190, anim: 'lbg-drift-b', dur: 45, delay: 5 },
+  { left: '30%',  top: '8%',  w: 500, h: 460, color: 'rgba(63,110,255,0.06)',  blur: 150, anim: 'lbg-drift-c', dur: 42, delay: 3 },
+  // ── Upper-mid band ────────────────────────────────────────────
+  { left: '-5%',  top: '22%', w: 620, h: 540, color: 'rgba(30,79,181,0.08)',   blur: 170, anim: 'lbg-drift-b', dur: 48, delay: 9 },
+  { left: '65%',  top: '18%', w: 700, h: 600, color: 'rgba(41,108,255,0.07)',  blur: 180, anim: 'lbg-drift-a', dur: 44, delay: 14 },
+  { left: '32%',  top: '30%', w: 560, h: 500, color: 'rgba(55,90,220,0.07)',   blur: 160, anim: 'lbg-drift-c', dur: 36, delay: 7 },
+  // ── Mid band ─────────────────────────────────────────────────
+  { left: '10%',  top: '46%', w: 600, h: 540, color: 'rgba(30,79,181,0.08)',   blur: 170, anim: 'lbg-drift-c', dur: 40, delay: 12 },
+  { left: '70%',  top: '42%', w: 640, h: 560, color: 'rgba(29,102,222,0.07)',  blur: 175, anim: 'lbg-drift-b', dur: 46, delay: 2 },
+  { left: '42%',  top: '52%', w: 520, h: 480, color: 'rgba(63,140,255,0.06)',  blur: 155, anim: 'lbg-drift-a', dur: 52, delay: 18 },
+  // ── Lower-mid band ────────────────────────────────────────────
+  { left: '-3%',  top: '64%', w: 660, h: 580, color: 'rgba(41,108,255,0.08)',  blur: 165, anim: 'lbg-drift-a', dur: 43, delay: 6 },
+  { left: '60%',  top: '68%', w: 640, h: 560, color: 'rgba(41,108,255,0.07)',  blur: 180, anim: 'lbg-drift-c', dur: 50, delay: 8 },
+  { left: '28%',  top: '74%', w: 580, h: 520, color: 'rgba(30,79,181,0.07)',   blur: 160, anim: 'lbg-drift-b', dur: 39, delay: 16 },
+  // ── Bottom band ───────────────────────────────────────────────
+  { left: '15%',  top: '86%', w: 620, h: 540, color: 'rgba(29,102,222,0.08)',  blur: 170, anim: 'lbg-drift-c', dur: 47, delay: 4 },
+  { left: '65%',  top: '88%', w: 700, h: 600, color: 'rgba(45,125,251,0.07)',  blur: 185, anim: 'lbg-drift-a', dur: 41, delay: 11 },
 ];
 
 // ── Particle definitions ───────────────────────────────────────────────────────
