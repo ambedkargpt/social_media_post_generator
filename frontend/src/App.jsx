@@ -23,6 +23,7 @@ import MusicGeneration           from './pages/MusicGeneration';
 import MusicGenerationStudio     from './pages/MusicGenerationStudio';
 import Preferences               from './pages/Preferences';
 import PostHistory               from './pages/PostHistory';
+import BheemBot                  from './pages/BheemBot';
 
 import CustomCursor        from './components/CustomCursor';
 import ScrollProgress      from './components/ScrollProgress';
@@ -84,6 +85,9 @@ export default function App() {
             } />
             <Route path="/posts" element={
               <ProtectedRoute><PostHistory /></ProtectedRoute>
+            } />
+            <Route path="/bheembot" element={
+              <ProtectedRoute><BheemBot /></ProtectedRoute>
             } />
 
             <Route path="*" element={<Navigate to="/" replace />} />

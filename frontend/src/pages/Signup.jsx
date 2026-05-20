@@ -113,7 +113,9 @@ export default function Signup() {
     setLoading(true);
     try {
       await loginWithGoogle(tokenResponse.access_token, politicalParty || undefined);
-      curtainGo('/questionnaire', { replace: true });
+      const redirect = sessionStorage.getItem('auth_redirect') || '/questionnaire';
+      sessionStorage.removeItem('auth_redirect');
+      curtainGo(redirect, { replace: true });
     } catch (err) {
       setAuthError(friendlyError(err));
     } finally {

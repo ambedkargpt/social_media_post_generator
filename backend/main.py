@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.v1.auth import router as auth_router
+from backend.api.v1.chat import router as chat_router
 from backend.api.v1.health import router as health_router
 from backend.api.v1.news import router as news_router
 from backend.api.v1.posts import router as posts_router
@@ -57,3 +58,4 @@ app.include_router(news_router, prefix="/api/v1")
 app.include_router(questions_router, prefix="/api/v1")
 app.include_router(profile_router, prefix="/api/v1")
 app.include_router(posts_router, prefix="/api/v1")
+app.include_router(chat_router, prefix="/api/v1")

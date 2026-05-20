@@ -7,10 +7,12 @@ import {
   BarChart3,
   User,
   Settings,
+  Bot,
 } from 'lucide-react';
 
 const NAV = [
   { id: 'dashboard',  label: 'Dashboard',        Icon: LayoutGrid },
+  { id: 'bheembot',   label: 'BheemBot',         Icon: Bot, route: '/bheembot' },
   { id: 'searches',   label: 'Post History',      Icon: Search, route: '/posts' },
   { id: 'prefs',      label: 'Preferences',      Icon: SlidersHorizontal, route: '/preferences' },
   { id: 'saved',      label: 'Saved Prompts',    Icon: Bookmark },

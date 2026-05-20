@@ -311,6 +311,8 @@ export default function SocialMediaPostGenerator() {
       setPostStatus('published');
       // Refresh quota so streak + daily count update immediately
       getDailyQuota().then(setQuota).catch(() => {});
+      // Redirect back to the generator feed after publish
+      navigate('/generate/social-media');
     } catch (err) {
       console.error('Publish failed:', err);
       if (err?.response?.status === 429) {

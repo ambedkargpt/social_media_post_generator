@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Send, SlidersHorizontal, LogOut } from 'lucide-react';
+import { FileText, Send, SlidersHorizontal, LogOut, Bot, Sparkles } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
 import { getPosts, getDailyQuota } from '../api/posts';
@@ -173,9 +173,61 @@ export default function Dashboard() {
           <SavedPromptsGrid posts={posts.filter((p) => p.status === 'published')} />
         </div>
 
-        {/* ── Achievements ── */}
-        <div className="mt-5">
-          <AchievementsGrid totalPosts={totalPosts} prefsAnswered={prefsAnswered} />
+        {/* ── BheemBot + Achievements row ── */}
+        <div className="mt-5 grid gap-5 grid-cols-1 lg:grid-cols-3">
+          {/* BheemBot card */}
+          <div
+            className="relative overflow-hidden rounded-2xl border border-[#1e3260]/60 p-5"
+            style={{ background: 'linear-gradient(135deg, #070f24 0%, #0d1a3e 100%)' }}
+          >
+            {/* Background glow */}
+            <div className="pointer-events-none absolute -top-8 -right-8 h-32 w-32 rounded-full bg-[#2d6fff]/20 blur-2xl" />
+            <div className="pointer-events-none absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-[#7b5cff]/15 blur-2xl" />
+
+            <div className="relative">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#2d6fff] to-[#7b5cff] shadow-[0_0_18px_rgba(79,107,255,0.4)]">
+                  <Bot size={18} strokeWidth={2} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="font-display text-[15px] font-semibold text-white">BheemBot</h3>
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e] shadow-[0_0_5px_rgba(34,197,94,0.7)]" />
+                    <span className="text-[11px] text-[#22c55e]">Online</span>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-[12.5px] leading-relaxed text-[#7a98bc] mb-4">
+                Chat with Ambedkar&apos;s AI — ask about constitutional law, social justice, or his philosophy.
+              </p>
+
+              <div className="flex flex-wrap gap-1.5 mb-4">
+                {['Constitution', 'Social Justice', 'Writings'].map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full border border-[#1e3260]/60 bg-[#0a1428] px-2.5 py-0.5 text-[10.5px] text-[#5a7a9e]"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => navigate('/bheembot')}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#2d6fff] px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_0_18px_rgba(45,111,255,0.35)] transition hover:bg-[#3d7fff] hover:-translate-y-0.5"
+              >
+                <Sparkles size={13} strokeWidth={2} />
+                Open Chat →
+              </button>
+            </div>
+          </div>
+
+          {/* Achievements — takes remaining 2 cols */}
+          <div className="lg:col-span-2">
+            <AchievementsGrid totalPosts={totalPosts} prefsAnswered={prefsAnswered} />
+          </div>
         </div>
 
         <DashboardFooter />

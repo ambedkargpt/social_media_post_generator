@@ -97,7 +97,9 @@ export default function Questionnaire() {
 
   function saveAndContinue() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, answers }));
-    navigate('/dashboard');
+    const redirect = sessionStorage.getItem('auth_redirect') || '/dashboard';
+    sessionStorage.removeItem('auth_redirect');
+    navigate(redirect);
   }
 
   function finish() {
@@ -106,7 +108,9 @@ export default function Questionnaire() {
     if (currentUser?.id) {
       saveProfileAnswers(currentUser.id, answers).catch(() => {});
     }
-    curtainGo('/dashboard', { replace: true });
+    const redirect = sessionStorage.getItem('auth_redirect') || '/dashboard';
+    sessionStorage.removeItem('auth_redirect');
+    curtainGo(redirect, { replace: true });
   }
 
   if (loadingQ || fetchErr || !question) {

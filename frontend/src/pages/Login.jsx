@@ -57,7 +57,9 @@ export default function Login() {
           },
         });
       } else {
-        curtainGo('/dashboard', { replace: true });
+        const redirect = sessionStorage.getItem('auth_redirect') || '/dashboard';
+        sessionStorage.removeItem('auth_redirect');
+        curtainGo(redirect, { replace: true });
       }
     } catch (err) {
       setAuthError(friendlyError(err));
@@ -71,7 +73,9 @@ export default function Login() {
     setLoading(true);
     try {
       await loginWithGoogle(tokenResponse.access_token);
-      curtainGo('/dashboard', { replace: true });
+      const redirect = sessionStorage.getItem('auth_redirect') || '/dashboard';
+      sessionStorage.removeItem('auth_redirect');
+      curtainGo(redirect, { replace: true });
     } catch (err) {
       setAuthError(friendlyError(err));
     } finally {

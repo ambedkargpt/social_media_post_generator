@@ -1,12 +1,25 @@
 import { useEffect, useState } from 'react';
 import { Play, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Sparkle  from './Sparkle';
 import CountUp  from './CountUp';
+import { useAuth } from '../../context/AuthContext';
 import squiggleSrc      from '../../assets/images/squiggle-lines.png';
 import ambedkarPortrait from '../../assets/images/purpose-ambedkar.png';
 
 export default function HeroSection() {
   const [scrollY, setScrollY] = useState(0);
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
+
+  function handleBheemBot() {
+    if (currentUser) {
+      navigate('/bheembot');
+    } else {
+      sessionStorage.setItem('auth_redirect', '/bheembot');
+      navigate('/login');
+    }
+  }
 
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY || 0);
@@ -90,6 +103,7 @@ export default function HeroSection() {
             </button>
             <button
               type="button"
+              onClick={handleBheemBot}
               className="btn-gradient inline-flex h-12 items-center gap-2 rounded-xl px-7 font-count text-[15px] font-semibold text-white"
             >
               BheemBot
