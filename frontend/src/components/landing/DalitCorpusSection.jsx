@@ -18,9 +18,11 @@ const QA = [
 
 export default function DalitCorpusSection() {
   return (
-    <section id="ambedkarverse" className="relative overflow-hidden py-20 md:py-28">
+    <section id="ambedkarverse" className="relative py-20 md:py-28">
       {/* ambient glow */}
-      <div className="pointer-events-none absolute left-[10%] top-[20%] h-[420px] w-[420px] rounded-full bg-[#2d7dfb]/8 blur-[130px]" />
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute left-[10%] top-[20%] h-[420px] w-[420px] rounded-full bg-[#2d7dfb]/8 blur-[130px]" />
+      </div>
 
       <div className="relative mx-auto max-w-[1180px] px-6">
         {/* Section label centered */}

@@ -60,7 +60,7 @@ function ChannelRow({ icon: Icon, label, value, href }) {
 
 export default function ContactSection() {
   return (
-    <section id="contact" className="relative overflow-hidden py-20 md:py-28">
+    <section id="contact" className="relative py-20 md:py-28">
       {/* Atmospheric glow behind the intro */}
       <div className="pointer-events-none absolute inset-x-0 top-10 mx-auto h-64 max-w-4xl bg-[radial-gradient(circle_at_center,rgba(63,120,255,0.16),transparent_70%)]" />
 
@@ -142,10 +142,13 @@ export default function ContactSection() {
           {/* Right column: Transmission form */}
           <form
             onSubmit={(e) => e.preventDefault()}
-            className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-[#1e3260]/60 bg-[#070f24] p-6 md:p-8"
+            className="relative flex h-full flex-col rounded-2xl border border-[#1e3260]/60 bg-[#070f24] p-6 md:p-8"
           >
-            <div className="pointer-events-none absolute -top-24 -right-24 h-56 w-56 rounded-full bg-[#3f9fff]/10 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-24 -left-24 h-48 w-48 rounded-full bg-[#7b5cff]/8 blur-3xl" />
+            {/* Glows contained so they don't bleed outside the form card */}
+            <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
+              <div className="absolute -top-24 -right-24 h-56 w-56 rounded-full bg-[#3f9fff]/10 blur-3xl" />
+              <div className="absolute -bottom-24 -left-24 h-48 w-48 rounded-full bg-[#7b5cff]/8 blur-3xl" />
+            </div>
 
             <div className="grid flex-1 gap-4 md:grid-cols-2">
               <Field label="Full Identity"            placeholder="Jane Doe" />

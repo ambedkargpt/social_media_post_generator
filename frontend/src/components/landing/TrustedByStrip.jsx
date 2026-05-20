@@ -6,8 +6,10 @@ import digitalIndiaLogo from '../../assets/images/digital-india-logo.png';
 // "Trusted By" partners strip — centered pill label + logos with sparkle separators.
 export default function TrustedByStrip() {
   return (
-    <section className="relative overflow-hidden py-16 md:py-20">
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-56 w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2d7dfb]/12 blur-[120px]" />
+    <section className="relative py-16 md:py-20">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute left-1/2 top-1/2 h-56 w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2d7dfb]/12 blur-[120px]" />
+      </div>
 
       <div className="relative mx-auto max-w-[1180px] px-6">
         <h3 className="text-[13px] font-semibold uppercase tracking-[0.18em] text-[#6b8cbf]">

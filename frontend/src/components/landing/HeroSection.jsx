@@ -18,7 +18,7 @@ export default function HeroSection() {
   return (
     <section
       id="home"
-      className="relative overflow-hidden bg-[radial-gradient(circle_at_50%_0%,rgba(41,108,255,0.18),rgba(6,11,26,0.98)_42%),linear-gradient(180deg,#050a18_0%,#030611_100%)] pt-6 md:min-h-[680px] md:pt-10"
+      className="relative bg-[radial-gradient(circle_at_50%_0%,rgba(41,108,255,0.18),rgba(6,11,26,0.98)_42%),linear-gradient(180deg,#050a18_0%,#030611_100%)] pt-6 md:min-h-[680px] md:pt-10"
     >
       {/* Glows + squiggle */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
