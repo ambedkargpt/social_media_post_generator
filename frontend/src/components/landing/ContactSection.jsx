@@ -71,7 +71,7 @@ export default function ContactSection() {
         {/* ══════════ Top: Work With Us CTA strip ══════════ */}
         <SectionLabel>Work With Us</SectionLabel>
 
-        <h2 className="mx-auto mt-8 max-w-[820px] text-center font-display text-[36px] font-semibold leading-[1.15] text-white md:text-[44px]">
+        <h2 className="mx-auto mt-8 max-w-[820px] text-center font-display text-[44px] font-bold leading-[1.1] text-white md:text-[54px]">
           Build AI for social change — join us to create the first{' '}
           <span className="italic gradient-text-blue">AI-powered Dalit Literature Corpus</span>{' '}
           &amp; Search.
@@ -96,7 +96,7 @@ export default function ContactSection() {
         <div className="mt-16 grid items-stretch gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
           {/* Left column: copy + channels + dotted map */}
           <div className="flex flex-col">
-            <h3 className="font-display text-[36px] font-semibold leading-[1.1] text-white md:text-[44px]">
+            <h3 className="font-display text-[42px] font-bold leading-[1.05] text-white md:text-[52px]">
               Let&apos;s Connect <span className="italic gradient-text-blue">And</span>
               <br />
               Build Together

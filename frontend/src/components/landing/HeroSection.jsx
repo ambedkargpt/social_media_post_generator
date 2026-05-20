@@ -80,7 +80,7 @@ export default function HeroSection() {
           </div>
 
           {/* Headline */}
-          <h1 className="font-display max-w-[620px] text-[38px] font-semibold leading-[1.1] tracking-tight text-white md:text-[56px]">
+          <h1 className="font-display max-w-[640px] text-[44px] font-bold leading-[1.05] tracking-tight text-white md:text-[66px]">
             Artificial Intelligence{' '}
             <span className="gradient-text-cyan italic">(AI) Meets</span>
             <br />

@@ -12,7 +12,7 @@ export default function TrustedByStrip() {
       </div>
 
       <div className="relative mx-auto max-w-[1180px] px-6">
-        <h3 className="text-[13px] font-semibold uppercase tracking-[0.18em] text-[#6b8cbf]">
+        <h3 className="text-[15px] font-semibold uppercase tracking-[0.18em] text-[#6b8cbf]">
           Trusted By
         </h3>
 

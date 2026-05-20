@@ -239,7 +239,7 @@ export default function KnowledgeSection() {
             Trusted by 500K+ creators worldwide
           </div>
 
-          <h2 className="mt-6 font-display text-[40px] font-bold leading-[1.1] tracking-tight text-white md:text-[50px]">
+          <h2 className="mt-6 font-display text-[46px] font-bold leading-[1.05] tracking-tight text-white md:text-[58px]">
             Grow Your Content
             <br />
             <span className="gradient-text-blue italic">Creator Journey</span>

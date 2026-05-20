@@ -179,7 +179,7 @@ export default function DalitHistoryMakers() {
       <div className="mx-auto max-w-[1180px] px-6">
         <SectionLabel>Dalit History Makers</SectionLabel>
 
-        <h2 className="mx-auto mt-8 max-w-[820px] text-center font-display text-[38px] font-semibold leading-[1.08] text-white md:text-[52px]">
+        <h2 className="mx-auto mt-8 max-w-[820px] text-center font-display text-[46px] font-bold leading-[1.05] text-white md:text-[62px]">
           Voices That Shaped{' '}
           <span className="italic gradient-text-blue">Justice</span>
         </h2>

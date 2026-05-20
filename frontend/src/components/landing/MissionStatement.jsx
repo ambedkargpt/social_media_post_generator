@@ -71,7 +71,7 @@ export default function MissionStatement({
         {label}
       </span>
 
-      <h2 className="mt-6 font-display text-[42px] font-semibold leading-[1.05] tracking-tight text-white md:text-[52px]">
+      <h2 className="mt-6 font-display text-[48px] font-bold leading-[1.03] tracking-tight text-white md:text-[60px]">
         {titlePrimary}
         <br />
         <span className="italic gradient-text-blue">{titleAccent}</span>

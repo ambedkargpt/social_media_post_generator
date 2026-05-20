@@ -40,7 +40,7 @@ export default function DalitCorpusSection() {
               <span className="font-display text-[38px] font-light leading-none text-[#1e3570] md:text-[44px]">
                 {QA[0].num}
               </span>
-              <h3 className="mt-4 font-display text-[17px] font-semibold text-white md:text-[19px]">
+              <h3 className="mt-4 font-display text-[20px] font-semibold text-white md:text-[23px]">
                 {QA[0].question}
               </h3>
               <p className="mt-4 text-[13.5px] leading-[1.9] text-[#7a9ac0]">
@@ -53,7 +53,7 @@ export default function DalitCorpusSection() {
               <span className="font-display text-[38px] font-light leading-none text-[#1e3570] md:text-[44px]">
                 {QA[1].num}
               </span>
-              <h3 className="mt-4 font-display text-[17px] font-semibold text-white md:text-[19px]">
+              <h3 className="mt-4 font-display text-[20px] font-semibold text-white md:text-[23px]">
                 {QA[1].question}
               </h3>
               <p className="mt-4 text-[13.5px] leading-[1.9] text-[#7a9ac0]">

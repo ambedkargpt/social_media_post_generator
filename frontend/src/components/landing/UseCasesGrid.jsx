@@ -71,7 +71,7 @@ export default function UseCasesGrid() {
       <div className="relative mx-auto max-w-[1180px] px-6">
         <SectionLabel>Use Cases</SectionLabel>
 
-        <h2 className="mx-auto mt-8 max-w-[820px] text-center font-display text-[38px] font-semibold leading-[1.1] text-white md:text-[52px]">
+        <h2 className="mx-auto mt-8 max-w-[820px] text-center font-display text-[46px] font-bold leading-[1.05] text-white md:text-[62px]">
           AI-Powered Knowledge for{' '}
           <span className="italic gradient-text-blue">Equality</span>
           <br className="hidden md:block" />
