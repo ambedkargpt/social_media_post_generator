@@ -1,9 +1,22 @@
 import { parsePost } from '../../utils/parsePost';
 
 export default function PostContent({ content, className = '' }) {
+  if (!content?.trim()) return null;
+
   const { headline, paragraphs, hashtags } = parsePost(content);
 
-  if (!content?.trim()) return null;
+  // If parsing produced nothing meaningful, render the raw content as plain text
+  // so the post is never invisible to the user.
+  const hasStructure = headline || paragraphs.length > 0;
+  if (!hasStructure) {
+    return (
+      <div className={`space-y-3 ${className}`}>
+        <p className="whitespace-pre-wrap text-[13.5px] leading-[1.8] text-[#c7d1eb]">
+          {content.trim()}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className={`space-y-3 ${className}`}>

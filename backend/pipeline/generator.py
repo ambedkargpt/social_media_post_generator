@@ -81,15 +81,24 @@ def _video_summaries_str(
 
 
 _LANGUAGE_INSTRUCTIONS: dict[str, str] = {
-    "hi": "LANGUAGE REQUIREMENT: Write the entire Social Media Post (and hashtags if included) in Hindi (Devanagari script). Do NOT write in English or Hinglish — pure Hindi only.",
+    "hi": "LANGUAGE REQUIREMENT: Write the entire Social Media Post (and hashtags if included) in Hindi (Devanagari script). Do NOT write in English or Hinglish — pure Hindi only. IMPORTANT: Keep the section labels (Headline:, Social Media Post:, Hashtags:) in English exactly as shown — do NOT translate them.",
     "en": "LANGUAGE REQUIREMENT: Write the entire Social Media Post (headline, body, and hashtags) in English. The source material may be in Hindi — synthesise ideas from it but express everything in English. Do NOT write in Hindi, Devanagari script, or Hinglish.",
 }
 
 
+# Matches section headers in English OR Hindi (LLM sometimes translates labels when
+# generating Hindi content).
 _SECTION_RE = re.compile(
-    r'^(Headline|Social Media Post|Hashtags)\s*:\s*\n',
+    r'^(Headline|शीर्षक|Social Media Post|सोशल मीडिया पोस्ट|Hashtags|हैशटेग)\s*:\s*\n',
     re.IGNORECASE | re.MULTILINE,
 )
+
+# Normalise Hindi section keys → canonical English keys
+_KEY_NORM: dict[str, str] = {
+    'शीर्षक':              'headline',
+    'सोशल मीडिया पोस्ट':  'social media post',
+    'हैशटेग':              'hashtags',
+}
 
 
 def _extract_post_body(raw: str) -> str:
@@ -97,6 +106,7 @@ def _extract_post_body(raw: str) -> str:
     Parse the structured LLM response into:
       [Headline]\\n\\n[Post body]\\n\\n[Hashtags]
 
+    Handles both English and Hindi section labels.
     Falls back to returning the raw text if parsing fails.
     """
     sections: dict[str, str] = {}
@@ -104,7 +114,8 @@ def _extract_post_body(raw: str) -> str:
     # split() with a capturing group returns: [pre, key1, val1, key2, val2, ...]
     i = 1
     while i + 1 < len(parts):
-        key = parts[i].strip().lower()
+        raw_key = parts[i].strip()
+        key = _KEY_NORM.get(raw_key, raw_key.lower())
         val = parts[i + 1].strip()
         sections[key] = val
         i += 2
@@ -155,11 +166,22 @@ def generate_post(
     system_msg, user_tpl = _load_post_prompts(prompts_dir)
 
     lang_instruction = _LANGUAGE_INSTRUCTIONS.get(language or "en", "")
+
+    # Prepend the language override BEFORE the rest of the system prompt so it
+    # takes precedence over any `language` field inside the USER PROFILE.
+    # (Appending it at the end loses to the "USER PROFILE is highest authority"
+    # instruction already in the prompt.)
     if lang_instruction:
-        system_msg = f"{system_msg}\n\n---\n\n{lang_instruction}"
+        system_msg = f"CRITICAL LANGUAGE OVERRIDE — This instruction supersedes any language field in the USER PROFILE:\n{lang_instruction}\n\n---\n\n{system_msg}"
 
     if refinement_note and refinement_note.strip():
         system_msg = f"{system_msg}\n\n---\n\nREFINEMENT INSTRUCTION: The user wants the following change in this post: {refinement_note.strip()}"
+
+    # Also force the profile's language field to match so the LLM isn't confused
+    # by a conflicting value (e.g. profile says "English" while language='hi').
+    if language:
+        lang_label_map = {"hi": "Hindi", "en": "English"}
+        profile = {**profile, "language": lang_label_map.get(language, language)}
 
     profile_desc = "\n".join(f"{k}: {v}" for k, v in profile.items())
 
@@ -180,6 +202,7 @@ def generate_post(
             {"role": "user", "content": user_content},
         ],
         temperature=temperature,
+        max_tokens=2000,
     )
 
     text = (response.choices[0].message.content or "").strip()

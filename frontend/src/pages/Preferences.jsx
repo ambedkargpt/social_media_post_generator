@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check, Save } from 'lucide-react';
+import { ArrowLeft, Check, Save, Home, ArrowUp } from 'lucide-react';
 import logoSrc from '../assets/images/logo-animation.png';
 import { useAuth } from '../context/AuthContext';
 import { saveProfileAnswers, getProfileAnswers } from '../api/profile';
@@ -83,7 +83,7 @@ const COMPULSORY = [
 const OPTIONAL = [
   {
     id: 'profile_use_of_ambedkar_quotes',
-    label: 'How should Ambedkar\'s quotes be used?',
+    label: "How should Ambedkar's quotes be used?",
     options: ['Mandatory', 'Preferred', 'Occasional', 'Indirect', 'None'],
   },
   {
@@ -166,7 +166,25 @@ const DEFAULTS = {
   profile_visual_suggestion:       'None',
 };
 
-// ─── Question card component ──────────────────────────────────────────────────
+const STORAGE_KEY = 'ambedkargpt-preferences';
+
+function stripArrow(val) {
+  return typeof val === 'string' && val.includes(' -> ') ? val.split(' -> ')[0].trim() : val;
+}
+
+function readLocalPrefs() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    const cleaned = Object.fromEntries(Object.entries(parsed).map(([k, v]) => [k, stripArrow(v)]));
+    return { ...DEFAULTS, ...cleaned };
+  } catch {
+    return null;
+  }
+}
+
+// ─── Question card ────────────────────────────────────────────────────────────
 
 function QuestionCard({ q, num, value, onSelect }) {
   return (
@@ -177,7 +195,6 @@ function QuestionCard({ q, num, value, onSelect }) {
         </span>
         <p className="text-[13.5px] font-medium leading-snug text-[#c0cde8]">{q.label}</p>
       </div>
-
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
         {q.options.map((opt) => {
           const active = value === opt;
@@ -202,8 +219,6 @@ function QuestionCard({ q, num, value, onSelect }) {
     </div>
   );
 }
-
-// ─── Section header ───────────────────────────────────────────────────────────
 
 function SectionHeader({ label, badge, description }) {
   return (
@@ -234,22 +249,33 @@ function SectionHeader({ label, badge, description }) {
 export default function Preferences() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const [prefs, setPrefs] = useState(DEFAULTS);
-  const [saved, setSaved] = useState(false);
-  const [saving, setSaving] = useState(false);
+
+  // Initialise from localStorage immediately so nothing flashes to defaults on revisit
+  const [prefs, setPrefs]       = useState(() => readLocalPrefs() ?? DEFAULTS);
+  const [saved, setSaved]       = useState(false);
+  const [saving, setSaving]     = useState(false);
   const [saveError, setSaveError] = useState('');
 
-  // Load saved answers on mount
+  // Load from DB and sync to localStorage
   useEffect(() => {
     if (!currentUser?.id) return;
     getProfileAnswers(currentUser.id)
       .then((rows) => {
         if (!rows?.length) return;
         const merged = { ...DEFAULTS };
-        for (const row of rows) merged[row.question_id] = row.answer;
+        for (const row of rows) {
+          // Backend normalises short labels to "Label -> Description" on save.
+          // Strip the description so the short label matches the UI option buttons.
+          const raw = row.answer;
+          merged[row.question_id] =
+            typeof raw === 'string' && raw.includes(' -> ')
+              ? raw.split(' -> ')[0].trim()
+              : raw;
+        }
         setPrefs(merged);
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(merged)); } catch { /* ignore */ }
       })
-      .catch(() => {}); // silently fall back to defaults if load fails
+      .catch(() => {}); // silently fall back to localStorage values already in state
   }, [currentUser?.id]);
 
   function select(id, val) {
@@ -262,10 +288,12 @@ export default function Preferences() {
     setSaveError('');
     try {
       await saveProfileAnswers(currentUser.id, prefs);
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs)); } catch { /* ignore */ }
       setSaved(true);
-      setTimeout(() => setSaved(false), 2200);
     } catch {
-      setSaveError('Failed to save. Please try again.');
+      // Save locally even if remote fails so next visit still shows the right values
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs)); } catch { /* ignore */ }
+      setSaveError('Saved locally. Remote sync failed — please try again.');
     } finally {
       setSaving(false);
     }
@@ -273,6 +301,7 @@ export default function Preferences() {
 
   function handleReset() {
     setPrefs(DEFAULTS);
+    setSaved(false);
   }
 
   const answeredCount = Object.values(prefs).filter(Boolean).length;
@@ -287,27 +316,46 @@ export default function Preferences() {
       <div className="pointer-events-none fixed left-0 top-0 h-[500px] w-[500px] rounded-full bg-[#2563eb]/8 blur-[140px]" />
       <div className="pointer-events-none fixed bottom-0 right-0 h-[420px] w-[420px] rounded-full bg-[#7b5cff]/8 blur-[140px]" />
 
-      <div className="relative mx-auto max-w-[780px] px-5 pb-24 pt-8 md:px-8">
+      {/* ── Sticky header ── */}
+      <header className="sticky top-0 z-20 border-b border-[#141d3a]/70 bg-[#070b1c]/80 backdrop-blur-md">
+        <div className="flex w-full items-center gap-5 px-8 py-5 md:px-12">
+          {/* Left: brand */}
+          <div className="flex items-center gap-2.5">
+            <img src={logoSrc} alt="AmbedkarGPT" className="h-8 w-8 object-contain drop-shadow-[0_0_10px_rgba(63,159,255,0.5)]" />
+            <span className="font-display text-[17px] font-bold text-white">
+              Ambedkar<span className="gradient-text-cyan">GPT</span>
+            </span>
+          </div>
 
-        {/* ── Top bar ── */}
-        <div className="mb-8 flex items-center justify-between">
+          {/* Back button */}
           <button
             type="button"
             onClick={() => navigate('/dashboard')}
-            className="inline-flex items-center gap-2 rounded-full border border-[#1e3260]/70 bg-[#0d1531]/60 px-4 py-2 text-[12.5px] font-medium text-[#8b94b8] transition hover:border-[#3a6bc4]/60 hover:text-white"
+            className="inline-flex items-center gap-2 rounded-full border border-[#1e3260]/70 px-4 py-2 text-[13px] font-medium text-[#6b78a0] transition hover:border-[#3a6bc4]/60 hover:text-white"
           >
-            <ArrowLeft size={13} strokeWidth={2} />
+            <ArrowLeft size={14} strokeWidth={2} />
             Dashboard
           </button>
 
-          {/* Progress indicator */}
-          <span className="text-[12px] text-[#6b78a0]">
-            <span className="font-count font-bold text-white">{answeredCount}</span>
-            <span> / {totalCount} answered</span>
-          </span>
+          {/* Right: progress tracker */}
+          <div className="ml-auto flex items-center gap-4">
+            <span className="hidden text-[13px] text-[#6b78a0] sm:block">
+              <span className="font-count font-bold text-white">{answeredCount}</span>
+              <span> / {totalCount} answered</span>
+            </span>
+            <div className="hidden h-1.5 w-28 overflow-hidden rounded-full bg-[#0f1a3a] sm:block">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-[#2563eb] to-[#3f9fff] transition-all duration-500"
+                style={{ width: `${(answeredCount / totalCount) * 100}%` }}
+              />
+            </div>
+          </div>
         </div>
+      </header>
 
-        {/* ── Page header ── */}
+      <div className="relative mx-auto max-w-[780px] px-5 pb-28 pt-8 md:px-8">
+
+        {/* ── Page hero ── */}
         <div className="mb-10 flex items-start gap-4">
           <img src={logoSrc} alt="AmbedkarGPT" className="mt-1 h-12 w-12 shrink-0 object-contain drop-shadow-[0_0_16px_rgba(63,159,255,0.5)]" />
           <div>
@@ -315,15 +363,8 @@ export default function Preferences() {
               Preferences
             </h1>
             <p className="mt-2 text-[14px] text-[#7a90b8]">
-              Help us understand you better to personalize your AmbedkarGPT experience
+              Help us understand you better to personalise your AmbedkarGPT experience
             </p>
-            {/* Progress bar */}
-            <div className="mt-4 h-1.5 w-48 rounded-full bg-[#0f1a3a]">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-[#2563eb] to-[#3f9fff] transition-all duration-500"
-                style={{ width: `${(answeredCount / totalCount) * 100}%` }}
-              />
-            </div>
           </div>
         </div>
 
@@ -391,6 +432,39 @@ export default function Preferences() {
           </div>
         </div>
       </div>
+
+      {/* ── Post-save floating toast ── */}
+      {saved && (
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2">
+          <div
+            className="flex items-center gap-3 rounded-2xl border border-[#22c55e]/25 px-5 py-3.5 shadow-2xl backdrop-blur-md"
+            style={{ background: 'rgba(5,12,26,0.92)', boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(34,197,94,0.15)' }}
+          >
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#22c55e]/15">
+              <Check size={12} strokeWidth={3} className="text-[#22c55e]" />
+            </span>
+            <span className="text-[13px] font-medium text-white">Preferences saved!</span>
+            <div className="ml-1 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => navigate('/dashboard')}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#1e3260]/70 px-3 py-1.5 text-[12px] font-medium text-[#6b78a0] transition hover:border-[#3a6bc4]/60 hover:text-white"
+              >
+                <Home size={11} strokeWidth={2} />
+                Dashboard
+              </button>
+              <button
+                type="button"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#1e3260]/70 px-3 py-1.5 text-[12px] font-medium text-[#6b78a0] transition hover:border-[#3a6bc4]/60 hover:text-white"
+              >
+                <ArrowUp size={11} strokeWidth={2} />
+                Top
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

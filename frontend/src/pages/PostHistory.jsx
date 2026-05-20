@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Copy, Check, Search, Sparkles, Trash2, BookmarkCheck } from 'lucide-react';
+import { ArrowLeft, Copy, Check, Search, Sparkles, Trash2, BookmarkCheck, Languages } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getPosts, updatePost, deletePost } from '../api/posts';
+import { getPosts, updatePost, deletePost, translatePost } from '../api/posts';
 import logoSrc from '../assets/images/logo-animation.png';
 
 const STATUS_COLORS = {
@@ -25,12 +25,29 @@ function StatusBadge({ status }) {
 
 function PostCard({ post, onCopy, onPublish, onArchive, copiedId }) {
   const [expanded, setExpanded] = useState(false);
-  const content = post.content ?? '';
-  const preview = content.slice(0, 200);
-  const hasMore = content.length > 200;
+  const [translating, setTranslating]     = useState(false);
+  const [translated, setTranslated]       = useState('');
+  const [showTranslated, setShowTranslated] = useState(false);
+
+  const rawContent = post.content ?? '';
+  const content    = showTranslated && translated ? translated : rawContent;
+  const preview    = content.slice(0, 200);
+  const hasMore    = content.length > 200;
   const date = post.created_at
     ? new Date(post.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
     : '';
+
+  async function handleTranslate() {
+    if (showTranslated) { setShowTranslated(false); return; }
+    if (translated) { setShowTranslated(true); return; }
+    setTranslating(true);
+    try {
+      const res = await translatePost(post.id, 'en');
+      setTranslated(res.translated_content ?? '');
+      setShowTranslated(true);
+    } catch { /* ignore */ }
+    finally { setTranslating(false); }
+  }
 
   return (
     <div
@@ -51,6 +68,19 @@ function PostCard({ post, onCopy, onPublish, onArchive, copiedId }) {
         </div>
 
         <div className="flex items-center gap-1.5">
+          {/* Translate */}
+          <button
+            type="button"
+            onClick={handleTranslate}
+            disabled={translating}
+            className="flex items-center gap-1 rounded-lg border border-[#1e3260]/60 px-2.5 py-1.5 text-[11.5px] font-medium text-[#6b78a0] transition hover:border-[#3f9fff]/50 hover:text-[#3f9fff] disabled:opacity-50"
+            title={showTranslated ? 'Show Hindi' : 'Translate to English'}
+            style={showTranslated ? { borderColor: 'rgba(63,159,255,0.4)', color: '#3f9fff' } : {}}
+          >
+            <Languages size={12} strokeWidth={2} />
+            {translating ? '…' : showTranslated ? 'हिंदी' : 'EN'}
+          </button>
+
           {/* Publish */}
           {post.status === 'draft' && (
             <button
@@ -197,29 +227,34 @@ export default function PostHistory() {
 
       {/* ── Header ── */}
       <header className="sticky top-0 z-20 border-b border-[#141d3a]/70 bg-[#070b1c]/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-[960px] items-center gap-4 px-6 py-4">
+        <div className="flex w-full items-center gap-5 px-8 py-5 md:px-12">
+          {/* Left: brand */}
+          <div className="flex items-center gap-2.5">
+            <img src={logoSrc} alt="AmbedkarGPT" className="h-8 w-8 object-contain drop-shadow-[0_0_10px_rgba(63,159,255,0.5)]" />
+            <span className="font-display text-[17px] font-bold text-white">
+              Ambedkar<span className="gradient-text-cyan">GPT</span>
+            </span>
+          </div>
+
+          {/* Back button */}
           <button
             type="button"
             onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-1.5 rounded-full border border-[#1e3260]/70 px-3.5 py-1.5 text-[12.5px] font-medium text-[#6b78a0] transition hover:border-[#3a6bc4]/60 hover:text-white"
+            className="flex items-center gap-2 rounded-full border border-[#1e3260]/70 px-4 py-2 text-[13px] font-medium text-[#6b78a0] transition hover:border-[#3a6bc4]/60 hover:text-white"
           >
-            <ArrowLeft size={13} strokeWidth={2} />
+            <ArrowLeft size={14} strokeWidth={2} />
             Dashboard
           </button>
 
-          <div className="flex items-center gap-2">
-            <img src={logoSrc} alt="AmbedkarGPT" className="h-7 w-7 object-contain drop-shadow-[0_0_10px_rgba(63,159,255,0.5)]" />
-            <span className="font-display text-[15px] font-bold gradient-text-blue">AmbedkarGPT</span>
-          </div>
-
+          {/* Right: action */}
           <div className="ml-auto">
             <button
               type="button"
               onClick={() => navigate('/generate')}
-              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold text-white"
+              className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[13.5px] font-semibold text-white"
               style={{ background: 'linear-gradient(90deg,#0a7dff,#3a9fff)', boxShadow: '0 4px 18px rgba(10,125,255,0.35)' }}
             >
-              <Sparkles size={14} strokeWidth={2.1} />
+              <Sparkles size={15} strokeWidth={2.1} />
               Generate New
             </button>
           </div>

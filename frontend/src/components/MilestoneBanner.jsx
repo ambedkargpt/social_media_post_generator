@@ -1,43 +1,30 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { X, Trophy } from 'lucide-react';
 
-const STORAGE_KEY = 'ambedkargpt-milestone-banner-dismissed';
-const MILESTONE   = 200;
+const MILESTONE = 200;
 
-/**
- * Slim full-width promotional banner.
- * Props:
- *   totalPosts  — streak-based post count (total_streak_posts from quota API)
- *                 Pass null/undefined when not logged in
- *   className   — optional extra classes on the outer wrapper
- */
-export default function MilestoneBanner({ totalPosts, className = '' }) {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    try {
-      if (!localStorage.getItem(STORAGE_KEY)) setVisible(true);
-    } catch {
-      setVisible(true);
-    }
-  }, []);
+export default function MilestoneBanner({ totalPosts, className = '', onHide }) {
+  const [visible, setVisible] = useState(true);
 
   function dismiss() {
     setVisible(false);
-    try { localStorage.setItem(STORAGE_KEY, '1'); } catch { /* ignore */ }
+    onHide?.();
   }
 
   if (!visible) return null;
 
-  const reached    = typeof totalPosts === 'number' && totalPosts >= MILESTONE;
+  const reached      = typeof totalPosts === 'number' && totalPosts >= MILESTONE;
   const showProgress = typeof totalPosts === 'number';
-  const pct        = showProgress ? Math.min((totalPosts / MILESTONE) * 100, 100) : null;
+  const pct          = showProgress ? Math.min((totalPosts / MILESTONE) * 100, 100) : null;
 
-  if (reached) return null; // hide once milestone is hit
+  if (reached) {
+    onHide?.();
+    return null;
+  }
 
   return (
     <div
-      className={`relative w-full overflow-hidden ${className}`}
+      className={`w-full overflow-hidden ${className}`}
       style={{
         background: 'linear-gradient(90deg, #b45309 0%, #d97706 25%, #f59e0b 50%, #d97706 75%, #b45309 100%)',
         backgroundSize: '200% 100%',
@@ -46,17 +33,14 @@ export default function MilestoneBanner({ totalPosts, className = '' }) {
       role="banner"
       aria-label="Milestone reward promotion"
     >
-      {/* Subtle pattern overlay */}
       <div
         className="pointer-events-none absolute inset-0 opacity-10"
         style={{ backgroundImage: 'repeating-linear-gradient(90deg, transparent 0px, transparent 20px, rgba(255,255,255,0.15) 20px, rgba(255,255,255,0.15) 21px)' }}
       />
 
       <div className="relative flex min-h-[48px] items-center gap-3 px-4 py-2.5 md:px-6">
-        {/* Icon */}
         <Trophy size={16} strokeWidth={2} className="shrink-0 text-amber-900/80" />
 
-        {/* Main text */}
         <p className="flex-1 text-center text-[12px] font-semibold leading-snug text-amber-950 md:text-[13px]">
           Create{' '}
           <span className="font-black">{MILESTONE} posts</span>{' '}
@@ -72,7 +56,6 @@ export default function MilestoneBanner({ totalPosts, className = '' }) {
               <span className="hidden sm:inline font-bold text-amber-900">
                 {totalPosts} / {MILESTONE} posts
               </span>
-              {/* Progress pill */}
               <span className="inline-flex h-4 w-20 overflow-hidden rounded-full bg-amber-900/20 align-middle">
                 <span
                   className="h-full rounded-full bg-amber-900/70 transition-all duration-700"
@@ -83,7 +66,6 @@ export default function MilestoneBanner({ totalPosts, className = '' }) {
           )}
         </p>
 
-        {/* Dismiss */}
         <button
           type="button"
           onClick={dismiss}
@@ -94,7 +76,6 @@ export default function MilestoneBanner({ totalPosts, className = '' }) {
         </button>
       </div>
 
-      {/* Keyframes injected inline */}
       <style>{`
         @keyframes banner-shimmer {
           0%   { background-position: 200% 0; }

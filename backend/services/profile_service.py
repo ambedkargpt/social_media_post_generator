@@ -44,10 +44,17 @@ class ProfileService:
         for question_id, answer in answers.items():
             question = question_map.get(str(question_id))
             if not question:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Question not found or inactive: {question_id}",
+                # Unknown question IDs (e.g. from the Preferences profile panel) are
+                # stored as free-form answers rather than rejected, so the UI always
+                # round-trips correctly even when the questions table doesn't have them.
+                doc = self.repo.upsert_answer(
+                    user_id=user_id,
+                    question_id=str(question_id),
+                    answer=answer,
+                    source=source,
                 )
+                out.append(self._to_response(doc))
+                continue
             normalized_answer = self._validate_answer_against_question(question, answer)
             doc = self.repo.upsert_answer(
                 user_id=user_id,

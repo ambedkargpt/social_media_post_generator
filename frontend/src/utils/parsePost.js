@@ -1,11 +1,14 @@
 /**
  * Split a generated post into headline, body paragraphs, and hashtags.
- * The LLM always produces:
- *   Line 1  → headline
- *   blank line
- *   Paragraph(s)
- *   blank line
- *   #tag1 #tag2 …
+ * Handles two LLM output formats:
+ *   A) Hashtags in their own blank-line-separated block:
+ *        Headline
+ *        Body paragraph(s)
+ *        #tag1 #tag2   ← or "Hashtags: #tag1 #tag2"
+ *
+ *   B) Hashtags appended inline at the end of the last paragraph:
+ *        Headline
+ *        Body paragraph ending with #tag1 #tag2
  */
 export function parsePost(content) {
   if (!content?.trim()) return { headline: '', paragraphs: [], hashtags: [] };
@@ -17,19 +20,51 @@ export function parsePost(content) {
 
   if (!blocks.length) return { headline: '', paragraphs: [], hashtags: [] };
 
-  // Last block is hashtags if it starts with # or is mostly hashtag tokens
+  // ── Format A: last block is a dedicated hashtag block ──────────────────────
+  // Use [^\s#]+ so Unicode (Devanagari etc.) hashtag text is captured
   const last = blocks[blocks.length - 1];
-  const hashtagTokens = (last.match(/#\w+/g) || []).length;
-  const totalTokens = last.split(/\s+/).length;
-  const isHashtagBlock = last.startsWith('#') || (totalTokens > 0 && hashtagTokens / totalTokens > 0.5);
+  const hashtagTokens = (last.match(/#[^\s#]+/g) || []).length;
+  const totalTokens   = last.split(/\s+/).length;
+  const isDedicatedHashtagBlock =
+    last.startsWith('#') ||
+    /^hashtags?\s*:/i.test(last) ||
+    (totalTokens > 0 && hashtagTokens / totalTokens > 0.5);
 
-  const hashtags = isHashtagBlock ? (last.match(/#\w+/g) || []) : [];
-  const mainBlocks = isHashtagBlock ? blocks.slice(0, -1) : blocks;
+  if (isDedicatedHashtagBlock) {
+    const hashtags   = last.match(/#[^\s#]+/g) || [];
+    const mainBlocks = blocks.slice(0, -1);
+    return {
+      headline:   mainBlocks[0] ?? '',
+      paragraphs: mainBlocks.slice(1),
+      hashtags,
+    };
+  }
 
-  const headline = mainBlocks[0] ?? '';
-  const paragraphs = mainBlocks.slice(1);
+  // ── Format B: hashtags appended inline at end of last paragraph ────────────
+  // Strip trailing hashtag run from the final block
+  const inlineTagRe = /\s+((?:#[^\s#]+\s*)+)$/;
+  const lastBlock   = blocks[blocks.length - 1];
+  const inlineMatch = lastBlock.match(inlineTagRe);
 
-  return { headline, paragraphs, hashtags };
+  if (inlineMatch) {
+    const inlineTags = inlineMatch[1].match(/#[^\s#]+/g) || [];
+    if (inlineTags.length) {
+      const stripped = lastBlock.slice(0, lastBlock.length - inlineMatch[0].length).trim();
+      const mainBlocks = [...blocks.slice(0, -1), ...(stripped ? [stripped] : [])];
+      return {
+        headline:   mainBlocks[0] ?? '',
+        paragraphs: mainBlocks.slice(1),
+        hashtags:   inlineTags,
+      };
+    }
+  }
+
+  // ── No hashtags found ──────────────────────────────────────────────────────
+  return {
+    headline:   blocks[0] ?? '',
+    paragraphs: blocks.slice(1),
+    hashtags:   [],
+  };
 }
 
 export function hashtagsText(hashtags) {

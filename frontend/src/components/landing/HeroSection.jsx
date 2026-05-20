@@ -3,7 +3,7 @@ import { Play, ArrowRight } from 'lucide-react';
 import Sparkle  from './Sparkle';
 import CountUp  from './CountUp';
 import squiggleSrc      from '../../assets/images/squiggle-lines.png';
-import ambedkarPortrait from '../../assets/images/ambedkar-portrait.png';
+import ambedkarPortrait from '../../assets/images/purpose-ambedkar.png';
 
 export default function HeroSection() {
   const [scrollY, setScrollY] = useState(0);
@@ -18,18 +18,19 @@ export default function HeroSection() {
   return (
     <section
       id="home"
-      className="relative overflow-hidden bg-[radial-gradient(circle_at_50%_0%,rgba(41,108,255,0.18),rgba(6,11,26,0.98)_42%),linear-gradient(180deg,#050a18_0%,#030611_100%)] pt-24 md:min-h-[680px] md:pt-32"
+      className="relative bg-[radial-gradient(circle_at_50%_0%,rgba(41,108,255,0.18),rgba(6,11,26,0.98)_42%),linear-gradient(180deg,#050a18_0%,#030611_100%)] pt-6 md:min-h-[680px] md:pt-10"
     >
-      {/* Corner glows */}
-      <div className="pointer-events-none absolute -left-24 -top-16 h-[460px] w-[460px] rounded-full bg-[#2d7dfb]/25 blur-[130px]" />
-      <div className="pointer-events-none absolute -right-24 top-0 h-[460px] w-[460px] rounded-full bg-[#1d66de]/25 blur-[120px]" />
-      <div className="pointer-events-none absolute left-1/2 top-[58%] h-[520px] w-[720px] -translate-x-1/2 rounded-full bg-[#1e4fb5]/25 blur-[120px]" />
-
-      {/* Squiggle lines */}
-      <div
-        className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-15"
-        style={{ backgroundImage: `url(${squiggleSrc})` }}
-      />
+      {/* Glows + squiggle contained in their own overflow-hidden wrapper so the
+          section itself never clips child border-radius (that caused sharp top corners) */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -left-24 -top-16 h-[460px] w-[460px] rounded-full bg-[#2d7dfb]/25 blur-[130px]" />
+        <div className="absolute -right-24 top-0 h-[460px] w-[460px] rounded-full bg-[#1d66de]/25 blur-[120px]" />
+        <div className="absolute left-1/2 top-[58%] h-[520px] w-[720px] -translate-x-1/2 rounded-full bg-[#1e4fb5]/25 blur-[120px]" />
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-15"
+          style={{ backgroundImage: `url(${squiggleSrc})` }}
+        />
+      </div>
 
       {/* Scanner beam */}
       <div className="pointer-events-none absolute inset-x-0 z-10" style={{ top: '96px' }}>
@@ -124,7 +125,8 @@ export default function HeroSection() {
             <img
               src={ambedkarPortrait}
               alt="Dr. BR Ambedkar"
-              className="h-full w-full object-cover object-top"
+              className="h-full w-full object-cover"
+              style={{ objectPosition: 'center 35%' }}
             />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#030611]/60" />
           </div>

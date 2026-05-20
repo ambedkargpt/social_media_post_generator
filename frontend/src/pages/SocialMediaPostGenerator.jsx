@@ -45,71 +45,6 @@ const PLATFORMS = [
   { id: 'whatsapp',  label: 'WhatsApp',      short: 'WA',  limit: 5000, color: '#25d366' },
 ];
 
-const NEWS_ARTICLES = [
-  {
-    id: 1,
-    category: 'Legacy',
-    title: 'Ambedkar Jayanti 2026: Nation Celebrates the Legacy of Dr. B.R. Ambedkar',
-    content: 'Millions across India and abroad mark the 135th birth anniversary of Dr. Bhimrao Ramji Ambedkar, the chief architect of the Indian Constitution and a champion of social justice and equality for the marginalised.',
-    topic: 'Ambedkar Jayanti 2026 celebration and legacy',
-  },
-  {
-    id: 2,
-    category: 'Policy',
-    title: 'Supreme Court Upholds Reservation Policy in Government Jobs',
-    content: 'The Supreme Court of India has upheld the constitutional validity of reservations for SC/ST communities in government employment, reaffirming Ambedkar\'s vision of social equality for all citizens.',
-    topic: 'Supreme Court upholds reservation policy for SC/ST communities',
-  },
-  {
-    id: 3,
-    category: 'Legacy',
-    title: 'New Dalit Literature Corpus Launched to Preserve Anti-Caste Voices',
-    content: 'A major digital archive of Dalit writings, speeches, and historical records has been launched to preserve and promote anti-caste literature and thought for future generations.',
-    topic: 'Launch of Dalit Literature Corpus digital archive',
-  },
-  {
-    id: 4,
-    category: 'Education',
-    title: 'Students Demand Better Implementation of Education Reservations',
-    content: 'Student activists across major universities are calling for better implementation of reservation policies in higher education, citing systemic barriers faced by Dalit and OBC students nationwide.',
-    topic: 'Student demand for better implementation of education reservations',
-  },
-  {
-    id: 5,
-    category: 'Research',
-    title: 'New Research Links Caste Discrimination to Mental Health Outcomes',
-    content: 'A landmark study reveals significant correlations between experiences of caste-based discrimination and adverse mental health outcomes among Dalit communities across India.',
-    topic: 'Research on caste discrimination and mental health outcomes',
-  },
-  {
-    id: 6,
-    category: 'Grassroots',
-    title: 'Grassroots Movements Revive Ambedkar\'s "Educate, Agitate, Organize" Call',
-    content: 'Community leaders and youth groups across rural India are reviving Dr. Ambedkar\'s iconic rallying cry, building new networks to challenge caste hierarchies at the local level.',
-    topic: 'Grassroots revival of Ambedkar\'s educate agitate organize movement',
-  },
-  {
-    id: 7,
-    category: 'Policy',
-    title: 'New Bill Proposes Stricter Penalties for Caste-Based Atrocities',
-    content: 'Parliament is debating an amendment to the SC/ST Prevention of Atrocities Act that would introduce faster trials and harsher penalties for crimes motivated by caste discrimination.',
-    topic: 'New bill proposing stricter penalties for caste-based atrocities',
-  },
-  {
-    id: 8,
-    category: 'Education',
-    title: 'IITs Launch Free Online Courses on Constitutional Rights and Equality',
-    content: 'Several premier Indian institutions are offering free MOOCs on constitutional rights, Ambedkar\'s philosophy, and social justice frameworks, aimed at reaching underserved communities.',
-    topic: 'IITs launching free online courses on constitutional rights and equality',
-  },
-  {
-    id: 9,
-    category: 'Research',
-    title: 'Study Finds Significant Wage Gap Persists Along Caste Lines in Urban India',
-    content: 'A new economic study across 12 major cities shows Dalit workers earn on average 27% less than upper-caste peers in comparable roles, despite similar qualifications and experience.',
-    topic: 'Wage gap study along caste lines in urban India',
-  },
-];
 
 const MIN_PANEL = 220;
 const MAX_PANEL = 500;
@@ -130,7 +65,8 @@ export default function SocialMediaPostGenerator() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
 
-  const [articles,        setArticles]        = useState(NEWS_ARTICLES);
+  const [articles,        setArticles]        = useState([]);
+  const [newsLoading,     setNewsLoading]     = useState(true);
   const [tone,            setTone]           = useState('Professional');
   const [toneOpen,        setToneOpen]        = useState(false);
   const [search,          setSearch]          = useState('');
@@ -171,17 +107,19 @@ export default function SocialMediaPostGenerator() {
 
   // Fetch news filtered by site language; fall back to all if empty
   useEffect(() => {
+    setNewsLoading(true);
     getNews({ limit: 100, language: siteLang })
       .then((data) => {
         if (data?.length) {
           setArticles(data.map(adaptNews));
+          setNewsLoading(false);
         } else {
           getNews({ limit: 100 }).then((all) => {
             if (all?.length) setArticles(all.map(adaptNews));
-          }).catch(() => {});
+          }).catch(() => {}).finally(() => setNewsLoading(false));
         }
       })
-      .catch(() => {});
+      .catch(() => setNewsLoading(false));
   }, []);
 
   useEffect(() => {
@@ -556,7 +494,13 @@ export default function SocialMediaPostGenerator() {
         {/* ── Feed view ── */}
         {view === 'feed' && (
           <div className="flex-1 space-y-3 overflow-y-auto px-6 pb-10 md:px-8">
-            {filteredArticles.map((article) => (
+            {newsLoading && Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-[90px] w-full animate-pulse rounded-2xl border border-[#1e3260]/30 bg-[#0a1130]/40"
+              />
+            ))}
+            {!newsLoading && filteredArticles.map((article) => (
               <button
                 key={article.id}
                 type="button"

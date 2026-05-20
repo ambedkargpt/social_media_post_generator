@@ -1,7 +1,12 @@
 import { LinkedinIcon, TwitterIcon } from './SocialIcons';
 import SectionLabel from './SectionLabel';
 import StaggerReveal from '../ui/StaggerReveal';
-import teamGroupImg from '../../assets/images/team-group.png';
+// Indian team photo — verified 200 OK (india office team work search)
+// Alternates if this one doesn't look right:
+//   1553009338-80e505b3f61b  |  1667351326034-c6d733c57dc9
+//   1578552398878-37247ca9726a  |  1580825175616-77f8df1bb507
+//   1542527114-3e9725c905cd  |  1602752398808-fc6ff810d7ec
+const teamGroupImg = 'https://images.unsplash.com/photo-1577962917302-cd874c4e31d2?w=1400&h=600&fit=crop&q=80';
 
 const TEAM = [
   { name: 'Yuvraj Singh Kane',  role: 'Founder & CEO',       initials: 'YK' },
@@ -68,8 +73,6 @@ export default function TeamSection() {
           before
         </h2>
 
-        {/* Group hero panel — real team photo with a dark gradient overlay
-            so the headline + CTA below read clearly against it */}
         <div className="relative mx-auto mt-10 aspect-[21/9] w-full overflow-hidden rounded-2xl border border-[#2a4375]/60 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
           <img
             src={teamGroupImg}
