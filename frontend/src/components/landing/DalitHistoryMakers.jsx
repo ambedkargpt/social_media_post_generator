@@ -171,6 +171,11 @@ function MobileCarousel() {
 export default function DalitHistoryMakers() {
   return (
     <section className="relative py-20 md:py-28">
+      {/* Ambient glow — bleeds into Hero above and KnowledgeSection below */}
+      <div className="pointer-events-none absolute inset-x-0 -top-28 -bottom-28">
+        <div className="absolute left-1/2 top-1/3 h-[400px] w-[700px] -translate-x-1/2 rounded-full bg-[#1e4fb5]/10 blur-[140px]" />
+      </div>
+
       <div className="mx-auto max-w-[1180px] px-6">
         <SectionLabel>Dalit History Makers</SectionLabel>
 

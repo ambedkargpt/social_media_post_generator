@@ -31,13 +31,17 @@ export default function HeroSection() {
   return (
     <section
       id="home"
-      className="relative bg-[radial-gradient(circle_at_50%_0%,rgba(41,108,255,0.18),rgba(6,11,26,0.98)_42%),linear-gradient(180deg,#050a18_0%,#030611_100%)] pt-6 md:min-h-[680px] md:pt-10"
+      className="relative pt-6 md:min-h-[680px] md:pt-10"
     >
-      {/* Glows + squiggle */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-24 -top-16 h-[460px] w-[460px] rounded-full bg-[#2d7dfb]/25 blur-[130px]" />
-        <div className="absolute -right-24 top-0 h-[460px] w-[460px] rounded-full bg-[#1d66de]/25 blur-[120px]" />
-        <div className="absolute left-1/2 top-[58%] h-[520px] w-[720px] -translate-x-1/2 rounded-full bg-[#1e4fb5]/25 blur-[120px]" />
+      {/* Glows + squiggle — extend downward so they bleed into the next section */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 -bottom-32">
+        {/* Top radial (replaces the removed section background gradient) */}
+        <div className="absolute inset-x-0 top-0 h-[480px] bg-[radial-gradient(circle_at_50%_0%,rgba(41,108,255,0.16),transparent_55%)]" />
+        <div className="absolute -left-24 -top-16 h-[460px] w-[460px] rounded-full bg-[#2d7dfb]/22 blur-[130px]" />
+        <div className="absolute -right-24 top-0 h-[460px] w-[460px] rounded-full bg-[#1d66de]/22 blur-[120px]" />
+        <div className="absolute left-1/2 top-[58%] h-[520px] w-[720px] -translate-x-1/2 rounded-full bg-[#1e4fb5]/20 blur-[120px]" />
+        {/* Bottom bleed glow — blends into DalitHistoryMakers */}
+        <div className="absolute bottom-0 left-1/2 h-[260px] w-[800px] -translate-x-1/2 rounded-full bg-[#1a3fa0]/15 blur-[120px]" />
         <div
           className="absolute inset-0 bg-cover bg-center opacity-15"
           style={{ backgroundImage: `url(${squiggleSrc})` }}

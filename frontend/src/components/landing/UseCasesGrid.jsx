@@ -62,7 +62,11 @@ function UseCaseCard({ icon: Icon, title, body }) {
 export default function UseCasesGrid() {
   return (
     <section id="bheem" className="relative py-20 md:py-28">
-      <div className="pointer-events-none absolute inset-x-0 top-10 mx-auto h-64 max-w-4xl bg-[radial-gradient(circle_at_center,rgba(63,120,255,0.18),transparent_70%)]" />
+      {/* Ambient glow — extended to bleed into adjacent sections */}
+      <div className="pointer-events-none absolute inset-x-0 -top-28 -bottom-28">
+        <div className="absolute left-1/2 top-0 h-[480px] w-[800px] -translate-x-1/2 rounded-full bg-[#3f78ff]/8 blur-[150px]" />
+        <div className="absolute left-1/2 bottom-0 h-[300px] w-[600px] -translate-x-1/2 rounded-full bg-[#2d55c0]/7 blur-[130px]" />
+      </div>
 
       <div className="relative mx-auto max-w-[1180px] px-6">
         <SectionLabel>Use Cases</SectionLabel>

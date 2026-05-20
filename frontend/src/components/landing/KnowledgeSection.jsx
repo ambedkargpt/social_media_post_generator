@@ -224,10 +224,10 @@ function TestimonialCarousel() {
 export default function KnowledgeSection() {
   return (
     <section id="about" className="relative py-20 md:py-28">
-      {/* ambient glows — contained in their own wrapper so they don't clip at section edge */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute left-[20%] top-[30%] h-[480px] w-[480px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2d7dfb]/8 blur-[140px]" />
-        <div className="absolute right-[10%] bottom-[20%] h-[380px] w-[380px] rounded-full bg-[#1a5fff]/6 blur-[120px]" />
+      {/* ambient glows — extended vertically so they bleed into adjacent sections */}
+      <div className="pointer-events-none absolute inset-x-0 -top-28 -bottom-28">
+        <div className="absolute left-[20%] top-[30%] h-[480px] w-[480px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2d7dfb]/9 blur-[140px]" />
+        <div className="absolute right-[10%] bottom-[20%] h-[380px] w-[380px] rounded-full bg-[#1a5fff]/7 blur-[120px]" />
       </div>
 
       <div className="relative mx-auto grid max-w-[1180px] items-start gap-12 px-6 md:grid-cols-[1fr_1.18fr] md:gap-10">
