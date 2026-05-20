@@ -18,10 +18,9 @@ export default function HeroSection() {
   return (
     <section
       id="home"
-      className="relative bg-[radial-gradient(circle_at_50%_0%,rgba(41,108,255,0.18),rgba(6,11,26,0.98)_42%),linear-gradient(180deg,#050a18_0%,#030611_100%)] pt-6 md:min-h-[680px] md:pt-10"
+      className="relative overflow-hidden bg-[radial-gradient(circle_at_50%_0%,rgba(41,108,255,0.18),rgba(6,11,26,0.98)_42%),linear-gradient(180deg,#050a18_0%,#030611_100%)] pt-6 md:min-h-[680px] md:pt-10"
     >
-      {/* Glows + squiggle contained in their own overflow-hidden wrapper so the
-          section itself never clips child border-radius (that caused sharp top corners) */}
+      {/* Glows + squiggle */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -left-24 -top-16 h-[460px] w-[460px] rounded-full bg-[#2d7dfb]/25 blur-[130px]" />
         <div className="absolute -right-24 top-0 h-[460px] w-[460px] rounded-full bg-[#1d66de]/25 blur-[120px]" />
@@ -183,8 +182,6 @@ export default function HeroSection() {
         </div>
       </div>
 
-      {/* Bottom fade */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-[#05081a]" />
     </section>
   );
 }
