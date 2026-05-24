@@ -302,3 +302,19 @@ Proceed with:
 - Versioned artifact lifecycle with atomic promotion and single-writer guarantees.
 
 This gives the best balance of reliability, operational simplicity, and compatibility with the current FastAPI + FAISS + SEMRAG file-heavy architecture.
+
+## 20) Operational mapping (this repository)
+
+Use this table to execute the plan without re-deriving paths.
+
+| Plan section | In-repo implementation |
+|--------------|-------------------------|
+| §5 Topology (single VM MVP) | [`deploy/README.md`](../../deploy/README.md) pre-domain rollout; one droplet runs API + optional worker timer. |
+| §5 Separate worker VM | Same scripts and `/data/...` layout on the worker host; only `worker.env` + venv + transcript required for builds. |
+| §6 Hot storage (`/data`) | [`deploy/scripts/01-storage-layout.sh`](../../deploy/scripts/01-storage-layout.sh): `artifacts/builds`, `locks`, `transcripts`, `logs/jobs`. |
+| §6–§7 Artifact lifecycle | [`build_artifacts.py`](../worker/build_artifacts.py), [`promote_artifact`](../worker/promote_artifact.py), [`rollback_artifact`](../worker/rollback_artifact.py); `ARTIFACTS_ROOT` in `api.env` / `worker.env`. |
+| §8 Env scopes | [`deploy/env/api.env.example`](../../deploy/env/api.env.example), [`deploy/env/worker.env.example`](../../deploy/env/worker.env.example) → `/etc/ambedkar/*.env`. |
+| §10 API / worker processes | [`deploy/systemd/ambedkar-api.service`](../../deploy/systemd/ambedkar-api.service), [`ambedkar-worker.service`](../../deploy/systemd/ambedkar-worker.service) + [`ambedkar-worker.timer`](../../deploy/systemd/ambedkar-worker.timer). |
+| §12 Backups to object storage | Optional `S3_*` / `AWS_*` in `worker.env`; [`backup_artifacts.py`](../worker/backup_artifacts.py) after promote. |
+
+**Bootstrap order (aligns with §16):** provision droplet + mount `/data` → `01-storage-layout.sh` → place master transcript under `/data/transcripts/` → copy and edit `api.env` / `worker.env` → `03-python-deps.sh` → seed `v0-bootstrap` + promote → `05-install-systemd.sh` → start API → smoke tests → enable `ambedkar-worker.timer` only after transcript path validates.

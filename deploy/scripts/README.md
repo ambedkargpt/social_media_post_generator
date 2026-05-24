@@ -4,7 +4,7 @@ All `*.sh` scripts are intended for **Linux (Ubuntu on DigitalOcean)** unless no
 
 | Script | Where | Purpose |
 |--------|--------|---------|
-| `01-storage-layout.sh` | droplet (root) | `/data/artifacts`, `/data/locks`, `/srv/ambedkar`, `/var/www/ambedkar`, `/etc/ambedkar`; `chown` for `ambedkar` / `www-data` |
+| `01-storage-layout.sh` | droplet (root) | `/data/artifacts`, `/data/locks`, `/data/transcripts`, `/data/logs/jobs`, `/srv/ambedkar`, `/var/www/ambedkar`, `/etc/ambedkar`; `chown` for `ambedkar` / `www-data` |
 | `02-migrate-opt-to-srv.sh` | droplet (root) | Stop old API unit; `rsync` `/opt/ambedkar/app/semrag` → `/srv/ambedkar/app` |
 | `03-python-deps.sh` | droplet (root) | Create `/srv/ambedkar/venv`, `pip install` API + worker requirements |
 | `04-bootstrap-promote.sh` | droplet (root) | `promote_artifact` from `BUILD_DIR` (default `v0-bootstrap`) |
