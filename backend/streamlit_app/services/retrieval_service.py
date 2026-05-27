@@ -17,9 +17,14 @@ OUTPUT_PATH = BASE_DIR / "outputs" / "retrieval_output.json"
 
 def run_retrieval(query: str, top_k: int = 5, semrag_mode: str | None = None) -> Dict[str, Any]:
     settings = get_settings()
-    store = load_vector_store(settings.faiss_index_path, settings.rag_chunks_path)
+    # Pinecone index handle — uses PINECONE_API_KEY + PINECONE_INDEX_NAME from settings
+    from pinecone import Pinecone  # type: ignore[import-untyped]
+    _pc = Pinecone(api_key=settings.pinecone_api_key)
+    pinecone_index = _pc.Index(settings.pinecone_index_name)
+
+    store = load_vector_store(None, settings.rag_chunks_path, pinecone_index=pinecone_index)
     if store is None:
-        raise RuntimeError("Vector store not found. Run main.py once to build embeddings/index.")
+        raise RuntimeError("Chunks file not found. Run the worker rebuild to populate artifacts.")
 
     embedder = ChunkEmbedder(
         api_key=settings.gemini_api_key,

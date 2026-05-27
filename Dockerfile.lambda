@@ -1,0 +1,45 @@
+# ─────────────────────────────────────────────────────────────────
+# AmbedkarGPT — AWS Lambda container image (API)
+#
+# Build:
+#   docker build -f Dockerfile.lambda -t ambedkargpt-api:latest .
+#
+# Push to ECR (replace <account> and <region>):
+#   aws ecr get-login-password --region ap-south-1 | \
+#     docker login --username AWS --password-stdin \
+#     <account>.dkr.ecr.ap-south-1.amazonaws.com
+#
+#   docker tag ambedkargpt-api:latest \
+#     <account>.dkr.ecr.ap-south-1.amazonaws.com/ambedkargpt-api:latest
+#
+#   docker push \
+#     <account>.dkr.ecr.ap-south-1.amazonaws.com/ambedkargpt-api:latest
+#
+# Lambda handler:   backend.main_lambda.handler
+# Lambda memory:    1024 MB
+# Lambda timeout:   60 s
+# ─────────────────────────────────────────────────────────────────
+
+FROM public.ecr.aws/lambda/python:3.11
+
+# ── System deps ──────────────────────────────────────────────────
+# gcc / g++ needed by some Python packages (e.g. numpy wheels may recompile).
+# libgomp1 was needed by faiss-cpu — no longer required.
+RUN dnf install -y gcc g++ && dnf clean all
+
+# ── Python dependencies ──────────────────────────────────────────
+COPY backend/requirements-api.txt /tmp/requirements-api.txt
+
+# Install into the Lambda task root so the runtime can find them
+RUN pip install --no-cache-dir -r /tmp/requirements-api.txt \
+    --target "${LAMBDA_TASK_ROOT}"
+
+# ── Application source ───────────────────────────────────────────
+# Copy the entire backend package and the root-level semrag config / prompts
+COPY backend/ ${LAMBDA_TASK_ROOT}/backend/
+
+# If prompts live at the repo root (relative to WORKDIR), copy them too
+# COPY prompts/ ${LAMBDA_TASK_ROOT}/prompts/
+
+# ── Lambda handler ───────────────────────────────────────────────
+CMD ["backend.main_lambda.handler"]

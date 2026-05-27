@@ -6,7 +6,7 @@ import unicodedata
 import numpy as np
 
 from .embedder import ChunkEmbedder
-from .vector_store import VectorStore, search
+from .vector_store import VectorStore, search  # search() now returns (chunk_id: str, score)
 from .query_expander import expand_queries_from_news
 from .bm25_store import BM25Store, tokenize
 
@@ -248,11 +248,17 @@ def retrieve_relevant_chunks(
         all_query_embs = news_emb[np.newaxis, :]
 
     results_by_chunk: Dict[str, Tuple[Dict, float]] = {}
-    dense_similarity_by_idx: Dict[int, float] = {}
+    # Pinecone search() returns (chunk_id: str, score) — track best dense score per chunk_id
+    dense_similarity_by_id: Dict[str, float] = {}
     chunk_by_id: Dict[str, Dict] = {
         str(chunk.get("chunk_id") or ""): chunk
         for chunk in store.chunks
         if str(chunk.get("chunk_id") or "").strip()
+    }
+    # Bridge BM25 int-indices ↔ Pinecone string IDs
+    idx_to_id: Dict[int, str] = {
+        idx: str(chunk.get("chunk_id") or f"idx_{idx}")
+        for idx, chunk in enumerate(store.chunks)
     }
 
     bm25_store = None
@@ -278,67 +284,73 @@ def retrieve_relevant_chunks(
         if rare_term_protect
         else []
     )
-    rare_force_indices = (
+    # Convert rare-term int-indices to chunk-id strings (BM25 returns int, Pinecone returns str)
+    rare_force_int_indices: Set[int] = (
         _rare_term_candidate_indices(rare_terms, bm25_store, force_k=rare_term_force_k)
         if rare_terms
         else set()
     )
+    rare_force_ids: Set[str] = {idx_to_id[i] for i in rare_force_int_indices if i in idx_to_id}
 
     for (q_text, weight), query_embedding in zip(weighted_queries, all_query_embs):
         if not q_text.strip():
             continue
-        # Dense retrieval candidates
+        # Dense retrieval — Pinecone returns (chunk_id: str, score: float)
         dense_hits = search(store, query_embedding, top_k=dense_top_n)
-        dense_rank_by_idx = {idx: rank for rank, (idx, _) in enumerate(dense_hits, start=1)}
-        dense_sim_by_idx = {idx: sim for idx, sim in dense_hits}
-        for idx, sim in dense_sim_by_idx.items():
-            prev = dense_similarity_by_idx.get(idx, -1.0)
+        dense_rank_by_id: Dict[str, int] = {cid: rank for rank, (cid, _) in enumerate(dense_hits, start=1)}
+        dense_sim_by_id: Dict[str, float] = {cid: sim for cid, sim in dense_hits}
+        for cid, sim in dense_sim_by_id.items():
+            prev = dense_similarity_by_id.get(cid, -1.0)
             if sim > prev:
-                dense_similarity_by_idx[idx] = sim
+                dense_similarity_by_id[cid] = sim
 
-        # BM25 retrieval candidates
-        bm25_rank_by_idx: Dict[int, int] = {}
-        bm25_raw_by_idx: Dict[int, float] = {}
-        bm25_norm_by_idx: Dict[int, float] = {}
+        # BM25 retrieval — still uses int indices internally; convert to chunk-id strings
+        bm25_rank_by_id: Dict[str, int] = {}
+        bm25_raw_by_id: Dict[str, float] = {}
+        bm25_norm_by_id: Dict[str, float] = {}
         if bm25_store is not None:
             bm25_scores = bm25_store.score(q_text)
             if bm25_scores.size:
                 top_bm25_idx = np.argsort(-bm25_scores)[:bm25_top_n]
-                bm25_rank_by_idx = {int(idx): rank for rank, idx in enumerate(top_bm25_idx, start=1)}
                 top_vals = bm25_scores[top_bm25_idx]
                 max_bm25 = float(np.max(top_vals)) if len(top_vals) else 0.0
-                for idx in top_bm25_idx:
+                for rank, idx in enumerate(top_bm25_idx, start=1):
+                    cid = idx_to_id.get(int(idx))
+                    if cid is None:
+                        continue
                     raw = float(bm25_scores[int(idx)])
-                    bm25_raw_by_idx[int(idx)] = raw
-                    bm25_norm_by_idx[int(idx)] = (raw / max_bm25) if max_bm25 > 1e-12 else 0.0
+                    bm25_rank_by_id[cid] = rank
+                    bm25_raw_by_id[cid] = raw
+                    bm25_norm_by_id[cid] = (raw / max_bm25) if max_bm25 > 1e-12 else 0.0
 
-        # Rank-fusion score over union of candidates.
-        candidate_indices = set(dense_rank_by_idx.keys()) | set(bm25_rank_by_idx.keys())
-        # Ensure rare-keyword lexical matches are represented in candidate pool.
-        if q_text == news_text and rare_force_indices:
-            candidate_indices |= rare_force_indices
-        for idx in candidate_indices:
-            chunk = store.chunks[idx]
+        # Rank-fusion over union of candidate chunk-ids (all strings now)
+        candidate_ids: Set[str] = set(dense_rank_by_id.keys()) | set(bm25_rank_by_id.keys())
+        # Force-include rare-term lexical candidates
+        if q_text == news_text and rare_force_ids:
+            candidate_ids |= rare_force_ids
+        for chunk_id in candidate_ids:
+            chunk = chunk_by_id.get(chunk_id)
+            if chunk is None:
+                continue
             if strict_title_mode and candidate_set and chunk.get("video_title") not in candidate_set:
                 continue
 
             # RRF contribution for this query
             rrf_score = 0.0
-            d_rank = dense_rank_by_idx.get(idx)
-            b_rank = bm25_rank_by_idx.get(idx)
+            d_rank = dense_rank_by_id.get(chunk_id)
+            b_rank = bm25_rank_by_id.get(chunk_id)
             if d_rank is not None:
                 rrf_score += 1.0 / (rrf_k + d_rank)
             if b_rank is not None:
                 rrf_score += 1.0 / (rrf_k + b_rank)
-            # B mode: soft title bias without hard exclusion.
+            # Soft title bias without hard exclusion
             if candidate_set and chunk.get("video_title") in candidate_set:
                 rrf_score += 0.01
             rrf_score *= weight
 
-            chunk_id = chunk.get("chunk_id") or f"idx_{idx}"
-            similarity_score = float(dense_sim_by_idx.get(idx, dense_similarity_by_idx.get(idx, 0.0)))
-            bm25_score = float(bm25_raw_by_idx.get(idx, 0.0))
-            bm25_norm_score = float(bm25_norm_by_idx.get(idx, 0.0))
+            similarity_score = float(dense_sim_by_id.get(chunk_id, dense_similarity_by_id.get(chunk_id, 0.0)))
+            bm25_score = float(bm25_raw_by_id.get(chunk_id, 0.0))
+            bm25_norm_score = float(bm25_norm_by_id.get(chunk_id, 0.0))
             argument_score = float(chunk.get("argument_score", 0.0))
 
             existing = results_by_chunk.get(chunk_id)
@@ -419,7 +431,7 @@ def retrieve_relevant_chunks(
     # Optional semantic rerank over top-N hybrid candidates.
     if enable_rerank and ranked:
         q_emb = news_emb.copy()
-        q_emb /= (np.linalg.norm(q_emb) + 1e-12)
+        q_emb /= (float(np.linalg.norm(q_emb)) + 1e-12)
         rerank_slice = ranked[: min(rerank_top_n, len(ranked))]
         chunk_texts = [r.get("chunk_text", "") for r in rerank_slice]
         chunk_embs = embedder.embed_texts(chunk_texts, desc="Reranking chunks").astype("float32")

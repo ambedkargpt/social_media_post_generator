@@ -7,7 +7,12 @@ from backend.semrag.semrag_config import load_semrag_config
 
 
 _PROJECT_ROOT = Path(__file__).resolve().parent
+# REPO_ROOT = the actual repository root (one level above backend/)
+# build_artifacts.py uses this to locate data/ravishkumar_all_transcripts.txt
+REPO_ROOT = _PROJECT_ROOT.parent
+# Load .env from backend/ first, then fall back to project root (one level up)
 load_dotenv(_PROJECT_ROOT / ".env")
+load_dotenv(_PROJECT_ROOT.parent / ".env")
 
 
 @dataclass
@@ -81,8 +86,11 @@ class Settings:
     google_client_id: str
     auth_debug_return_otp: bool
     app_env: str
-    # Artifact paths (FAISS index + RAG chunks) used by health/readiness checks
-    faiss_index_path: Path
+    # Pinecone (replaces FAISS)
+    pinecone_api_key: str
+    pinecone_index_name: str
+    pinecone_namespace: str
+    # Artifact paths — RAG chunks JSON (still needed for BM25 + metadata lookup)
     rag_chunks_path: Path
     artifacts_root: Path | None
     artifact_manifest_path: Path | None
@@ -170,6 +178,9 @@ def get_settings() -> Settings:
     - GOOGLE_CLIENT_ID (optional, required for strict Google ID token validation)
     - AUTH_DEBUG_RETURN_OTP (optional, defaults to false)
     - APP_ENV (optional, defaults to development)
+    - PINECONE_API_KEY (required for vector search)
+    - PINECONE_INDEX_NAME (optional, defaults to ambedkargpt)
+    - PINECONE_NAMESPACE (optional, defaults to empty string)
     """
     openai_api_key = os.getenv("OPENAI_API_KEY", "")
     openai_model = os.getenv("OPENAI_MODEL", "gpt-5-nano")
@@ -197,10 +208,16 @@ def get_settings() -> Settings:
     }
     retrieval_rare_term_min_idf = float(os.getenv("RETRIEVAL_RARE_TERM_MIN_IDF", "6.0"))
     retrieval_rare_term_force_k = int(os.getenv("RETRIEVAL_RARE_TERM_FORCE_K", "20"))
+    # Prompts live in backend/prompts/ so use _PROJECT_ROOT for config load.
+    # Data files (graph, cache, chunks) live under REPO_ROOT/data/semrag/ —
+    # override those paths below if the env vars are not set.
     semrag_cfg = load_semrag_config(_PROJECT_ROOT)
     semrag_enabled = semrag_cfg.semrag_enabled
-    semrag_graph_path = semrag_cfg.semrag_graph_path
-    semrag_cache_path = semrag_cfg.semrag_cache_path
+    # SEMRAG data lives under REPO_ROOT/data/semrag/ (project root), not backend/data/semrag/.
+    # Only override when env vars are absent (env vars always win).
+    _semrag_data_dir = REPO_ROOT / "data" / "semrag"
+    semrag_graph_path = semrag_cfg.semrag_graph_path if os.getenv("SEMRAG_GRAPH_PATH") else (_semrag_data_dir / "semrag_graph.json")
+    semrag_cache_path = semrag_cfg.semrag_cache_path if os.getenv("SEMRAG_CACHE_PATH") else (_semrag_data_dir / "semrag_extraction_cache.json")
     semrag_weight = semrag_cfg.semrag_weight
     semrag_top_n = semrag_cfg.semrag_top_n
     semrag_search_mode = semrag_cfg.semrag_search_mode
@@ -270,6 +287,9 @@ def get_settings() -> Settings:
     google_client_id = (os.getenv("GOOGLE_CLIENT_ID") or "").strip()
     auth_debug_return_otp = (os.getenv("AUTH_DEBUG_RETURN_OTP", "false").lower() in {"1", "true", "yes", "on"})
     app_env = (os.getenv("APP_ENV") or "development").strip().lower() or "development"
+    pinecone_api_key = (os.getenv("PINECONE_API_KEY") or "").strip()
+    pinecone_index_name = (os.getenv("PINECONE_INDEX_NAME") or "ambedkargpt").strip()
+    pinecone_namespace = (os.getenv("PINECONE_NAMESPACE") or "").strip()
 
     if not openai_api_key:
         raise ValueError("OPENAI_API_KEY is not set in the environment.")
@@ -304,7 +324,7 @@ def get_settings() -> Settings:
         semrag_enabled=semrag_enabled,
         semrag_graph_path=semrag_graph_path,
         semrag_cache_path=semrag_cache_path,
-        semrag_chunks_path=semrag_cfg.semrag_chunks_path,
+        semrag_chunks_path=semrag_cfg.semrag_chunks_path if os.getenv("SEMRAG_CHUNKS_PATH") else (_semrag_data_dir / "semrag_chunks.json"),
         semrag_weight=semrag_weight,
         semrag_top_n=semrag_top_n,
         semrag_model=semrag_model,
@@ -339,7 +359,9 @@ def get_settings() -> Settings:
         google_client_id=google_client_id,
         auth_debug_return_otp=auth_debug_return_otp,
         app_env=app_env,
-        faiss_index_path=(_PROJECT_ROOT / "outputs" / "faiss_index.bin").resolve(),
+        pinecone_api_key=pinecone_api_key,
+        pinecone_index_name=pinecone_index_name,
+        pinecone_namespace=pinecone_namespace,
         rag_chunks_path=(_PROJECT_ROOT / "data" / "argument_chunks.json").resolve(),
         artifacts_root=Path(os.environ["ARTIFACTS_ROOT"]).resolve() if os.getenv("ARTIFACTS_ROOT") else None,
         artifact_manifest_path=Path(os.environ["ARTIFACT_MANIFEST_PATH"]).resolve() if os.getenv("ARTIFACT_MANIFEST_PATH") else None,

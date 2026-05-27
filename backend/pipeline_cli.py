@@ -14,6 +14,7 @@ from backend.pipeline.chunker import chunk_videos
 from backend.pipeline.argument_scorer import score_argument_chunks
 from backend.pipeline.embedder import ChunkEmbedder
 from backend.pipeline.vector_store import build_index, save_vector_store, load_vector_store
+from backend.core.s3_loader import ensure_artifact_local, artifact_s3_key
 from backend.pipeline.retriever import retrieve_relevant_chunks
 from backend.pipeline.generator import generate_post
 from backend.pipeline.profiles import get_user_profiles
@@ -27,7 +28,9 @@ from backend.semrag.semrag_config import load_semrag_config
 BASE_DIR = Path(__file__).parent
 DATA_PATH = BASE_DIR / "data" / "ravishkumar_all_transcripts.txt"
 OUTPUT_PATH = BASE_DIR / "outputs" / "generated_posts.json"
-INDEX_PATH = BASE_DIR / "outputs" / "faiss_index.bin"
+# INDEX_PATH kept for backward-compat with save_vector_store() signature (ignored at runtime).
+# Vector index now lives in Pinecone — no local .bin file is written or read.
+INDEX_PATH = BASE_DIR / "outputs" / "faiss_index.bin"  # unused; Pinecone is cloud-managed
 CHUNKS_PATH = BASE_DIR / "data" / "argument_chunks.json"
 VIDEO_CONTEXT_PATH = BASE_DIR / "data" / "video_context.json"
 TITLE_EMB_PATH = BASE_DIR / "data" / "video_title_embeddings.json"
@@ -60,18 +63,47 @@ def load_transcript_file() -> str:
 _RAG_CACHE: tuple | None = None
 
 
+def _get_pinecone_index(settings):
+    """Return a live pinecone.Index handle using settings credentials."""
+    from pinecone import Pinecone  # type: ignore[import-untyped]
+    pc = Pinecone(api_key=settings.pinecone_api_key)
+    return pc.Index(settings.pinecone_index_name)
+
+
 def ensure_rag_stack(settings) -> Tuple[ChunkEmbedder, Any, Dict[str, Dict[str, Any]]]:
-    """
-    Load or build FAISS store + chunk JSON, return embedder and title→video_context map.
-    Result is cached in-process so disk/embedding setup only runs once per server start.
+    """Load or build the RAG stack; return (embedder, VectorStore, context_by_title).
+
+    On Lambda cold start:
+      - Downloads artifact files from S3 to /tmp if they don't exist locally.
+      - Connects to Pinecone (no local FAISS file needed).
+      - Builds BM25 index in memory from chunks JSON.
+
+    On a warm Lambda instance (or local dev with files already on disk):
+      - Returns the cached _RAG_CACHE immediately (<1 ms).
+
+    Full rebuild path (no chunks file + Pinecone index empty):
+      - Parses transcripts, embeds, upserts to Pinecone, saves chunks JSON.
     """
     global _RAG_CACHE
     if _RAG_CACHE is not None:
         return _RAG_CACHE
 
-    store = load_vector_store(INDEX_PATH, CHUNKS_PATH)
+    # --- Ensure artifact files are local (S3 download on Lambda cold start) ---
+    for fname, local in [
+        ("argument_chunks.json",          CHUNKS_PATH),
+        ("video_context.json",             VIDEO_CONTEXT_PATH),
+        ("video_title_embeddings.json",    TITLE_EMB_PATH),
+    ]:
+        ensure_artifact_local(artifact_s3_key(fname), local)
+
+    # --- Connect to Pinecone ---
+    pinecone_index = _get_pinecone_index(settings)
+
+    # --- Load chunks + wrap with Pinecone index ---
+    store = load_vector_store(INDEX_PATH, CHUNKS_PATH, pinecone_index=pinecone_index)
 
     if store is None:
+        # Full rebuild: parse → embed → upsert to Pinecone → save chunks JSON
         raw_transcripts = load_transcript_file()
         videos = parse_transcripts(raw_transcripts)
 
@@ -101,7 +133,8 @@ def ensure_rag_stack(settings) -> Tuple[ChunkEmbedder, Any, Dict[str, Dict[str, 
             use_cache=settings.embedding_chunk_cache_enabled,
         )
 
-        store = build_index(embeddings, chunks)
+        # Upsert to Pinecone instead of writing faiss_index.bin
+        store = build_index(embeddings, chunks, pinecone_index)
         save_vector_store(store, INDEX_PATH, CHUNKS_PATH)
     else:
         embedder = ChunkEmbedder(

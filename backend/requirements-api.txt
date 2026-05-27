@@ -1,9 +1,13 @@
-# Production API / Gunicorn — install on the application droplet.
+# Production API — Lambda container + local dev.
 # pip install -r backend/requirements-api.txt
+#
+# MIGRATION NOTE: faiss-cpu removed — vector search now via Pinecone Serverless.
+# mangum added    — ASGI adapter that wraps FastAPI for AWS Lambda.
 
 fastapi==0.115.8
 uvicorn[standard]==0.34.2
 gunicorn==23.0.0
+mangum==0.19.0
 pymongo==4.11.2
 PyJWT==2.10.1
 google-auth==2.38.0
@@ -12,7 +16,7 @@ python-dotenv==1.0.1
 httpx==0.28.1
 openai==1.61.1
 google-genai==1.29.0
-faiss-cpu==1.9.0.post1
+pinecone==6.0.0
 numpy==2.2.2
 requests==2.32.3
 beautifulsoup4==4.13.3

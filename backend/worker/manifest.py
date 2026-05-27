@@ -20,8 +20,9 @@ def sha256_file(path: Path, chunk_size: int = 1024 * 1024) -> str:
     return h.hexdigest()
 
 
+# faiss_index.bin removed — vector index now lives in Pinecone (cloud-managed).
+# argument_chunks.json is the source of truth for BM25 + metadata lookup.
 ARTIFACT_FILENAMES = (
-    "faiss_index.bin",
     "argument_chunks.json",
     "video_context.json",
     "video_title_embeddings.json",

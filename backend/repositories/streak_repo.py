@@ -19,7 +19,6 @@ def _to_datetime(d: date) -> datetime:
 class StreakRepository:
     def __init__(self) -> None:
         self.collection = db["user_streaks"]
-        self.collection.create_index("user_id", unique=True, name="uq_streak_user_id", background=True)
 
     def get(self, user_id: str) -> Optional[dict]:
         return self.collection.find_one({"user_id": ObjectId(user_id)})

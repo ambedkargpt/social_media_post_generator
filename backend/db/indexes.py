@@ -77,3 +77,6 @@ def ensure_phase3_indexes() -> None:
     posts.create_index([("news_id", ASCENDING), ("created_at", DESCENDING)], name="idx_posts_news_created")
     posts.create_index([("status", ASCENDING), ("created_at", DESCENDING)], name="idx_posts_status_created")
     posts.create_index([("content", "text")], name="idx_posts_content_text")
+
+    streaks = db["user_streaks"]
+    streaks.create_index("user_id", unique=True, name="uq_streak_user_id")

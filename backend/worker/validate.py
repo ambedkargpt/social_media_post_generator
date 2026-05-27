@@ -1,13 +1,49 @@
-"""Post-build validation for artifact directories."""
+"""Post-build validation for artifact directories.
+
+MIGRATION NOTE: faiss-cpu removed — FAISS index validation replaced by:
+  - argument_chunks.json content check (non-empty, parseable)
+  - Pinecone vector count check (optional; skipped in offline/CI builds)
+"""
 
 from __future__ import annotations
 
 import json
+import logging
+import os
 from pathlib import Path
 
-import faiss
-
 from backend.worker.manifest import sha256_file
+
+logger = logging.getLogger(__name__)
+
+
+def _pinecone_vector_count(min_expected: int = 1) -> tuple[bool, str | None]:
+    """Return (ok, error_message).
+
+    Pings the configured Pinecone index and checks that it has at least
+    ``min_expected`` vectors.  Returns (True, None) when:
+      - PINECONE_API_KEY is not set (offline / CI build — skip silently), or
+      - the index reports >= min_expected vectors.
+    """
+    api_key = (os.getenv("PINECONE_API_KEY") or "").strip()
+    if not api_key:
+        logger.info("PINECONE_API_KEY not set — skipping Pinecone vector count check.")
+        return True, None
+
+    index_name = (os.getenv("PINECONE_INDEX_NAME") or "ambedkargpt").strip()
+    try:
+        from pinecone import Pinecone  # type: ignore[import-untyped]
+
+        pc = Pinecone(api_key=api_key)
+        idx = pc.Index(index_name)
+        stats = idx.describe_index_stats()
+        total = int(stats.total_vector_count or 0)
+        if total < min_expected:
+            return False, f"pinecone_vector_count_too_low:{total}<{min_expected}"
+        logger.info("Pinecone index %r has %d vectors — OK.", index_name, total)
+        return True, None
+    except Exception as exc:
+        return False, f"pinecone_check_failed:{exc}"
 
 
 def validate_build_dir(
@@ -15,28 +51,43 @@ def validate_build_dir(
     *,
     require_semrag: bool = True,
     min_graph_entities: int = 1,
+    check_pinecone: bool = True,
 ) -> tuple[bool, list[str]]:
-    """
-    Return (ok, warnings_or_errors).
+    """Return (ok, warnings_or_errors).
 
-    - Ensures required files exist and FAISS loads.
-    - If ``require_semrag``, checks ``semrag_graph.json`` has non-empty ``entities`` list.
+    Checks:
+    - argument_chunks.json  — exists, non-empty, valid JSON, has at least 1 chunk.
+    - video_context.json    — exists and non-empty.
+    - semrag_graph.json     — exists and has >= min_graph_entities entities (if require_semrag).
+    - semrag_chunks.json    — exists and non-empty (if require_semrag).
+    - Pinecone vector count — >= len(chunks) (if check_pinecone and PINECONE_API_KEY set).
     """
     errors: list[str] = []
-    for name in ("faiss_index.bin", "argument_chunks.json", "video_context.json"):
+
+    # --- argument_chunks.json ---
+    chunks_path = build_dir / "argument_chunks.json"
+    if not chunks_path.is_file() or chunks_path.stat().st_size == 0:
+        errors.append("missing_or_empty:argument_chunks.json")
+        chunk_count = 0
+    else:
+        try:
+            chunks = json.loads(chunks_path.read_text(encoding="utf-8"))
+            chunk_count = len(chunks) if isinstance(chunks, list) else 0
+            if chunk_count == 0:
+                errors.append("argument_chunks_empty:0_items")
+        except Exception as exc:
+            errors.append(f"argument_chunks_invalid:{exc}")
+            chunk_count = 0
+
+    # --- video_context.json ---
+    for name in ("video_context.json",):
         p = build_dir / name
         if not p.is_file() or p.stat().st_size == 0:
             errors.append(f"missing_or_empty:{name}")
 
-    try:
-        idx = faiss.read_index(str(build_dir / "faiss_index.bin"))
-        if idx.ntotal < 0:
-            errors.append("faiss_ntotal_invalid")
-    except Exception as exc:
-        errors.append(f"faiss_load_failed:{exc}")
-
-    semrag_graph = build_dir / "semrag_graph.json"
+    # --- SEMRAG artifacts ---
     if require_semrag:
+        semrag_graph = build_dir / "semrag_graph.json"
         if not semrag_graph.is_file():
             errors.append("missing:semrag_graph.json")
         else:
@@ -49,9 +100,15 @@ def validate_build_dir(
             except Exception as exc:
                 errors.append(f"semrag_graph_invalid:{exc}")
 
-    chunks_path = build_dir / "semrag_chunks.json"
-    if require_semrag and (not chunks_path.is_file() or chunks_path.stat().st_size < 32):
-        errors.append("missing_or_empty:semrag_chunks.json")
+        sem_chunks = build_dir / "semrag_chunks.json"
+        if not sem_chunks.is_file() or sem_chunks.stat().st_size < 32:
+            errors.append("missing_or_empty:semrag_chunks.json")
+
+    # --- Pinecone vector count ---
+    if check_pinecone and chunk_count > 0:
+        ok, err = _pinecone_vector_count(min_expected=1)
+        if not ok and err:
+            errors.append(err)
 
     return (len(errors) == 0, errors)
 

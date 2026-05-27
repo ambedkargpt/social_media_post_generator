@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import random
+import time
 from pathlib import Path
 
 from backend.repositories.news_repo import NewsRepository
@@ -17,6 +19,12 @@ from backend.pipeline.video_summarizer import (
 
 
 def _fetch_module():
+    import sys
+    import os
+    # Ensure backend/ directory is in sys.path so 'Fetch' can be imported directly.
+    _backend_dir = str(Path(__file__).resolve().parent.parent.parent)  # .../backend/
+    if _backend_dir not in sys.path:
+        sys.path.insert(0, _backend_dir)
     import Fetch as fetch_module
 
     return fetch_module
@@ -62,6 +70,10 @@ def run_ingestion(context: PipelineContext) -> StageResult:
                 entry[key] = meta[key]
         entries.append(entry)
         fetch.add_processed(processed_ids, processed_records, meta, url, channel.processed_json_path)
+        # Polite delay to avoid YouTube IP rate-limiting
+        delay = random.uniform(10, 15)
+        print(f" Sleeping {delay:.1f}s before next fetch…")
+        time.sleep(delay)
 
     appended = fetch.append_entries_to_consolidated(channel.consolidated_txt_path, entries)
     context.runtime["newly_fetched_entries"] = entries

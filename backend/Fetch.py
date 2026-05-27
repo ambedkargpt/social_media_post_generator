@@ -33,7 +33,8 @@ OUTPUT_BASE_DIR = PROJECT_ROOT / "outputs" / "transcripts"
 DATA_DIR = PROJECT_ROOT / "data"
 RAVISH_CHANNEL_SLUG = "ravishkumar.official"
 RAVISH_DATA_TXT = DATA_DIR / "ravishkumar_all_transcripts.txt"
-RAG_INDEX_PATH = PROJECT_ROOT / "outputs" / "faiss_index.bin"
+# RAG_INDEX_PATH kept as a path constant but no longer written — vector index is in Pinecone.
+RAG_INDEX_PATH = PROJECT_ROOT / "outputs" / "faiss_index.bin"  # legacy reference; unused
 RAG_CHUNKS_PATH = DATA_DIR / "argument_chunks.json"
 RAG_VIDEO_CONTEXT_PATH = DATA_DIR / "video_context.json"
 RAG_TITLE_EMB_PATH = DATA_DIR / "video_title_embeddings.json"
@@ -281,43 +282,53 @@ def append_entries_to_consolidated(target_path: Path, entries: list[dict]) -> in
     return appended
 
 
-def rebuild_rag_artifacts_from_data_file(data_txt_path: Path) -> None:
+def rebuild_rag_artifacts_from_data_file(
+    data_txt_path: Path,
+    *,
+    index_path: Path | None = None,           # accepted for compat; Pinecone is cloud-managed
+    chunks_path: Path | None = None,
+    video_context_path: Path | None = None,
+    title_emb_path: Path | None = None,
+) -> None:
     """
     Rebuild RAG artifacts after transcript data grows.
-    This keeps chunks/index/title embeddings up to date automatically.
+    Writes chunks JSON and title embeddings to the provided paths (or module-level
+    defaults if not supplied).  Vector index is upserted to Pinecone Serverless.
+    ``index_path`` is accepted for call-site compatibility but ignored at runtime.
     """
     if not data_txt_path.exists():
         return
 
+    from pinecone import Pinecone as _Pinecone  # type: ignore[import-untyped]
     from backend.config import get_settings
     from backend.pipeline.transcript_parser import parse_transcripts
     from backend.pipeline.chunker import chunk_videos
     from backend.pipeline.argument_scorer import score_argument_chunks
     from backend.pipeline.embedder import ChunkEmbedder
     from backend.pipeline.vector_store import build_index, save_vector_store
-    from backend.pipeline.title_embeddings import build_title_embeddings, save_title_embeddings
+    from backend.pipeline.title_embeddings import build_title_embeddings, load_title_embeddings, save_title_embeddings
 
     settings = get_settings()
+
+    # Resolve output paths — caller (build_artifacts) may supply build-dir paths
+    _chunks_path     = chunks_path        or RAG_CHUNKS_PATH
+    _vc_path         = video_context_path or RAG_VIDEO_CONTEXT_PATH
+    _title_emb_path  = title_emb_path     or RAG_TITLE_EMB_PATH
+
     raw_text = data_txt_path.read_text(encoding="utf-8")
     videos = parse_transcripts(raw_text)
     if not videos:
         return
 
     # Persist latest full video context
-    RAG_VIDEO_CONTEXT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    RAG_VIDEO_CONTEXT_PATH.write_text(
-        json.dumps(videos, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    _vc_path.parent.mkdir(parents=True, exist_ok=True)
+    _vc_path.write_text(json.dumps(videos, ensure_ascii=False, indent=2), encoding="utf-8")
 
     chunks = chunk_videos(videos)
     chunks = score_argument_chunks(chunks)
 
-    RAG_CHUNKS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    RAG_CHUNKS_PATH.write_text(
-        json.dumps(chunks, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    _chunks_path.parent.mkdir(parents=True, exist_ok=True)
+    _chunks_path.write_text(json.dumps(chunks, ensure_ascii=False, indent=2), encoding="utf-8")
 
     embedder = ChunkEmbedder(
         api_key=settings.gemini_api_key,
@@ -329,17 +340,61 @@ def rebuild_rag_artifacts_from_data_file(data_txt_path: Path) -> None:
         cache_path=settings.embedding_chunk_cache_path,
         use_cache=settings.embedding_chunk_cache_enabled,
     )
-    store = build_index(embeddings, chunks)
-    save_vector_store(store, RAG_INDEX_PATH, RAG_CHUNKS_PATH)
 
-    title_emb = build_title_embeddings(videos, embedder)
-    save_title_embeddings(title_emb, RAG_TITLE_EMB_PATH)
+    # Connect to Pinecone and upsert (replaces faiss.write_index)
+    _pc = _Pinecone(api_key=settings.pinecone_api_key)
+    pinecone_index = _pc.Index(settings.pinecone_index_name)
+    store = build_index(embeddings, chunks, pinecone_index, namespace=settings.pinecone_namespace)
+    save_vector_store(store, RAG_INDEX_PATH, _chunks_path)  # index_path ignored; chunks re-saved
+
+    # --- Title embeddings with cache ---
+    # Search for an existing title embeddings file: target path first, then the
+    # canonical data/ paths (project-root and backend/data/), so we never
+    # re-embed titles we already have.
+    _canonical_title_emb_root = PROJECT_ROOT.parent / "data" / "video_title_embeddings.json"
+    _canonical_title_emb_be   = RAG_TITLE_EMB_PATH  # backend/data/video_title_embeddings.json
+    _existing_te = (
+        load_title_embeddings(_title_emb_path)
+        or load_title_embeddings(_canonical_title_emb_root)
+        or load_title_embeddings(_canonical_title_emb_be)
+    )
+
+    # Collect titles that still need embedding
+    _all_titles_by_title: dict = {}
+    for v in videos:
+        t = (v.get("video_title") or "").strip()
+        if not t or t in _all_titles_by_title:
+            continue
+        _all_titles_by_title[t] = (v.get("video_link") or "").strip()
+
+    if _existing_te and _existing_te.model == embedder.model_name:
+        _cached_titles = set(_existing_te.titles)
+        _new_titles = [t for t in sorted(_all_titles_by_title) if t not in _cached_titles]
+        if _new_titles:
+            print(f"Title embeddings: {len(_cached_titles)} cached, {len(_new_titles)} new to embed.")
+            title_emb = build_title_embeddings(videos, embedder)  # full rebuild merges all
+        else:
+            print(f"Title embeddings: all {len(_cached_titles)} titles cached — no API calls.")
+            title_emb = _existing_te
+    else:
+        title_emb = build_title_embeddings(videos, embedder)
+
+    save_title_embeddings(title_emb, _title_emb_path)
 
 
-def rebuild_semrag_artifacts_from_data_file(data_txt_path: Path) -> None:
+def rebuild_semrag_artifacts_from_data_file(
+    data_txt_path: Path,
+    *,
+    graph_path: Path | None = None,
+    cache_path: Path | None = None,
+    chunks_path: Path | None = None,
+) -> None:
     """
     Refresh SEMRAG chunks + KG from the latest transcript master file.
     Uses extraction cache, so only truly new/changed chunks are processed.
+
+    Optional keyword args allow the worker to write artifacts into a versioned
+    build directory rather than the default settings paths.
     """
     if not data_txt_path.exists():
         return
@@ -350,14 +405,29 @@ def rebuild_semrag_artifacts_from_data_file(data_txt_path: Path) -> None:
     from backend.semrag.chunking import chunk_videos_for_semrag
     from backend.semrag.semrag_config import load_semrag_config
 
+    import shutil
+
     settings = get_settings()
     semrag_cfg = load_semrag_config(PROJECT_ROOT)
+
+    # Resolve output paths — use caller-supplied paths or fall back to settings
+    _graph_path = graph_path if graph_path is not None else settings.semrag_graph_path
+    _cache_path = cache_path if cache_path is not None else settings.semrag_cache_path
+    _chunks_path = chunks_path if chunks_path is not None else settings.semrag_chunks_path
+
+    # If the target cache path is a NEW versioned build path (doesn't exist yet)
+    # but the canonical settings cache does exist, seed it from there so the graph
+    # builder never has to re-call DeepSeek for already-extracted chunks.
+    if not _cache_path.exists() and settings.semrag_cache_path.exists() and _cache_path != settings.semrag_cache_path:
+        print(f"Seeding extraction cache from {settings.semrag_cache_path} -> {_cache_path}")
+        shutil.copy2(settings.semrag_cache_path, _cache_path)
+
     semrag_chunks = []
-    if settings.semrag_chunks_path.exists():
+    if _chunks_path.exists():
         try:
-            semrag_chunks = json.loads(settings.semrag_chunks_path.read_text(encoding="utf-8"))
+            semrag_chunks = json.loads(_chunks_path.read_text(encoding="utf-8"))
             if semrag_chunks:
-                print(f" Using existing SEMRAG chunks from: {settings.semrag_chunks_path}")
+                print(f" Using existing SEMRAG chunks from: {_chunks_path}")
         except Exception:
             semrag_chunks = []
 
@@ -367,12 +437,12 @@ def rebuild_semrag_artifacts_from_data_file(data_txt_path: Path) -> None:
         if not videos:
             return
         semrag_chunks = chunk_videos_for_semrag(videos, embedder=None, cfg=semrag_cfg)
-        save_semrag_chunks(settings.semrag_chunks_path, semrag_chunks)
+        save_semrag_chunks(_chunks_path, semrag_chunks)
     build_semrag_graph(
         chunks=semrag_chunks,
         settings=settings,
-        graph_path=settings.semrag_graph_path,
-        cache_path=settings.semrag_cache_path,
+        graph_path=_graph_path,
+        cache_path=_cache_path,
         force_rebuild=False,
     )
 
