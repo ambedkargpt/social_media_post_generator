@@ -1,0 +1,212 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# rebuild.yml
+#
+# Automated + manual RAG artifact rebuild via AWS Batch.
+#
+# Triggers:
+#   - EventBridge Scheduler handles the true production cron
+#     (cron(0 2 */2 * ? *) — every 2 days at 2 AM UTC / 7:30 AM IST)
+#   - This GitHub Actions schedule is a complementary trigger that fires on the
+#     same cadence and submits the Batch job from the CI side.
+#     Both can coexist — Batch's distributed S3 lock prevents double-runs.
+#   - workflow_dispatch: manual "Run workflow" button in GitHub UI
+#
+# What this does:
+#   1. Submit an AWS Batch job (ambedkargpt-worker) to the worker queue
+#   2. Poll until SUCCEEDED or FAILED (max ~3 hours — GitHub Actions job timeout)
+#   3. Post result to the GitHub Actions job summary
+#
+# Required GitHub Secrets:
+#   AWS_ROLE_ARN     — OIDC role ARN for GitHub Actions
+#
+# Required infrastructure (created by DevOps before first run):
+#   - Batch compute environment:  ambedkargpt-compute-env  (Fargate)
+#   - Batch job queue:            ambedkargpt-worker-queue
+#   - Batch job definition:       ambedkargpt-worker  (deployed by deploy-worker.yml)
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: Scheduled RAG Rebuild
+
+on:
+  # GitHub-side schedule — every 2 days at 2:05 AM UTC
+  # (5-min offset from EventBridge avoids exact simultaneous double-submit)
+  schedule:
+    - cron: "5 2 */2 * *"
+
+  # Manual trigger from GitHub UI — useful for ad-hoc rebuilds
+  workflow_dispatch:
+    inputs:
+      skip_semrag:
+        description: "Skip SEMRAG extraction (faster, only RAG artifacts)"
+        type: boolean
+        default: false
+        required: false
+      force_full:
+        description: "Force full re-embed (ignore incremental cache)"
+        type: boolean
+        default: false
+        required: false
+      dry_run:
+        description: "Dry run — submit job but exit immediately (no wait)"
+        type: boolean
+        default: false
+        required: false
+
+permissions:
+  id-token: write   # Required for OIDC token exchange
+  contents: read
+
+jobs:
+  trigger-batch:
+    name: Submit & Monitor Batch Rebuild
+    runs-on: ubuntu-latest
+    # 3-hour timeout — worker pipeline takes ~1–3 hrs; GitHub Actions max is 6 hrs
+    timeout-minutes: 180
+
+    steps:
+      # Configure AWS credentials via OIDC (no static keys)
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ap-south-1
+
+      # Build the environment overrides JSON based on workflow_dispatch inputs
+      - name: Prepare job parameters
+        id: params
+        run: |
+          # Build list of environment variable overrides for the Batch job
+          ENV_OVERRIDES='[]'
+
+          if [ "${{ inputs.skip_semrag }}" = "true" ]; then
+            ENV_OVERRIDES=$(echo "$ENV_OVERRIDES" | jq '. + [{"name":"SKIP_SEMRAG","value":"1"}]')
+          fi
+
+          if [ "${{ inputs.force_full }}" = "true" ]; then
+            ENV_OVERRIDES=$(echo "$ENV_OVERRIDES" | jq '. + [{"name":"FORCE_FULL_REBUILD","value":"1"}]')
+          fi
+
+          # Always record the GitHub trigger metadata in the job environment
+          ENV_OVERRIDES=$(echo "$ENV_OVERRIDES" | jq \
+            --arg actor "${{ github.actor }}" \
+            --arg run_id "${{ github.run_id }}" \
+            --arg sha "${{ github.sha }}" \
+            '. + [
+              {"name":"GITHUB_ACTOR",  "value": $actor},
+              {"name":"GITHUB_RUN_ID", "value": $run_id},
+              {"name":"GITHUB_SHA",    "value": $sha}
+            ]')
+
+          echo "env_overrides=${ENV_OVERRIDES}" >> $GITHUB_OUTPUT
+
+      # Submit the Batch job and capture the Job ID
+      - name: Submit Batch job
+        id: submit
+        run: |
+          JOB_NAME="auto-rebuild-$(date -u +%Y%m%d-%H%M%S)-${{ github.run_id }}"
+
+          CONTAINER_OVERRIDES=$(jq -n \
+            --argjson env '${{ steps.params.outputs.env_overrides }}' \
+            '{"environment": $env}')
+
+          JOB_ID=$(aws batch submit-job \
+            --job-name    "${JOB_NAME}" \
+            --job-queue   ambedkargpt-worker-queue \
+            --job-definition ambedkargpt-worker \
+            --container-overrides "${CONTAINER_OVERRIDES}" \
+            --query 'jobId' \
+            --output text)
+
+          echo "Job submitted: ${JOB_NAME} (${JOB_ID})"
+          echo "job_id=${JOB_ID}"        >> $GITHUB_OUTPUT
+          echo "job_name=${JOB_NAME}"    >> $GITHUB_OUTPUT
+
+          # Write to summary immediately so the link is visible even if we time out
+          echo "## RAG Rebuild — Job Submitted ⏳" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Job name | \`${JOB_NAME}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Job ID | \`${JOB_ID}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Triggered by | \`${{ github.actor }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| skip_semrag | \`${{ inputs.skip_semrag }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| force_full  | \`${{ inputs.force_full }}\` |" >> $GITHUB_STEP_SUMMARY
+
+      # If dry_run, stop here — job is submitted but we don't wait
+      - name: Dry run — exiting early
+        if: inputs.dry_run == 'true'
+        run: |
+          echo "Dry run — job submitted but not monitoring. Check Batch console." | tee -a $GITHUB_STEP_SUMMARY
+          exit 0
+
+      # Poll until SUCCEEDED or FAILED (every 60 seconds, 3-hour budget)
+      - name: Wait for Batch job completion
+        id: wait
+        run: |
+          JOB_ID="${{ steps.submit.outputs.job_id }}"
+          POLL_INTERVAL=60   # seconds between polls
+          MAX_POLLS=180       # 180 × 60s = 3 hours
+
+          echo "Monitoring job ${JOB_ID} (max ${MAX_POLLS} polls × ${POLL_INTERVAL}s)..."
+          echo ""
+
+          for i in $(seq 1 ${MAX_POLLS}); do
+            RESULT=$(aws batch describe-jobs \
+              --jobs "${JOB_ID}" \
+              --query 'jobs[0].{status:status,reason:statusReason,startedAt:startedAt,stoppedAt:stoppedAt}' \
+              --output json)
+
+            STATUS=$(echo "$RESULT" | jq -r '.status')
+            REASON=$(echo "$RESULT" | jq -r '.reason // "—"')
+
+            TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+            echo "[${TIMESTAMP}] Poll #${i}: ${STATUS}"
+
+            case "$STATUS" in
+              SUCCEEDED)
+                echo "status=SUCCEEDED" >> $GITHUB_OUTPUT
+                echo ""
+                echo "✅ Job SUCCEEDED"
+                exit 0
+                ;;
+              FAILED)
+                echo "status=FAILED" >> $GITHUB_OUTPUT
+                echo ""
+                echo "❌ Job FAILED — reason: ${REASON}"
+                exit 1
+                ;;
+              SUBMITTED|PENDING|RUNNABLE|STARTING|RUNNING)
+                sleep "${POLL_INTERVAL}"
+                ;;
+              *)
+                echo "⚠️  Unknown status: ${STATUS} — continuing to poll"
+                sleep "${POLL_INTERVAL}"
+                ;;
+            esac
+          done
+
+          # If we exit the loop without SUCCEEDED/FAILED, the job is still running
+          echo "⚠️  Polling budget exhausted — job is still running in Batch."
+          echo "   Check the AWS Batch console for job: ${JOB_ID}"
+          echo "status=TIMEOUT" >> $GITHUB_OUTPUT
+          exit 1
+
+      # Append final status to the job summary (always runs, even on failure)
+      - name: Final summary
+        if: always()
+        run: |
+          JOB_ID="${{ steps.submit.outputs.job_id }}"
+          JOB_STATUS="${{ steps.wait.outputs.status }}"
+
+          ICON="✅"
+          if [ "$JOB_STATUS" = "FAILED" ];  then ICON="❌"; fi
+          if [ "$JOB_STATUS" = "TIMEOUT" ]; then ICON="⚠️"; fi
+
+          # Overwrite summary section with final state
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "## Final Status: ${ICON} ${JOB_STATUS}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Job ID: \`${JOB_ID}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "View logs: AWS Console → CloudWatch → Log groups → \`/aws/batch/job\`" >> $GITHUB_STEP_SUMMARY

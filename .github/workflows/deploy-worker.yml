@@ -1,0 +1,116 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# deploy-worker.yml
+#
+# Triggered on every push to main.
+# Runs in PARALLEL with deploy-lambda.yml (independent job — no shared state).
+#
+# 1. Build the worker container image (Dockerfile.worker)
+# 2. Push to ECR (ambedkargpt-worker:latest + ambedkargpt-worker:<sha>)
+# 3. Register a new AWS Batch job definition pointing at the new SHA
+#
+# The job definition update is non-breaking: existing running Batch jobs
+# continue using their original definition revision. New jobs submitted after
+# this workflow completes will automatically use the latest revision.
+#
+# Required GitHub Secrets:
+#   AWS_ROLE_ARN     — OIDC role ARN for GitHub Actions
+#   ECR_REGISTRY     — <account>.dkr.ecr.ap-south-1.amazonaws.com
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: Deploy Worker
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write   # Required for OIDC token exchange
+  contents: read
+
+jobs:
+  build-and-push:
+    name: Build → ECR → Batch Job Def
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Configure AWS credentials via OIDC
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ap-south-1
+
+      # Login to ECR
+      - name: Log in to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Build the worker image (heavier than Lambda — includes all ML/ingestion deps)
+      - name: Build worker image
+        run: |
+          IMAGE_URI="${{ secrets.ECR_REGISTRY }}/ambedkargpt-worker"
+          docker build \
+            -f Dockerfile.worker \
+            -t "${IMAGE_URI}:latest" \
+            -t "${IMAGE_URI}:${{ github.sha }}" \
+            .
+          echo "IMAGE_URI=${IMAGE_URI}" >> $GITHUB_ENV
+
+      # Push both tags to ECR
+      - name: Push to ECR
+        run: |
+          docker push "${IMAGE_URI}:latest"
+          docker push "${IMAGE_URI}:${{ github.sha }}"
+
+      # Register a new Batch job definition revision pointing at the SHA-tagged image.
+      # Using --generate-cli-skeleton + inline JSON to keep the definition in code.
+      - name: Register Batch job definition
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          WORKER_ROLE_ARN="arn:aws:iam::${ACCOUNT_ID}:role/ambedkargpt-worker-role"
+          LOG_GROUP="/aws/batch/job"
+
+          NEW_JOB_DEF_ARN=$(aws batch register-job-definition \
+            --job-definition-name ambedkargpt-worker \
+            --type container \
+            --platform-capabilities FARGATE \
+            --container-properties "{
+              \"image\": \"${IMAGE_URI}:${{ github.sha }}\",
+              \"command\": [\"python\", \"-m\", \"backend.worker.auto_rebuild\"],
+              \"jobRoleArn\": \"${WORKER_ROLE_ARN}\",
+              \"executionRoleArn\": \"${WORKER_ROLE_ARN}\",
+              \"resourceRequirements\": [
+                {\"type\": \"VCPU\",   \"value\": \"4\"},
+                {\"type\": \"MEMORY\", \"value\": \"16384\"}
+              ],
+              \"networkConfiguration\": {
+                \"assignPublicIp\": \"ENABLED\"
+              },
+              \"logConfiguration\": {
+                \"logDriver\": \"awslogs\",
+                \"options\": {
+                  \"awslogs-group\":  \"${LOG_GROUP}\",
+                  \"awslogs-region\": \"ap-south-1\",
+                  \"awslogs-stream-prefix\": \"ambedkargpt-worker\"
+                }
+              }
+            }" \
+            --query 'jobDefinitionArn' \
+            --output text)
+
+          echo "Registered job definition: ${NEW_JOB_DEF_ARN}"
+          echo "NEW_JOB_DEF_ARN=${NEW_JOB_DEF_ARN}" >> $GITHUB_ENV
+
+      # Print final summary
+      - name: Deployment summary
+        run: |
+          echo "## Worker Deployment ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Image | \`${IMAGE_URI}:${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Job Definition | \`${NEW_JOB_DEF_ARN}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Region | \`ap-south-1\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Triggered by | \`${{ github.actor }}\` |" >> $GITHUB_STEP_SUMMARY

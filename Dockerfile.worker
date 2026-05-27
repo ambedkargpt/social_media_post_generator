@@ -1,0 +1,103 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Dockerfile.worker
+#
+# AWS Batch / Fargate container for the AmbedkarGPT artifact rebuild worker.
+# Heavier than Dockerfile.lambda — includes all ingestion + ML deps.
+#
+# Build (local test):
+#   docker build -f Dockerfile.worker -t ambedkargpt-worker:local .
+#
+# Run locally (dry-run — needs AWS credentials + S3_BUCKET set):
+#   docker run --rm \
+#     -e S3_BUCKET=ambedkargpt-artifacts \
+#     -e AWS_REGION=ap-south-1 \
+#     -e SKIP_SEMRAG=1 \
+#     -v ~/.aws:/root/.aws:ro \
+#     ambedkargpt-worker:local --skip-semrag
+#
+# ECR Push (replace <account>):
+#   aws ecr get-login-password --region ap-south-1 | \
+#     docker login --username AWS --password-stdin \
+#     <account>.dkr.ecr.ap-south-1.amazonaws.com
+#
+#   docker tag ambedkargpt-worker:local \
+#     <account>.dkr.ecr.ap-south-1.amazonaws.com/ambedkargpt-worker:latest
+#
+#   docker push \
+#     <account>.dkr.ecr.ap-south-1.amazonaws.com/ambedkargpt-worker:latest
+#
+# Lambda handler:   N/A (this image is for Batch, not Lambda)
+# Batch vCPU:       4
+# Batch memory:     16 GB
+# Default command:  python -m backend.worker.auto_rebuild
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Use the official AWS-managed Python 3.11 slim image (Debian Bookworm).
+# Not the Lambda runtime — Batch runs a standard Linux container.
+FROM python:3.11-slim-bookworm
+
+# ── Build-time labels ─────────────────────────────────────────────────────────
+LABEL org.opencontainers.image.title="ambedkargpt-worker" \
+      org.opencontainers.image.description="AmbedkarGPT RAG/SEMRAG artifact rebuild worker (AWS Batch)" \
+      org.opencontainers.image.source="https://github.com/your-org/ambedkargpt"
+
+# ── System dependencies ───────────────────────────────────────────────────────
+# ffmpeg    — required by yt-dlp for audio post-processing
+# gcc/g++   — needed to compile any C-extension wheels
+# curl      — useful for health checks and debugging inside the container
+# ca-certs  — TLS for Pinecone, MongoDB Atlas, Gemini API, DeepSeek API
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ffmpeg \
+        gcc \
+        g++ \
+        libffi-dev \
+        curl \
+        ca-certificates \
+        git \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── Working directory ─────────────────────────────────────────────────────────
+WORKDIR /app
+
+# ── Python dependencies ───────────────────────────────────────────────────────
+# Install worker requirements first (before copying source) to exploit
+# Docker layer caching — requirements rarely change, source does.
+COPY backend/requirements-worker.txt /tmp/requirements-worker.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r /tmp/requirements-worker.txt
+
+# ── Application source ────────────────────────────────────────────────────────
+# Copy the full project into the image.
+# .dockerignore should exclude: .git, __pycache__, *.pyc, node_modules,
+# frontend/, tests/, *.faiss, outputs/, and local data caches.
+COPY . /app/
+
+# ── Runtime directories ───────────────────────────────────────────────────────
+# /tmp/artifacts  — local artifact build workspace (build_artifacts.py writes here)
+# /tmp/data       — downloaded data files (transcript master, caches from S3)
+# /tmp/locks      — local file lock (fcntl) used by artifact_build_lock
+RUN mkdir -p /tmp/artifacts /tmp/data /tmp/locks
+
+# ── Environment defaults ──────────────────────────────────────────────────────
+# These are overridden by the Batch job definition environment variables
+# and/or passed in via --container-overrides at submit time.
+ENV ARTIFACTS_ROOT=/tmp/artifacts \
+    ARTIFACTS_LOCKS_DIR=/tmp/locks \
+    TRANSCRIPT_MASTER_PATH=/tmp/data/ravishkumar_all_transcripts.txt \
+    S3_ARTIFACT_PREFIX=artifacts \
+    S3_DATA_PREFIX=data \
+    PYTHONPATH=/app \
+    PYTHONUNBUFFERED=1 \
+    PYTHONUTF8=1
+
+# ── Health check ──────────────────────────────────────────────────────────────
+# Simple import check — verifies the Python environment is intact.
+# AWS Batch doesn't use HEALTHCHECK but it's useful for local docker testing.
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=2 \
+  CMD python -c "import backend.worker.auto_rebuild; print('ok')" || exit 1
+
+# ── Default entry point ───────────────────────────────────────────────────────
+# Can be overridden in the Batch job definition or via docker run <image> <args>.
+# Runs the full auto-rebuild orchestrator.
+CMD ["python", "-m", "backend.worker.auto_rebuild"]
