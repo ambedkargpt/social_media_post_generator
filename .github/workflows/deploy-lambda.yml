@@ -113,12 +113,17 @@ jobs:
             --function-name ambedkargpt-api
           echo "Lambda updated successfully."
 
-      # Optional smoke test — hits the health endpoint and checks for HTTP 200
+      # Optional smoke test — hits the health endpoint and checks for HTTP 200.
+      # LAMBDA_FUNCTION_URL is stored as a GitHub *Variable* (not a Secret)
+      # because it is not sensitive. Set it under Settings → Variables → Actions.
+      # If the variable is unset the step is skipped automatically.
       - name: Smoke test (health check)
-        if: secrets.LAMBDA_FUNCTION_URL != ''
+        if: vars.LAMBDA_FUNCTION_URL != ''
+        env:
+          LAMBDA_FUNCTION_URL: ${{ vars.LAMBDA_FUNCTION_URL }}
         run: |
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            "${{ secrets.LAMBDA_FUNCTION_URL }}/api/v1/health")
+            "${LAMBDA_FUNCTION_URL}/api/v1/health")
           if [ "$HTTP_STATUS" != "200" ]; then
             echo "Health check failed — HTTP $HTTP_STATUS"
             exit 1
