@@ -79,23 +79,19 @@ jobs:
           ENV_OVERRIDES='[]'
 
           if [ "${{ inputs.skip_semrag }}" = "true" ]; then
-            ENV_OVERRIDES=$(echo "$ENV_OVERRIDES" | jq '. + [{"name":"SKIP_SEMRAG","value":"1"}]')
+            ENV_OVERRIDES=$(echo "$ENV_OVERRIDES" | jq -c '. + [{"name":"SKIP_SEMRAG","value":"1"}]')
           fi
 
           if [ "${{ inputs.force_full }}" = "true" ]; then
-            ENV_OVERRIDES=$(echo "$ENV_OVERRIDES" | jq '. + [{"name":"FORCE_FULL_REBUILD","value":"1"}]')
+            ENV_OVERRIDES=$(echo "$ENV_OVERRIDES" | jq -c '. + [{"name":"FORCE_FULL_REBUILD","value":"1"}]')
           fi
 
           # Always record the GitHub trigger metadata in the job environment
-          ENV_OVERRIDES=$(echo "$ENV_OVERRIDES" | jq \
+          ENV_OVERRIDES=$(echo "$ENV_OVERRIDES" | jq -c \
             --arg actor "${{ github.actor }}" \
             --arg run_id "${{ github.run_id }}" \
             --arg sha "${{ github.sha }}" \
-            '. + [
-              {"name":"GITHUB_ACTOR",  "value": $actor},
-              {"name":"GITHUB_RUN_ID", "value": $run_id},
-              {"name":"GITHUB_SHA",    "value": $sha}
-            ]')
+            '. + [{"name":"GITHUB_ACTOR","value":$actor},{"name":"GITHUB_RUN_ID","value":$run_id},{"name":"GITHUB_SHA","value":$sha}]')
 
           echo "env_overrides=${ENV_OVERRIDES}" >> $GITHUB_OUTPUT
 
