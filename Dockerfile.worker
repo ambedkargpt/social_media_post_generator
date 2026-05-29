@@ -63,6 +63,8 @@ WORKDIR /app
 # ── Python dependencies ───────────────────────────────────────────────────────
 # Install worker requirements first (before copying source) to exploit
 # Docker layer caching — requirements rarely change, source does.
+# Copy both files — requirements-worker.txt references -r requirements-api.txt
+COPY backend/requirements-api.txt /tmp/requirements-api.txt
 COPY backend/requirements-worker.txt /tmp/requirements-worker.txt
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r /tmp/requirements-worker.txt
