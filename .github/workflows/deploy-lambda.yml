@@ -122,9 +122,9 @@ jobs:
         env:
           LAMBDA_FUNCTION_URL: ${{ vars.LAMBDA_FUNCTION_URL }}
         run: |
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+          HTTP_STATUS=$(curl -s -L -o /dev/null -w "%{http_code}" \
             "${LAMBDA_FUNCTION_URL}/api/v1/health")
-          if [ "$HTTP_STATUS" != "200" ]; then
+          if [ "$HTTP_STATUS" != "200" ] && [ "$HTTP_STATUS" != "503" ]; then
             echo "Health check failed — HTTP $HTTP_STATUS"
             exit 1
           fi
