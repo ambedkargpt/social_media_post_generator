@@ -89,7 +89,18 @@ jobs:
                 {\"name\": \"S3_ARTIFACT_PREFIX\",       \"value\": \"artifacts\"},
                 {\"name\": \"S3_DATA_PREFIX\",           \"value\": \"data\"},
                 {\"name\": \"AWS_SSM_PREFIX\",           \"value\": \"/ambedkargpt/prod\"},
-                {\"name\": \"FETCH_NEW_TRANSCRIPTS\",    \"value\": \"1\"}
+                {\"name\": \"FETCH_NEW_TRANSCRIPTS\",    \"value\": \"1\"},
+                {\"name\": \"MONGODB_DATABASE\",         \"value\": \"ambedkargpt\"}
+              ],
+              \"secrets\": [
+                {\"name\": \"OPENAI_API_KEY\",    \"valueFrom\": \"arn:aws:ssm:ap-south-1:${ACCOUNT_ID}:parameter/ambedkargpt/prod/OPENAI_API_KEY\"},
+                {\"name\": \"GEMINI_API_KEY\",    \"valueFrom\": \"arn:aws:ssm:ap-south-1:${ACCOUNT_ID}:parameter/ambedkargpt/prod/GEMINI_API_KEY\"},
+                {\"name\": \"DEEPSEEK_API_KEY\",  \"valueFrom\": \"arn:aws:ssm:ap-south-1:${ACCOUNT_ID}:parameter/ambedkargpt/prod/DEEPSEEK_API_KEY\"},
+                {\"name\": \"PINECONE_API_KEY\",  \"valueFrom\": \"arn:aws:ssm:ap-south-1:${ACCOUNT_ID}:parameter/ambedkargpt/prod/PINECONE_API_KEY\"},
+                {\"name\": \"PINECONE_INDEX_NAME\",\"valueFrom\": \"arn:aws:ssm:ap-south-1:${ACCOUNT_ID}:parameter/ambedkargpt/prod/PINECONE_INDEX_NAME\"},
+                {\"name\": \"MONGODB_URI\",       \"valueFrom\": \"arn:aws:ssm:ap-south-1:${ACCOUNT_ID}:parameter/ambedkargpt/prod/MONGODB_URI\"},
+                {\"name\": \"JWT_SECRET\",        \"valueFrom\": \"arn:aws:ssm:ap-south-1:${ACCOUNT_ID}:parameter/ambedkargpt/prod/JWT_SECRET\"},
+                {\"name\": \"NEWS_API_KEY\",      \"valueFrom\": \"arn:aws:ssm:ap-south-1:${ACCOUNT_ID}:parameter/ambedkargpt/prod/NEWS_API_KEY\"}
               ],
               \"networkConfiguration\": {
                 \"assignPublicIp\": \"ENABLED\"
