@@ -85,10 +85,11 @@ jobs:
                 {\"type\": \"MEMORY\", \"value\": \"16384\"}
               ],
               \"environment\": [
-                {\"name\": \"S3_BUCKET\",          \"value\": \"ambedkargpt-artifacts\"},
-                {\"name\": \"S3_ARTIFACT_PREFIX\",  \"value\": \"artifacts\"},
-                {\"name\": \"S3_DATA_PREFIX\",      \"value\": \"data\"},
-                {\"name\": \"AWS_SSM_PREFIX\",      \"value\": \"/ambedkargpt/prod\"}
+                {\"name\": \"S3_BUCKET\",               \"value\": \"ambedkargpt-artifacts\"},
+                {\"name\": \"S3_ARTIFACT_PREFIX\",       \"value\": \"artifacts\"},
+                {\"name\": \"S3_DATA_PREFIX\",           \"value\": \"data\"},
+                {\"name\": \"AWS_SSM_PREFIX\",           \"value\": \"/ambedkargpt/prod\"},
+                {\"name\": \"FETCH_NEW_TRANSCRIPTS\",    \"value\": \"1\"}
               ],
               \"networkConfiguration\": {
                 \"assignPublicIp\": \"ENABLED\"
