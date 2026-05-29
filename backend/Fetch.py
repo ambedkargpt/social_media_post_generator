@@ -25,7 +25,12 @@ from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 
-from src.verification.transcript_verifier import TranscriptVerifier
+try:
+    from src.verification.transcript_verifier import TranscriptVerifier
+except ModuleNotFoundError:
+    class TranscriptVerifier:  # no-op stub for production/container use
+        def verify(self, *args, **kwargs):
+            return {}
 
 
 INPUT_TXT = PROJECT_ROOT / "input.txt"
