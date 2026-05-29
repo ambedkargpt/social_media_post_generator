@@ -362,7 +362,7 @@ def get_settings() -> Settings:
         pinecone_api_key=pinecone_api_key,
         pinecone_index_name=pinecone_index_name,
         pinecone_namespace=pinecone_namespace,
-        rag_chunks_path=(_PROJECT_ROOT / "data" / "argument_chunks.json").resolve(),
+        rag_chunks_path=Path(os.environ["RAG_CHUNKS_PATH"]).resolve() if os.getenv("RAG_CHUNKS_PATH") else (_PROJECT_ROOT / "data" / "argument_chunks.json").resolve(),
         artifacts_root=Path(os.environ["ARTIFACTS_ROOT"]).resolve() if os.getenv("ARTIFACTS_ROOT") else None,
         artifact_manifest_path=Path(os.environ["ARTIFACT_MANIFEST_PATH"]).resolve() if os.getenv("ARTIFACT_MANIFEST_PATH") else None,
     )

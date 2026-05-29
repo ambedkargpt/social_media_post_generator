@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 from pathlib import Path
 from typing import Any, Dict, List, Sequence, Tuple
 
@@ -28,12 +29,14 @@ from backend.semrag.semrag_config import load_semrag_config
 BASE_DIR = Path(__file__).parent
 DATA_PATH = BASE_DIR / "data" / "ravishkumar_all_transcripts.txt"
 OUTPUT_PATH = BASE_DIR / "outputs" / "generated_posts.json"
-# INDEX_PATH kept for backward-compat with save_vector_store() signature (ignored at runtime).
-# Vector index now lives in Pinecone — no local .bin file is written or read.
 INDEX_PATH = BASE_DIR / "outputs" / "faiss_index.bin"  # unused; Pinecone is cloud-managed
-CHUNKS_PATH = BASE_DIR / "data" / "argument_chunks.json"
-VIDEO_CONTEXT_PATH = BASE_DIR / "data" / "video_context.json"
-TITLE_EMB_PATH = BASE_DIR / "data" / "video_title_embeddings.json"
+
+# On Lambda, /var/task/ is read-only — artifacts must live in /tmp.
+# Set LAMBDA_ARTIFACTS_DIR=/tmp/artifacts in Lambda env vars to redirect.
+_ARTIFACTS_DIR = Path(os.environ["LAMBDA_ARTIFACTS_DIR"]) if os.getenv("LAMBDA_ARTIFACTS_DIR") else BASE_DIR / "data"
+CHUNKS_PATH = _ARTIFACTS_DIR / "argument_chunks.json"
+VIDEO_CONTEXT_PATH = _ARTIFACTS_DIR / "video_context.json"
+TITLE_EMB_PATH = _ARTIFACTS_DIR / "video_title_embeddings.json"
 
 
 def _retrieval_cfg_from_settings(settings) -> Dict[str, Any]:
