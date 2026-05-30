@@ -146,6 +146,11 @@ class PostsService:
             temperature=temperature,
             language=language,
         )
+        if not post_text or not post_text.strip():
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Post generation returned empty content. Please try again.",
+            )
         model_used = self._current_generation_model()
         snapshot_id = f"rs_{uuid4().hex}"
         references = self._references_from_chunks(retrieved_chunks)
@@ -227,6 +232,11 @@ class PostsService:
             language=payload.language,
             refinement_note=payload.refinement_note,
         )
+        if not post_text or not post_text.strip():
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Post generation returned empty content. Please try again.",
+            )
         model_used = self._current_generation_model()
 
         references = self._references_from_chunks(chunks)

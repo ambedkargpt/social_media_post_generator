@@ -49,6 +49,17 @@ const PLATFORMS = [
 const MIN_PANEL = 220;
 const MAX_PANEL = 500;
 
+// Preference questions shown in the right panel, in display order
+const PREF_QUESTION_IDS = [
+  'profile_user_role',
+  'profile_tone',
+  'profile_target_audience',
+  'profile_primary_focus',
+  'profile_ambedkarite_perspective',
+  'profile_content_length',
+  'profile_call_to_action',
+];
+
 // Map backend NewsResponse → local article shape
 function adaptNews(item) {
   return {
@@ -126,9 +137,12 @@ export default function SocialMediaPostGenerator() {
     if (!currentUser?.id) return;
 
     Promise.all([
-      getQuestions(7),
+      getQuestions(25),
       getProfileAnswers(currentUser.id).catch(() => []),
-    ]).then(([qs, saved]) => {
+    ]).then(([allQs, saved]) => {
+      // Keep only the 7 preferred questions, in defined display order
+      const qMap = Object.fromEntries(allQs.map((q) => [q.question_id, q]));
+      const qs = PREF_QUESTION_IDS.map((id) => qMap[id]).filter(Boolean);
       setPrefQuestions(qs);
 
       // Build a { question_id: answer } map from the saved answers array
@@ -220,7 +234,9 @@ export default function SocialMediaPostGenerator() {
         language: 'hi',
         profileOverrides: { ...preferences, target_platform: platformObj?.label ?? platform },
       });
-      setGeneratedPost(response?.post?.content || '');
+      const content = response?.post?.content || '';
+      if (!content.trim()) throw new Error('empty_content');
+      setGeneratedPost(content);
       setSelectedPostId(response?.post?.id || null);
       setPostStatus('draft');
       setPostView('post');
@@ -245,7 +261,9 @@ export default function SocialMediaPostGenerator() {
   }
 
   async function handleRegenerate() {
-    if (!selectedArticle || !selectedPostId) return;
+    if (!selectedArticle) return;
+    // If there's no saved post ID (e.g. previous generation failed), do a fresh generate instead
+    if (!selectedPostId) { handleGenerate(); return; }
     setGenerating(true);
     setGenSeconds(0);
     const timer = setInterval(() => setGenSeconds((s) => s + 1), 1000);
@@ -255,7 +273,9 @@ export default function SocialMediaPostGenerator() {
         profileOverrides: preferences,
         refinementNote,
       });
-      setGeneratedPost(response?.post?.content || '');
+      const content = response?.post?.content || '';
+      if (!content.trim()) throw new Error('empty_content');
+      setGeneratedPost(content);
       setSelectedPostId(response?.post?.id || selectedPostId);
       setPostStatus('draft');
       setPostView('post');
@@ -327,7 +347,8 @@ export default function SocialMediaPostGenerator() {
 
   async function handleCopy() {
     try {
-      await navigator.clipboard.writeText(generatedPost);
+      const text = showTranslated && translatedPost ? translatedPost : generatedPost;
+      await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
     } catch { setCopied(false); }

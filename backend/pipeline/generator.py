@@ -153,9 +153,6 @@ def generate_post(
     Prompts load from prompts_dir (defaults to Settings.prompts_dir):
     post_generation_system.txt, post_generation_user.txt
     """
-    if not retrieved_chunks:
-        return "Insufficient information in the provided transcript chunks to generate a reliable post."
-
     if prompts_dir is None:
         from backend.config import get_settings
 
@@ -202,8 +199,10 @@ def generate_post(
             {"role": "user", "content": user_content},
         ],
         temperature=temperature,
-        max_tokens=2000,
+        max_tokens=4096,
     )
 
     text = (response.choices[0].message.content or "").strip()
+    if not text:
+        return ""
     return _extract_post_body(text)

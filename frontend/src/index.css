@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Anybody:ital,wght@0,100..900;1,100..900&family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Anybody:ital,wght@0,100..900;1,100..900&family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Noto+Sans+Devanagari:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @font-face {
@@ -15,6 +15,7 @@
   --font-serif: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
   --font-display: 'Anybody', 'Inter', system-ui, sans-serif;
   --font-count: 'Count', 'Anybody', monospace;
+  --font-hindi: 'Mangal', 'Noto Sans Devanagari', serif;
 
   --color-navy-950: #05081a;
   --color-navy-900: #0a0e27;
@@ -64,6 +65,14 @@ body {
 
 #root { width: 100%; min-height: 100svh; }
 html { scroll-behavior: smooth; }
+
+/* Hindi language — apply Mangal with Noto Sans Devanagari as web fallback */
+:root[lang="hi"] body,
+:root[lang="hi"] input,
+:root[lang="hi"] textarea,
+:root[lang="hi"] button {
+  font-family: var(--font-hindi);
+}
 
 /* --- Reveal on scroll --- */
 .reveal-section {
