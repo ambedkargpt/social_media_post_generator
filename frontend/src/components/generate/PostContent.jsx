@@ -10,7 +10,7 @@ export default function PostContent({ content, className = '' }) {
   const hasStructure = headline || paragraphs.length > 0;
   if (!hasStructure) {
     return (
-      <div className={`space-y-3 ${className}`}>
+      <div className={`space-y-3 ${className}`} style={{ fontFamily: 'var(--font-hindi)' }}>
         <p className="whitespace-pre-wrap text-[13.5px] leading-[1.8] text-[#c7d1eb]">
           {content.trim()}
         </p>
@@ -19,9 +19,9 @@ export default function PostContent({ content, className = '' }) {
   }
 
   return (
-    <div className={`space-y-3 ${className}`}>
+    <div className={`space-y-3 ${className}`} style={{ fontFamily: 'var(--font-hindi)' }}>
       {headline && (
-        <p className="font-display text-[15px] font-bold leading-snug text-white">
+        <p className="text-[15px] font-bold leading-snug text-white">
           {headline}
         </p>
       )}
