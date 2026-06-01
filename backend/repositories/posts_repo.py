@@ -83,6 +83,37 @@ class PostsRepository:
             {"$set": {"published_at": datetime.now(timezone.utc)}},
         )
 
+    def try_publish_atomic(self, post_id: str, user_id: str, daily_limit: int) -> bool:
+        """Atomically publish a post only if the user hasn't hit the daily limit.
+        Returns True if published, False if limit already reached.
+        Uses a two-phase approach: stamp published_at only if count < limit.
+        """
+        midnight = _today_midnight_utc()
+        now = datetime.now(timezone.utc)
+        # Phase 1: stamp published_at atomically (idempotent — only if not already set)
+        result = self.collection.find_one_and_update(
+            {
+                "_id": ObjectId(post_id),
+                "user_id": ObjectId(user_id),
+                "published_at": {"$exists": False},
+            },
+            {"$set": {"published_at": now, "updated_at": now}},
+            return_document=True,
+        )
+        if not result:
+            # Already published or not found — re-check current count
+            return self.count_published_today(user_id) < daily_limit
+        # Phase 2: check if this publish put us over the limit
+        count = self.count_published_today(user_id)
+        if count > daily_limit:
+            # Rollback — unset published_at
+            self.collection.update_one(
+                {"_id": ObjectId(post_id)},
+                {"$unset": {"published_at": ""}, "$set": {"updated_at": now}},
+            )
+            return False
+        return True
+
     def count_all_time(self, user_id: str) -> int:
         """Total posts ever created by user (for milestone tracking)."""
         return self.collection.count_documents({"user_id": ObjectId(user_id)})

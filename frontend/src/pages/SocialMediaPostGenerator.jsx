@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Search, Filter, Sparkles,
@@ -78,6 +78,7 @@ export default function SocialMediaPostGenerator() {
 
   const [articles,        setArticles]        = useState([]);
   const [newsLoading,     setNewsLoading]     = useState(true);
+  const [newsError,       setNewsError]       = useState(false);
   const [tone,            setTone]           = useState('Professional');
   const [toneOpen,        setToneOpen]        = useState(false);
   const [search,          setSearch]          = useState('');
@@ -91,6 +92,7 @@ export default function SocialMediaPostGenerator() {
   const [selectedPostId,  setSelectedPostId]  = useState(null);
   const [copied,          setCopied]          = useState(false);
   const [panelWidth,      setPanelWidth]      = useState(300);
+  const [searchInput,     setSearchInput]     = useState('');
   const [prefQuestions,   setPrefQuestions]   = useState([]);
   const [preferences,     setPreferences]     = useState({});
   const [savedPrefs,      setSavedPrefs]      = useState({});
@@ -116,9 +118,9 @@ export default function SocialMediaPostGenerator() {
     getDailyQuota().then(setQuota).catch(() => {});
   }, [currentUser?.id]);
 
-  // Fetch news filtered by site language; fall back to all if empty
-  useEffect(() => {
+  const loadNews = useCallback(() => {
     setNewsLoading(true);
+    setNewsError(false);
     getNews({ limit: 100, language: siteLang })
       .then((data) => {
         if (data?.length) {
@@ -127,10 +129,21 @@ export default function SocialMediaPostGenerator() {
         } else {
           getNews({ limit: 100 }).then((all) => {
             if (all?.length) setArticles(all.map(adaptNews));
-          }).catch(() => {}).finally(() => setNewsLoading(false));
+          }).catch(() => setNewsError(true)).finally(() => setNewsLoading(false));
         }
       })
-      .catch(() => setNewsLoading(false));
+      .catch(() => { setNewsLoading(false); setNewsError(true); });
+  }, [siteLang]);
+
+  // Debounce search input 300ms before filtering
+  useEffect(() => {
+    const id = setTimeout(() => setSearch(searchInput), 300);
+    return () => clearTimeout(id);
+  }, [searchInput]);
+
+  // Fetch news filtered by site language; fall back to all if empty
+  useEffect(() => {
+    loadNews();
   }, []);
 
   useEffect(() => {
@@ -191,11 +204,11 @@ export default function SocialMediaPostGenerator() {
     document.body.style.userSelect = 'none';
   }
 
-  const filteredArticles = articles.filter((a) => {
+  const filteredArticles = useMemo(() => articles.filter((a) => {
     const matchSearch = !search || a.title.toLowerCase().includes(search.toLowerCase());
     const matchFilter = activeFilter === 'All' || a.category === activeFilter;
     return matchSearch && matchFilter;
-  });
+  }), [articles, search, activeFilter]);
 
   const activeContent = showTranslated && translatedPost ? translatedPost : generatedPost;
   const chars = activeContent.trim().length;
@@ -458,8 +471,8 @@ export default function SocialMediaPostGenerator() {
             <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6b78a0]" strokeWidth={2} />
             <input
               type="text"
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setView('feed'); }}
+              value={searchInput}
+              onChange={(e) => { setSearchInput(e.target.value); setView('feed'); }}
               placeholder="Search Your Content"
               className="w-full rounded-full border border-[#1e3260]/70 bg-[#0a1130]/80 py-2.5 pl-9 pr-4 text-[13px] text-white placeholder-[#6b78a0] outline-none transition focus:border-[#3f9fff]/70 focus:shadow-[0_0_0_3px_rgba(63,159,255,0.12)]"
             />
@@ -523,7 +536,25 @@ export default function SocialMediaPostGenerator() {
                 className="h-[90px] w-full animate-pulse rounded-2xl border border-[#1e3260]/30 bg-[#0a1130]/40"
               />
             ))}
-            {!newsLoading && filteredArticles.map((article) => (
+            {!newsLoading && newsError && (
+              <div className="flex flex-col items-center gap-3 rounded-2xl border border-red-500/20 bg-red-500/5 px-6 py-10 text-center">
+                <p className="text-[13px] text-red-400">Failed to load news articles.</p>
+                <button
+                  type="button"
+                  onClick={loadNews}
+                  className="rounded-full border border-red-500/30 bg-red-500/10 px-4 py-2 text-[12px] font-medium text-red-400 transition hover:bg-red-500/20"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+            {!newsLoading && !newsError && filteredArticles.length === 0 && (
+              <div className="flex flex-col items-center gap-2 py-16 text-center">
+                <p className="text-[14px] font-medium text-[#6aa8ff]">No articles found</p>
+                <p className="text-[12px] text-[#4a5a80]">Try a different search or filter</p>
+              </div>
+            )}
+            {!newsLoading && !newsError && filteredArticles.map((article) => (
               <button
                 key={article.id}
                 type="button"

@@ -81,8 +81,8 @@ class PostsService:
         )
         if is_publishing:
             self._validate_status_transition(existing["status"], "published")
-            # ── Daily publish rate limit (server-side) ───────────────────────
             user_id = current_user_id or str(existing["user_id"])
+            # ── Atomic daily publish rate limit ─────────────────────────────
             published_today = self.repo.count_published_today(user_id)
             if published_today >= DAILY_POST_LIMIT:
                 next_midnight = (datetime.now(timezone.utc) + timedelta(days=1)).replace(
@@ -96,8 +96,19 @@ class PostsService:
                         "reset_at": next_midnight.isoformat(),
                     },
                 )
-            # Stamp published_at before updating status
-            self.repo.set_published_at(post_id)
+            allowed = self.repo.try_publish_atomic(post_id, user_id, DAILY_POST_LIMIT)
+            if not allowed:
+                next_midnight = (datetime.now(timezone.utc) + timedelta(days=1)).replace(
+                    hour=0, minute=0, second=0, microsecond=0
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail={
+                        "error": "daily_limit_reached",
+                        "message": f"You've used all {DAILY_POST_LIMIT} posts for today. Come back tomorrow!",
+                        "reset_at": next_midnight.isoformat(),
+                    },
+                )
             # Update streak
             self.streak_repo.on_publish(user_id)
         elif "status" in updates and updates["status"] is not None:
@@ -401,8 +412,14 @@ class PostsService:
         profile_overrides: dict[str, str] | None = None,
     ) -> dict[str, Any]:
         default_profile = dict(get_user_profiles()[0])
-        # Apply saved DB answers
-        answers = self.profile_answers_repo.list_by_user(user_id=user_id, limit=500, skip=0)
+        # Fetch only the known profile question IDs — avoids scanning 500 rows per request
+        known_qids = [f"profile_{f}" for f in PROFILE_FIELDS]
+        answers = self.profile_answers_repo.list_by_user(
+            user_id=user_id,
+            question_ids=known_qids,
+            limit=len(known_qids),
+            skip=0,
+        )
         for row in answers:
             qid = str(row.get("question_id") or "").strip()
             if not qid.startswith("profile_"):
@@ -430,7 +447,9 @@ class PostsService:
                 mode=getattr(settings, "semrag_search_mode", "hybrid"),
             )
             retrieval_cfg["semrag_candidates"] = semrag_candidates
-        except Exception:
+        except Exception as exc:
+            import logging as _logging
+            _logging.getLogger(__name__).warning("semrag retrieval failed, falling back to base retrieval: %s", exc)
             retrieval_cfg["semrag_enabled"] = False
             retrieval_cfg.pop("semrag_candidates", None)
         return retrieve_relevant_chunks(

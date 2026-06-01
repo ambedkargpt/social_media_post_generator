@@ -1,4 +1,8 @@
-from fastapi import APIRouter, Header, HTTPException, status
+import time
+from collections import defaultdict
+from threading import Lock
+
+from fastapi import APIRouter, Header, HTTPException, Request, status
 
 from backend.schemas.auth import (
     AuthResponse,
@@ -18,9 +22,30 @@ from backend.services.auth_service import AuthService
 router = APIRouter(prefix="/auth", tags=["auth"])
 service = AuthService()
 
+# Simple in-process rate limiter: max 10 attempts per IP per 60 seconds
+_rate_store: dict[str, list[float]] = defaultdict(list)
+_rate_lock = Lock()
+_RATE_LIMIT = 10
+_RATE_WINDOW = 60
+
+
+def _check_rate_limit(ip: str, endpoint: str) -> None:
+    key = f"{ip}:{endpoint}"
+    now = time.time()
+    with _rate_lock:
+        timestamps = [t for t in _rate_store[key] if now - t < _RATE_WINDOW]
+        if len(timestamps) >= _RATE_LIMIT:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too many attempts. Please wait 60 seconds before trying again.",
+            )
+        timestamps.append(now)
+        _rate_store[key] = timestamps
+
 
 @router.post("/signup", response_model=AuthResponse, responses={400: {"model": ErrorResponse}, 409: {"model": ErrorResponse}})
-def signup(payload: SignupRequest) -> AuthResponse:
+def signup(payload: SignupRequest, request: Request) -> AuthResponse:
+    _check_rate_limit(request.client.host if request.client else "unknown", "signup")
     return service.signup(
         username=payload.username.strip(),
         password=payload.password,
@@ -31,7 +56,8 @@ def signup(payload: SignupRequest) -> AuthResponse:
 
 
 @router.post("/verify-otp", response_model=MessageResponse, responses={400: {"model": ErrorResponse}})
-def verify_otp(payload: VerifyOtpRequest) -> MessageResponse:
+def verify_otp(payload: VerifyOtpRequest, request: Request) -> MessageResponse:
+    _check_rate_limit(request.client.host if request.client else "unknown", "verify-otp")
     result = service.verify_otp(
         target=payload.target.strip(),
         channel=payload.channel,
@@ -42,7 +68,8 @@ def verify_otp(payload: VerifyOtpRequest) -> MessageResponse:
 
 
 @router.post("/login", response_model=AuthResponse, responses={401: {"model": ErrorResponse}})
-def login(payload: LoginRequest) -> AuthResponse:
+def login(payload: LoginRequest, request: Request) -> AuthResponse:
+    _check_rate_limit(request.client.host if request.client else "unknown", "login")
     return service.login(identifier=payload.identifier.strip(), password=payload.password)
 
 

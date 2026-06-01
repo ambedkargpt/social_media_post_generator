@@ -35,6 +35,9 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!currentUser?.id) return;
+    // Reset loading states on every mount so re-login always shows fresh data
+    setDataLoading(true);
+    setQuotaLoading(true);
     Promise.all([
       getPosts({ limit: 100 }).catch(() => []),
       getProfileAnswers(currentUser.id).catch(() => []),

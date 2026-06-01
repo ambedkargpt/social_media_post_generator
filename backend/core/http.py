@@ -50,7 +50,16 @@ async def catch_http_exceptions(request: Request, call_next):
 
 def register_http_layer(app: FastAPI) -> None:
     _raw = os.getenv("CORS_ORIGINS", "").strip()
-    origins = [o.strip() for o in _raw.split(",") if o.strip()] if _raw else ["*"]
+    if _raw:
+        origins = [o.strip() for o in _raw.split(",") if o.strip()]
+    else:
+        app_env = os.getenv("APP_ENV", "development").lower()
+        if app_env in {"production", "prod"}:
+            logger.error("CORS_ORIGINS is not set in production — requests will be blocked. Set CORS_ORIGINS env var.")
+            origins = []  # block all in production if not configured
+        else:
+            logger.warning("CORS_ORIGINS not set — defaulting to wildcard '*' (dev only)")
+            origins = ["*"]
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,

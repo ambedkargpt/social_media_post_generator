@@ -29,8 +29,17 @@ class ProfileAnswersRepository:
         self.collection.update_one(query, update, upsert=True)
         return self.collection.find_one(query)
 
-    def list_by_user(self, user_id: str, limit: int = 200, skip: int = 0) -> list[dict]:
-        return list(self.collection.find({"user_id": ObjectId(user_id)}).sort("updated_at", -1).skip(skip).limit(limit))
+    def list_by_user(
+        self,
+        user_id: str,
+        limit: int = 200,
+        skip: int = 0,
+        question_ids: list[str] | None = None,
+    ) -> list[dict]:
+        query: dict[str, Any] = {"user_id": ObjectId(user_id)}
+        if question_ids:
+            query["question_id"] = {"$in": question_ids}
+        return list(self.collection.find(query).sort("updated_at", -1).skip(skip).limit(limit))
 
     def get_by_user_and_question(self, user_id: str, question_id: str) -> Optional[dict]:
         return self.collection.find_one({"user_id": ObjectId(user_id), "question_id": question_id})

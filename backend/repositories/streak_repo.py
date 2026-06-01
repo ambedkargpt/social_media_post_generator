@@ -37,19 +37,23 @@ class StreakRepository:
         yesterday = today - timedelta(days=1)
         now = datetime.now(timezone.utc)
 
-        doc = self.get(user_id)
-
-        if doc is None:
-            new_doc = {
+        # Atomic upsert for first-time creation — prevents race condition duplicate inserts
+        self.collection.update_one(
+            {"user_id": ObjectId(user_id)},
+            {"$setOnInsert": {
                 "user_id": ObjectId(user_id),
-                "streak_days": 1,
+                "streak_days": 0,
                 "streak_start_date": _to_datetime(today),
-                "total_streak_posts": 1,
-                "last_publish_date": today.isoformat(),
+                "total_streak_posts": 0,
+                "last_publish_date": None,
                 "updated_at": now,
-            }
-            self.collection.insert_one(new_doc)
-            return new_doc
+            }},
+            upsert=True,
+        )
+        doc = self.get(user_id)
+        if doc is None:
+            # Fallback — should never happen after upsert
+            doc = {"streak_days": 0, "total_streak_posts": 0, "last_publish_date": None}
 
         last_str = doc.get("last_publish_date")
         last_date: Optional[date] = date.fromisoformat(last_str) if last_str else None

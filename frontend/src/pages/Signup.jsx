@@ -63,7 +63,8 @@ export default function Signup() {
   function validate() {
     const e = {};
     if (mode === 'email') {
-      if (!email.trim())             e.email = 'Email is required.';
+      if (!email.trim())                              e.email = 'Email is required.';
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) e.email = 'Please enter a valid email address.';
       if (!password)                 e.password = 'Password is required.';
       else if (password.length < 8)  e.password = 'Password must be at least 8 characters.';
       if (!confirmPassword)          e.confirmPassword = 'Please confirm your password.';
