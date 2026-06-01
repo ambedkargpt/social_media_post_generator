@@ -79,7 +79,8 @@ def google_login(payload: GoogleLoginRequest) -> AuthResponse:
 
 
 @router.post("/refresh", response_model=AuthResponse, responses={401: {"model": ErrorResponse}})
-def refresh(payload: RefreshRequest) -> AuthResponse:
+def refresh(payload: RefreshRequest, request: Request) -> AuthResponse:
+    _check_rate_limit(request.client.host if request.client else "unknown", "refresh")
     return service.refresh(payload.refresh_token)
 
 

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 PostStatus = Literal["draft", "published", "archived"]
@@ -14,6 +14,13 @@ class PostCreateRequest(BaseModel):
     hashtags: list[str] = Field(default_factory=list)
     status: PostStatus = "draft"
     generation_meta: Optional[dict[str, Any]] = None
+
+    @field_validator("content", mode="before")
+    @classmethod
+    def content_not_blank(cls, v: str) -> str:
+        if isinstance(v, str) and not v.strip():
+            raise ValueError("Content must not be blank or whitespace only.")
+        return v
 
 
 class PostUpdateRequest(BaseModel):
@@ -110,7 +117,7 @@ class DailyQuotaResponse(BaseModel):
 
 
 class PostTranslateRequest(BaseModel):
-    target_language: str = "en"  # "en" | "hi"
+    target_language: Literal["en", "hi"] = "en"
 
 
 class PostTranslateResponse(BaseModel):

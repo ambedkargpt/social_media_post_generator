@@ -334,6 +334,11 @@ class PostsService:
             temperature=0.3,
         )
         translated = (response.choices[0].message.content or "").strip()
+        if not translated:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Translation returned empty content. Please try again.",
+            )
 
         # Persist for future requests
         self.repo.save_translation(post_id, target_language, translated)
@@ -503,14 +508,18 @@ class PostsService:
                 refinement_note=refinement_note,
             )
         except OpenAIRateLimitError as exc:
+            import logging as _logging
+            _logging.getLogger(__name__).warning("LLM rate limit reached: %s", exc)
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail=f"LLM provider quota/rate-limit reached: {exc}",
+                detail="Post generation is temporarily unavailable due to high demand. Please try again shortly.",
             ) from exc
         except Exception as exc:
+            import logging as _logging
+            _logging.getLogger(__name__).error("Post generation failed: %s", exc, exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=f"Post generation failed: {exc}",
+                detail="Post generation failed. Please try again.",
             ) from exc
 
     def _references_from_chunks(self, chunks: list[dict[str, Any]]) -> list[RetrievedChunkReference]:

@@ -77,6 +77,19 @@ def ensure_phase3_indexes() -> None:
     posts.create_index([("news_id", ASCENDING), ("created_at", DESCENDING)], name="idx_posts_news_created")
     posts.create_index([("status", ASCENDING), ("created_at", DESCENDING)], name="idx_posts_status_created")
     posts.create_index([("content", "text")], name="idx_posts_content_text")
+    # Compound index for count_published_today() — queried on every publish
+    posts.create_index(
+        [("user_id", ASCENDING), ("published_at", DESCENDING), ("status", ASCENDING)],
+        name="idx_posts_user_published_status",
+        partialFilterExpression={"status": "published"},
+    )
+    # Index for session revocation check in get_current_user_id
+    sessions = db["sessions"]
+    sessions.create_index(
+        [("access_token", ASCENDING), ("is_revoked", ASCENDING)],
+        name="idx_sessions_access_token_revoked",
+        partialFilterExpression={"is_revoked": False},
+    )
 
     streaks = db["user_streaks"]
     streaks.create_index("user_id", unique=True, name="uq_streak_user_id")

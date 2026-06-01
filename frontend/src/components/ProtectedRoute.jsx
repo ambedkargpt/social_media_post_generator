@@ -21,7 +21,11 @@ export default function ProtectedRoute({ children }) {
     }
   }, [loading, currentUser, location]);
 
-  if (loading) return null;
+  if (loading) return (
+    <div className="flex min-h-screen items-center justify-center bg-navy-950">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#1e3260] border-t-brand-cyan" />
+    </div>
+  );
   if (!currentUser) return <Navigate to="/login" replace />;
   return children;
 }

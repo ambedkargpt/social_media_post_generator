@@ -244,7 +244,7 @@ export default function SocialMediaPostGenerator() {
         userId: currentUser.id,
         newsId: selectedArticle._backendId,
         tone,
-        language: 'hi',
+        language: siteLang,
         profileOverrides: { ...preferences, target_platform: platformObj?.label ?? platform },
       });
       const content = response?.post?.content || '';
@@ -282,7 +282,7 @@ export default function SocialMediaPostGenerator() {
     const timer = setInterval(() => setGenSeconds((s) => s + 1), 1000);
     try {
       const response = await regeneratePostFromSnapshot(selectedPostId, {
-        language: 'hi',
+        language: siteLang,
         profileOverrides: preferences,
         refinementNote,
       });
@@ -730,7 +730,7 @@ export default function SocialMediaPostGenerator() {
                   <button
                     type="button"
                     onClick={handlePublish}
-                    disabled={publishing || postStatus === 'published'}
+                    disabled={publishing || postStatus === 'published' || charOverLimit}
                     className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[12px] font-medium transition disabled:cursor-default disabled:opacity-70"
                     style={{
                       borderColor: postStatus === 'published' ? 'rgba(34,197,94,0.5)' : 'rgba(34,197,94,0.35)',

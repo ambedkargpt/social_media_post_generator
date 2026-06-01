@@ -40,6 +40,17 @@ class SessionsRepository:
         doc["_id"] = result.inserted_id
         return doc
 
+    def find_active_by_access_token(self, access_token: str) -> dict | None:
+        """Check if an access token's session is still active (not revoked)."""
+        now = datetime.now(timezone.utc)
+        return self.collection.find_one(
+            {
+                "access_token": access_token,
+                "is_revoked": False,
+                "access_expires_at": {"$gt": now},
+            }
+        )
+
     def find_active_by_refresh(self, refresh_token: str) -> dict | None:
         now = datetime.now(timezone.utc)
         return self.collection.find_one(
