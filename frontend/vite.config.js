@@ -16,11 +16,13 @@ export default defineConfig({
     chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'react-vendor':  ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor':     ['lucide-react', '@fortawesome/fontawesome-free'],
-          'auth-vendor':   ['@react-oauth/google'],
-          'map-vendor':    ['leaflet'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) return 'react-vendor';
+            if (id.includes('lucide-react') || id.includes('@fortawesome')) return 'ui-vendor';
+            if (id.includes('@react-oauth')) return 'auth-vendor';
+            if (id.includes('leaflet')) return 'map-vendor';
+          }
         },
       },
     },
