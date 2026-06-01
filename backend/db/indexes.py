@@ -1,6 +1,19 @@
+import logging
+
 from pymongo import ASCENDING, DESCENDING
+from pymongo.errors import OperationFailure
 
 from backend.db.mongo import db
+
+logger = logging.getLogger(__name__)
+
+
+def _safe_create_index(collection, keys, **kwargs):
+    """Create index, ignoring conflicts on pre-existing indexes with same name/keys."""
+    try:
+        collection.create_index(keys, **kwargs)
+    except OperationFailure as exc:
+        logger.warning("Index creation skipped (already exists or conflict): %s", exc)
 
 
 def ensure_auth_indexes() -> None:
@@ -26,15 +39,21 @@ def ensure_auth_indexes() -> None:
     otp.create_index([("user_id", ASCENDING)], name="idx_otp_user")
 
     sessions = db["sessions"]
-    sessions.create_index([("user_id", ASCENDING)], name="idx_sessions_user")
-    sessions.create_index(
+    _safe_create_index(sessions, [("user_id", ASCENDING)], name="idx_sessions_user")
+    _safe_create_index(sessions,
         [("refresh_token_hash", ASCENDING)],
         unique=True,
         partialFilterExpression={"refresh_token_hash": {"$type": "string"}},
         name="uq_sessions_refresh_token_hash",
     )
-    sessions.create_index([("access_expires_at", ASCENDING)], name="idx_sessions_access_exp")
-    sessions.create_index([("refresh_expires_at", ASCENDING)], name="idx_sessions_refresh_exp")
+    _safe_create_index(sessions, [("access_expires_at", ASCENDING)], name="idx_sessions_access_exp")
+    _safe_create_index(sessions, [("refresh_expires_at", ASCENDING)], name="idx_sessions_refresh_exp")
+    # Index for fast session revocation check on every authenticated request
+    _safe_create_index(sessions,
+        [("access_token", ASCENDING)],
+        name="idx_sessions_access_token",
+        partialFilterExpression={"is_revoked": False},
+    )
 
 
 def ensure_phase2_indexes() -> None:
@@ -73,23 +92,16 @@ def ensure_phase2_indexes() -> None:
 
 def ensure_phase3_indexes() -> None:
     posts = db["posts"]
-    posts.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)], name="idx_posts_user_created")
-    posts.create_index([("news_id", ASCENDING), ("created_at", DESCENDING)], name="idx_posts_news_created")
-    posts.create_index([("status", ASCENDING), ("created_at", DESCENDING)], name="idx_posts_status_created")
-    posts.create_index([("content", "text")], name="idx_posts_content_text")
+    _safe_create_index(posts, [("user_id", ASCENDING), ("created_at", DESCENDING)], name="idx_posts_user_created")
+    _safe_create_index(posts, [("news_id", ASCENDING), ("created_at", DESCENDING)], name="idx_posts_news_created")
+    _safe_create_index(posts, [("status", ASCENDING), ("created_at", DESCENDING)], name="idx_posts_status_created")
+    _safe_create_index(posts, [("content", "text")], name="idx_posts_content_text")
     # Compound index for count_published_today() — queried on every publish
-    posts.create_index(
+    _safe_create_index(posts,
         [("user_id", ASCENDING), ("published_at", DESCENDING), ("status", ASCENDING)],
         name="idx_posts_user_published_status",
         partialFilterExpression={"status": "published"},
     )
-    # Index for session revocation check in get_current_user_id
-    sessions = db["sessions"]
-    sessions.create_index(
-        [("access_token", ASCENDING), ("is_revoked", ASCENDING)],
-        name="idx_sessions_access_token_revoked",
-        partialFilterExpression={"is_revoked": False},
-    )
 
     streaks = db["user_streaks"]
-    streaks.create_index("user_id", unique=True, name="uq_streak_user_id")
+    _safe_create_index(streaks, "user_id", unique=True, name="uq_streak_user_id")
