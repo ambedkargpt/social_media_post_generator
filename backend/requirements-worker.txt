@@ -4,7 +4,7 @@
 -r requirements-api.txt
 
 boto3==1.37.3
-yt-dlp==2025.2.19
+yt-dlp>=2025.12.1  # 2025.2.19 returns 0 videos from AWS IPs due to YouTube API changes
 youtube-transcript-api==1.1.0
 python-docx==1.1.2
 pyspellchecker==0.8.2

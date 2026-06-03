@@ -240,6 +240,49 @@ def upload_artifacts(
                 break
 
 
+# ── YouTube RSS feed fallback ─────────────────────────────────────────────────
+# Channel ID for @ravishkumar.official — used by the RSS feed endpoint.
+_RAVISH_CHANNEL_ID = "UC0yXUUIaPVAqZLgRjvtMftw"
+
+
+def _fetch_video_urls_rss(channel_id: str = _RAVISH_CHANNEL_ID) -> list[str]:
+    """
+    Fetch the 15 most recent video URLs via the YouTube RSS feed.
+
+    The RSS feed (https://www.youtube.com/feeds/videos.xml?channel_id=...)
+    is a first-party YouTube API endpoint — no scraping, no bot detection,
+    works from any IP including AWS. Returns at most 15 videos.
+    """
+    import urllib.request
+    import xml.etree.ElementTree as ET
+
+    feed_url = f"https://www.youtube.com/feeds/videos.xml?channel_id={channel_id}"
+    try:
+        with urllib.request.urlopen(feed_url, timeout=30) as resp:
+            xml_data = resp.read()
+    except Exception as exc:
+        log.error("RSS feed fetch failed: %s", exc)
+        return []
+
+    try:
+        root = ET.fromstring(xml_data)
+        ns = {
+            "atom": "http://www.w3.org/2005/Atom",
+            "yt": "http://www.youtube.com/xml/schemas/2015",
+        }
+        urls = []
+        for entry in root.findall("atom:entry", ns):
+            video_id_el = entry.find("yt:videoId", ns)
+            if video_id_el is not None and video_id_el.text:
+                vid = video_id_el.text.strip()
+                urls.append(f"https://www.youtube.com/watch?v={vid}")
+        log.info("RSS feed returned %d recent videos.", len(urls))
+        return urls
+    except Exception as exc:
+        log.error("RSS feed XML parse failed: %s", exc)
+        return []
+
+
 # ── Optional: fetch new YouTube transcripts ───────────────────────────────────
 
 
@@ -265,8 +308,16 @@ def fetch_new_transcripts(transcript_master_path: Path) -> None:
     channel_url = f"https://www.youtube.com/@{RAVISH_CHANNEL_SLUG}"
     log.info("Fetching video list from %s ...", channel_url)
     video_urls = fetch_video_urls(channel_url)
+
+    # yt-dlp on AWS IPs is often blocked by YouTube (returns 0 results).
+    # Fall back to the YouTube RSS feed — proper API, works from any IP,
+    # returns the 15 most recent videos without authentication.
     if not video_urls:
-        log.warning("No video URLs returned — skipping fetch.")
+        log.warning("yt-dlp returned 0 videos (likely AWS IP blocked) — trying RSS feed fallback.")
+        video_urls = _fetch_video_urls_rss()
+
+    if not video_urls:
+        log.warning("RSS fallback also returned 0 videos — skipping fetch.")
         return
 
     log.info("Found %d videos. Fetching new transcripts ...", len(video_urls))
