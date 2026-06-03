@@ -109,35 +109,49 @@ export default function OpeningSplash({ onDone }) {
       <img
         src={logoSrc}
         alt=""
-        className="splash-logo relative z-10 h-20 w-20 object-contain drop-shadow-[0_0_32px_rgba(63,159,255,0.7)] md:h-28 md:w-28"
+        className="splash-logo relative z-10 h-24 w-24 object-contain drop-shadow-[0_0_40px_rgba(63,159,255,0.75)] sm:h-28 sm:w-28 md:h-32 md:w-32"
       />
 
-      {/* Wordmark */}
-      <h1
-        className="splash-wordmark relative z-10 mt-6 font-serif text-[52px] font-bold uppercase leading-none tracking-[0.08em] md:text-[80px] lg:text-[96px]"
-        style={{
-          background: 'linear-gradient(180deg, #c8deff 0%, #6aaaff 30%, #2a6fd4 65%, #0d3a8a 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text',
-          textShadow: 'none',
-          filter: 'drop-shadow(0 0 28px rgba(50,120,255,0.35))',
-        }}
-      >
-        AmbedkarGPT
-      </h1>
+      {/* Wordmark — two-tier layout: serif name + display accent */}
+      <div className="splash-wordmark relative z-10 mt-7 flex flex-col items-center gap-1.5">
+        <h1
+          className="font-serif text-[52px] font-bold uppercase leading-none tracking-[0.1em] sm:text-[64px] md:text-[88px] lg:text-[108px]"
+          style={{
+            background: 'linear-gradient(180deg, #dceeff 0%, #7ab8ff 28%, #2a6fd4 62%, #0d3a8a 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            filter: 'drop-shadow(0 0 28px rgba(50,120,255,0.3))',
+          }}
+        >
+          Ambedkar
+        </h1>
+        <span
+          className="font-display text-[26px] font-bold tracking-[0.38em] uppercase sm:text-[32px] md:text-[44px] lg:text-[54px]"
+          style={{
+            background: 'linear-gradient(90deg, #3f9fff 0%, #a78bff 50%, #3f9fff 100%)',
+            backgroundSize: '200% 100%',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            animation: 'accentShimmer 5s linear infinite',
+          }}
+        >
+          GPT
+        </span>
+      </div>
 
       {/* Tagline */}
-      <div className="splash-tagline relative z-10 mt-6 flex items-center gap-4">
-        <div className="h-px w-16 md:w-24" style={{ background: 'linear-gradient(90deg, transparent, rgba(74,123,196,0.7))' }} />
-        <span className="font-count text-[10px] uppercase tracking-[0.42em] md:text-[11px]" style={{ color: '#4a7bc4' }}>
+      <div className="splash-tagline relative z-10 mt-7 flex items-center gap-3 sm:gap-5">
+        <div className="h-px w-14 sm:w-20 md:w-28" style={{ background: 'linear-gradient(90deg, transparent, rgba(74,123,196,0.65))' }} />
+        <span className="font-count text-[9.5px] uppercase tracking-[0.45em] sm:text-[11px]" style={{ color: '#5080b8' }}>
           AI for Justice
         </span>
-        <div className="h-px w-16 md:w-24" style={{ background: 'linear-gradient(270deg, transparent, rgba(74,123,196,0.7))' }} />
+        <div className="h-px w-14 sm:w-20 md:w-28" style={{ background: 'linear-gradient(270deg, transparent, rgba(74,123,196,0.65))' }} />
       </div>
 
       {/* ESTD */}
-      <p className="splash-estd relative z-10 mt-3 font-count text-[10px] uppercase tracking-[0.35em]" style={{ color: '#2d5080' }}>
+      <p className="splash-estd relative z-10 mt-2.5 font-count text-[9px] uppercase tracking-[0.38em]" style={{ color: '#2a4870' }}>
         ESTD. 2026
       </p>
 

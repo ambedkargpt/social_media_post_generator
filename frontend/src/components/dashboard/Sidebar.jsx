@@ -8,6 +8,8 @@ import {
   User,
   Settings,
   Bot,
+  X,
+  LogOut,
 } from 'lucide-react';
 
 const NAV = [
@@ -21,18 +23,15 @@ const NAV = [
   { id: 'settings',   label: 'Settings',         Icon: Settings },
 ];
 
-export default function Sidebar({ active = 'dashboard', onSelect }) {
+function SidebarContent({ active, onSelect, onClose, onLogout }) {
   const navigate = useNavigate();
   return (
-    <aside
-      className="hidden lg:flex flex-col w-[232px] shrink-0 border-r border-[#141d3a]/70"
-      style={{ background: 'linear-gradient(180deg,#0a1024 0%,#070b1c 100%)' }}
-    >
+    <>
       {/* brand */}
-      <div className="px-6 pt-7 pb-9">
+      <div className="flex items-center justify-between px-6 pt-7 pb-9">
         <button
           type="button"
-          onClick={() => navigate('/dashboard')}
+          onClick={() => { navigate('/dashboard'); onClose?.(); }}
           className="flex items-center gap-2.5 transition-opacity hover:opacity-85"
         >
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#3f9fff] to-[#7b5cff] shadow-[0_0_18px_rgba(79,107,255,0.35)]">
@@ -42,6 +41,16 @@ export default function Sidebar({ active = 'dashboard', onSelect }) {
             AI Dashboard
           </span>
         </button>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-[#5a7a9e] transition hover:text-white lg:hidden"
+            aria-label="Close menu"
+          >
+            <X size={16} strokeWidth={1.8} />
+          </button>
+        )}
       </div>
 
       {/* nav */}
@@ -53,7 +62,11 @@ export default function Sidebar({ active = 'dashboard', onSelect }) {
             <button
               key={item.id}
               type="button"
-              onClick={() => { if (item.route) { navigate(item.route); } else { onSelect?.(item.id); } }}
+              onClick={() => {
+                if (item.route) { navigate(item.route); }
+                else { onSelect?.(item.id); }
+                onClose?.();
+              }}
               className={[
                 'group relative flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-[13.5px] font-medium transition-all duration-200',
                 isActive
@@ -81,9 +94,53 @@ export default function Sidebar({ active = 'dashboard', onSelect }) {
         })}
       </nav>
 
-      <div className="px-6 py-6 text-[11px] font-count text-[#4e5a80] tracking-wide">
-        v1.0 · AmbedkarGPT
+      <div className="px-4 pb-4 pt-2">
+        {/* Logout — shown in mobile overlay only */}
+        {onLogout && (
+          <button
+            type="button"
+            onClick={() => { onClose?.(); onLogout(); }}
+            className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-[13.5px] font-medium text-[#7b88ad] transition hover:bg-[#0f173a]/70 hover:text-red-400 lg:hidden"
+            style={{ border: '1px solid transparent' }}
+          >
+            <LogOut size={17} strokeWidth={1.8} />
+            <span>Log Out</span>
+          </button>
+        )}
+        <div className="px-2 pt-2 text-[11px] font-count text-[#4e5a80] tracking-wide">
+          v1.0 · AmbedkarGPT
+        </div>
       </div>
-    </aside>
+    </>
+  );
+}
+
+export default function Sidebar({ active = 'dashboard', onSelect, mobileOpen = false, onMobileClose, onLogout }) {
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <aside
+        className="hidden lg:flex flex-col w-[232px] shrink-0 border-r border-[#141d3a]/70"
+        style={{ background: 'linear-gradient(180deg,#0a1024 0%,#070b1c 100%)' }}
+      >
+        <SidebarContent active={active} onSelect={onSelect} />
+      </aside>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={onMobileClose}
+          />
+          <aside
+            className="absolute left-0 top-0 flex h-full w-[260px] flex-col border-r border-[#141d3a]/70"
+            style={{ background: 'linear-gradient(180deg,#0a1024 0%,#070b1c 100%)' }}
+          >
+            <SidebarContent active={active} onSelect={onSelect} onClose={onMobileClose} onLogout={onLogout} />
+          </aside>
+        </div>
+      )}
+    </>
   );
 }

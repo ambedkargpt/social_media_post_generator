@@ -26,6 +26,7 @@ export default function Dashboard() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const [active, setActive] = useState('dashboard');
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const [posts,            setPosts]           = useState([]);
   const [profileAnswers,   setProfileAnswers]  = useState([]);
@@ -78,7 +79,13 @@ export default function Dashboard() {
       className="flex h-screen overflow-hidden text-[#e5e7eb]"
       style={{ background: 'radial-gradient(1200px 700px at 20% 0%, #0d1636 0%, #070b1c 55%, #05081a 100%)' }}
     >
-      <Sidebar active={active} onSelect={setActive} />
+      <Sidebar
+        active={active}
+        onSelect={setActive}
+        mobileOpen={mobileSidebarOpen}
+        onMobileClose={() => setMobileSidebarOpen(false)}
+        onLogout={handleLogout}
+      />
 
       <div className="relative flex-1 min-w-0 overflow-y-auto">
         <MilestoneBanner totalPosts={quota?.total_streak_posts} />
@@ -86,7 +93,7 @@ export default function Dashboard() {
         <div className="pointer-events-none fixed top-0 right-0 h-[420px] w-[420px] rounded-full bg-[#3f9fff]/10 blur-[130px]" />
         <div className="pointer-events-none fixed bottom-0 left-[22%] h-[360px] w-[360px] rounded-full bg-[#7b5cff]/10 blur-[130px]" />
 
-        <Topbar user={topbarUser} />
+        <Topbar user={topbarUser} onMenuOpen={() => setMobileSidebarOpen(true)} />
 
         {/* ── Welcome ── */}
         <div className="mb-7 flex items-end justify-between gap-4">

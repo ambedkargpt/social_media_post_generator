@@ -106,6 +106,7 @@ export default function SocialMediaPostGenerator() {
   const [postView,        setPostView]        = useState('post'); // 'post' | 'preview'
   const [refinementNote,  setRefinementNote]  = useState('');
   const [copiedHashtags,  setCopiedHashtags]  = useState(false);
+  const [showMobilePrefs, setShowMobilePrefs] = useState(false);
   const filterRef = useRef(null);
 
   const siteLang = getSiteLanguage() ?? 'en';
@@ -512,6 +513,27 @@ export default function SocialMediaPostGenerator() {
           </div>
         </header>
 
+        {/* ── Mobile tone selector (left sidebar is hidden on mobile) ── */}
+        <div className="mx-6 mb-3 lg:hidden md:mx-8">
+          <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
+            <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#6aa8ff]">Tone</span>
+            {TONES.map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTone(t)}
+                className={`shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10.5px] font-medium transition ${
+                  tone === t
+                    ? 'border-[#3f9fff]/60 bg-[#0d1a3a] text-[#3f9fff]'
+                    : 'border-[#1e3260]/60 bg-[#0a1130]/60 text-[#6b78a0] hover:text-white'
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* AmbedkarGPT identity banner */}
         <div className="mx-6 mb-3 flex items-center gap-4 rounded-xl border border-[#1a2d55]/50 bg-[#070e22]/80 px-5 py-3 md:mx-8">
           <img src={logoSrc} alt="AmbedkarGPT" className="h-7 w-7 shrink-0 object-contain opacity-90 drop-shadow-[0_0_8px_rgba(63,159,255,0.5)]" />
@@ -657,6 +679,61 @@ export default function SocialMediaPostGenerator() {
               </div>
             )}
 
+            {/* ── Mobile preferences (right panel is hidden on mobile) ── */}
+            <div className="mt-4 lg:hidden">
+              <button
+                type="button"
+                onClick={() => setShowMobilePrefs((p) => !p)}
+                className="flex w-full items-center justify-between rounded-xl border border-[#1e3260]/60 bg-[#0a1130]/60 px-4 py-3 text-left transition hover:border-[#3f9fff]/40"
+              >
+                <div className="flex items-center gap-2">
+                  <Sparkles size={13} strokeWidth={2} className="text-[#6aa8ff]" />
+                  <span className="text-[13px] font-semibold text-white">Post Preferences</span>
+                  <span className="text-[11px] text-[#6b78a0]">· tune the AI voice</span>
+                </div>
+                <ChevronDown
+                  size={14}
+                  strokeWidth={2}
+                  className={`shrink-0 text-[#6b78a0] transition-transform duration-200 ${showMobilePrefs ? 'rotate-180' : ''}`}
+                />
+              </button>
+              {showMobilePrefs && prefQuestions.length > 0 && (
+                <div className="mt-2 space-y-3 rounded-xl border border-[#1e3260]/50 bg-[#07101f] p-4">
+                  {prefQuestions.map((q, i) => {
+                    const labels = {
+                      profile_user_role: 'Your role',
+                      profile_tone: 'Preferred tone',
+                      profile_target_audience: 'Target audience',
+                      profile_primary_focus: 'Primary focus',
+                      profile_ambedkarite_perspective: 'Perspective',
+                      profile_content_length: 'Content length',
+                      profile_call_to_action: 'Call to action',
+                    };
+                    return (
+                      <div key={q.question_id}>
+                        <label className="mb-1.5 block text-[10.5px] font-semibold uppercase tracking-wider text-[#6aa8ff]">
+                          <span className="mr-1 text-[#4e5a80]">{i + 1}.</span>
+                          {labels[q.question_id] ?? q.question_text}
+                        </label>
+                        <div className="relative">
+                          <select
+                            value={preferences[q.question_id] ?? q.options[0]}
+                            onChange={(e) => setPreferences((prev) => ({ ...prev, [q.question_id]: e.target.value }))}
+                            className="w-full appearance-none rounded-lg border border-[#1e3260]/70 bg-[#0a1130]/80 py-2 pl-3 pr-8 text-[12.5px] text-white outline-none transition focus:border-[#3f9fff]/60"
+                          >
+                            {q.options.map((opt) => (
+                              <option key={opt} value={opt} className="bg-[#0a1130]">{opt}</option>
+                            ))}
+                          </select>
+                          <ChevronDown size={12} strokeWidth={2} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#6b78a0]" />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             <button
               type="button"
               onClick={handleGenerate}
@@ -677,27 +754,31 @@ export default function SocialMediaPostGenerator() {
         {/* ── Generated post view ── */}
         {view === 'generated' && (
           <div className="flex-1 overflow-y-auto px-6 pb-10 md:px-8">
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setView('preview')}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[#1e3260]/70 bg-[#0d1531]/60 px-3 py-1.5 text-[12px] font-medium text-[#8b94b8] transition hover:border-[#3f9fff]/50 hover:text-white"
-                >
-                  <ArrowLeft size={12} strokeWidth={2} />
-                  Article
-                </button>
-                <h2 className="font-display text-[18px] font-semibold text-white">Generated Post</h2>
-              </div>
-              <div className="flex items-center gap-2">
-                {/* Translate button — only shown when site language is English
-                    (post is always in Hindi; Hindi users already have it in their language) */}
+            {/* Header: back + title on left, actions on right.
+                Mobile: back/actions are icon-only to prevent overflow. */}
+            <div className="mb-4 flex items-center gap-2">
+              {/* Back — icon-only on mobile */}
+              <button
+                type="button"
+                onClick={() => setView('preview')}
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#1e3260]/70 bg-[#0d1531]/60 text-[#8b94b8] transition hover:border-[#3f9fff]/50 hover:text-white sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-1.5"
+              >
+                <ArrowLeft size={12} strokeWidth={2} />
+                <span className="hidden text-[12px] font-medium sm:inline">Article</span>
+              </button>
+
+              <h2 className="font-display text-[16px] font-semibold text-white sm:text-[18px]">Generated Post</h2>
+
+              {/* Action buttons */}
+              <div className="ml-auto flex items-center gap-1 sm:gap-2">
+                {/* Translate — hidden on mobile to save space */}
                 {selectedPostId && !generating && siteLang !== 'hi' && (
                   <button
                     type="button"
                     onClick={showTranslated ? () => setShowTranslated(false) : handleTranslate}
                     disabled={translating}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#1e3a6e]/80 bg-[#0d1840]/80 px-3 py-2 text-[12px] font-medium text-[#6aa8ff] transition hover:border-[#3f9fff]/60 hover:text-white disabled:opacity-40"
+                    title={showTranslated ? 'Show Hindi' : 'Translate to English'}
+                    className="hidden items-center gap-1.5 rounded-lg border border-[#1e3a6e]/80 bg-[#0d1840]/80 px-3 py-2 text-[12px] font-medium text-[#6aa8ff] transition hover:border-[#3f9fff]/60 hover:text-white disabled:opacity-40 sm:inline-flex"
                   >
                     {translating ? (
                       <RefreshCw size={12} strokeWidth={2} className="animate-spin" />
@@ -706,32 +787,42 @@ export default function SocialMediaPostGenerator() {
                         <path d="M5 8l6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6" />
                       </svg>
                     )}
-                    {showTranslated ? 'Show Hindi' : translating ? 'Translating…' : 'Translate to English'}
+                    {showTranslated ? 'Show Hindi' : translating ? 'Translating…' : 'Translate'}
                   </button>
                 )}
+
+                {/* Regenerate — icon on mobile, icon+label on sm+ */}
                 <button
                   type="button"
                   onClick={handleRegenerate}
                   disabled={generating}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#1e3260]/70 bg-[#0d1531]/60 px-3 py-2 text-[12px] font-medium text-[#8b94b8] transition hover:border-[#3f9fff]/60 hover:text-white disabled:opacity-40"
+                  title="Regenerate"
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#1e3260]/70 bg-[#0d1531]/60 text-[#8b94b8] transition hover:border-[#3f9fff]/60 hover:text-white disabled:opacity-40 sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-2"
                 >
                   <RefreshCw size={12} strokeWidth={2} className={generating ? 'animate-spin' : ''} />
-                  Regenerate
+                  <span className="hidden text-[12px] font-medium sm:inline">Regenerate</span>
                 </button>
+
+                {/* Copy */}
                 <button
                   type="button"
                   onClick={handleCopy}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#1e3260]/70 bg-[#0d1531]/60 px-3 py-2 text-[12px] font-medium text-[#8b94b8] transition hover:border-[#3f9fff]/60 hover:text-white"
+                  title="Copy"
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#1e3260]/70 bg-[#0d1531]/60 text-[#8b94b8] transition hover:border-[#3f9fff]/60 hover:text-white sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-2"
+                  style={{ color: copied ? '#22c55e' : undefined, borderColor: copied ? 'rgba(34,197,94,0.4)' : undefined }}
                 >
                   {copied ? <Check size={12} strokeWidth={2.4} /> : <Copy size={12} strokeWidth={2} />}
-                  {copied ? 'Copied' : 'Copy'}
+                  <span className="hidden text-[12px] font-medium sm:inline">{copied ? 'Copied' : 'Copy'}</span>
                 </button>
+
+                {/* Publish */}
                 {selectedPostId && !generating && (
                   <button
                     type="button"
                     onClick={handlePublish}
                     disabled={publishing || postStatus === 'published' || charOverLimit}
-                    className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[12px] font-medium transition disabled:cursor-default disabled:opacity-70"
+                    title={postStatus === 'published' ? 'Published' : 'Publish'}
+                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition disabled:cursor-default disabled:opacity-70 sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-2"
                     style={{
                       borderColor: postStatus === 'published' ? 'rgba(34,197,94,0.5)' : 'rgba(34,197,94,0.35)',
                       backgroundColor: postStatus === 'published' ? 'rgba(34,197,94,0.12)' : 'rgba(34,197,94,0.08)',
@@ -739,7 +830,9 @@ export default function SocialMediaPostGenerator() {
                     }}
                   >
                     <Check size={12} strokeWidth={2.4} />
-                    {postStatus === 'published' ? 'Published' : publishing ? 'Publishing…' : 'Publish'}
+                    <span className="hidden text-[12px] font-medium sm:inline">
+                      {postStatus === 'published' ? 'Published' : publishing ? 'Publishing…' : 'Publish'}
+                    </span>
                   </button>
                 )}
               </div>

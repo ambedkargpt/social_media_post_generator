@@ -1,14 +1,24 @@
-import { Sparkles, Bell } from 'lucide-react';
+import { Sparkles, Bell, Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import LanguageSwitcher from '../LanguageSwitcher';
 
-export default function Topbar({ user }) {
+export default function Topbar({ user, onMenuOpen }) {
   const navigate = useNavigate();
   const name  = user?.name  ?? '—';
   const initial = (name?.[0] ?? 'A').toUpperCase();
 
   return (
     <div className="flex items-center justify-between gap-4 pt-7 pb-6">
+      {/* Hamburger — mobile only */}
+      <button
+        type="button"
+        onClick={onMenuOpen}
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#1e3260]/60 text-[#5a7a9e] transition hover:text-white lg:hidden"
+        aria-label="Open menu"
+      >
+        <Menu size={17} strokeWidth={1.8} />
+      </button>
+
       {/* Generate CTA (centered visually) */}
       <div className="flex-1 flex items-center">
         <button

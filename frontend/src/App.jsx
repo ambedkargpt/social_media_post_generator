@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider } from './context/AuthContext';
 import { CurtainProvider } from './context/CurtainContext';
@@ -33,6 +33,17 @@ import ErrorBoundary       from './components/ErrorBoundary';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
+// Wraps <Routes> and re-keys on every pathname change so the CSS
+// pageEnter animation replays on each navigation.
+function PageTransition({ children }) {
+  const location = useLocation();
+  return (
+    <div key={location.pathname} className="page-enter">
+      {children}
+    </div>
+  );
+}
+
 export default function App() {
   const [splashDone, setSplashDone] = useState(false);
   const handleSplashDone = useCallback(() => setSplashDone(true), []);
@@ -48,6 +59,7 @@ export default function App() {
           <ScrollProgress />
           <CustomCursor />
 
+          <PageTransition>
           <Routes>
             {/* public */}
             <Route path="/"          element={<Home />} />
@@ -92,6 +104,7 @@ export default function App() {
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </PageTransition>
         </AuthProvider>
         </CurtainProvider>
       </BrowserRouter>

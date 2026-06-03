@@ -61,24 +61,28 @@ function PostCard({ post, onCopy, onPublish, onArchive, copiedId }) {
       onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#1a2c55'; }}
     >
       {/* top row */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
+      <div className="flex items-center justify-between gap-2">
+        {/* badge + date */}
+        <div className="flex min-w-0 items-center gap-2">
           <StatusBadge status={post.status} />
-          <span className="text-[11.5px] text-[#4e5a80]">{date}</span>
+          <span className="whitespace-nowrap text-[11px] text-[#4e5a80]">{date}</span>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        {/* action buttons — icon-only on mobile, icon+label on sm+ */}
+        <div className="flex shrink-0 items-center gap-1">
           {/* Translate */}
           <button
             type="button"
             onClick={handleTranslate}
             disabled={translating}
-            className="flex items-center gap-1 rounded-lg border border-[#1e3260]/60 px-2.5 py-1.5 text-[11.5px] font-medium text-[#6b78a0] transition hover:border-[#3f9fff]/50 hover:text-[#3f9fff] disabled:opacity-50"
             title={showTranslated ? 'Show Hindi' : 'Translate to English'}
+            className="flex h-7 items-center justify-center gap-1 rounded-lg border border-[#1e3260]/60 px-1.5 text-[#6b78a0] transition hover:border-[#3f9fff]/50 hover:text-[#3f9fff] disabled:opacity-50 sm:px-2.5"
             style={showTranslated ? { borderColor: 'rgba(63,159,255,0.4)', color: '#3f9fff' } : {}}
           >
             <Languages size={12} strokeWidth={2} />
-            {translating ? '…' : showTranslated ? 'हिंदी' : 'EN'}
+            <span className="hidden text-[11px] font-medium sm:inline">
+              {translating ? '…' : showTranslated ? 'हिंदी' : 'EN'}
+            </span>
           </button>
 
           {/* Publish */}
@@ -86,11 +90,11 @@ function PostCard({ post, onCopy, onPublish, onArchive, copiedId }) {
             <button
               type="button"
               onClick={() => onPublish(post.id)}
-              className="flex items-center gap-1 rounded-lg border border-[#1e3260]/60 px-2.5 py-1.5 text-[11.5px] font-medium text-[#6b78a0] transition hover:border-[#22c55e]/50 hover:text-[#22c55e]"
               title="Publish"
+              className="flex h-7 items-center justify-center gap-1 rounded-lg border border-[#1e3260]/60 px-1.5 text-[#6b78a0] transition hover:border-[#22c55e]/50 hover:text-[#22c55e] sm:px-2.5"
             >
               <BookmarkCheck size={12} strokeWidth={2} />
-              Publish
+              <span className="hidden text-[11px] font-medium sm:inline">Publish</span>
             </button>
           )}
 
@@ -99,8 +103,8 @@ function PostCard({ post, onCopy, onPublish, onArchive, copiedId }) {
             <button
               type="button"
               onClick={() => onArchive(post.id)}
-              className="flex items-center gap-1 rounded-lg border border-[#1e3260]/60 px-2.5 py-1.5 text-[11.5px] font-medium text-[#6b78a0] transition hover:border-red-500/40 hover:text-red-400"
               title="Archive"
+              className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#1e3260]/60 text-[#6b78a0] transition hover:border-red-500/40 hover:text-red-400"
             >
               <Trash2 size={12} strokeWidth={2} />
             </button>
@@ -110,16 +114,16 @@ function PostCard({ post, onCopy, onPublish, onArchive, copiedId }) {
           <button
             type="button"
             onClick={() => onCopy(post.id, content)}
-            className="flex items-center gap-1.5 rounded-lg border border-[#1e3260]/60 px-2.5 py-1.5 text-[11.5px] font-medium transition"
+            title="Copy"
+            className="flex h-7 items-center justify-center gap-1 rounded-lg border border-[#1e3260]/60 px-1.5 transition sm:px-2.5"
             style={{
               color: copiedId === post.id ? '#22c55e' : '#6b78a0',
               borderColor: copiedId === post.id ? 'rgba(34,197,94,0.4)' : undefined,
             }}
-            title="Copy"
           >
             {copiedId === post.id
-              ? <><Check size={12} strokeWidth={2.5} /> Copied</>
-              : <><Copy size={12} strokeWidth={2} /> Copy</>
+              ? <><Check size={12} strokeWidth={2.5} /><span className="hidden text-[11px] font-medium sm:inline">Copied</span></>
+              : <><Copy  size={12} strokeWidth={2}   /><span className="hidden text-[11px] font-medium sm:inline">Copy</span></>
             }
           </button>
         </div>

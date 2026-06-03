@@ -14,17 +14,17 @@ export default function MainLayout({ children }) {
         for fixed descendants — keeping them outside avoids that trap.
       */}
       <Navbar />
-      {/* Stacked directly below Navbar — fixed so it scrolls with viewport like the Navbar */}
+      {/* Stacked directly below Navbar — mobile navbar is now 72px, md+ is 80px (no scroll-pills row) */}
       <MilestoneBanner
-        className="fixed inset-x-0 top-[72px] z-30 md:top-[80px]"
+        className="fixed inset-x-0 top-[72px] z-30 md:top-20"
         onHide={() => setBannerVisible(false)}
       />
-      {/* Padding accounts for Navbar (72/80px) + Banner (48px) when visible */}
+      {/* Padding = navbar height + banner (48px) when visible */}
       <main
         className={
           bannerVisible
-            ? 'relative min-h-screen overflow-x-hidden bg-[#05081a] pt-[120px] text-white transition-all duration-300 md:pt-[128px]'
-            : 'relative min-h-screen overflow-x-hidden bg-[#05081a] pt-[72px] text-white transition-all duration-300 md:pt-[80px]'
+            ? 'relative min-h-screen overflow-x-hidden bg-[#05081a] pt-[120px] text-white transition-all duration-300 md:pt-32'
+            : 'relative min-h-screen overflow-x-hidden bg-[#05081a] pt-[72px] text-white transition-all duration-300 md:pt-20'
         }
       >
         <div className="relative z-10">{children}</div>
