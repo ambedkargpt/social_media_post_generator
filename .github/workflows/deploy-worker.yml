@@ -90,7 +90,9 @@ jobs:
                 {\"name\": \"S3_DATA_PREFIX\",           \"value\": \"data\"},
                 {\"name\": \"AWS_SSM_PREFIX\",           \"value\": \"/ambedkargpt/prod\"},
                 {\"name\": \"FETCH_NEW_TRANSCRIPTS\",    \"value\": \"1\"},
-                {\"name\": \"MONGODB_DATABASE\",         \"value\": \"ambedkargpt\"}
+                {\"name\": \"MONGODB_DATABASE\",         \"value\": \"ambedkargpt\"},
+                {\"name\": \"SEMRAG_MODEL\",             \"value\": \"gpt-4o-mini\"},
+                {\"name\": \"OPENAI_MODEL\",             \"value\": \"gpt-4o-mini\"}
               ],
               \"secrets\": [
                 {\"name\": \"OPENAI_API_KEY\",    \"valueFrom\": \"arn:aws:ssm:ap-south-1:${ACCOUNT_ID}:parameter/ambedkargpt/prod/OPENAI_API_KEY\"},
