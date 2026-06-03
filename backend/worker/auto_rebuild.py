@@ -168,6 +168,8 @@ def download_current_artifacts(
         *ARTIFACT_FILENAMES,
         "manifest.json",
         "chunk_embedding_cache.json",
+        "semrag_entities_backup.json",   # incremental SEMRAG state — prevents DeepSeek re-extraction
+        "semrag_relations_backup.json",  # incremental SEMRAG state — prevents DeepSeek re-extraction
     )
     current_prefix = f"{artifact_prefix}/current"
     for name in cache_files:
@@ -222,12 +224,20 @@ def upload_artifacts(
         current_key = f"{artifact_prefix}/current/{name}"
         upload_file(client, bucket, current_key, src)
 
-    # Also upload incremental caches so the next worker run is fast
-    local_data_dir = build_dir.parent  # caches were placed alongside build output
-    for cache_name in ("chunk_embedding_cache.json",):
-        cache_path = local_data_dir / cache_name
-        if cache_path.is_file():
-            upload_file(client, bucket, f"{artifact_prefix}/current/{cache_name}", cache_path)
+    # Upload incremental caches from the build dir so the next worker run is fast
+    # These are written by the pipeline alongside the artifacts
+    incremental_caches = (
+        "chunk_embedding_cache.json",
+        "semrag_entities_backup.json",
+        "semrag_relations_backup.json",
+    )
+    for cache_name in incremental_caches:
+        # Pipeline writes caches into the build dir's checkpoints/parent area
+        for search_dir in (build_dir, build_dir.parent, build_dir / "checkpoints"):
+            cache_path = search_dir / cache_name
+            if cache_path.is_file():
+                upload_file(client, bucket, f"{artifact_prefix}/current/{cache_name}", cache_path)
+                break
 
 
 # ── Optional: fetch new YouTube transcripts ───────────────────────────────────
@@ -410,8 +420,8 @@ def _repoint_caches(local_data_dir: Path) -> None:
     """
     # These env vars are read by the embedding/SEMRAG pipeline modules
     cache_env_map = {
-        "CHUNK_EMBEDDING_CACHE_PATH": "chunk_embedding_cache.json",
-        "SEMRAG_EXTRACTION_CACHE_PATH": "semrag_extraction_cache.json",
+        "EMBEDDING_CHUNK_CACHE_PATH": "chunk_embedding_cache.json",  # matches config.py
+        "SEMRAG_CACHE_PATH": "semrag_extraction_cache.json",          # matches config.py
     }
     for env_var, filename in cache_env_map.items():
         candidate = local_data_dir / filename
