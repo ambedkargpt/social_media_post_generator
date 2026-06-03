@@ -420,27 +420,47 @@ def rebuild_semrag_artifacts_from_data_file(
     _cache_path = cache_path if cache_path is not None else settings.semrag_cache_path
     _chunks_path = chunks_path if chunks_path is not None else settings.semrag_chunks_path
 
-    # If the target cache path is a NEW versioned build path (doesn't exist yet)
-    # but the canonical settings cache does exist, seed it from there so the graph
-    # builder never has to re-call DeepSeek for already-extracted chunks.
+    # Seed extraction cache from canonical location so we never re-call the
+    # extraction API for chunks that are already processed.
     if not _cache_path.exists() and settings.semrag_cache_path.exists() and _cache_path != settings.semrag_cache_path:
         print(f"Seeding extraction cache from {settings.semrag_cache_path} -> {_cache_path}")
         shutil.copy2(settings.semrag_cache_path, _cache_path)
 
+    # Seed existing SEMRAG chunks so we don't re-chunk all videos on every rebuild.
+    # Only new videos (not in the existing chunks) will be re-chunked.
+    if not _chunks_path.exists() and settings.semrag_chunks_path.exists() and _chunks_path != settings.semrag_chunks_path:
+        print(f"Seeding SEMRAG chunks from {settings.semrag_chunks_path} -> {_chunks_path}")
+        shutil.copy2(settings.semrag_chunks_path, _chunks_path)
+
+    # Load existing chunks if available
     semrag_chunks = []
     if _chunks_path.exists():
         try:
             semrag_chunks = json.loads(_chunks_path.read_text(encoding="utf-8"))
             if semrag_chunks:
-                print(f" Using existing SEMRAG chunks from: {_chunks_path}")
+                print(f" Using existing SEMRAG chunks from: {_chunks_path} ({len(semrag_chunks)} chunks)")
         except Exception:
             semrag_chunks = []
 
-    if not semrag_chunks:
-        raw_text = data_txt_path.read_text(encoding="utf-8")
-        videos = parse_transcripts(raw_text)
-        if not videos:
-            return
+    # Parse all videos from transcript master
+    raw_text = data_txt_path.read_text(encoding="utf-8")
+    videos = parse_transcripts(raw_text)
+    if not videos:
+        return
+
+    if semrag_chunks:
+        # Incremental: find videos not yet chunked and chunk only those
+        chunked_links = {c.get("video_link", "").strip() for c in semrag_chunks if c.get("video_link")}
+        new_videos = [v for v in videos if v.get("video_link", "").strip() not in chunked_links]
+        if new_videos:
+            print(f" Chunking {len(new_videos)} new videos (skipping {len(videos) - len(new_videos)} already chunked)...")
+            new_chunks = chunk_videos_for_semrag(new_videos, embedder=None, cfg=semrag_cfg)
+            semrag_chunks = semrag_chunks + new_chunks
+            save_semrag_chunks(_chunks_path, semrag_chunks)
+        else:
+            print(f" All {len(videos)} videos already chunked — skipping re-chunk.")
+    else:
+        # First run: chunk everything
         semrag_chunks = chunk_videos_for_semrag(videos, embedder=None, cfg=semrag_cfg)
         save_semrag_chunks(_chunks_path, semrag_chunks)
     build_semrag_graph(
