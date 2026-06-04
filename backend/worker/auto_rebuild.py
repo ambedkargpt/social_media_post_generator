@@ -199,12 +199,19 @@ def download_data_files(
 
 
 def upload_artifacts(
-    client, bucket: str, artifact_prefix: str, build_dir: Path, version: str
+    client, bucket: str, artifact_prefix: str, build_dir: Path, version: str,
+    local_data_dir: Path | None = None,
 ) -> None:
     """
     Upload all produced artifact files to:
       s3://<bucket>/artifacts/current/<file>         (latest, Lambda reads here)
       s3://<bucket>/artifacts/builds/<version>/<file> (versioned archive)
+
+    Also uploads incremental cache files so the next rebuild is incremental:
+      chunk_embedding_cache.json   — written to local_data_dir by embedder
+      semrag_extraction_cache.json — included in ARTIFACT_FILENAMES (build_dir)
+      semrag_entities_backup.json  — written to build_dir by SEMRAG extractor
+      semrag_relations_backup.json — written to build_dir by SEMRAG extractor
     """
     from backend.worker.manifest import ARTIFACT_FILENAMES
 
@@ -224,20 +231,26 @@ def upload_artifacts(
         current_key = f"{artifact_prefix}/current/{name}"
         upload_file(client, bucket, current_key, src)
 
-    # Upload incremental caches from the build dir so the next worker run is fast
-    # These are written by the pipeline alongside the artifacts
-    incremental_caches = (
-        "chunk_embedding_cache.json",
-        "semrag_entities_backup.json",
-        "semrag_relations_backup.json",
-    )
-    for cache_name in incremental_caches:
-        # Pipeline writes caches into the build dir's checkpoints/parent area
-        for search_dir in (build_dir, build_dir.parent, build_dir / "checkpoints"):
+    # Upload incremental caches so next rebuild only processes new content.
+    # chunk_embedding_cache.json is written by the embedder to local_data_dir
+    # (EMBEDDING_CHUNK_CACHE_PATH = /tmp/data/chunk_embedding_cache.json).
+    # The SEMRAG backup files are written to build_dir by the extractor.
+    incremental_caches = {
+        "chunk_embedding_cache.json":    [local_data_dir, build_dir] if local_data_dir else [build_dir],
+        "semrag_entities_backup.json":   [build_dir],
+        "semrag_relations_backup.json":  [build_dir],
+    }
+    for cache_name, search_dirs in incremental_caches.items():
+        for search_dir in search_dirs:
+            if search_dir is None:
+                continue
             cache_path = search_dir / cache_name
             if cache_path.is_file():
                 upload_file(client, bucket, f"{artifact_prefix}/current/{cache_name}", cache_path)
+                log.info("Uploaded cache: %s → s3://%s/%s/current/%s", cache_path.name, bucket, artifact_prefix, cache_name)
                 break
+        else:
+            log.warning("Cache not found in any search dir: %s", cache_name)
 
 
 # ── YouTube RSS feed fallback ─────────────────────────────────────────────────
@@ -416,8 +429,13 @@ def run() -> int:
         else:
             log.info("--- Step 3: Skipped (FETCH_NEW_TRANSCRIPTS not set) ---")
 
-        # ── Step 4: Full build pipeline ───────────────────────────────────────
-        log.info("--- Step 4: Running build pipeline ---")
+        # ── Step 4: Incremental build (only new content processed) ──────────────
+        # The pipeline reads all transcripts but uses caches to skip existing work:
+        #   - Embedding cache  → new chunks only get embedded via Gemini API
+        #   - SEMRAG cache     → new chunks only get entity-extracted via GPT-4o-mini
+        #   - SEMRAG chunks    → seeded from S3, only new videos get re-chunked
+        # Net cost: only proportional to the number of NEW transcripts added.
+        log.info("--- Step 4: Incremental build (new content only, caches handle the rest) ---")
 
         if _flag("FORCE_FULL_REBUILD"):
             log.info("FORCE_FULL_REBUILD set — removing incremental caches.")
@@ -446,7 +464,8 @@ def run() -> int:
 
         # ── Step 5: Upload artifacts to S3 ────────────────────────────────────
         log.info("--- Step 5: Uploading artifacts to S3 ---")
-        upload_artifacts(client, bucket, artifact_prefix, build_dir, version)
+        upload_artifacts(client, bucket, artifact_prefix, build_dir, version,
+                         local_data_dir=local_data_dir)
 
         # Also upload updated transcript master + caches so next run stays fast
         if transcript_path.is_file():
