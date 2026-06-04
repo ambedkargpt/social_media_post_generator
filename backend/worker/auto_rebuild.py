@@ -286,12 +286,13 @@ def _fetch_video_urls_rss(channel_id: str = _RAVISH_CHANNEL_ID) -> list[str]:
 # ── Optional: fetch new YouTube transcripts ───────────────────────────────────
 
 
-def fetch_new_transcripts(transcript_master_path: Path) -> None:
+def fetch_new_transcripts(transcript_master_path: Path) -> int:
     """
     Calls into Fetch.py's channel-fetch logic to download any new transcripts
     from the Ravish Kumar YouTube channel and append them to the master file.
 
     Only called when FETCH_NEW_TRANSCRIPTS=1.
+    Returns the number of new transcripts appended (0 = nothing new found).
     """
     log.info("Fetching new YouTube transcripts → %s", transcript_master_path)
 
@@ -303,7 +304,7 @@ def fetch_new_transcripts(transcript_master_path: Path) -> None:
         )
     except ImportError as exc:
         log.error("Cannot import Fetch module: %s — skipping transcript fetch.", exc)
-        return
+        return 0
 
     channel_url = f"https://www.youtube.com/@{RAVISH_CHANNEL_SLUG}"
     log.info("Fetching video list from %s ...", channel_url)
@@ -318,7 +319,7 @@ def fetch_new_transcripts(transcript_master_path: Path) -> None:
 
     if not video_urls:
         log.warning("RSS fallback also returned 0 videos — skipping fetch.")
-        return
+        return 0
 
     log.info("Found %d videos. Fetching new transcripts ...", len(video_urls))
 
@@ -336,7 +337,8 @@ def fetch_new_transcripts(transcript_master_path: Path) -> None:
         )
         if result.returncode != 0:
             log.error("Fetch subprocess returned non-zero: %d", result.returncode)
-        return
+        # Subprocess path: can't know exact count, return 1 to let pipeline continue
+        return 1
 
     new_count = 0
     for url in video_urls:
@@ -349,6 +351,7 @@ def fetch_new_transcripts(transcript_master_path: Path) -> None:
             log.debug("Skipping %s: %s", url, exc)
 
     log.info("Fetch complete. %d new transcripts appended.", new_count)
+    return new_count
 
 
 # ── Main orchestrator ─────────────────────────────────────────────────────────
@@ -402,7 +405,14 @@ def run() -> int:
         # ── Step 3: (Optional) Fetch new transcripts ──────────────────────────
         if _flag("FETCH_NEW_TRANSCRIPTS"):
             log.info("--- Step 3: Fetching new YouTube transcripts ---")
-            fetch_new_transcripts(transcript_path)
+            new_transcripts = fetch_new_transcripts(transcript_path)
+            if new_transcripts == 0:
+                log.info(
+                    "No new transcripts found — nothing has changed since last rebuild. "
+                    "Skipping build pipeline. Next run will check again."
+                )
+                return 0
+            log.info("--- Step 3: %d new transcript(s) added — proceeding to rebuild ---", new_transcripts)
         else:
             log.info("--- Step 3: Skipped (FETCH_NEW_TRANSCRIPTS not set) ---")
 
