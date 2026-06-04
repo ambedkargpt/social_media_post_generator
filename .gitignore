@@ -81,6 +81,7 @@ agent-transcripts/
 
 # --- outputs/ (root and backend/) ---
 outputs/
+**/outputs/
 **/outputs/faiss_index.bin
 **/outputs/transcripts/
 **/outputs/streamlit_runs/
@@ -88,6 +89,7 @@ outputs/
 **/outputs/generated_posts_from_news.json
 **/outputs/retrieval_output.json
 **/outputs/video_summary_checkpoint.json
+**/outputs/generated_news.json
 **/outputs/generated_news_legacy.json
 **/outputs/questions_with_ids.docx
 **/outputs/**/verification_report.json
@@ -132,12 +134,23 @@ bulk_retrieval_test.py
 export_bulk_retrieval_pdf.py
 rebuild_embeddings_safe.py
 
-# --- Local scratch ---
+# --- Local scratch / temp files ---
 input.txt
 Output.txt
 bhbhbhbs.txt
 DB_TEST.txt
 *.pdf
+
+# --- Pipeline temp & log files ---
+data/new_video_urls.txt
+data/build_log.txt
+data/realtime_progress.log
+data/news_gen_live.log
+data/artifacts/
+data/semrag/checkpoints/
+
+# --- Backup directory ---
+backup/
 
 # --- Test files ---
 tests/
