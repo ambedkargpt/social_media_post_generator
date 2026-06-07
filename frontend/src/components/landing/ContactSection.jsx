@@ -60,7 +60,7 @@ function ChannelRow({ icon: Icon, label, value, href }) {
 
 export default function ContactSection() {
   return (
-    <section id="contact" className="relative py-20 md:py-28">
+    <section id="contact" className="relative py-12 md:py-16">
       {/* Ambient glow — extends upward to blend with TeamSection above */}
       <div className="pointer-events-none absolute inset-x-0 -top-28 -bottom-0">
         <div className="absolute left-1/2 top-0 h-[500px] w-[800px] -translate-x-1/2 rounded-full bg-[#3f78ff]/9 blur-[150px]" />
@@ -69,7 +69,7 @@ export default function ContactSection() {
 
       <div className="relative mx-auto max-w-[1180px] px-6">
         {/* ══════════ Top: Work With Us CTA strip ══════════ */}
-        <SectionLabel>Work With Us</SectionLabel>
+        <SectionLabel>Connect With Us</SectionLabel>
 
         <h2 className="mx-auto mt-8 max-w-[820px] text-center font-display text-[44px] font-bold leading-[1.1] text-white md:text-[54px]">
           Build AI for social change — join us to create the first{' '}
@@ -80,6 +80,7 @@ export default function ContactSection() {
         <div className="mt-8 flex justify-center">
           <button
             type="button"
+            onClick={() => document.getElementById('contact-form').scrollIntoView({ behavior: 'smooth', block: 'start' })}
             className="btn-gradient inline-flex h-12 items-center gap-2 rounded-full px-7 text-[14px] font-semibold text-white"
           >
             Join Our Team
@@ -144,6 +145,7 @@ export default function ContactSection() {
 
           {/* Right column: Transmission form */}
           <form
+            id="contact-form"
             onSubmit={(e) => e.preventDefault()}
             className="relative flex h-full flex-col rounded-2xl border border-[#1e3260]/60 bg-[#070f24] p-6 md:p-8"
           >

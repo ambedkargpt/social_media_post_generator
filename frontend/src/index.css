@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Anybody:ital,wght@0,100..900;1,100..900&family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Noto+Sans+Devanagari:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Anybody:ital,wght@0,100..900;1,100..900&family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Noto+Sans+Devanagari:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @font-face {
@@ -14,7 +14,7 @@
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-serif: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
   --font-display: 'Anybody', 'Inter', system-ui, sans-serif;
-  --font-count: 'Count', 'Anybody', monospace;
+  --font-count: 'Poppins', 'Count', sans-serif;
   --font-hindi: 'Mangal', 'Noto Sans Devanagari', serif;
 
   --color-navy-950: #05081a;
@@ -602,12 +602,12 @@ html { scroll-behavior: smooth; }
 
 /* --- Page entry transition (triggered by route key change) --- */
 @keyframes pageEnter {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 .page-enter {
-  animation: pageEnter 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  will-change: opacity, transform;
+  animation: pageEnter 320ms ease both;
+  will-change: opacity;
 }
 @media (prefers-reduced-motion: reduce) {
   .page-enter { animation: none; }

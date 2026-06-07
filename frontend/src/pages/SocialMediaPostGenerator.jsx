@@ -278,6 +278,9 @@ export default function SocialMediaPostGenerator() {
     if (!selectedArticle) return;
     // If there's no saved post ID (e.g. previous generation failed), do a fresh generate instead
     if (!selectedPostId) { handleGenerate(); return; }
+    setGeneratedPost('');
+    setTranslatedPost('');
+    setShowTranslated(false);
     setGenerating(true);
     setGenSeconds(0);
     const timer = setInterval(() => setGenSeconds((s) => s + 1), 1000);

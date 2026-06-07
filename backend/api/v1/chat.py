@@ -5,6 +5,7 @@ POST /api/v1/chat/message  →  {reply, sources}
 from __future__ import annotations
 
 import logging
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -61,29 +62,37 @@ Answer in {language}."""
 
 # ── Lazy RAG helpers ───────────────────────────────────────────────────────────
 
+def _do_retrieve(query: str, top_k: int) -> List[dict]:
+    from backend.pipeline_cli import ensure_rag_stack
+    from backend.pipeline.retriever import retrieve_relevant_chunks
+
+    embedder, store, _ctx = ensure_rag_stack(settings)
+    cfg = {
+        "use_bm25": getattr(settings, "retrieval_use_bm25", True),
+        "bm25_top_n": getattr(settings, "retrieval_bm25_top_n", 50),
+        "dense_top_n": getattr(settings, "retrieval_dense_top_n", 50),
+    }
+    return retrieve_relevant_chunks(
+        news_text=query,
+        embedder=embedder,
+        store=store,
+        top_k=top_k,
+        retrieval_cfg=cfg,
+    )
+
+
 def _try_retrieve(query: str, top_k: int = 5) -> List[dict]:
     """
-    Attempt to retrieve relevant chunks from the RAG stack.
-    Returns empty list gracefully if the stack is unavailable.
+    Retrieve relevant chunks with a hard 10s timeout.
+    Returns empty list gracefully if the stack is slow or unavailable.
     """
     try:
-        from backend.pipeline_cli import ensure_rag_stack
-        from backend.pipeline.retriever import retrieve_relevant_chunks
-
-        embedder, store, _ctx = ensure_rag_stack(settings)
-        cfg = {
-            "use_bm25": getattr(settings, "retrieval_use_bm25", True),
-            "bm25_top_n": getattr(settings, "retrieval_bm25_top_n", 50),
-            "dense_top_n": getattr(settings, "retrieval_dense_top_n", 50),
-        }
-        chunks = retrieve_relevant_chunks(
-            news_text=query,
-            embedder=embedder,
-            store=store,
-            top_k=top_k,
-            retrieval_cfg=cfg,
-        )
-        return chunks
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(_do_retrieve, query, top_k)
+            return future.result(timeout=10)
+    except FuturesTimeoutError:
+        logger.warning("RAG retrieval timed out for BheemBot — falling back to LLM-only.")
+        return []
     except Exception as exc:
         logger.warning("RAG retrieval failed (BheemBot falling back to LLM-only): %s", exc)
         return []

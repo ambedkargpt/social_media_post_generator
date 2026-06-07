@@ -223,7 +223,7 @@ function TestimonialCarousel() {
 
 export default function KnowledgeSection() {
   return (
-    <section id="about" className="relative py-20 md:py-28">
+    <section id="about" className="relative py-12 md:py-16">
       {/* ambient glows — extended vertically so they bleed into adjacent sections */}
       <div className="pointer-events-none absolute inset-x-0 -top-28 -bottom-28">
         <div className="absolute left-[20%] top-[30%] h-[480px] w-[480px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2d7dfb]/9 blur-[140px]" />

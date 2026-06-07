@@ -71,6 +71,11 @@ class UsersRepository:
             {"$set": {"last_login_at": datetime.now(timezone.utc), "updated_at": datetime.now(timezone.utc)}},
         )
 
+    def update_profile(self, user_id: ObjectId, fields: dict) -> Optional[dict]:
+        fields["updated_at"] = datetime.now(timezone.utc)
+        self.collection.update_one({"_id": user_id}, {"$set": fields})
+        return self.find_by_id(str(user_id))
+
     def upsert_google_user(self, email: str, username_seed: str, political_party: Optional[str] = None) -> dict:
         existing = self.find_by_email(email)
         now = datetime.now(timezone.utc)

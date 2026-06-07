@@ -6,12 +6,18 @@ from fastapi import APIRouter, Header, HTTPException, Request, status
 
 from backend.schemas.auth import (
     AuthResponse,
+    ForgotPasswordRequest,
+    ForgotPasswordResponse,
     GoogleLoginRequest,
     LoginRequest,
     LogoutRequest,
     MessageResponse,
     RefreshRequest,
+    ResendOtpRequest,
+    ResendOtpResponse,
+    SendPhoneOtpRequest,
     SignupRequest,
+    UpdateProfileRequest,
     UserPublic,
     VerifyOtpRequest,
 )
@@ -73,6 +79,35 @@ def login(payload: LoginRequest, request: Request) -> AuthResponse:
     return service.login(identifier=payload.identifier.strip(), password=payload.password)
 
 
+@router.post("/forgot-password", response_model=ForgotPasswordResponse, responses={400: {"model": ErrorResponse}, 404: {"model": ErrorResponse}})
+def forgot_password(payload: ForgotPasswordRequest, request: Request) -> ForgotPasswordResponse:
+    _check_rate_limit(request.client.host if request.client else "unknown", "forgot-password")
+    result = service.forgot_password(payload.email.lower().strip())
+    return ForgotPasswordResponse(**result)
+
+
+@router.post("/send-phone-otp", response_model=AuthResponse, responses={404: {"model": ErrorResponse}, 409: {"model": ErrorResponse}})
+def send_phone_otp(payload: SendPhoneOtpRequest, request: Request) -> AuthResponse:
+    _check_rate_limit(request.client.host if request.client else "unknown", "send-phone-otp")
+    return service.send_phone_otp(
+        phone=payload.phone.strip(),
+        purpose=payload.purpose,
+        username=payload.username.strip() if payload.username else None,
+        political_party=payload.political_party.strip() if payload.political_party else None,
+    )
+
+
+@router.post("/resend-otp", response_model=ResendOtpResponse, responses={404: {"model": ErrorResponse}})
+def resend_otp(payload: ResendOtpRequest, request: Request) -> ResendOtpResponse:
+    _check_rate_limit(request.client.host if request.client else "unknown", "resend-otp")
+    result = service.resend_otp(
+        target=payload.target.strip(),
+        channel=payload.channel,
+        purpose=payload.purpose,
+    )
+    return ResendOtpResponse(**result)
+
+
 @router.post("/google-login", response_model=AuthResponse, responses={400: {"model": ErrorResponse}, 401: {"model": ErrorResponse}})
 def google_login(payload: GoogleLoginRequest) -> AuthResponse:
     return service.google_login(payload.access_token, payload.political_party)
@@ -96,3 +131,11 @@ def me(authorization: str = Header(default="")) -> UserPublic:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token.")
     token = authorization.replace("Bearer ", "", 1).strip()
     return service.me(token)
+
+
+@router.patch("/me", response_model=UserPublic, responses={401: {"model": ErrorResponse}, 409: {"model": ErrorResponse}})
+def update_profile(payload: UpdateProfileRequest, authorization: str = Header(default="")) -> UserPublic:
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token.")
+    token = authorization.replace("Bearer ", "", 1).strip()
+    return service.update_profile(token, payload.full_name, payload.username)

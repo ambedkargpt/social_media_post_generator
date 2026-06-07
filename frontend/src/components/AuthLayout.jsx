@@ -1,5 +1,8 @@
+import { Link } from 'react-router-dom';
 import BrandPanel from './BrandPanel';
 import BackgroundDecorations from './BackgroundDecorations';
+
+const logoSrc = new URL('../assets/images/logo-animation.png', import.meta.url).href;
 
 export default function AuthLayout({ children, brandSide = 'right', brandVariant = 'login' }) {
   const brandPanel = (
@@ -9,7 +12,9 @@ export default function AuthLayout({ children, brandSide = 'right', brandVariant
   );
 
   const formPanel = (
-    <div className="w-full md:w-[48%] flex items-center justify-center px-6 py-10 md:px-12 lg:px-14">
+    <div className="w-full md:w-[48%] flex flex-col justify-center px-6 py-10 md:px-12 lg:px-14">
+      {/* spacer so form doesn't overlap the fixed logo on mobile */}
+      <div className="mb-8 h-10 md:hidden" />
       <div className="w-full max-w-xl p-2 md:p-3">
         {children}
       </div>
@@ -22,6 +27,21 @@ export default function AuthLayout({ children, brandSide = 'right', brandVariant
       style={{ backgroundColor: '#0a0e1b' }}
     >
       <BackgroundDecorations variant={brandVariant} />
+
+      {/* Logo — always pinned top-left regardless of brand panel side */}
+      <div className="absolute left-6 top-7 z-20 md:left-10 md:top-8">
+        <Link to="/" className="inline-flex items-center gap-2.5 transition-opacity hover:opacity-85">
+          <img
+            src={logoSrc}
+            alt="AmbedkarGPT"
+            className="h-10 w-10 object-contain drop-shadow-[0_0_16px_rgba(63,159,255,0.6)]"
+          />
+          <span className="font-display text-[22px] font-bold leading-none tracking-tight">
+            <span className="text-white">Ambedkar</span>
+            <span className="ml-1 gradient-text-cyan">GPT</span>
+          </span>
+        </Link>
+      </div>
       <div
         className="absolute left-0 right-0 bottom-0 h-28 pointer-events-none"
         style={{

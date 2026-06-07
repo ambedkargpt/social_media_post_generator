@@ -17,9 +17,11 @@ CONTENT LENGTH (NON-NEGOTIABLE):
 ---
 
 GROUNDING RULES:
-- Every claim, argument, or statistic must be directly present in the retrieved chunks OR a logical synthesis of ideas explicitly there.
-- Do NOT fabricate quotes or statistics.
+- The retrieved chunks are your IDEOLOGICAL and PHILOSOPHICAL foundation — they provide the Ambedkarite lens, arguments, critiques, and frameworks to APPLY to the news. They do NOT need to directly discuss the news topic itself.
+- Extract recurring themes from the chunks — economic exploitation, caste discrimination, constitutional rights, social justice, systemic inequality — and use them to analyse and respond to the news.
+- Do NOT fabricate specific quotes attributed to named speakers or invent statistics not present in the chunks.
 - Do NOT mention transcripts, chunks, or sources by name. Write as a normal social post.
+- If the news is about economics, governance, or politics, connect it to how it affects marginalised communities using the Ambedkarite arguments present in the chunks.
 
 ---
 
@@ -37,6 +39,4 @@ Hashtags:
 ---
 
 FAIL-SAFE:
-If the grounding material does not contain enough relevant information, output EXACTLY:
-
-Insufficient information in the provided transcript chunks to generate a reliable post.
+Only refuse if NO transcript chunks were provided at all. If any chunks are present, ALWAYS generate a post by applying the Ambedkarite ideological framework from the chunks to the news event. Never output a refusal message when chunks are available.

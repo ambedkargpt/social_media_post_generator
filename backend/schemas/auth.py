@@ -6,7 +6,7 @@ from pydantic import BaseModel, EmailStr, Field, model_validator
 
 class SignupRequest(BaseModel):
     username: str = Field(min_length=3, max_length=50)
-    password: str = Field(min_length=8, max_length=128)
+    password: Optional[str] = Field(default=None, min_length=8, max_length=128)
     email: Optional[EmailStr] = None
     phone: Optional[str] = Field(default=None, min_length=8, max_length=20)
     political_party: Optional[str] = Field(default=None, min_length=1, max_length=120)
@@ -15,6 +15,8 @@ class SignupRequest(BaseModel):
     def validate_contact(self) -> "SignupRequest":
         if not self.email and not self.phone:
             raise ValueError("At least one of email or phone is required.")
+        if self.email and not self.password:
+            raise ValueError("Password is required for email signup.")
         return self
 
 
@@ -27,7 +29,32 @@ class VerifyOtpRequest(BaseModel):
 
 class LoginRequest(BaseModel):
     identifier: str = Field(description="Username, email, or phone")
-    password: str = Field(min_length=8, max_length=128)
+    password: Optional[str] = Field(default=None, min_length=8, max_length=128)
+
+
+class SendPhoneOtpRequest(BaseModel):
+    phone: str = Field(min_length=8, max_length=20)
+    purpose: Literal["signup_verify", "login_verify"]
+    username: Optional[str] = Field(default=None, min_length=3, max_length=50)
+    political_party: Optional[str] = Field(default=None, min_length=1, max_length=120)
+
+
+class SendPhoneOtpResponse(BaseModel):
+    message: str
+    otp_required: bool = True
+    otp_target: Optional[str] = None
+    dev_otp: Optional[str] = None
+
+
+class ResendOtpRequest(BaseModel):
+    target: str
+    channel: Literal["email", "phone"]
+    purpose: Literal["signup_verify", "login_verify", "reset_password", "change_contact"]
+
+
+class ResendOtpResponse(BaseModel):
+    message: str
+    dev_otp: Optional[str] = None
 
 
 class GoogleLoginRequest(BaseModel):
@@ -46,6 +73,7 @@ class LogoutRequest(BaseModel):
 class UserPublic(BaseModel):
     id: str
     username: str
+    full_name: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
     political_party: Optional[str] = None
@@ -53,6 +81,11 @@ class UserPublic(BaseModel):
     is_phone_verified: bool
     auth_providers: list[str]
     created_at: datetime
+
+
+class UpdateProfileRequest(BaseModel):
+    full_name: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    username: Optional[str] = Field(default=None, min_length=3, max_length=50)
 
 
 class AuthTokens(BaseModel):
@@ -73,3 +106,12 @@ class AuthResponse(BaseModel):
 
 class MessageResponse(BaseModel):
     message: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ForgotPasswordResponse(BaseModel):
+    message: str
+    dev_otp: Optional[str] = None
