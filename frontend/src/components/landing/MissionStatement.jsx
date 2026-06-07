@@ -104,7 +104,7 @@ export default function MissionStatement({
   );
 
   return (
-    <section className="relative py-20 md:py-28">
+    <section className="relative py-12 md:py-16">
       {/* Ambient glow — bleeds into adjacent sections */}
       <div className="pointer-events-none absolute inset-x-0 -top-28 -bottom-28">
         <div className="absolute right-[15%] top-1/2 h-[400px] w-[500px] -translate-y-1/2 rounded-full bg-[#2d55c0]/8 blur-[140px]" />

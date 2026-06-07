@@ -13,7 +13,7 @@ import GoogleButton  from '../components/GoogleButton';
 export default function Login() {
   const navigate = useNavigate();
   const { go: curtainGo } = useCurtain();
-  const { loginWithEmail, loginWithGoogle } = useAuth();
+  const { loginWithEmail, loginWithPhone, loginWithGoogle } = useAuth();
 
   const [mode, setMode]         = useState('email');
   const [email, setEmail]       = useState('');
@@ -44,22 +44,34 @@ export default function Login() {
     setAuthError('');
     setLoading(true);
     try {
-      const identifier = mode === 'phone' ? phone : email.trim();
-      const data = await loginWithEmail(identifier, mode === 'phone' ? null : password);
-      if (data?.otp_required) {
+      if (mode === 'phone') {
+        const data = await loginWithPhone(phone);
         navigate('/otp', {
           state: {
-            identifier: data.otp_target || identifier,
-            type:   mode,
-            mode:   'login',
+            identifier: data?.otp_target || phone,
+            type: 'phone',
+            mode: 'login',
             password: '',
-            devOtp: data.dev_otp || '',
+            devOtp: data?.dev_otp || '',
           },
         });
       } else {
-        const redirect = sessionStorage.getItem('auth_redirect') || '/dashboard';
-        sessionStorage.removeItem('auth_redirect');
-        curtainGo(redirect, { replace: true });
+        const data = await loginWithEmail(email.trim(), password);
+        if (data?.otp_required) {
+          navigate('/otp', {
+            state: {
+              identifier: data.otp_target || email.trim(),
+              type: 'email',
+              mode: 'login',
+              password: '',
+              devOtp: data.dev_otp || '',
+            },
+          });
+        } else {
+          const redirect = sessionStorage.getItem('auth_redirect') || '/dashboard';
+          sessionStorage.removeItem('auth_redirect');
+          curtainGo(redirect, { replace: true });
+        }
       }
     } catch (err) {
       setAuthError(friendlyError(err));

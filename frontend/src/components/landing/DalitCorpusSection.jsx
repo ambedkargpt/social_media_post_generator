@@ -18,22 +18,19 @@ const QA = [
 
 export default function DalitCorpusSection() {
   return (
-    <section id="ambedkarverse" className="relative py-20 md:py-28">
-      {/* ambient glow — extended vertically to bleed into adjacent sections */}
+    <section id="ambedkarverse" className="relative py-12 md:py-16">
       <div className="pointer-events-none absolute inset-x-0 -top-28 -bottom-28">
         <div className="absolute left-[10%] top-[20%] h-[420px] w-[420px] rounded-full bg-[#2d7dfb]/9 blur-[130px]" />
         <div className="absolute right-[5%] bottom-[10%] h-[360px] w-[360px] rounded-full bg-[#1a3fa0]/7 blur-[130px]" />
       </div>
 
       <div className="relative mx-auto max-w-[1180px] px-6">
-        {/* Section label centered */}
         <div className="flex justify-center">
           <SectionLabel size="lg">Dalit Corpus</SectionLabel>
         </div>
 
-        {/* Outer container card */}
         <div className="mt-10 overflow-hidden rounded-2xl border border-[#1a2d55]/60 bg-[#070e22]">
-          <div className="grid md:grid-cols-[1fr_1fr_1fr]">
+          <div className="grid md:grid-cols-[1fr_1fr_0.5fr]">
 
             {/* ── Col 1: Q&A 01 ── */}
             <div className="border-b border-[#1a2d55]/50 p-8 md:border-b-0 md:border-r md:p-10">
@@ -61,12 +58,12 @@ export default function DalitCorpusSection() {
               </p>
             </div>
 
-            {/* ── Col 3: Library image ── */}
-            <div className="min-h-[240px] md:min-h-[420px]">
+            {/* ── Col 3: Library image (half width) ── */}
+            <div className="hidden md:block">
               <img
                 src={libraryImg}
                 alt="A vast circular library representing the Dalit Corpus"
-                className="h-full w-full object-cover object-center"
+                className="h-full w-full object-cover object-top"
               />
             </div>
 

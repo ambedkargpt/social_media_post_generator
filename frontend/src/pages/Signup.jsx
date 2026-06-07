@@ -96,8 +96,8 @@ export default function Signup() {
     setLoading(true);
     try {
       if (mode === 'phone') {
-        const data = await signupWithPhone(phone, null, politicalParty || undefined);
-        navigate('/otp', { state: { identifier: phone, type: 'phone', mode: 'signup', password: '', devOtp: data?.dev_otp || '' } });
+        const data = await signupWithPhone(phone, politicalParty || undefined);
+        navigate('/otp', { state: { identifier: data?.otp_target || phone, type: 'phone', mode: 'signup', password: '', devOtp: data?.dev_otp || '' } });
       } else {
         const data = await signupWithEmail(email.trim(), password, politicalParty || undefined);
         navigate('/otp', { state: { identifier: email.trim(), type: 'email', mode: 'signup', password, devOtp: data?.dev_otp || '' } });

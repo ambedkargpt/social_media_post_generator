@@ -74,23 +74,24 @@ function OtpBoxes({ value, onChange, error }) {
   );
 }
 
-function ResendTimer({ onResend }) {
+function ResendTimer({ onResend, type }) {
   const [seconds, setSeconds] = useState(30);
   useEffect(() => {
     if (seconds <= 0) return;
     const t = setTimeout(() => setSeconds((s) => s - 1), 1000);
     return () => clearTimeout(t);
   }, [seconds]);
+  const label = type === 'phone' ? 'call again' : 'Resend';
   return (
     <p className="text-center text-sm" style={{ color: '#8b94b8' }}>
-      Didn&apos;t receive it?{' '}
+      {type === 'phone' ? "Didn't get the call?" : "Didn't receive it?"}{' '}
       {seconds > 0 ? (
-        <span style={{ color: '#6b7db3' }}>Resend in {seconds}s</span>
+        <span style={{ color: '#6b7db3' }}>Try again in {seconds}s</span>
       ) : (
         <button type="button" onClick={() => { setSeconds(30); onResend(); }}
           className="underline underline-offset-2 hover:opacity-80 transition-opacity font-medium"
           style={{ color: '#6b8aff' }}>
-          Resend
+          {label}
         </button>
       )}
     </p>
@@ -127,7 +128,11 @@ export default function Otp() {
     try {
       const purpose = mode === 'signup' ? 'signup_verify' : 'login_verify';
       await verifyOtp(otp, identifier, type, purpose);
-      curtainGo(mode === 'signup' ? '/questionnaire' : '/dashboard', { replace: true });
+      // Phone signup → profile setup → questionnaire; all other paths → questionnaire or dashboard
+      const dest = (mode === 'signup' && type === 'phone') ? '/profile-setup'
+                 : mode === 'signup' ? '/questionnaire'
+                 : '/dashboard';
+      curtainGo(dest, { replace: true });
     } catch (err) {
       setOtpError(friendlyError(err));
     } finally {
@@ -152,6 +157,9 @@ export default function Otp() {
 
   const title  = type === 'email' ? 'Verify Your Email' : 'Verify Your Phone';
   const backTo = mode === 'login' ? '/login' : '/signup';
+  const deliveryMsg = type === 'phone'
+    ? <>You&apos;ll receive a <span className="font-medium" style={{ color: '#c8d8ff' }}>call</span> on <span className="font-medium" style={{ color: '#c8d8ff' }}>{masked}</span> with your 6-digit code.</>
+    : <>We&apos;ve sent a 6-digit code to your {label} <span className="font-medium" style={{ color: '#c8d8ff' }}>{masked}</span>.</>;
 
   return (
     <AuthLayout brandSide="left" brandVariant="signup">
@@ -159,8 +167,7 @@ export default function Otp() {
         <div>
           <h1 className="text-3xl font-bold text-white">{title}</h1>
           <p className="mt-2 text-sm leading-relaxed" style={{ color: '#8b94b8' }}>
-            We&apos;ve sent a 6-digit code to your {label}{' '}
-            <span className="font-medium" style={{ color: '#c8d8ff' }}>{masked}</span>.
+            {deliveryMsg}
           </p>
           {devOtp && (
             <p className="mt-1 text-xs rounded-md px-3 py-1.5 inline-block" style={{ backgroundColor: '#0d2b1a', color: '#4ade80', border: '1px solid #166534' }}>
@@ -182,7 +189,7 @@ export default function Otp() {
           </PrimaryButton>
         </form>
 
-        <ResendTimer onResend={handleResend} />
+        <ResendTimer onResend={handleResend} type={type} />
 
         <p className="text-center text-sm" style={{ color: '#8b94b8' }}>
           Wrong {type === 'email' ? 'email' : 'number'}?{' '}

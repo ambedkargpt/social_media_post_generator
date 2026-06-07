@@ -2,22 +2,25 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import logoSrc from '../assets/images/logo-animation.png';
+import { useAuth } from '../context/AuthContext';
 
+// action: 'scroll' (default) | 'bheembot' | 'dashboard' | 'section:<id>'
 const navItems = [
   { label: 'HOME',          sectionId: 'home' },
   { label: 'ABOUT',         sectionId: 'about' },
-  { label: 'BHEEM CHATBOT', sectionId: 'bheem' },
+  { label: 'BHEEM CHATBOT', sectionId: 'bheem',        action: 'bheembot'   },
   { label: 'CONTACT',       sectionId: 'contact' },
-  { label: 'CHARITY',       sectionId: 'charity' },
-  { label: 'AMBEDKARVERSE', sectionId: 'ambedkarverse' },
+  { label: 'CHARITY',       sectionId: 'charity',      action: 'section:contact' },
+  { label: 'AMBEDKARVERSE', sectionId: 'ambedkarverse', action: 'dashboard'  },
 ];
 
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { currentUser } = useAuth();
   const [active,   setActive]   = useState('home');
   const [menuOpen, setMenuOpen] = useState(false);
-  const headerRef = useRef(null);
+  const headerRef  = useRef(null);
 
   // Highlight nav item based on scroll position
   useEffect(() => {
@@ -59,16 +62,47 @@ export default function Navbar() {
   // Close dropdown on route change
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
-  function handleNav(sectionId) {
-    setActive(sectionId);
-    setMenuOpen(false);
+
+  function scrollToSection(id) {
     if (location.pathname === '/') {
-      const target = document.getElementById(sectionId);
+      const target = document.getElementById(id);
       if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      sessionStorage.setItem('pending-section-scroll', id);
+      navigate('/');
+    }
+  }
+
+  function handleNav(item) {
+    setActive(item.sectionId);
+    setMenuOpen(false);
+
+    if (item.action === 'bheembot') {
+      if (currentUser) {
+        navigate('/bheembot');
+      } else {
+        sessionStorage.setItem('auth_redirect', '/bheembot');
+        navigate('/login');
+      }
       return;
     }
-    sessionStorage.setItem('pending-section-scroll', sectionId);
-    navigate('/');
+
+    if (item.action === 'dashboard') {
+      if (currentUser) {
+        navigate('/dashboard');
+      } else {
+        sessionStorage.setItem('auth_redirect', '/dashboard');
+        navigate('/login');
+      }
+      return;
+    }
+
+    if (item.action?.startsWith('section:')) {
+      scrollToSection(item.action.split(':')[1]);
+      return;
+    }
+
+    scrollToSection(item.sectionId);
   }
 
   return (
@@ -98,18 +132,18 @@ export default function Navbar() {
         </Link>
 
         {/* ── Desktop nav ──────────────────────── */}
-        <nav className="hidden items-center gap-7 font-count text-[11.5px] font-medium tracking-[0.16em] lg:flex">
+        <nav className="hidden items-center gap-7 font-count text-[13px] font-medium tracking-[0.1em] lg:flex">
           {navItems.map((item) => {
             const isActive = active === item.sectionId;
             return (
               <button
                 key={item.sectionId}
                 type="button"
-                onClick={() => handleNav(item.sectionId)}
+                onClick={() => handleNav(item)}
                 className={`relative rounded-md px-3 py-1.5 transition-all duration-200 ${
                   isActive
                     ? 'bg-[#0d1a3a] border border-[#3f6bd4]/60 text-[#3f9fff] shadow-[0_0_12px_rgba(63,159,255,0.18)]'
-                    : 'border border-transparent text-white/75 hover:text-white hover:bg-white/[0.05] hover:border-white/10'
+                    : 'border border-transparent text-white/70 hover:text-[#3f9fff] hover:bg-[#3f9fff]/10 hover:border-[#3f9fff]/30 hover:shadow-[0_0_10px_rgba(63,159,255,0.2)]'
                 }`}
               >
                 {item.label}
@@ -137,7 +171,7 @@ export default function Navbar() {
 
           <Link
             to="/login"
-            className="inline-flex h-8 shrink-0 items-center justify-center whitespace-nowrap rounded-lg border border-white/20 bg-white/5 px-3 font-count text-[11.5px] font-medium text-white/80 transition hover:border-white/40 hover:bg-white/10 hover:text-white md:h-10 md:border-transparent md:bg-transparent md:px-4 md:text-[13px] md:hover:bg-transparent"
+            className="inline-flex h-9 shrink-0 items-center justify-center whitespace-nowrap rounded-lg border border-[#3f9fff]/50 bg-[#3f9fff]/10 px-4 font-count text-[13px] font-semibold text-[#7fc8ff] shadow-[0_0_14px_rgba(63,159,255,0.15)] transition hover:border-[#3f9fff]/80 hover:bg-[#3f9fff]/20 hover:text-white hover:shadow-[0_0_20px_rgba(63,159,255,0.3)] md:h-10 md:px-5 md:text-[13.5px]"
           >
             Log In
           </Link>
@@ -163,12 +197,12 @@ export default function Navbar() {
                 <button
                   key={item.sectionId}
                   type="button"
-                  onClick={() => handleNav(item.sectionId)}
+                  onClick={() => handleNav(item)}
                   className={[
                     'flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left font-count text-[11.5px] font-medium tracking-[0.14em] transition-all duration-150',
                     isActive
                       ? 'bg-[#0d1a36] text-[#3f9fff] border border-[#3f6bd4]/35'
-                      : 'border border-transparent text-[#b8cce8] hover:bg-white/[0.05] hover:text-white',
+                      : 'border border-transparent text-white/70 hover:text-[#3f9fff] hover:bg-[#3f9fff]/10 hover:border-[#3f9fff]/25',
                   ].join(' ')}
                 >
                   {isActive && (

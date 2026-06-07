@@ -52,9 +52,9 @@ const WELCOME_MESSAGE = {
   timestamp: Date.now(),
 };
 
-const SESSION_KEY        = 'bheembot_history';
 const SIDEBAR_WIDTH_KEY  = 'bheembot_sidebar_width';
-const CHAT_TIMEOUT_MS    = 15_000;
+const sessionKey = (userId) => `bheembot_history_${userId || 'anon'}`;
+const CHAT_TIMEOUT_MS    = 45_000;
 const SIDEBAR_MIN        = 160;
 const SIDEBAR_MAX        = 420;
 const SIDEBAR_DEFAULT    = 220;
@@ -301,7 +301,7 @@ export default function BheemBot() {
   // ── Chat state ──
   const [messages,     setMessages]     = useState(() => {
     try {
-      const stored = sessionStorage.getItem(SESSION_KEY);
+      const stored = sessionStorage.getItem(sessionKey(currentUser?.id));
       if (stored) return JSON.parse(stored);
     } catch { /* ignore */ }
     return [WELCOME_MESSAGE];
@@ -314,18 +314,37 @@ export default function BheemBot() {
   const messagesEndRef = useRef(null);
   const inputRef       = useRef(null);
 
-  // ── Persist chat ──
+  // ── Remove legacy shared key on first mount ──
+  useEffect(() => {
+    sessionStorage.removeItem('bheembot_history');
+  }, []);
+
+  // ── Persist chat (per-user) ──
   useEffect(() => {
     try {
       const toStore = messages.filter((m) => !m.typing);
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify(toStore));
+      sessionStorage.setItem(sessionKey(currentUser?.id), JSON.stringify(toStore));
     } catch { /* storage full */ }
-  }, [messages]);
+  }, [messages, currentUser?.id]);
 
   // ── Persist sidebar width ──
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, String(sidebarWidth));
   }, [sidebarWidth]);
+
+  // ── Reset chat when user changes (account switch) ──
+  const prevUserIdRef = useRef(currentUser?.id);
+  useEffect(() => {
+    if (prevUserIdRef.current !== currentUser?.id) {
+      prevUserIdRef.current = currentUser?.id;
+      try {
+        const stored = sessionStorage.getItem(sessionKey(currentUser?.id));
+        setMessages(stored ? JSON.parse(stored) : [WELCOME_MESSAGE]);
+      } catch {
+        setMessages([WELCOME_MESSAGE]);
+      }
+    }
+  }, [currentUser?.id]);
 
   // ── Auto-scroll ──
   useEffect(() => {

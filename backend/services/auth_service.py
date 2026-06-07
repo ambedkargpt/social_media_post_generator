@@ -3,7 +3,9 @@ from fastapi import HTTPException, status
 from backend.core.auth_constants import (
     AUTH_PROVIDER_GOOGLE,
     AUTH_PROVIDER_PASSWORD,
+    AUTH_PROVIDER_PHONE,
     OTP_PURPOSE_LOGIN_VERIFY,
+    OTP_PURPOSE_RESET_PASSWORD,
     OTP_PURPOSE_SIGNUP_VERIFY,
 )
 from backend.core.config import settings
@@ -14,6 +16,7 @@ from backend.schemas.auth import AuthResponse, AuthTokens, UserPublic
 from backend.services.google_auth import fetch_google_userinfo
 from backend.services.otp_service import build_hashed_otp, otp_expiry_time
 from backend.services.security import hash_password, verify_otp_hash, verify_password
+from backend.services.sms_service import try_send_otp_sms
 from backend.services.token_service import create_access_token, create_refresh_token, decode_token
 
 
@@ -26,7 +29,7 @@ class AuthService:
     def signup(
         self,
         username: str,
-        password: str,
+        password: str | None,
         email: str | None,
         phone: str | None,
         political_party: str | None,
@@ -38,13 +41,14 @@ class AuthService:
         if phone and self.users_repo.find_by_phone(phone):
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Phone already exists.")
 
+        auth_providers = [AUTH_PROVIDER_PASSWORD] if email else [AUTH_PROVIDER_PHONE]
         user = self.users_repo.create_user(
             username=username,
-            password_hash=hash_password(password),
+            password_hash=hash_password(password) if password else None,
             email=email,
             phone=phone,
             political_party=political_party,
-            auth_providers=[AUTH_PROVIDER_PASSWORD],
+            auth_providers=auth_providers,
         )
 
         channel = "email" if email else "phone"
@@ -65,6 +69,85 @@ class AuthService:
             auth_response.dev_otp = otp_code
         return auth_response
 
+    def send_phone_otp(
+        self,
+        phone: str,
+        purpose: str,
+        username: str | None = None,
+        political_party: str | None = None,
+    ) -> AuthResponse:
+        """Create/find phone user, generate OTP in MongoDB, issue session tokens, attempt SMS."""
+        if purpose == OTP_PURPOSE_SIGNUP_VERIFY:
+            existing = self.users_repo.find_by_phone(phone)
+            if existing:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="An account with this phone number already exists.",
+                )
+            _username = username or ("user_" + phone.replace("+", "").replace(" ", "")[-8:])
+            while self.users_repo.find_by_username(_username):
+                _username = _username + "_1"
+            user = self.users_repo.create_user(
+                username=_username,
+                password_hash=None,
+                email=None,
+                phone=phone,
+                political_party=political_party,
+                auth_providers=[AUTH_PROVIDER_PHONE],
+            )
+        else:
+            user = self.users_repo.find_by_phone(phone)
+            if not user:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="No account found with this phone number.",
+                )
+
+        otp_code, otp_hash = build_hashed_otp()
+        self.otp_repo.create_otp(
+            user_id=user["_id"],
+            channel="phone",
+            target=phone,
+            otp_hash=otp_hash,
+            purpose=purpose,
+            max_attempts=settings.otp_max_attempts,
+            expires_at=otp_expiry_time(),
+        )
+
+        try_send_otp_sms(phone, otp_code)
+
+        auth_response = self._issue_session(user, otp_required=True, otp_target=phone)
+        if settings.auth_debug_return_otp and settings.app_env in {"development", "dev", "test", "testing"}:
+            auth_response.dev_otp = otp_code
+        return auth_response
+
+    def resend_otp(self, target: str, channel: str, purpose: str) -> dict:
+        """Delete any existing OTP for this target/channel/purpose and issue a fresh one."""
+        user = self.users_repo.find_by_identifier(target)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No account found.")
+
+        self.otp_repo.delete_for_target(target=target, channel=channel, purpose=purpose)
+
+        otp_code, otp_hash = build_hashed_otp()
+        self.otp_repo.create_otp(
+            user_id=user["_id"],
+            channel=channel,
+            target=target,
+            otp_hash=otp_hash,
+            purpose=purpose,
+            max_attempts=settings.otp_max_attempts,
+            expires_at=otp_expiry_time(),
+        )
+
+        if channel == "phone":
+            try_send_otp_sms(target, otp_code)
+
+        result: dict = {"message": "A new verification code has been sent."}
+        if settings.auth_debug_return_otp and settings.app_env in {"development", "dev", "test", "testing"}:
+            result["dev_otp"] = otp_code
+        return result
+
     def verify_otp(self, target: str, channel: str, otp_code: str, purpose: str) -> dict:
         otp_doc = self.otp_repo.get_active_otp(target=target, channel=channel, purpose=purpose)
         if not otp_doc:
@@ -83,7 +166,12 @@ class AuthService:
             self.users_repo.verify_channel(user_id, channel)
         return {"message": "OTP verified successfully."}
 
-    def login(self, identifier: str, password: str) -> AuthResponse:
+    def login(self, identifier: str, password: str | None) -> AuthResponse:
+        if not password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="phone_otp_required",
+            )
         user = self.users_repo.find_by_identifier(identifier)
         if not user or not user.get("password_hash"):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials.")
@@ -110,6 +198,33 @@ class AuthService:
             return auth_response
 
         return self._issue_session(user)
+
+    def forgot_password(self, email: str) -> dict:
+        user = self.users_repo.find_by_email(email)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No account found with this email.")
+
+        providers = user.get("auth_providers", [])
+        if AUTH_PROVIDER_PASSWORD not in providers:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="google_account",
+            )
+
+        otp_code, otp_hash = build_hashed_otp()
+        self.otp_repo.create_otp(
+            user_id=user["_id"],
+            channel="email",
+            target=email,
+            otp_hash=otp_hash,
+            purpose=OTP_PURPOSE_RESET_PASSWORD,
+            max_attempts=settings.otp_max_attempts,
+            expires_at=otp_expiry_time(),
+        )
+        result: dict = {"message": "Verification code sent to your email."}
+        if settings.auth_debug_return_otp and settings.app_env in {"development", "dev", "test", "testing"}:
+            result["dev_otp"] = otp_code
+        return result
 
     def google_login(self, access_token: str, political_party: str | None = None) -> AuthResponse:
         payload = fetch_google_userinfo(access_token)
@@ -173,10 +288,33 @@ class AuthService:
             user, access_token, refresh_token, access_expires_at, refresh_expires_at, otp_required, otp_target
         )
 
+    def update_profile(self, bearer_token: str, full_name: str | None, username: str | None) -> UserPublic:
+        payload = decode_token(bearer_token)
+        if payload.get("type") != "access":
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid access token.")
+        user = self.users_repo.find_by_id(payload["sub"])
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+
+        fields: dict = {}
+        if full_name is not None:
+            fields["full_name"] = full_name.strip()
+        if username is not None:
+            username = username.strip()
+            existing = self.users_repo.find_by_username(username)
+            if existing and str(existing["_id"]) != str(user["_id"]):
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username already taken.")
+            fields["username"] = username
+
+        if fields:
+            user = self.users_repo.update_profile(user["_id"], fields)
+        return self._to_user_public(user)
+
     def _to_user_public(self, user: dict) -> UserPublic:
         return UserPublic(
             id=str(user["_id"]),
             username=user["username"],
+            full_name=user.get("full_name"),
             email=user.get("email"),
             phone=user.get("phone"),
             political_party=user.get("political_party"),

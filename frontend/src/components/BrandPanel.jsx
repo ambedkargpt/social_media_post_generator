@@ -101,14 +101,7 @@ export default function BrandPanel({ variant = 'login' }) {
 
   return (
     <div className="relative flex h-full min-h-[100svh] flex-col px-6 pt-8 pb-10 md:px-8 md:pt-10 md:pb-12">
-      {/* Logo: top */}
-      <div className="flex justify-center md:justify-start">
-        <BrandLogo />
-      </div>
-
-      {/* Middle zone: image + tagline as ONE tight group, vertically centered
-          in whatever space remains after the logo. flex-1 claims the leftover
-          height; justify-center pins the group to the middle of that span. */}
+      {/* Image + tagline vertically centered */}
       <div className="flex flex-1 flex-col items-center justify-center gap-0 py-2">
         <FramedImage src={src} label={label} variant={variant} />
 
