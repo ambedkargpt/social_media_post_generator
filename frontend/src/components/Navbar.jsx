@@ -25,7 +25,9 @@ export default function Navbar() {
   // Highlight nav item based on scroll position
   useEffect(() => {
     if (location.pathname !== '/') return;
-    const ids = navItems.map((i) => i.sectionId);
+    // Only observe sections that actually scroll — skip items that navigate away
+    const scrollItems = navItems.filter((i) => !i.action || i.action.startsWith('section:'));
+    const ids = scrollItems.map((i) => i.sectionId);
     const els = ids.map((id) => document.getElementById(id)).filter(Boolean);
     if (!els.length) return;
 
