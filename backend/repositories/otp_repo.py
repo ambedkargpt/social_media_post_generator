@@ -55,3 +55,6 @@ class OtpRepository:
 
     def consume(self, otp_id: ObjectId) -> None:
         self.collection.update_one({"_id": otp_id}, {"$set": {"consumed_at": datetime.now(timezone.utc)}})
+
+    def delete_for_target(self, target: str, channel: str, purpose: str) -> None:
+        self.collection.delete_many({"target": target, "channel": channel, "purpose": purpose, "consumed_at": None})

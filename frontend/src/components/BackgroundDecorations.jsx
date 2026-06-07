@@ -72,13 +72,15 @@ function Waves({ side = 'left' }) {
   const isLeft = side === 'left';
   return (
     <svg
-      className="pointer-events-none absolute bottom-0"
+      className="pointer-events-none absolute"
       style={{
-        [isLeft ? 'left' : 'right']: 0,
+        bottom: 160,
+        [isLeft ? 'left' : 'right']: -160,
         width: 560,
         height: 240,
         opacity: 0.26,
-        transform: isLeft ? 'none' : 'scaleX(-1)',
+        transform: isLeft ? 'rotate(38deg)' : 'scaleX(-1) rotate(38deg)',
+        transformOrigin: isLeft ? 'bottom left' : 'bottom right',
       }}
       viewBox="0 0 560 240"
       aria-hidden="true"

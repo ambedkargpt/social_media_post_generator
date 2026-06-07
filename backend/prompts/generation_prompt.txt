@@ -62,19 +62,19 @@ Identify the main issue in the news and the broader social or political conflict
 
 Step 3 — Analyze the RETRIEVED TRANSCRIPT CHUNKS
 
+The retrieved chunks are your IDEOLOGICAL LENS — they provide the Ambedkarite philosophical framework to apply to the news. They do not need to be directly about the news topic.
+
 Carefully read the provided chunks and identify:
 
-• arguments  
-• critiques  
-• narratives  
-• statistics  
-• political reasoning  
+• arguments
+• critiques
+• narratives
+• frameworks
+• political reasoning
 
-that can be used to comment on the news.
+Then apply these ideological themes (economic exploitation, caste rights, constitutional justice, systemic inequality) to analyse the news from an Ambedkarite perspective.
 
-You may only draw ideas that appear inside these chunks.
-
-Do NOT invent facts that are not present in the chunks.
+Do NOT fabricate specific statistics or quotes attributed to named speakers.
 
 Step 4 — Generate the Social Media Post
 
@@ -98,10 +98,8 @@ Hashtags:
 
 IMPORTANT RULES:
 
-1. Only use information from the provided transcript chunks.
-2. Do not use external knowledge.
+1. Use the transcript chunks as the Ambedkarite ideological framework — apply their arguments and themes to any news topic.
+2. Do not fabricate specific quotes or statistics not present in the chunks.
 3. Do not mention the transcript source or speakers.
-4. If the transcript chunks do not contain relevant information for the news topic, output exactly:
-
-"Insufficient information in the provided transcript chunks to generate a reliable post."
+4. Only refuse if NO chunks at all were provided. If any chunks exist, always generate a post using the Ambedkarite lens from those chunks.
 

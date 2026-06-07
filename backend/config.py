@@ -86,6 +86,8 @@ class Settings:
     google_client_id: str
     auth_debug_return_otp: bool
     app_env: str
+    # 2Factor.in (Indian SMS OTP)
+    twofactor_api_key: str
     # Pinecone (replaces FAISS)
     pinecone_api_key: str
     pinecone_index_name: str
@@ -287,6 +289,7 @@ def get_settings() -> Settings:
     google_client_id = (os.getenv("GOOGLE_CLIENT_ID") or "").strip()
     auth_debug_return_otp = (os.getenv("AUTH_DEBUG_RETURN_OTP", "false").lower() in {"1", "true", "yes", "on"})
     app_env = (os.getenv("APP_ENV") or "development").strip().lower() or "development"
+    twofactor_api_key = (os.getenv("TWOFACTOR_API_KEY") or "").strip()
     pinecone_api_key = (os.getenv("PINECONE_API_KEY") or "").strip()
     pinecone_index_name = (os.getenv("PINECONE_INDEX_NAME") or "ambedkargpt").strip()
     pinecone_namespace = (os.getenv("PINECONE_NAMESPACE") or "").strip()
@@ -359,6 +362,7 @@ def get_settings() -> Settings:
         google_client_id=google_client_id,
         auth_debug_return_otp=auth_debug_return_otp,
         app_env=app_env,
+        twofactor_api_key=twofactor_api_key,
         pinecone_api_key=pinecone_api_key,
         pinecone_index_name=pinecone_index_name,
         pinecone_namespace=pinecone_namespace,

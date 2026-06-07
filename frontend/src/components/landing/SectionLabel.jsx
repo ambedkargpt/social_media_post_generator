@@ -1,28 +1,37 @@
 import Sparkle from './Sparkle';
 
-// Centered pill-style section label like "✦ Trusted By ✦".
-// The two sparkles rotate + pulse out of phase for subtle motion.
 export default function SectionLabel({ children, size = 'md' }) {
   const isLg = size === 'lg';
   return (
     <div className="flex justify-center">
       <div
-        className={`inline-flex items-center gap-2.5 rounded-full border border-[#2f5ba0]/60 bg-[#0d1a36]/70 shadow-[0_0_36px_rgba(43,126,255,0.22)] backdrop-blur-sm ${
-          isLg ? 'px-6 py-2.5' : 'px-5 py-2'
+        className={`relative inline-flex items-center gap-4 rounded-full border border-[#4f8fff]/50 bg-[#071228] shadow-[0_0_48px_rgba(63,159,255,0.35),inset_0_0_24px_rgba(63,159,255,0.08)] backdrop-blur-sm ${
+          isLg ? 'px-9 py-4' : 'px-8 py-3.5'
         }`}
       >
+        {/* inner top-edge highlight */}
+        <span className="pointer-events-none absolute inset-x-6 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(100,180,255,0.6),transparent)]" />
+
         <span className="sparkle-twinkle inline-flex">
-          <Sparkle size={isLg ? 14 : 12} color="#4fb4ff" />
+          <Sparkle size={isLg ? 22 : 20} color="#4fb4ff" />
         </span>
+
         <span
-          className={`font-medium uppercase tracking-[0.22em] text-[#9dc3ff] ${
-            isLg ? 'text-[13px]' : 'text-[11.5px]'
+          className={`font-bold tracking-wide ${
+            isLg ? 'text-[22px]' : 'text-[20px]'
           }`}
+          style={{
+            background: 'linear-gradient(90deg, #a8d0ff 0%, #4fb4ff 50%, #a8d0ff 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}
         >
           {children}
         </span>
+
         <span className="sparkle-twinkle-delay inline-flex">
-          <Sparkle size={isLg ? 14 : 12} color="#4fb4ff" />
+          <Sparkle size={isLg ? 22 : 20} color="#4fb4ff" />
         </span>
       </div>
     </div>

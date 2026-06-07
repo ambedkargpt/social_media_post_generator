@@ -61,7 +61,7 @@ function UseCaseCard({ icon: Icon, title, body }) {
 // Use Cases — centered title with gradient-accent words, 2×2 feature grid
 export default function UseCasesGrid() {
   return (
-    <section id="bheem" className="relative py-20 md:py-28">
+    <section id="bheem" className="relative py-12 md:py-16">
       {/* Ambient glow — extended to bleed into adjacent sections */}
       <div className="pointer-events-none absolute inset-x-0 -top-28 -bottom-28">
         <div className="absolute left-1/2 top-0 h-[480px] w-[800px] -translate-x-1/2 rounded-full bg-[#3f78ff]/8 blur-[150px]" />

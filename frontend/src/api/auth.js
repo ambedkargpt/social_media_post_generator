@@ -42,12 +42,14 @@ export async function signupWithEmail({ username, email, password, political_par
   return data; // includes dev_otp when AUTH_DEBUG_RETURN_OTP=true
 }
 
-// ── Signup with phone + password ──────────────────────────────────────────────
-export async function signupWithPhone({ username, phone, password, political_party }) {
-  const { data } = await axios.post(`${BASE_URL}/auth/signup`, {
-    username,
+// ── Send phone OTP (signup or login) ─────────────────────────────────────────
+// purpose: 'signup_verify' | 'login_verify'
+// Returns AuthResponse shape (tokens + user + otp_required=true + dev_otp?)
+export async function sendPhoneOtp({ phone, purpose, username, political_party }) {
+  const { data } = await axios.post(`${BASE_URL}/auth/send-phone-otp`, {
     phone,
-    password,
+    purpose,
+    ...(username ? { username } : {}),
     ...(political_party ? { political_party } : {}),
   });
   if (data.tokens) {
@@ -99,17 +101,23 @@ export async function loginWithGoogle(googleAccessToken, politicalParty) {
 
 // ── Resend OTP ────────────────────────────────────────────────────────────────
 export async function resendOtp({ target, channel, purpose }) {
-  const { data } = await axios.post(`${BASE_URL}/auth/resend-otp`, {
-    target,
-    channel,
-    purpose,
-  });
+  const { data } = await axios.post(`${BASE_URL}/auth/resend-otp`, { target, channel, purpose });
   return data; // { message, dev_otp? }
 }
 
 // ── Get current user from backend ────────────────────────────────────────────
 export async function getMe() {
   const { data } = await client.get('/auth/me');
+  saveUser(data);
+  return data;
+}
+
+// ── Update profile (full_name, username) ─────────────────────────────────────
+export async function updateProfile({ full_name, username }) {
+  const { data } = await client.patch('/auth/me', {
+    ...(full_name  !== undefined ? { full_name }  : {}),
+    ...(username   !== undefined ? { username }   : {}),
+  });
   saveUser(data);
   return data;
 }

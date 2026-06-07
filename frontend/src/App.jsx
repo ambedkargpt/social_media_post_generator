@@ -17,6 +17,7 @@ import Otp        from './pages/Otp';
 import Dashboard       from './pages/Dashboard';
 import ForgotPassword  from './pages/ForgotPassword';
 import Questionnaire   from './pages/Questionnaire';
+import ProfileSetup    from './pages/ProfileSetup';
 import ServiceSelection          from './pages/ServiceSelection';
 import SocialMediaPostGenerator  from './pages/SocialMediaPostGenerator';
 import MusicGeneration           from './pages/MusicGeneration';
@@ -74,6 +75,9 @@ export default function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
 
             {/* protected */}
+            <Route path="/profile-setup" element={
+              <ProtectedRoute><ProfileSetup /></ProtectedRoute>
+            } />
             <Route path="/questionnaire" element={
               <ProtectedRoute><Questionnaire /></ProtectedRoute>
             } />

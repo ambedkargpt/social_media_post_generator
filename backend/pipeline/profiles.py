@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Dict, List
 
 
@@ -38,13 +37,6 @@ def _validate_profile_list(profiles: List[Dict[str, str]]) -> None:
             raise ValueError(f"Profile {profile.get('user_role')} missing fields: {missing}")
 
 
-def _ensure_user_profiles_parquet(path: Path) -> None:
-    """Always regenerate from DEFAULT_USER_PROFILES so code is the source of truth."""
-    import pandas as pd
-
-    path.parent.mkdir(parents=True, exist_ok=True)
-    _validate_profile_list(DEFAULT_USER_PROFILES)
-    pd.DataFrame(DEFAULT_USER_PROFILES).to_parquet(path, index=False)
 
 
 DEFAULT_USER_PROFILES: List[Dict[str, str]] = [
@@ -322,18 +314,6 @@ DEFAULT_USER_PROFILES: List[Dict[str, str]] = [
 
 
 def get_user_profiles() -> List[Dict[str, str]]:
-    """
-    Load user profiles from Parquet (see Settings.user_profiles_parquet_path).
-    On first run, seeds the file from DEFAULT_USER_PROFILES.
-    """
-    import pandas as pd
-
-    from backend.config import get_settings
-
-    path = get_settings().user_profiles_parquet_path
-    _ensure_user_profiles_parquet(path)
-    df = pd.read_parquet(path)
-    records = df.to_dict(orient="records")
-    _validate_profile_list(records)
-    return records
+    _validate_profile_list(DEFAULT_USER_PROFILES)
+    return DEFAULT_USER_PROFILES
 

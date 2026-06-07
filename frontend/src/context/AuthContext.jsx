@@ -10,10 +10,16 @@ export function useAuth() {
 export function friendlyError(err) {
   const detail = err?.response?.data?.detail || err?.message || String(err);
   const msg = detail.toLowerCase();
+  if (msg.includes('phone') && (msg.includes('already') || msg.includes('duplicate')))
+    return 'An account with this phone number already exists.';
   if (msg.includes('already') || msg.includes('duplicate'))
     return 'An account with this email already exists.';
   if ((msg.includes('invalid') && msg.includes('credential')) || msg.includes('wrong password'))
     return 'Incorrect email or password.';
+  if (detail === 'google_account')
+    return 'This account uses Google Sign-In. Please log in with Google instead.';
+  if (detail === 'phone_otp_required')
+    return 'Use the Phone Number tab and enter your number to receive a one-time code.';
   if (msg.includes('not found') || msg.includes('does not exist'))
     return 'No account found with these credentials.';
   if (msg.includes('expired') && msg.includes('otp'))
@@ -58,14 +64,20 @@ export function AuthProvider({ children }) {
     });
   }
 
-  // ── Phone signup ───────────────────────────────────────────────────────────
-  async function signupWithPhone(phone, _password, politicalParty) {
+  // ── Phone signup (OTP-based, no password) ─────────────────────────────────
+  async function signupWithPhone(phone, politicalParty) {
     const username = 'user_' + phone.replace(/\D/g, '').slice(-8);
-    return authApi.signupWithPhone({
-      username,
+    return authApi.sendPhoneOtp({
       phone,
+      purpose: 'signup_verify',
+      username,
       political_party: politicalParty || undefined,
     });
+  }
+
+  // ── Phone login (OTP-based) ────────────────────────────────────────────────
+  async function loginWithPhone(phone) {
+    return authApi.sendPhoneOtp({ phone, purpose: 'login_verify' });
   }
 
   // ── OTP verification ───────────────────────────────────────────────────────
@@ -94,6 +106,12 @@ export function AuthProvider({ children }) {
     return data;
   }
 
+  async function updateProfile(fields) {
+    const user = await authApi.updateProfile(fields);
+    if (user) setCurrentUser(user);
+    return user;
+  }
+
   async function logout() {
     await authApi.logout();
     setCurrentUser(null);
@@ -105,9 +123,11 @@ export function AuthProvider({ children }) {
       loading,
       signupWithEmail,
       signupWithPhone,
+      loginWithPhone,
       verifyOtp,
       loginWithEmail,
       loginWithGoogle,
+      updateProfile,
       logout,
     }}>
       {children}
