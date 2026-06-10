@@ -144,7 +144,7 @@ export default function OpeningSplash({ onDone }) {
       {/* Tagline */}
       <div className="splash-tagline relative z-10 mt-7 flex items-center gap-3 sm:gap-5">
         <div className="h-px w-14 sm:w-20 md:w-28" style={{ background: 'linear-gradient(90deg, transparent, rgba(74,123,196,0.65))' }} />
-        <span className="font-count text-[9.5px] uppercase tracking-[0.45em] sm:text-[11px]" style={{ color: '#5080b8' }}>
+        <span className="font-count text-[12px] uppercase tracking-[0.45em] sm:text-[14px]" style={{ color: '#5080b8' }}>
           AI for Justice
         </span>
         <div className="h-px w-14 sm:w-20 md:w-28" style={{ background: 'linear-gradient(270deg, transparent, rgba(74,123,196,0.65))' }} />
@@ -165,7 +165,7 @@ export default function OpeningSplash({ onDone }) {
             aria-label="Select site language"
             disabled={confirmed}
             onClick={() => setMenuOpen((o) => !o)}
-            className="inline-flex min-w-[168px] items-center justify-between gap-3 rounded-full border px-4 py-1.5 font-count text-[12px] font-medium transition hover:brightness-110 disabled:cursor-default disabled:opacity-80"
+            className="inline-flex min-w-[188px] items-center justify-between gap-3 rounded-full border px-5 py-2 font-count text-[14px] font-medium transition hover:brightness-110 disabled:cursor-default disabled:opacity-80"
             style={{
               borderColor: displayLang ? 'rgba(63,120,220,0.6)' : 'rgba(63,120,220,0.5)',
               backgroundColor: displayLang ? 'rgba(15,35,90,0.7)' : 'rgba(15,35,90,0.6)',
@@ -195,7 +195,7 @@ export default function OpeningSplash({ onDone }) {
                     type="button"
                     role="option"
                     aria-selected={lang.code === displayLang}
-                    className="flex w-full items-center justify-between px-4 py-2 text-left font-count text-[12px] font-medium transition hover:bg-[rgba(63,120,220,0.2)]"
+                    className="flex w-full items-center justify-between px-4 py-2 text-left font-count text-[14px] font-medium transition hover:bg-[rgba(63,120,220,0.2)]"
                     style={{ color: lang.code === displayLang ? '#6aa8ff' : '#9ec4f5' }}
                     onClick={() => handleSelect(lang.code)}
                   >

@@ -33,6 +33,10 @@ export default function Home() {
       <HeroSection />
 
       <RevealOnScroll delayMs={60}>
+        <DalitCorpusSection />
+      </RevealOnScroll>
+
+      <RevealOnScroll delayMs={60}>
         <DalitHistoryMakers />
       </RevealOnScroll>
 
@@ -40,10 +44,6 @@ export default function Home() {
 
       <RevealOnScroll delayMs={60}>
         <UseCasesGrid />
-      </RevealOnScroll>
-
-      <RevealOnScroll delayMs={60}>
-        <DalitCorpusSection />
       </RevealOnScroll>
 
       <RevealOnScroll delayMs={60}>

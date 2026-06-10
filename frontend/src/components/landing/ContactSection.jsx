@@ -113,8 +113,8 @@ export default function ContactSection() {
               <ChannelRow
                 icon={Mail}
                 label="Email"
-                value="hello@ambedkargpt.in"
-                href="mailto:hello@ambedkargpt.in"
+                value="krishprakash1232@gmail.com"
+                href="mailto:krishprakash1232@gmail.com"
               />
               <ChannelRow
                 icon={MapPin}

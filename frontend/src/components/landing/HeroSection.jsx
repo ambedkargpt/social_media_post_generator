@@ -31,7 +31,7 @@ export default function HeroSection() {
   return (
     <section
       id="home"
-      className="relative pt-6 md:min-h-[680px] md:pt-10"
+      className="relative pt-6 md:pt-10"
     >
       {/* Glows + squiggle — extend downward so they bleed into the next section */}
       <div className="pointer-events-none absolute inset-x-0 top-0 -bottom-32">
@@ -68,7 +68,7 @@ export default function HeroSection() {
       </div>
 
       {/* ── Main content ── */}
-      <div className="relative z-10 mx-auto grid max-w-[1180px] items-stretch gap-12 px-6 pb-16 pt-8 md:grid-cols-[1fr_auto] md:pb-24 md:pt-14">
+      <div className="relative z-10 mx-auto grid max-w-[1180px] items-stretch gap-12 px-6 pb-12 pt-8 md:grid-cols-[1fr_auto] md:pb-20 md:pt-14">
 
         {/* ── LEFT: text content ── */}
         <div className="flex flex-col items-start">
@@ -103,7 +103,7 @@ export default function HeroSection() {
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 transition group-hover:bg-white/20">
                 <Play size={11} fill="currentColor" strokeWidth={0} className="translate-x-[1px]" />
               </span>
-              Watch Demo
+              Build your narrative
             </button>
             <button
               type="button"
@@ -134,7 +134,7 @@ export default function HeroSection() {
           </div>
         </div>
 
-        {/* ── RIGHT: image placeholder + EDUCATE text + AI Tools card ── */}
+        {/* ── RIGHT: image + EDUCATE text ── */}
         <div className="relative hidden md:flex md:w-[380px] md:flex-col md:items-end md:justify-between">
 
           {/* Ambedkar image */}
@@ -161,42 +161,6 @@ export default function HeroSection() {
             </span>
           </div>
 
-          {/* Best AI Tools badge */}
-          <div
-            className="flex w-[220px] items-center gap-3 rounded-xl px-3 py-2.5"
-            style={{
-              backgroundColor: '#000000',
-              border: '1px solid rgba(63,159,255,0.55)',
-              boxShadow: '0 0 10px rgba(63,159,255,0.35), 0 0 24px rgba(63,159,255,0.15)',
-            }}
-          >
-            {/* Icon — robot face with blue glow */}
-            <div
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#1e2a4a]"
-              style={{ backgroundColor: '#111827' }}
-            >
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                {/* head */}
-                <rect x="3" y="6" width="14" height="10" rx="2.5" stroke="#4a7fff" strokeWidth="1.4"/>
-                {/* eyes */}
-                <circle cx="7.5" cy="11" r="1.5" fill="#4a7fff"/>
-                <circle cx="12.5" cy="11" r="1.5" fill="#4a7fff"/>
-                {/* antenna */}
-                <line x1="10" y1="6" x2="10" y2="3.5" stroke="#4a7fff" strokeWidth="1.4" strokeLinecap="round"/>
-                <circle cx="10" cy="3" r="1" fill="#4a7fff"/>
-              </svg>
-            </div>
-
-            {/* Text */}
-            <div>
-              <p className="font-count text-[13px] font-bold uppercase leading-tight tracking-[0.06em] text-white">
-                Best AI Tools
-              </p>
-              <p className="font-count mt-1 text-[10.5px] leading-[1.45] text-white/70">
-                Using AI to democratize providing knowledge and create equal beginnings
-              </p>
-            </div>
-          </div>
         </div>
       </div>
 

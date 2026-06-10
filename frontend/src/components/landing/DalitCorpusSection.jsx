@@ -1,3 +1,4 @@
+import { CheckCircle2 } from 'lucide-react';
 import SectionLabel from './SectionLabel';
 import libraryImg   from '../../assets/images/corpus-library.png';
 
@@ -7,18 +8,28 @@ const QA = [
     question: 'What is a corpus?',
     answer:
       'A Dalit corpus is a digital collection of writings, speeches, and historical records documenting Dalit experiences and thought. It helps users explore social change, identity, and anti-caste movements, functioning like a search engine to discover and connect insights across texts and time.',
+    points: [
+      'Spans speeches, letters, essays, and oral histories',
+      'Organised by theme, era, and author for fast discovery',
+      'Continuously growing as new material is digitised',
+    ],
   },
   {
     num: '02',
     question: 'How does a corpus work?',
     answer:
       'We collect material from a wide range of Dalit writers, activists, scholars, and community voices. This allows us to trace recurring themes, narratives, and expressions across different contexts and time periods. These patterns shape the insights we present — grounded in documented evidence from diverse sources, rather than the perspective of any single individual.',
+    points: [
+      'Source material verified for authenticity and context',
+      'Recurring themes traced across decades of writing',
+      'Every insight links back to its original source text',
+    ],
   },
 ];
 
 export default function DalitCorpusSection() {
   return (
-    <section id="ambedkarverse" className="relative py-12 md:py-16">
+    <section id="ambedkarverse" className="relative pb-12 pt-0 md:pb-16">
       <div className="pointer-events-none absolute inset-x-0 -top-28 -bottom-28">
         <div className="absolute left-[10%] top-[20%] h-[420px] w-[420px] rounded-full bg-[#2d7dfb]/9 blur-[130px]" />
         <div className="absolute right-[5%] bottom-[10%] h-[360px] w-[360px] rounded-full bg-[#1a3fa0]/7 blur-[130px]" />
@@ -43,6 +54,14 @@ export default function DalitCorpusSection() {
               <p className="mt-4 text-[13.5px] leading-[1.9] text-[#7a9ac0]">
                 {QA[0].answer}
               </p>
+              <ul className="mt-5 space-y-2.5">
+                {QA[0].points.map((point) => (
+                  <li key={point} className="flex items-start gap-2.5 text-[13px] leading-snug text-[#aec3e0]">
+                    <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-[#4d94ff]" />
+                    {point}
+                  </li>
+                ))}
+              </ul>
             </div>
 
             {/* ── Col 2: Q&A 02 ── */}
@@ -56,6 +75,14 @@ export default function DalitCorpusSection() {
               <p className="mt-4 text-[13.5px] leading-[1.9] text-[#7a9ac0]">
                 {QA[1].answer}
               </p>
+              <ul className="mt-5 space-y-2.5">
+                {QA[1].points.map((point) => (
+                  <li key={point} className="flex items-start gap-2.5 text-[13px] leading-snug text-[#aec3e0]">
+                    <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-[#4d94ff]" />
+                    {point}
+                  </li>
+                ))}
+              </ul>
             </div>
 
             {/* ── Col 3: Library image (half width) ── */}
