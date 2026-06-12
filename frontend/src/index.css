@@ -565,8 +565,26 @@ html { scroll-behavior: smooth; }
   70%      { transform: translate(7px,  -6px); opacity: 0.85; }
 }
 
+/* Aurora sweep — slow diagonal gradient band drifting across the page */
+.lbg-aurora {
+  background: linear-gradient(115deg,
+    transparent 25%,
+    rgba(63,159,255,0.05) 42%,
+    rgba(123,92,255,0.06) 52%,
+    rgba(63,224,255,0.04) 62%,
+    transparent 80%
+  );
+  background-size: 200% 200%;
+  animation: lbg-aurora-drift 55s ease-in-out infinite alternate;
+  mix-blend-mode: screen;
+}
+@keyframes lbg-aurora-drift {
+  0%   { background-position: 0% 20%; }
+  100% { background-position: 100% 80%; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .lbg-grad-layer, .lbg-orb, .lbg-particle { animation: none !important; }
+  .lbg-grad-layer, .lbg-orb, .lbg-particle, .lbg-aurora { animation: none !important; }
 }
 
 .splash-logo     { animation: splashLogoIn 900ms ease-out both, splashLogoSpin 1.8s linear 900ms infinite; }

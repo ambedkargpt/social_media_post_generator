@@ -90,7 +90,7 @@ export default function TeamSection() {
         </div>
 
         <p className="mx-auto mt-8 max-w-[720px] text-center text-[14.5px] leading-7 text-[#a6b9d6]">
-          Our team connects scholars, creators, engineers, and changemakers —
+          Our team connects scholars, creators, engineers, and changemakers,
           turning knowledge into meaningful action.
         </p>
 

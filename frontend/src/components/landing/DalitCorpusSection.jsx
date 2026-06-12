@@ -1,33 +1,37 @@
 import { CheckCircle2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import SectionLabel from './SectionLabel';
 import libraryImg   from '../../assets/images/corpus-library.png';
 
-const QA = [
-  {
-    num: '01',
-    question: 'What is a corpus?',
-    answer:
-      'A Dalit corpus is a digital collection of writings, speeches, and historical records documenting Dalit experiences and thought. It helps users explore social change, identity, and anti-caste movements, functioning like a search engine to discover and connect insights across texts and time.',
-    points: [
-      'Spans speeches, letters, essays, and oral histories',
-      'Organised by theme, era, and author for fast discovery',
-      'Continuously growing as new material is digitised',
-    ],
-  },
-  {
-    num: '02',
-    question: 'How does a corpus work?',
-    answer:
-      'We collect material from a wide range of Dalit writers, activists, scholars, and community voices. This allows us to trace recurring themes, narratives, and expressions across different contexts and time periods. These patterns shape the insights we present — grounded in documented evidence from diverse sources, rather than the perspective of any single individual.',
-    points: [
-      'Source material verified for authenticity and context',
-      'Recurring themes traced across decades of writing',
-      'Every insight links back to its original source text',
-    ],
-  },
-];
+const CORPUS = {
+  question: 'What is Dalit Corpus?',
+  intro: [
+    'For too long, our history was written by those who oppressed us. They erased our heroes, twisted our words, and buried our truth.',
+    'Dalit Corpus is our answer.',
+    'It is a growing library of Ambedkarite and Bahujan voices, including speeches, books, songs, slogans, and political writings. Everything is collected and verified by our own community.',
+    'Whether you are a student, a creator, or a researcher, Dalit Corpus gives you the real history the mainstream hid from you.',
+  ],
+  whyItMatters: [
+    'It saves our stories before they vanish.',
+    'It gives Bahujan creators true, unfiltered knowledge.',
+    'It powers AmbedkarGPT with our own words.',
+    'It teaches our next generation our history, not theirs.',
+  ],
+  whyWeNeedIt:
+    'The internet is ruled by data, and that data has a caste. Dalit Corpus is our own digital land, built by us, owned by us, and growing with us.',
+};
 
 export default function DalitCorpusSection() {
+  const navigate = useNavigate();
+
+  function handleContribute() {
+    document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function handleBuyDataset() {
+    navigate('/signup');
+  }
+
   return (
     <section id="ambedkarverse" className="relative pb-12 pt-0 md:pb-16">
       <div className="pointer-events-none absolute inset-x-0 -top-28 -bottom-28">
@@ -40,52 +44,68 @@ export default function DalitCorpusSection() {
           <SectionLabel size="lg">Dalit Corpus</SectionLabel>
         </div>
 
+        <h2 className="mx-auto mt-8 max-w-[900px] text-center font-display text-[52px] font-bold leading-[1.05] text-white md:text-[72px]">
+          Knowledge That Powers{' '}
+          <span className="italic gradient-text-blue">The Movement</span>
+        </h2>
+
+        <p className="mx-auto mt-6 max-w-[760px] text-center text-[16px] leading-7 text-[#a6b9d6] md:text-[17px]">
+          A caste-bias-free knowledge base of Dalit history, texts, speeches, and political
+          thought for creators, researchers, and revolutionaries.
+        </p>
+
         <div className="mt-10 overflow-hidden rounded-2xl border border-[#1a2d55]/60 bg-[#070e22]">
-          <div className="grid md:grid-cols-[1fr_1fr_0.5fr]">
+          <div className="grid md:grid-cols-[1.4fr_0.6fr]">
 
-            {/* ── Col 1: Q&A 01 ── */}
+            {/* ── Col 1: Dalit Corpus ── */}
             <div className="border-b border-[#1a2d55]/50 p-8 md:border-b-0 md:border-r md:p-10">
-              <span className="font-display text-[38px] font-light leading-none text-[#1e3570] md:text-[44px]">
-                {QA[0].num}
-              </span>
-              <h3 className="mt-4 font-display text-[20px] font-semibold text-white md:text-[23px]">
-                {QA[0].question}
+              <h3 className="font-display text-[24px] font-semibold text-white md:text-[28px]">
+                {CORPUS.question}
               </h3>
-              <p className="mt-4 text-[13.5px] leading-[1.9] text-[#7a9ac0]">
-                {QA[0].answer}
-              </p>
-              <ul className="mt-5 space-y-2.5">
-                {QA[0].points.map((point) => (
-                  <li key={point} className="flex items-start gap-2.5 text-[13px] leading-snug text-[#aec3e0]">
-                    <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-[#4d94ff]" />
+              {CORPUS.intro.map((para) => (
+                <p key={para} className="mt-4 text-[15px] leading-[1.9] text-[#a6b9d6]">
+                  {para}
+                </p>
+              ))}
+
+              <h4 className="mt-7 font-display text-[17px] font-semibold text-white">
+                Why it matters:
+              </h4>
+              <ul className="mt-3 space-y-3">
+                {CORPUS.whyItMatters.map((point) => (
+                  <li key={point} className="flex items-start gap-2.5 text-[14.5px] leading-relaxed text-[#aec3e0]">
+                    <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-[#4d94ff]" />
                     {point}
                   </li>
                 ))}
               </ul>
-            </div>
 
-            {/* ── Col 2: Q&A 02 ── */}
-            <div className="border-b border-[#1a2d55]/50 p-8 md:border-b-0 md:border-r md:p-10">
-              <span className="font-display text-[38px] font-light leading-none text-[#1e3570] md:text-[44px]">
-                {QA[1].num}
-              </span>
-              <h3 className="mt-4 font-display text-[20px] font-semibold text-white md:text-[23px]">
-                {QA[1].question}
-              </h3>
-              <p className="mt-4 text-[13.5px] leading-[1.9] text-[#7a9ac0]">
-                {QA[1].answer}
+              <h4 className="mt-7 font-display text-[17px] font-semibold text-white">
+                Why we need it:
+              </h4>
+              <p className="mt-3 text-[15px] leading-[1.9] text-[#a6b9d6]">
+                {CORPUS.whyWeNeedIt}
               </p>
-              <ul className="mt-5 space-y-2.5">
-                {QA[1].points.map((point) => (
-                  <li key={point} className="flex items-start gap-2.5 text-[13px] leading-snug text-[#aec3e0]">
-                    <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-[#4d94ff]" />
-                    {point}
-                  </li>
-                ))}
-              </ul>
+
+              <div className="mt-7 flex flex-wrap items-center gap-4">
+                <button
+                  type="button"
+                  onClick={handleContribute}
+                  className="btn-gradient inline-flex h-12 items-center gap-2 rounded-xl px-7 font-count text-[14px] font-semibold text-white"
+                >
+                  Contribute to Corpus
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBuyDataset}
+                  className="btn-outline-blue inline-flex h-12 items-center gap-2 rounded-xl px-7 font-count text-[14px] font-medium text-white"
+                >
+                  Buy Dataset
+                </button>
+              </div>
             </div>
 
-            {/* ── Col 3: Library image (half width) ── */}
+            {/* ── Col 2: Library image ── */}
             <div className="hidden md:block">
               <img
                 src={libraryImg}

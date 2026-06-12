@@ -12,7 +12,7 @@ const MAKERS = [
   {
     name: 'Savitribai Phule',
     image: savitribai,
-    blurb: "India’s first woman teacher — a pioneer of education for every learner, regardless of birth.",
+    blurb: "India’s first woman teacher and a pioneer of education for every learner, regardless of birth.",
   },
   {
     name: 'Gurram Jashuva',
@@ -32,7 +32,7 @@ const MAKERS = [
   {
     name: 'Dakshayani Velayudhan',
     image: dakshayani,
-    blurb: 'First and only Dalit woman elected to the Constituent Assembly — a quiet architect of equality.',
+    blurb: 'First and only Dalit woman elected to the Constituent Assembly and a quiet architect of equality.',
   },
   {
     name: 'Kanshi Ram',
@@ -186,7 +186,7 @@ export default function DalitHistoryMakers() {
 
         <p className="mx-auto mt-6 max-w-[760px] text-center text-[16px] leading-7 text-[#a6b9d6] md:text-[17px]">
           Meet the reformers, poets, and thinkers whose ideas built the foundations of
-          equality — their stories live on in every line of the corpus.
+          equality. Their stories live on in every line of the corpus.
         </p>
       </div>
 

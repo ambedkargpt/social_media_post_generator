@@ -80,7 +80,7 @@ export default function UseCasesGrid() {
         </h2>
 
         <p className="mx-auto mt-6 max-w-[760px] text-center text-[15px] leading-7 text-[#a6b9d6]">
-          Our AI system connects scholars, creators, engineers, and changemakers — automating
+          Our AI system connects scholars, creators, engineers, and changemakers, automating
           knowledge access, providing verified insights, and transforming information into
           actionable understanding.
         </p>

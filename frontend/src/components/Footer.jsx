@@ -1,24 +1,23 @@
-import { Link } from 'react-router-dom';
-import logoSrc from '../assets/images/logo-animation.png';
-import indiaAiLogo      from '../assets/images/indiaai-logo.png';
-import digitalIndiaLogo from '../assets/images/digital-india-logo.png';
+import { Link } from "react-router-dom";
+import logoSrc from "../assets/images/logo-animation.png";
+import indiaAiLogo from "../assets/images/indiaai-logo.png";
+import digitalIndiaLogo from "../assets/images/digital-india-logo.png";
 
 const ABOUT_LINKS = [
-  { label: 'API',                         href: '#' },
-  { label: 'FAQ',                         href: '#' },
-  { label: 'Support',                     href: '#contact' },
-  { label: 'Contact Us',                  href: '#contact' },
-  { label: 'Careers',                     href: '#' },
-  { label: 'AmbedkarGpt Creator Program', href: '#' },
+  { label: "API", href: "#" },
+  { label: "FAQ", href: "#" },
+  { label: "Support", href: "#contact" },
+  { label: "Contact Us", href: "#contact" },
+  { label: "Careers", href: "#" },
+  { label: "AmbedkarGpt Creator Program", href: "#" },
 ];
 
 const SOCIAL_LINKS = [
-  { label: 'Facebook', href: '#' },
-  { label: 'LinkedIn', href: '#' },
-  { label: 'Twitter',  href: '#' },
-  { label: 'YouTube',  href: '#' },
+  { label: "Facebook", href: "#" },
+  { label: "LinkedIn", href: "#" },
+  { label: "Twitter", href: "#" },
+  { label: "YouTube", href: "#" },
 ];
-
 
 export default function Footer() {
   return (
@@ -45,8 +44,17 @@ export default function Footer() {
               <span className="ml-0.5 gradient-text-cyan">GPT</span>
             </Link>
             <div className="mt-4 space-y-1 text-[13px] leading-relaxed text-[#9fb2d1]">
-              <p>Kalpit Ltd</p>
+              <p>Kalpik Ltd</p>
               <p>ABN: 56 862 209 485</p>
+              <p>
+                <a
+                  href="mailto:smartbhaujan@gmail.com"
+                  className="transition hover:text-white"
+                >
+                  smartbhaujan@gmail.com
+                </a>
+              </p>
+              <p>71-75 Shelton Street in Covent Garden, London (WC2H 9JQ)</p>
             </div>
             <p className="mt-3 font-serif text-[13px] italic text-[#7aa6e5]">
               Equality for Everyone, AI FOR All
@@ -72,7 +80,9 @@ export default function Footer() {
 
           {/* Stay tuned! column */}
           <div>
-            <h4 className="text-[16px] font-semibold text-white">Stay tuned!</h4>
+            <h4 className="text-[16px] font-semibold text-white">
+              Stay tuned!
+            </h4>
             <ul className="mt-6 space-y-5">
               {SOCIAL_LINKS.map((l) => (
                 <li key={l.label} className="flex items-center gap-3">
@@ -117,16 +127,25 @@ export default function Footer() {
         {/* ─── Bottom bar ─── */}
         <div className="mt-8 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[12.5px] text-[#8296bd]">
-            <a href="#" className="transition hover:text-white">Legal Notice</a>
-            <a href="#" className="transition hover:text-white">DMCA</a>
-            <a href="#" className="transition hover:text-white">Terms of Service</a>
-            <a href="#" className="transition hover:text-white">Cookie Policy</a>
+            <a href="#" className="transition hover:text-white">
+              Legal Notice
+            </a>
+            <a href="#" className="transition hover:text-white">
+              DMCA
+            </a>
+            <a href="#" className="transition hover:text-white">
+              Terms of Service
+            </a>
+            <a href="#" className="transition hover:text-white">
+              Cookie Policy
+            </a>
           </div>
 
           <div className="text-right text-[12.5px] leading-relaxed text-[#8296bd]">
             <p>Terms of use and privacy policy</p>
             <p className="mt-0.5">
-              AmbedkarGPT Developed by Kalpit Ltd (UK) © {new Date().getFullYear()}
+              AmbedkarGPT Developed by Kalpik Ltd (UK) ©{" "}
+              {new Date().getFullYear()}
             </p>
           </div>
         </div>

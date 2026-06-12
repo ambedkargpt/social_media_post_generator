@@ -1,11 +1,12 @@
 // Small 4-point sparkle used as decorative separator throughout the design.
-export default function Sparkle({ size = 14, className = '', color = '#5fa5ff' }) {
+export default function Sparkle({ size = 14, className = '', color = '#5fa5ff', style }) {
   return (
     <svg
       width={size}
       height={size}
       viewBox="0 0 16 16"
       className={className}
+      style={style}
       aria-hidden="true"
     >
       <path

@@ -145,13 +145,13 @@ export default function OpeningSplash({ onDone }) {
       <div className="splash-tagline relative z-10 mt-7 flex items-center gap-3 sm:gap-5">
         <div className="h-px w-14 sm:w-20 md:w-28" style={{ background: 'linear-gradient(90deg, transparent, rgba(74,123,196,0.65))' }} />
         <span className="font-count text-[12px] uppercase tracking-[0.45em] sm:text-[14px]" style={{ color: '#5080b8' }}>
-          AI for Justice
+          Bahujan AI Voice
         </span>
         <div className="h-px w-14 sm:w-20 md:w-28" style={{ background: 'linear-gradient(270deg, transparent, rgba(74,123,196,0.65))' }} />
       </div>
 
       {/* ESTD */}
-      <p className="splash-estd relative z-10 mt-2.5 font-count text-[9px] uppercase tracking-[0.38em]" style={{ color: '#2a4870' }}>
+      <p className="splash-estd relative z-10 mt-4 font-count text-[11px] uppercase tracking-[0.38em]" style={{ color: '#5a82c0' }}>
         ESTD. 2026
       </p>
 

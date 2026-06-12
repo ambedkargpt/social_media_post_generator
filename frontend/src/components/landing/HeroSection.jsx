@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Play, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Sparkle  from './Sparkle';
-import CountUp  from './CountUp';
 import { useAuth } from '../../context/AuthContext';
 import squiggleSrc      from '../../assets/images/squiggle-lines.png';
 import ambedkarPortrait from '../../assets/images/purpose-ambedkar.png';
@@ -31,7 +30,7 @@ export default function HeroSection() {
   return (
     <section
       id="home"
-      className="relative pt-6 md:pt-10"
+      className="relative pt-0 md:pt-2"
     >
       {/* Glows + squiggle — extend downward so they bleed into the next section */}
       <div className="pointer-events-none absolute inset-x-0 top-0 -bottom-32">
@@ -68,7 +67,7 @@ export default function HeroSection() {
       </div>
 
       {/* ── Main content ── */}
-      <div className="relative z-10 mx-auto grid max-w-[1180px] items-stretch gap-12 px-6 pb-12 pt-8 md:grid-cols-[1fr_auto] md:pb-20 md:pt-14">
+      <div className="relative z-10 mx-auto grid max-w-[1180px] items-stretch gap-12 px-6 pb-12 pt-4 md:grid-cols-[1fr_auto] md:pb-20 md:pt-8">
 
         {/* ── LEFT: text content ── */}
         <div className="flex flex-col items-start">
@@ -76,7 +75,7 @@ export default function HeroSection() {
           {/* Badge */}
           <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-[#3a5e94] bg-[#0f1d3b]/75 px-5 py-2 text-[13px] text-[#d3e4ff] shadow-[0_0_24px_rgba(43,126,255,0.22)]">
             <Sparkle size={12} color="#4fb4ff" />
-            Trusted by AI Power Users Worldwide
+            Amplify Bahujan Thought
           </div>
 
           {/* Headline */}
@@ -90,8 +89,8 @@ export default function HeroSection() {
 
           {/* Sub-copy */}
           <p className="font-count mt-6 max-w-[480px] text-[14.5px] leading-7 text-[#b7c6e1] md:text-[15px]">
-            Deep Neural Networks trained on a dataset of 15,000 pages of
-            writings and speeches of Dr. BR Ambedkar...
+            When you create with AmbedkarGPT, you don&apos;t just post. You
+            pierce the algorithm, shake the timeline, and wake millions.
           </p>
 
           {/* CTAs */}
@@ -115,27 +114,10 @@ export default function HeroSection() {
             </button>
           </div>
 
-          {/* Stats */}
-          <div className="mt-10 flex items-start gap-8 md:gap-12">
-            <div>
-              <p className="font-display text-[36px] leading-none text-[#3f9fff] md:text-[44px]">
-                <CountUp end={4.8} decimals={1} />
-                <span className="text-[#3f9fff]/80">+</span>
-              </p>
-              <p className="mt-2 text-xs uppercase tracking-[0.18em] text-[#90a8cc]">Stars Rating</p>
-            </div>
-            <div>
-              <p className="font-display text-[36px] leading-none text-[#3f9fff] md:text-[44px]">
-                <CountUp end={24} format={(v) => `${Math.round(v)}k`} />
-                <span className="text-[#3f9fff]/80">+</span>
-              </p>
-              <p className="mt-2 text-xs uppercase tracking-[0.18em] text-[#90a8cc]">Satisfied Customer</p>
-            </div>
-          </div>
         </div>
 
         {/* ── RIGHT: image + EDUCATE text ── */}
-        <div className="relative hidden md:flex md:w-[380px] md:flex-col md:items-end md:justify-between">
+        <div className="relative hidden md:flex md:w-[380px] md:flex-col md:items-end">
 
           {/* Ambedkar image */}
           <div className="relative w-full overflow-hidden rounded-2xl" style={{ height: '420px' }}>
@@ -149,7 +131,7 @@ export default function HeroSection() {
           </div>
 
           {/* EDUCATE . AGITATE . ORGANIZE — below image */}
-          <div className="w-full py-3 text-center">
+          <div className="w-full mt-4 py-3 text-center">
             <span
               className="font-display text-[15px] font-bold text-white md:text-[17px]"
               style={{

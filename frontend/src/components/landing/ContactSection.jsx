@@ -11,7 +11,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl:     'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-const MHOW = [22.5565, 75.7610];
+const OFFICE = [51.5145, -0.1227];
 
 // ─── Individual form field — label + input/textarea ───
 function Field({ label, type = 'text', placeholder, rows, colSpan = 1, grow = false }) {
@@ -72,7 +72,7 @@ export default function ContactSection() {
         <SectionLabel>Connect With Us</SectionLabel>
 
         <h2 className="mx-auto mt-8 max-w-[820px] text-center font-display text-[44px] font-bold leading-[1.1] text-white md:text-[54px]">
-          Build AI for social change — join us to create the first{' '}
+          Build AI for social change. Join us to create the first{' '}
           <span className="italic gradient-text-blue">AI-powered Dalit Literature Corpus</span>{' '}
           &amp; Search.
         </h2>
@@ -113,21 +113,21 @@ export default function ContactSection() {
               <ChannelRow
                 icon={Mail}
                 label="Email"
-                value="krishprakash1232@gmail.com"
-                href="mailto:krishprakash1232@gmail.com"
+                value="smartbhaujan@gmail.com"
+                href="mailto:smartbhaujan@gmail.com"
               />
               <ChannelRow
                 icon={MapPin}
                 label="Location"
-                value="Mhow (Dr. Ambedkar Nagar), Madhya Pradesh, India"
+                value="71-75 Shelton Street in Covent Garden, London (WC2H 9JQ)"
                 href="#"
               />
             </div>
 
             <div className="mt-7 overflow-hidden rounded-2xl border border-[#1e3260]/60" style={{ height: 220 }}>
               <MapContainer
-                center={MHOW}
-                zoom={13}
+                center={OFFICE}
+                zoom={15}
                 scrollWheelZoom={false}
                 zoomControl={false}
                 style={{ height: '100%', width: '100%' }}
@@ -136,8 +136,8 @@ export default function ContactSection() {
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                <Marker position={MHOW}>
-                  <Popup>Birthplace of Dr. B.R. Ambedkar<br />Mhow, Madhya Pradesh</Popup>
+                <Marker position={OFFICE}>
+                  <Popup>AmbedkarGPT<br />71-75 Shelton Street, Covent Garden, London (WC2H 9JQ)</Popup>
                 </Marker>
               </MapContainer>
             </div>
