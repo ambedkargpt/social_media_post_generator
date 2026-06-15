@@ -45,6 +45,24 @@ def build_title_embeddings(
     )
 
 
+def merge_title_embeddings(existing: TitleEmbeddings, new: TitleEmbeddings) -> TitleEmbeddings:
+    """
+    Merge newly embedded titles into an existing cache, keeping a stable
+    sorted ordering. Titles present in both keep the newer embedding.
+    """
+    combined: Dict[str, Tuple[str, np.ndarray]] = {
+        t: (existing.links[i], existing.embeddings[i]) for i, t in enumerate(existing.titles)
+    }
+    for i, t in enumerate(new.titles):
+        combined[t] = (new.links[i], new.embeddings[i])
+
+    titles = sorted(combined.keys())
+    links = [combined[t][0] for t in titles]
+    embeddings = np.stack([combined[t][1] for t in titles]) if titles else np.zeros((0, 0), dtype="float32")
+
+    return TitleEmbeddings(model=new.model, titles=titles, links=links, embeddings=embeddings)
+
+
 def save_title_embeddings(te: TitleEmbeddings, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {

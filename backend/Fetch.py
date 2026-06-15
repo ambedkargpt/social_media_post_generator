@@ -311,7 +311,12 @@ def rebuild_rag_artifacts_from_data_file(
     from backend.pipeline.argument_scorer import score_argument_chunks
     from backend.pipeline.embedder import ChunkEmbedder
     from backend.pipeline.vector_store import build_index, save_vector_store
-    from backend.pipeline.title_embeddings import build_title_embeddings, load_title_embeddings, save_title_embeddings
+    from backend.pipeline.title_embeddings import (
+        build_title_embeddings,
+        load_title_embeddings,
+        merge_title_embeddings,
+        save_title_embeddings,
+    )
 
     settings = get_settings()
 
@@ -377,7 +382,11 @@ def rebuild_rag_artifacts_from_data_file(
         _new_titles = [t for t in sorted(_all_titles_by_title) if t not in _cached_titles]
         if _new_titles:
             print(f"Title embeddings: {len(_cached_titles)} cached, {len(_new_titles)} new to embed.")
-            title_emb = build_title_embeddings(videos, embedder)  # full rebuild merges all
+            _new_videos = [
+                {"video_title": t, "video_link": _all_titles_by_title[t]} for t in _new_titles
+            ]
+            new_te = build_title_embeddings(_new_videos, embedder)
+            title_emb = merge_title_embeddings(_existing_te, new_te)
         else:
             print(f"Title embeddings: all {len(_cached_titles)} titles cached — no API calls.")
             title_emb = _existing_te
