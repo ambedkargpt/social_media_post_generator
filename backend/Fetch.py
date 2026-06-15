@@ -8,6 +8,7 @@ import re
 import json
 from pathlib import Path
 from datetime import datetime, timezone
+from typing import Dict
 
 from tqdm import tqdm
 from yt_dlp import YoutubeDL
@@ -310,7 +311,7 @@ def rebuild_rag_artifacts_from_data_file(
     from backend.pipeline.chunker import chunk_videos
     from backend.pipeline.argument_scorer import score_argument_chunks
     from backend.pipeline.embedder import ChunkEmbedder
-    from backend.pipeline.vector_store import build_index, save_vector_store
+    from backend.pipeline.vector_store import VectorStore, build_index, save_vector_store
     from backend.pipeline.title_embeddings import (
         build_title_embeddings,
         load_title_embeddings,
@@ -337,6 +338,20 @@ def rebuild_rag_artifacts_from_data_file(
     chunks = chunk_videos(videos)
     chunks = score_argument_chunks(chunks)
 
+    # Snapshot the previously saved chunks (by id -> text) so we can later
+    # determine which chunks are new or changed and only upsert those to
+    # Pinecone — avoids burning write units re-upserting unchanged vectors
+    # on every rebuild.
+    _old_chunk_text_by_id: Dict[str, str] = {}
+    if _chunks_path.exists():
+        try:
+            for c in json.loads(_chunks_path.read_text(encoding="utf-8")):
+                cid = c.get("chunk_id")
+                if cid:
+                    _old_chunk_text_by_id[cid] = c.get("chunk_text", "")
+        except (json.JSONDecodeError, OSError):
+            pass
+
     _chunks_path.parent.mkdir(parents=True, exist_ok=True)
     _chunks_path.write_text(json.dumps(chunks, ensure_ascii=False, indent=2), encoding="utf-8")
 
@@ -351,10 +366,27 @@ def rebuild_rag_artifacts_from_data_file(
         use_cache=settings.embedding_chunk_cache_enabled,
     )
 
-    # Connect to Pinecone and upsert (replaces faiss.write_index)
+    # Connect to Pinecone and upsert only chunks that are new or changed
+    # (replaces faiss.write_index)
     _pc = _Pinecone(api_key=settings.pinecone_api_key)
     pinecone_index = _pc.Index(settings.pinecone_index_name)
-    store = build_index(embeddings, chunks, pinecone_index, namespace=settings.pinecone_namespace)
+
+    _changed_idx = [
+        i for i, c in enumerate(chunks)
+        if _old_chunk_text_by_id.get(c.get("chunk_id")) != c.get("chunk_text")
+    ]
+    if _changed_idx:
+        print(f"Pinecone upsert: {len(_changed_idx)}/{len(chunks)} chunks new/changed.")
+        build_index(
+            embeddings[_changed_idx],
+            [chunks[i] for i in _changed_idx],
+            pinecone_index,
+            namespace=settings.pinecone_namespace,
+        )
+    else:
+        print("Pinecone upsert: no new/changed chunks — skipping upsert.")
+
+    store = VectorStore(index=pinecone_index, chunks=chunks)
     save_vector_store(store, RAG_INDEX_PATH, _chunks_path)  # index_path ignored; chunks re-saved
 
     # --- Title embeddings with cache ---
