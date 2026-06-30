@@ -5,6 +5,7 @@ import RevealOnScroll from '../components/ui/RevealOnScroll';
 
 import LandingBackground   from '../components/landing/LandingBackground';
 import HeroSection         from '../components/landing/HeroSection';
+import TrustedByStrip      from '../components/landing/TrustedByStrip';
 import KnowledgeSection    from '../components/landing/KnowledgeSection';
 import UseCasesGrid        from '../components/landing/UseCasesGrid';
 import DalitHistoryMakers  from '../components/landing/DalitHistoryMakers';
@@ -32,6 +33,12 @@ export default function Home() {
 
       <HeroSection />
 
+      <TrustedByStrip />
+
+      <RevealOnScroll delayMs={60}>
+        <DalitCorpusSection />
+      </RevealOnScroll>
+
       <RevealOnScroll delayMs={60}>
         <DalitHistoryMakers />
       </RevealOnScroll>
@@ -40,10 +47,6 @@ export default function Home() {
 
       <RevealOnScroll delayMs={60}>
         <UseCasesGrid />
-      </RevealOnScroll>
-
-      <RevealOnScroll delayMs={60}>
-        <DalitCorpusSection />
       </RevealOnScroll>
 
       <RevealOnScroll delayMs={60}>

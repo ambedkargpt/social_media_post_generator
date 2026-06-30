@@ -11,7 +11,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl:     'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-const MHOW = [22.5565, 75.7610];
+const OFFICE = [51.5145, -0.1227];
 
 // ─── Individual form field — label + input/textarea ───
 function Field({ label, type = 'text', placeholder, rows, colSpan = 1, grow = false }) {
@@ -60,19 +60,19 @@ function ChannelRow({ icon: Icon, label, value, href }) {
 
 export default function ContactSection() {
   return (
-    <section id="contact" className="relative py-12 md:py-16">
+    <section id="contact" className="relative py-8 md:py-10">
       {/* Ambient glow — extends upward to blend with TeamSection above */}
       <div className="pointer-events-none absolute inset-x-0 -top-28 -bottom-0">
         <div className="absolute left-1/2 top-0 h-[500px] w-[800px] -translate-x-1/2 rounded-full bg-[#3f78ff]/9 blur-[150px]" />
         <div className="absolute left-[20%] top-[40%] h-[320px] w-[400px] rounded-full bg-[#1a3fa0]/7 blur-[130px]" />
       </div>
 
-      <div className="relative mx-auto max-w-[1180px] px-6">
+      <div className="relative mx-auto max-w-[1320px] px-6">
         {/* ══════════ Top: Work With Us CTA strip ══════════ */}
         <SectionLabel>Connect With Us</SectionLabel>
 
         <h2 className="mx-auto mt-8 max-w-[820px] text-center font-display text-[44px] font-bold leading-[1.1] text-white md:text-[54px]">
-          Build AI for social change — join us to create the first{' '}
+          Build AI for social change. Join us to create the first{' '}
           <span className="italic gradient-text-blue">AI-powered Dalit Literature Corpus</span>{' '}
           &amp; Search.
         </h2>
@@ -113,21 +113,21 @@ export default function ContactSection() {
               <ChannelRow
                 icon={Mail}
                 label="Email"
-                value="hello@ambedkargpt.in"
-                href="mailto:hello@ambedkargpt.in"
+                value="smartbhaujan@gmail.com"
+                href="mailto:smartbhaujan@gmail.com"
               />
               <ChannelRow
                 icon={MapPin}
                 label="Location"
-                value="Mhow (Dr. Ambedkar Nagar), Madhya Pradesh, India"
+                value="71-75 Shelton Street in Covent Garden, London (WC2H 9JQ)"
                 href="#"
               />
             </div>
 
             <div className="mt-7 overflow-hidden rounded-2xl border border-[#1e3260]/60" style={{ height: 220 }}>
               <MapContainer
-                center={MHOW}
-                zoom={13}
+                center={OFFICE}
+                zoom={15}
                 scrollWheelZoom={false}
                 zoomControl={false}
                 style={{ height: '100%', width: '100%' }}
@@ -136,8 +136,8 @@ export default function ContactSection() {
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                <Marker position={MHOW}>
-                  <Popup>Birthplace of Dr. B.R. Ambedkar<br />Mhow, Madhya Pradesh</Popup>
+                <Marker position={OFFICE}>
+                  <Popup>AmbedkarGPT<br />71-75 Shelton Street, Covent Garden, London (WC2H 9JQ)</Popup>
                 </Marker>
               </MapContainer>
             </div>

@@ -10,8 +10,6 @@ const navItems = [
   { label: 'ABOUT',         sectionId: 'about' },
   { label: 'BHEEM CHATBOT', sectionId: 'bheem',        action: 'bheembot'   },
   { label: 'CONTACT',       sectionId: 'contact' },
-  { label: 'CHARITY',       sectionId: 'charity',      action: 'section:contact' },
-  { label: 'AMBEDKARVERSE', sectionId: 'ambedkarverse', action: 'dashboard'  },
 ];
 
 export default function Navbar() {

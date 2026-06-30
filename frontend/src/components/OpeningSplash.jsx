@@ -9,18 +9,15 @@ import {
 } from '../utils/siteLanguage';
 
 const EXIT_MS = 700;
-const AUTO_DISMISS_MS = 2500;
 
 export default function OpeningSplash({ onDone }) {
-  const storedLang = getSiteLanguage();            // null = first visit
-  const isReturning = Boolean(storedLang);
+  const storedLang = getSiteLanguage();            // pre-fills the picker, if any
 
   const [phase,        setPhase]        = useState('enter');
   const [menuOpen,     setMenuOpen]     = useState(false);
   const [confirmed,    setConfirmed]    = useState(false); // user actively picked
   const [displayLang,  setDisplayLang]  = useState(storedLang); // what the button shows
   const langRef    = useRef(null);
-  const timerRef   = useRef(null);
 
   // Lock body scroll while splash is visible
   useEffect(() => {
@@ -39,16 +36,8 @@ export default function OpeningSplash({ onDone }) {
     }, EXIT_MS);
   }, [onDone]);
 
-  // Auto-dismiss for returning users — paused while menu is open
-  useEffect(() => {
-    if (!isReturning || confirmed) return;
-    if (menuOpen) {
-      clearTimeout(timerRef.current);
-      return;
-    }
-    timerRef.current = setTimeout(() => dismiss(storedLang), AUTO_DISMISS_MS);
-    return () => clearTimeout(timerRef.current);
-  }, [isReturning, menuOpen, confirmed, storedLang, dismiss]);
+  // Splash always waits for an explicit language choice — on every visit,
+  // not just the first one. No auto-dismiss.
 
   // Close menu on outside click / Escape
   useEffect(() => {
@@ -66,7 +55,6 @@ export default function OpeningSplash({ onDone }) {
   }, [menuOpen]);
 
   function handleSelect(code) {
-    clearTimeout(timerRef.current);
     setDisplayLang(code);
     setConfirmed(true);
     setMenuOpen(false);
@@ -76,11 +64,7 @@ export default function OpeningSplash({ onDone }) {
   if (phase === 'gone') return null;
 
   const buttonLabel = displayLang ? getSiteLanguageLabel(displayLang) : 'Select language';
-  const hint = isReturning && !menuOpen && !confirmed
-    ? 'Continuing shortly — or change language'
-    : confirmed
-      ? null
-      : 'Choose a language to continue';
+  const hint = confirmed ? null : 'Choose a language to continue';
 
   return (
     <div
@@ -144,14 +128,14 @@ export default function OpeningSplash({ onDone }) {
       {/* Tagline */}
       <div className="splash-tagline relative z-10 mt-7 flex items-center gap-3 sm:gap-5">
         <div className="h-px w-14 sm:w-20 md:w-28" style={{ background: 'linear-gradient(90deg, transparent, rgba(74,123,196,0.65))' }} />
-        <span className="font-count text-[9.5px] uppercase tracking-[0.45em] sm:text-[11px]" style={{ color: '#5080b8' }}>
-          AI for Justice
+        <span className="font-count text-[12px] uppercase tracking-[0.45em] sm:text-[14px]" style={{ color: '#5080b8' }}>
+          Bahujan AI Voice
         </span>
         <div className="h-px w-14 sm:w-20 md:w-28" style={{ background: 'linear-gradient(270deg, transparent, rgba(74,123,196,0.65))' }} />
       </div>
 
       {/* ESTD */}
-      <p className="splash-estd relative z-10 mt-2.5 font-count text-[9px] uppercase tracking-[0.38em]" style={{ color: '#2a4870' }}>
+      <p className="splash-estd relative z-10 mt-4 font-count text-[11px] uppercase tracking-[0.38em]" style={{ color: '#5a82c0' }}>
         ESTD. 2026
       </p>
 
@@ -165,7 +149,7 @@ export default function OpeningSplash({ onDone }) {
             aria-label="Select site language"
             disabled={confirmed}
             onClick={() => setMenuOpen((o) => !o)}
-            className="inline-flex min-w-[168px] items-center justify-between gap-3 rounded-full border px-4 py-1.5 font-count text-[12px] font-medium transition hover:brightness-110 disabled:cursor-default disabled:opacity-80"
+            className="inline-flex min-w-[188px] items-center justify-between gap-3 rounded-full border px-5 py-2 font-count text-[14px] font-medium transition hover:brightness-110 disabled:cursor-default disabled:opacity-80"
             style={{
               borderColor: displayLang ? 'rgba(63,120,220,0.6)' : 'rgba(63,120,220,0.5)',
               backgroundColor: displayLang ? 'rgba(15,35,90,0.7)' : 'rgba(15,35,90,0.6)',
@@ -195,7 +179,7 @@ export default function OpeningSplash({ onDone }) {
                     type="button"
                     role="option"
                     aria-selected={lang.code === displayLang}
-                    className="flex w-full items-center justify-between px-4 py-2 text-left font-count text-[12px] font-medium transition hover:bg-[rgba(63,120,220,0.2)]"
+                    className="flex w-full items-center justify-between px-4 py-2 text-left font-count text-[14px] font-medium transition hover:bg-[rgba(63,120,220,0.2)]"
                     style={{ color: lang.code === displayLang ? '#6aa8ff' : '#9ec4f5' }}
                     onClick={() => handleSelect(lang.code)}
                   >

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Play } from 'lucide-react';
 import SectionLabel from './SectionLabel';
 import savitribai from '../../assets/images/makers/savitribai.png';
 import gurram     from '../../assets/images/makers/gurram.png';
@@ -12,7 +13,7 @@ const MAKERS = [
   {
     name: 'Savitribai Phule',
     image: savitribai,
-    blurb: "India’s first woman teacher — a pioneer of education for every learner, regardless of birth.",
+    blurb: "India’s first woman teacher and a pioneer of education for every learner, regardless of birth.",
   },
   {
     name: 'Gurram Jashuva',
@@ -32,7 +33,7 @@ const MAKERS = [
   {
     name: 'Dakshayani Velayudhan',
     image: dakshayani,
-    blurb: 'First and only Dalit woman elected to the Constituent Assembly — a quiet architect of equality.',
+    blurb: 'First and only Dalit woman elected to the Constituent Assembly and a quiet architect of equality.',
   },
   {
     name: 'Kanshi Ram',
@@ -52,7 +53,7 @@ const TRACK = [...MAKERS, ...MAKERS];
 function MakerCard({ maker, idx }) {
   return (
     <div
-      className="group relative h-[360px] w-[280px] shrink-0 overflow-hidden rounded-2xl border border-[#2a4375]/60 bg-[#0a1430] shadow-[0_20px_50px_rgba(0,0,0,0.45)] transition hover:-translate-y-1 hover:border-[#4a78c8]/80 md:w-[300px]"
+      className="group relative h-[400px] w-[300px] shrink-0 overflow-hidden rounded-2xl border border-[#2a4375]/60 bg-[#0a1430] shadow-[0_20px_50px_rgba(0,0,0,0.45)] transition hover:-translate-y-1 hover:border-[#4a78c8]/80 md:w-[340px]"
       aria-hidden={idx >= MAKERS.length ? true : undefined}
     >
       <div className="absolute inset-0 bg-gradient-to-b from-[#11204a] via-[#0b1633] to-[#070c1f]" />
@@ -67,10 +68,10 @@ function MakerCard({ maker, idx }) {
       />
 
       <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-[#030611] via-[#030611]/70 to-transparent p-5">
-        <h3 className="text-[20px] font-semibold leading-tight text-white md:text-[22px]">
+        <h3 className="text-[22px] font-semibold leading-tight text-white md:text-[25px]">
           {maker.name}
         </h3>
-        <p className="mt-2 line-clamp-3 text-[12.5px] leading-relaxed text-[#aec0de]">
+        <p className="mt-2 line-clamp-3 text-[15px] leading-relaxed text-[#c2d2ee] md:text-[16px]">
           {maker.blurb}
         </p>
       </div>
@@ -101,7 +102,7 @@ function MobileCarousel() {
   return (
     <div className="mt-10 px-6">
       {/* Single card — key change causes React to remount, re-triggering the jump animation */}
-      <div className="relative mx-auto h-[380px] max-w-[320px] overflow-hidden rounded-2xl border border-[#2a4375]/60 bg-[#0a1430] shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
+      <div className="relative mx-auto h-[420px] max-w-[360px] overflow-hidden rounded-2xl border border-[#2a4375]/60 bg-[#0a1430] shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
         <div
           key={activeIdx}
           className="absolute inset-0"
@@ -118,7 +119,7 @@ function MobileCarousel() {
           />
           <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-[#030611] via-[#030611]/70 to-transparent p-5">
             <h3 className="text-[20px] font-semibold leading-tight text-white">{maker.name}</h3>
-            <p className="mt-2 line-clamp-3 text-[12.5px] leading-relaxed text-[#aec0de]">{maker.blurb}</p>
+            <p className="mt-2 line-clamp-3 text-[14.5px] leading-relaxed text-[#c2d2ee]">{maker.blurb}</p>
           </div>
         </div>
       </div>
@@ -170,23 +171,23 @@ function MobileCarousel() {
 
 export default function DalitHistoryMakers() {
   return (
-    <section className="relative py-12 md:py-16">
+    <section className="relative py-10 md:py-14">
       {/* Ambient glow — bleeds into Hero above and KnowledgeSection below */}
       <div className="pointer-events-none absolute inset-x-0 -top-28 -bottom-28">
         <div className="absolute left-1/2 top-1/3 h-[400px] w-[700px] -translate-x-1/2 rounded-full bg-[#1e4fb5]/10 blur-[140px]" />
       </div>
 
-      <div className="mx-auto max-w-[1180px] px-6">
+      <div className="mx-auto max-w-[1320px] px-6">
         <SectionLabel>Dalit History Makers</SectionLabel>
 
-        <h2 className="mx-auto mt-8 max-w-[820px] text-center font-display text-[46px] font-bold leading-[1.05] text-white md:text-[62px]">
+        <h2 className="mx-auto mt-8 max-w-[900px] text-center font-display text-[52px] font-bold leading-[1.05] text-white md:text-[72px]">
           Voices That Shaped{' '}
           <span className="italic gradient-text-blue">Justice</span>
         </h2>
 
-        <p className="mx-auto mt-6 max-w-[700px] text-center text-[15px] leading-7 text-[#a6b9d6]">
+        <p className="mx-auto mt-6 max-w-[760px] text-center text-[16px] leading-7 text-[#a6b9d6] md:text-[17px]">
           Meet the reformers, poets, and thinkers whose ideas built the foundations of
-          equality — their stories live on in every line of the corpus.
+          equality. Their stories live on in every line of the corpus.
         </p>
       </div>
 
@@ -204,6 +205,19 @@ export default function DalitHistoryMakers() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Build your narrative CTA */}
+      <div className="mt-10 flex justify-center md:mt-14">
+        <button
+          type="button"
+          className="btn-gradient group inline-flex h-12 items-center gap-2.5 rounded-xl px-7 font-count text-[15px] font-semibold text-white"
+        >
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 transition group-hover:bg-white/20">
+            <Play size={11} fill="currentColor" strokeWidth={0} className="translate-x-[1px]" />
+          </span>
+          Build your narrative
+        </button>
       </div>
     </section>
   );

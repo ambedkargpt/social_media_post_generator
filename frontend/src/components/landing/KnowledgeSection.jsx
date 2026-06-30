@@ -1,18 +1,18 @@
-import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  BarChart2, Users, Sliders, Activity,
-  Zap, Target, CheckCircle2, ShieldCheck, Layers,
-  ChevronLeft, ChevronRight,
+  BarChart2, Users, Sliders, Activity, Zap, Target, Quote,
 } from 'lucide-react';
-import Sparkle  from './Sparkle';
+import SectionLabel from './SectionLabel';
 import CountUp  from './CountUp';
-// slot 1 — social media writing / content creation
-const creator1 = 'https://images.unsplash.com/photo-1637589308599-3478cc55510d?w=400&h=300&fit=crop&q=80';
-// slot 2 — music production / studio
-const creator2 = 'https://images.unsplash.com/photo-1642177398844-06d28a8f973a?w=400&h=300&fit=crop&q=80';
-// slot 3 — content creator / social media
-const creator3 = 'https://images.unsplash.com/photo-1621184078816-62b9eff99925?w=400&h=300&fit=crop&q=80';
+
+// Writes the pointer position into CSS vars so a radial "spotlight" overlay
+// can follow the cursor inside a card on hover.
+function handleCardMove(e) {
+  const el = e.currentTarget;
+  const rect = el.getBoundingClientRect();
+  el.style.setProperty('--mx', `${e.clientX - rect.left}px`);
+  el.style.setProperty('--my', `${e.clientY - rect.top}px`);
+}
 
 const FEATURE_CARDS = [
   { icon: BarChart2, title: 'Analytics',       sub: 'Real-time insights'   },
@@ -29,20 +29,6 @@ const STATS = [
   { end: 10,   format: (v) => `${Math.round(v)}M+`, label: 'Content Pieces'   },
   { end: 150,  format: (v) => `${Math.round(v)}+`,  label: 'Countries'        },
 ];
-
-const CHECKLIST = [
-  'Increase engagement by up to 300%',
-  'Save 15+ hours per week with automation',
-  'Grow your audience 10x faster',
-];
-
-const PILLARS = [
-  { icon: Zap,        label: 'Lightning Fast'   },
-  { icon: ShieldCheck, label: 'Secure Platform' },
-  { icon: Layers,     label: 'Expert Support'   },
-];
-
-const IMAGES = [creator1, creator2, creator3];
 
 const TESTIMONIALS = [
   {
@@ -101,7 +87,7 @@ function StarRating({ count }) {
       {Array.from({ length: 5 }).map((_, i) => (
         <svg
           key={i}
-          width="13" height="13" viewBox="0 0 14 14"
+          width="15" height="15" viewBox="0 0 14 14"
           fill={i < count ? '#f5a623' : '#1e3260'}
           aria-hidden="true"
         >
@@ -112,216 +98,133 @@ function StarRating({ count }) {
   );
 }
 
-function TestimonialCarousel() {
-  const [current,   setCurrent] = useState(0);
-  const [direction, setDirection] = useState('next');
-  const [busy,      setBusy]    = useState(false);
-  const [paused,    setPaused]  = useState(false);
-
-  const total = TESTIMONIALS.length;
-
-  const go = useCallback((next, dir = 'next') => {
-    if (busy) return;
-    setBusy(true);
-    setDirection(dir);
-    setCurrent(next);
-    setTimeout(() => setBusy(false), 350);
-  }, [busy]);
-
-  const goNext = useCallback(() => go((current + 1) % total, 'next'), [current, go, total]);
-  const goPrev = useCallback(() => go((current - 1 + total) % total, 'prev'), [current, go, total]);
-
-  useEffect(() => {
-    if (paused) return;
-    const id = setInterval(goNext, 4000);
-    return () => clearInterval(id);
-  }, [paused, goNext]);
-
-  const t = TESTIMONIALS[current];
-
+function TestimonialCard({ t, idx }) {
   return (
     <div
-      className="rounded-xl border border-[#1e3260]/70 bg-[#070f24]/80 p-4 overflow-hidden"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
+      onMouseMove={handleCardMove}
+      className="liquid-glass group relative flex h-[320px] w-[330px] shrink-0 flex-col overflow-hidden rounded-2xl p-6 md:w-[360px]"
+      aria-hidden={idx >= TESTIMONIALS.length ? true : undefined}
     >
-      <style>{`
-        @keyframes slide-from-right {
-          from { opacity: 0; transform: translateX(32px) scale(0.97); }
-          to   { opacity: 1; transform: translateX(0)    scale(1);    }
-        }
-        @keyframes slide-from-left {
-          from { opacity: 0; transform: translateX(-32px) scale(0.97); }
-          to   { opacity: 1; transform: translateX(0)     scale(1);    }
-        }
-      `}</style>
-
+      {/* base top glow */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_0%,rgba(63,159,255,0.10),transparent_60%)]" />
+      {/* cursor-following spotlight */}
       <div
-        key={`${current}-${direction}`}
-        style={{
-          animation: `${direction === 'next' ? 'slide-from-right' : 'slide-from-left'} 480ms cubic-bezier(0.22, 1, 0.36, 1) forwards`,
-          minHeight: '110px',
-        }}
-      >
+        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+        style={{ background: 'radial-gradient(240px circle at var(--mx,50%) var(--my,50%), rgba(63,159,255,0.18), transparent 65%)' }}
+      />
+
+      <Quote size={32} className="relative shrink-0 text-[#4d94ff] transition-transform duration-300 group-hover:scale-110" fill="currentColor" strokeWidth={0} />
+
+      <p className="relative mt-4 line-clamp-5 flex-1 text-[14.5px] leading-relaxed text-[#aec3e0]">
+        {t.quote}
+      </p>
+
+      <div className="relative mt-4 flex items-center gap-2">
         <StarRating count={t.stars} />
-        <p className="mt-2.5 text-[12.5px] italic leading-relaxed text-[#a8c0de]">
-          {t.quote}
-        </p>
-        <div className="mt-3 flex items-center gap-2.5">
-          <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${t.gradient} text-[11px] font-bold text-white`}>
-            {t.initials}
-          </div>
-          <div>
-            <p className="text-[12.5px] font-semibold text-white">{t.name}</p>
-            <p className="text-[11px] text-[#5a7a9e]">{t.role}</p>
-          </div>
-        </div>
+        <span className="text-[12.5px] font-medium text-[#7a98bc]">{t.stars}/5</span>
       </div>
 
-      {/* Controls */}
-      <div className="mt-3.5 flex items-center justify-between">
-        {/* Dot indicators */}
-        <div className="flex items-center gap-1.5">
-          {TESTIMONIALS.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => go(i, i >= current ? 'next' : 'prev')}
-              aria-label={`Go to testimonial ${i + 1}`}
-              className={`rounded-full transition-all duration-300 ${
-                i === current
-                  ? 'w-4 h-1.5 bg-[#4d94ff]'
-                  : 'w-1.5 h-1.5 bg-[#1e3260] hover:bg-[#2a4a8a]'
-              }`}
-            />
-          ))}
+      <div className="relative mt-4 flex items-center gap-3 border-t border-[#1e3260]/60 pt-4">
+        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${t.gradient} text-[13px] font-bold text-white`}>
+          {t.initials}
         </div>
-
-        {/* Prev / Next buttons */}
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={goPrev}
-            className="flex h-6 w-6 items-center justify-center rounded-full border border-[#1e3260]/70 text-[#5a7a9e] transition hover:border-[#3f9fff]/50 hover:text-[#3f9fff]"
-            aria-label="Previous testimonial"
-          >
-            <ChevronLeft size={13} strokeWidth={2} />
-          </button>
-          <button
-            type="button"
-            onClick={goNext}
-            className="flex h-6 w-6 items-center justify-center rounded-full border border-[#1e3260]/70 text-[#5a7a9e] transition hover:border-[#3f9fff]/50 hover:text-[#3f9fff]"
-            aria-label="Next testimonial"
-          >
-            <ChevronRight size={13} strokeWidth={2} />
-          </button>
+        <div>
+          <p className="text-[14px] font-semibold text-white">{t.name}</p>
+          <p className="text-[12px] text-[#5a7a9e]">{t.role}</p>
         </div>
       </div>
     </div>
   );
 }
 
+// Double the list so the CSS marquee (-50%) loops seamlessly.
+const TESTIMONIAL_TRACK = [...TESTIMONIALS, ...TESTIMONIALS];
+
 export default function KnowledgeSection() {
   return (
-    <section id="about" className="relative py-12 md:py-16">
+    <section id="about" className="relative py-8 md:py-10">
       {/* ambient glows — extended vertically so they bleed into adjacent sections */}
       <div className="pointer-events-none absolute inset-x-0 -top-28 -bottom-28">
         <div className="absolute left-[20%] top-[30%] h-[480px] w-[480px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2d7dfb]/9 blur-[140px]" />
         <div className="absolute right-[10%] bottom-[20%] h-[380px] w-[380px] rounded-full bg-[#1a5fff]/7 blur-[120px]" />
       </div>
 
-      <div className="relative mx-auto grid max-w-[1180px] items-start gap-12 px-6 md:grid-cols-[1fr_1.18fr] md:gap-10">
+      <div className="relative mx-auto max-w-[1320px] px-6">
+        <SectionLabel>Creator Growth</SectionLabel>
 
-        {/* ─── LEFT COLUMN ─── */}
-        <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#2a4a8a]/70 bg-[#0c1735]/80 px-4 py-1.5 text-[12px] text-[#7ab0ff]">
-            <Sparkle size={12} color="#6b9fff" />
-            Trusted by 500K+ creators worldwide
-          </div>
+        <h2 className="mx-auto mt-8 max-w-[820px] text-center font-display text-[46px] font-bold leading-[1.05] text-white md:text-[62px]">
+          Grow Your Content{' '}
+          <span className="gradient-text-blue italic">Creator Journey</span>
+        </h2>
 
-          <h2 className="mt-6 font-display text-[46px] font-bold leading-[1.05] tracking-tight text-white md:text-[58px]">
-            Grow Your Content
-            <br />
-            <span className="gradient-text-blue italic">Creator Journey</span>
-          </h2>
+        <p className="mx-auto mt-6 max-w-[760px] text-center text-[16px] leading-7 text-[#a6b9d6] md:text-[17px]">
+          Transform your passion into a thriving career with powerful analytics,
+          automation, and growth tools designed for modern content creators.
+        </p>
 
-          <p className="mt-5 text-[14.5px] leading-[1.85] text-[#9fb8dc]">
-            Transform your passion into a thriving career with powerful analytics,
-            automation, and growth tools designed for modern content creators.
-          </p>
+        {/* ── Stats — one straight line ── */}
+        <div className="mx-auto mt-14 grid max-w-[920px] grid-cols-2 gap-y-8 sm:grid-cols-4">
+          {STATS.map(({ end, format, label }, i) => (
+            <div
+              key={label}
+              className={`px-4 text-center sm:px-6 ${i > 0 ? 'sm:border-l sm:border-[#1e3260]/60' : ''}`}
+            >
+              <p className="font-display text-[40px] font-bold leading-none text-[#4d94ff] md:text-[48px]">
+                <CountUp end={end} format={format} durationMs={1600} />
+              </p>
+              <p className="mt-2 text-[13.5px] text-[#7a98bc]">{label}</p>
+            </div>
+          ))}
+        </div>
 
-          <div className="mt-9 grid grid-cols-2 gap-x-10 gap-y-6">
-            {STATS.map(({ end, format, label }) => (
-              <div key={label}>
-                <p className="font-display text-[32px] font-bold leading-none text-[#4d94ff]">
-                  <CountUp end={end} format={format} durationMs={1600} />
-                </p>
-                <p className="mt-1 text-[13px] text-[#7a98bc]">{label}</p>
-              </div>
-            ))}
-          </div>
+        {/* ── Feature cards ── */}
+        <div className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+          {FEATURE_CARDS.map(({ icon: Icon, title, sub }) => (
+            <div
+              key={title}
+              onMouseMove={handleCardMove}
+              className="liquid-glass group relative overflow-hidden rounded-2xl p-6"
+            >
+              {/* cursor-following spotlight */}
+              <div
+                className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                style={{ background: 'radial-gradient(220px circle at var(--mx,50%) var(--my,50%), rgba(63,159,255,0.20), transparent 65%)' }}
+              />
+              {/* corner accent */}
+              <div className="pointer-events-none absolute -top-14 -right-14 h-32 w-32 rounded-full bg-[#3f9fff]/10 opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100" />
 
-          <ul className="mt-8 space-y-3.5">
-            {CHECKLIST.map((item) => (
-              <li key={item} className="flex items-start gap-2.5 text-[13.5px] text-[#aec3e0]">
-                <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-[#4d94ff]" />
-                {item}
-              </li>
-            ))}
-          </ul>
+              <span className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-[#2a4375]/60 bg-[#0c1a3e]/80 text-[#5fa5ff] shadow-[0_0_18px_rgba(63,159,255,0.18)] transition-transform duration-300 group-hover:scale-110 group-hover:text-[#7ab8ff]">
+                <Icon size={19} strokeWidth={1.8} />
+              </span>
+              <p className="relative mt-4 text-[16px] font-semibold text-white">{title}</p>
+              <p className="relative mt-1 text-[13.5px] text-[#5a7a9e]">{sub}</p>
+            </div>
+          ))}
+        </div>
 
+      </div>
+
+      {/* ── Review marquee — full-bleed row of testimonial cards ── */}
+      <div className="marquee relative mt-14" style={{ '--marquee-duration': '60s' }}>
+        <div className="marquee-track">
+          {TESTIMONIAL_TRACK.map((t, i) => (
+            <TestimonialCard key={`${t.name}-${i}`} t={t} idx={i} />
+          ))}
+        </div>
+      </div>
+
+      <div className="relative mx-auto max-w-[1320px] px-6">
+        {/* ── CTA ── */}
+        <div className="mt-12 flex justify-center">
           <Link
             to="/signup"
-            className="mt-9 inline-flex items-center gap-2 rounded-xl bg-[#2d6fff] px-7 py-3.5 text-[14.5px] font-semibold text-white shadow-[0_0_24px_rgba(45,111,255,0.4)] transition-all duration-300 hover:bg-[#3d7fff] hover:-translate-y-0.5 hover:shadow-[0_0_36px_rgba(45,111,255,0.6)]"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#2d6fff] px-8 py-3.5 text-[15px] font-semibold text-white shadow-[0_0_24px_rgba(45,111,255,0.4)] transition-all duration-300 hover:bg-[#3d7fff] hover:-translate-y-0.5 hover:shadow-[0_0_36px_rgba(45,111,255,0.6)]"
           >
             Get Started Free
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </Link>
-        </div>
-
-        {/* ─── RIGHT COLUMN ─── */}
-        <div className="flex flex-col gap-3">
-
-          {/* Feature cards 2×3 */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {FEATURE_CARDS.map(({ icon: Icon, title, sub }, i) => (
-              <div
-                key={title}
-                className="hover-lift rounded-xl border border-[#1e3260]/70 bg-[#070f24]/80 p-4 transition-all duration-300"
-                style={{ transitionDelay: `${i * 50}ms` }}
-              >
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#2a4375]/60 bg-[#0c1a3e]/80 text-[#5fa5ff]">
-                  <Icon size={16} strokeWidth={1.8} />
-                </span>
-                <p className="mt-3 text-[13.5px] font-semibold text-white">{title}</p>
-                <p className="mt-0.5 text-[11.5px] text-[#5a7a9e]">{sub}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Image strip */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {IMAGES.map((src, i) => (
-              <div key={i} className="aspect-[4/3] overflow-hidden rounded-xl border border-[#1e3260]/60 bg-[#070f24]">
-                <img src={src} alt="" className="h-full w-full object-cover transition duration-500 hover:scale-105" />
-              </div>
-            ))}
-          </div>
-
-          {/* Testimonial carousel */}
-          <TestimonialCarousel />
-
-          {/* Bottom pillars */}
-          <div className="grid grid-cols-3 gap-3">
-            {PILLARS.map(({ icon: Icon, label }) => (
-              <div key={label} className="flex flex-col items-center gap-1.5 rounded-xl border border-[#1e3260]/60 bg-[#070f24]/60 py-3">
-                <Icon size={18} className="text-[#f5a623]" />
-                <span className="text-[11.5px] text-[#7a98bc]">{label}</span>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </section>

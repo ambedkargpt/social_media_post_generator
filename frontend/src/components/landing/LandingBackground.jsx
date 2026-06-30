@@ -5,15 +5,19 @@
  * grows with the page height (not viewport-fixed). This means every section
  * gets the same ambient light no matter how far down you scroll.
  *
- * Three layered effects:
- *  1. Gradient shift  — slow 300%-wide gradient breathes through dark blue tones
- *  2. Drifting orbs   — 4 large blurred circles drift organically across the page
- *  3. Floating particles — 22 tiny light dots float upward at different speeds
+ * Layered effects:
+ *  1. Aurora sweep        — slow diagonal gradient band drifting across the page
+ *  2. Drifting orbs       — large blurred circles drift organically (2 parallax depths)
+ *  3. Floating particles  — tiny light dots float upward at different speeds
+ *  4. Twinkling stars     — sparse sparkle accents scattered down the page
  */
+
+import { useEffect, useRef } from 'react';
+import Sparkle from './Sparkle';
 
 // ── Drifting orb definitions ───────────────────────────────────────────────────
 // left/top are percentages of the background element (= full page height)
-const ORBS = [
+const BG_ORBS = [
   // ── Top band ──────────────────────────────────────────────────
   { left: '-8%',  top: '1%',  w: 680, h: 580, color: 'rgba(29,102,222,0.09)',  blur: 160, anim: 'lbg-drift-a', dur: 38 },
   { left: '55%',  top: '3%',  w: 750, h: 640, color: 'rgba(45,125,251,0.07)',  blur: 190, anim: 'lbg-drift-b', dur: 45, delay: 5 },
@@ -33,6 +37,29 @@ const ORBS = [
   // ── Bottom band ───────────────────────────────────────────────
   { left: '15%',  top: '86%', w: 620, h: 540, color: 'rgba(29,102,222,0.08)',  blur: 170, anim: 'lbg-drift-c', dur: 47, delay: 4 },
   { left: '65%',  top: '88%', w: 700, h: 600, color: 'rgba(45,125,251,0.07)',  blur: 185, anim: 'lbg-drift-a', dur: 41, delay: 11 },
+];
+
+// Accent color orbs — cyan + violet, sit on their own (faster) parallax layer
+const ACCENT_ORBS = [
+  { left: '78%',  top: '12%', w: 460, h: 420, color: 'rgba(63,224,255,0.06)',  blur: 150, anim: 'lbg-drift-b', dur: 49, delay: 13 },
+  { left: '6%',   top: '38%', w: 480, h: 440, color: 'rgba(123,92,255,0.07)',  blur: 160, anim: 'lbg-drift-c', dur: 45, delay: 10 },
+  { left: '50%',  top: '80%', w: 460, h: 420, color: 'rgba(123,92,255,0.06)',  blur: 155, anim: 'lbg-drift-a', dur: 50, delay: 17 },
+];
+
+// ── Edge-rail nodes ─────────────────────────────────────────────────────────────
+// top values are percentages down the full page; only rendered on 2xl+ screens
+// (see .lbg-edge-rail in index.css) where the side gutters are wide enough to need it.
+const EDGE_NODES = [8, 24, 40, 56, 72, 88];
+
+// ── Twinkling sparkle accents ───────────────────────────────────────────────────
+const SPARKLES = [
+  { left: '12%', top: '6%',  size: 18, color: '#5fa5ff', delay: false },
+  { left: '88%', top: '16%', size: 14, color: '#7b5cff', delay: true  },
+  { left: '6%',  top: '34%', size: 16, color: '#3fe0ff', delay: true  },
+  { left: '92%', top: '48%', size: 20, color: '#5fa5ff', delay: false },
+  { left: '15%', top: '60%', size: 14, color: '#7b5cff', delay: true  },
+  { left: '85%', top: '72%', size: 18, color: '#3fe0ff', delay: false },
+  { left: '8%',  top: '88%', size: 16, color: '#5fa5ff', delay: true  },
 ];
 
 // ── Particle definitions ───────────────────────────────────────────────────────
@@ -65,42 +92,113 @@ const PARTICLES = [
 ];
 
 export default function LandingBackground() {
+  const bgLayerRef = useRef(null);
+  const accentLayerRef = useRef(null);
+  const particleLayerRef = useRef(null);
+
+  // Parallax — background layers drift at different speeds as the page scrolls
+  useEffect(() => {
+    let raf = null;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        const y = window.scrollY;
+        if (bgLayerRef.current)      bgLayerRef.current.style.transform      = `translateY(${y * -0.02}px)`;
+        if (accentLayerRef.current)  accentLayerRef.current.style.transform  = `translateY(${y * -0.05}px)`;
+        if (particleLayerRef.current) particleLayerRef.current.style.transform = `translateY(${y * -0.035}px)`;
+        raf = null;
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
     <div className="lbg-grad-layer pointer-events-none absolute inset-0 z-0 overflow-hidden">
 
-      {/* ── 1. Drifting orbs ── */}
-      {ORBS.map((orb, i) => (
-        <div
-          key={i}
-          className="lbg-orb absolute rounded-full"
-          style={{
-            left: orb.left,
-            top:  orb.top,
-            width:  orb.w,
-            height: orb.h,
-            background: orb.color,
-            filter: `blur(${orb.blur}px)`,
-            animation: `${orb.anim} ${orb.dur}s ease-in-out ${orb.delay ?? 0}s infinite`,
-            willChange: 'transform',
-          }}
-        />
-      ))}
+      {/* ── 1. Aurora sweep ── */}
+      <div className="lbg-aurora absolute inset-0" />
 
-      {/* ── 3. Floating particles ── */}
-      {PARTICLES.map((p, i) => (
-        <div
+      {/* ── 2a. Drifting orbs — background layer (slow parallax) ── */}
+      <div ref={bgLayerRef} className="absolute inset-0 will-change-transform">
+        {BG_ORBS.map((orb, i) => (
+          <div
+            key={i}
+            className="lbg-orb absolute rounded-full"
+            style={{
+              left: orb.left,
+              top:  orb.top,
+              width:  orb.w,
+              height: orb.h,
+              background: orb.color,
+              filter: `blur(${orb.blur}px)`,
+              animation: `${orb.anim} ${orb.dur}s ease-in-out ${orb.delay ?? 0}s infinite`,
+              willChange: 'transform',
+            }}
+          />
+        ))}
+      </div>
+
+      {/* ── 2b. Accent orbs — foreground layer (faster parallax) ── */}
+      <div ref={accentLayerRef} className="absolute inset-0 will-change-transform">
+        {ACCENT_ORBS.map((orb, i) => (
+          <div
+            key={i}
+            className="lbg-orb absolute rounded-full"
+            style={{
+              left: orb.left,
+              top:  orb.top,
+              width:  orb.w,
+              height: orb.h,
+              background: orb.color,
+              filter: `blur(${orb.blur}px)`,
+              animation: `${orb.anim} ${orb.dur}s ease-in-out ${orb.delay ?? 0}s infinite`,
+              willChange: 'transform',
+            }}
+          />
+        ))}
+      </div>
+
+      {/* ── 3. Floating particles (medium parallax) ── */}
+      <div ref={particleLayerRef} className="absolute inset-0 will-change-transform">
+        {PARTICLES.map((p, i) => (
+          <div
+            key={i}
+            className="lbg-particle absolute rounded-full"
+            style={{
+              left:   p.left,
+              top:    p.top,
+              width:  p.size,
+              height: p.size,
+              background: 'rgba(100, 170, 255, 0.7)',
+              boxShadow: `0 0 ${p.size * 3}px ${p.size * 1.5}px rgba(79, 148, 255, 0.3)`,
+              animation: `${FLOAT_ANIMS[i % 4]} ${p.dur}s ease-in-out ${p.delay}s infinite`,
+              willChange: 'transform, opacity',
+            }}
+          />
+        ))}
+      </div>
+
+      {/* ── 4. Edge rails — fill the wide side gutters on 2xl+ screens ── */}
+      <div className="lbg-edge-rail lbg-edge-rail--left">
+        {EDGE_NODES.map((top, i) => (
+          <span key={i} className="lbg-edge-node" style={{ top: `${top}%`, animationDelay: `${i * 0.7}s` }} />
+        ))}
+      </div>
+      <div className="lbg-edge-rail lbg-edge-rail--right">
+        {EDGE_NODES.map((top, i) => (
+          <span key={i} className="lbg-edge-node" style={{ top: `${top}%`, animationDelay: `${i * 0.7 + 1.4}s` }} />
+        ))}
+      </div>
+
+      {/* ── 5. Twinkling stars ── */}
+      {SPARKLES.map((s, i) => (
+        <Sparkle
           key={i}
-          className="lbg-particle absolute rounded-full"
-          style={{
-            left:   p.left,
-            top:    p.top,
-            width:  p.size,
-            height: p.size,
-            background: 'rgba(100, 170, 255, 0.7)',
-            boxShadow: `0 0 ${p.size * 3}px ${p.size * 1.5}px rgba(79, 148, 255, 0.3)`,
-            animation: `${FLOAT_ANIMS[i % 4]} ${p.dur}s ease-in-out ${p.delay}s infinite`,
-            willChange: 'transform, opacity',
-          }}
+          size={s.size}
+          color={s.color}
+          className={`absolute opacity-40 ${s.delay ? 'sparkle-twinkle-delay' : 'sparkle-twinkle'}`}
+          style={{ left: s.left, top: s.top }}
         />
       ))}
     </div>

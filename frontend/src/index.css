@@ -344,6 +344,77 @@ html { scroll-behavior: smooth; }
   border-radius: 16px;
 }
 
+/* --- Liquid glass card ---
+   Frosted + saturated backdrop, glossy specular rim, top sheen and a
+   light streak that sweeps across on hover. Pair with `overflow-hidden`
+   and a rounded radius on the element. */
+.liquid-glass {
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.02) 38%, rgba(255,255,255,0) 72%),
+    linear-gradient(160deg, rgba(22,34,66,0.62) 0%, rgba(10,18,38,0.66) 100%);
+  border: 1px solid rgba(150,190,255,0.16);
+  backdrop-filter: blur(16px) saturate(165%);
+  -webkit-backdrop-filter: blur(16px) saturate(165%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.20),
+    inset 0 -12px 26px rgba(8,14,32,0.5),
+    0 16px 40px rgba(0,0,0,0.40);
+  transition: transform 320ms cubic-bezier(0.22,1,0.36,1), box-shadow 320ms ease, border-color 320ms ease;
+}
+/* glossy gradient edge (masked 1px ring) */
+.liquid-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0) 32%, rgba(255,255,255,0) 68%, rgba(125,180,255,0.28) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  opacity: 0.55;
+  pointer-events: none;
+  transition: opacity 320ms ease;
+  z-index: 2;
+}
+/* sweeping light streak */
+.liquid-glass::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -65%;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,0.13), transparent);
+  transform: skewX(-18deg);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.liquid-glass:hover {
+  transform: translateY(-6px);
+  border-color: rgba(150,190,255,0.32);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.28),
+    inset 0 -12px 26px rgba(8,14,32,0.45),
+    0 26px 55px rgba(0,0,0,0.5),
+    0 0 32px rgba(63,159,255,0.16);
+}
+.liquid-glass:hover::before { opacity: 1; }
+.liquid-glass:hover::after  { animation: glassSheen 900ms ease forwards; }
+@keyframes glassSheen {
+  0%   { left: -65%; opacity: 0; }
+  18%  { opacity: 1; }
+  100% { left: 130%; opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .liquid-glass { transition: none; }
+  .liquid-glass:hover { transform: none; }
+  .liquid-glass:hover::after { animation: none; }
+}
+
 .image-glow {
   box-shadow: 0 0 40px rgba(79, 107, 255, 0.3), 0 0 80px rgba(123, 92, 255, 0.15);
 }
@@ -565,8 +636,62 @@ html { scroll-behavior: smooth; }
   70%      { transform: translate(7px,  -6px); opacity: 0.85; }
 }
 
+/* Aurora sweep — slow diagonal gradient band drifting across the page */
+.lbg-aurora {
+  background: linear-gradient(115deg,
+    transparent 25%,
+    rgba(63,159,255,0.05) 42%,
+    rgba(123,92,255,0.06) 52%,
+    rgba(63,224,255,0.04) 62%,
+    transparent 80%
+  );
+  background-size: 200% 200%;
+  animation: lbg-aurora-drift 55s ease-in-out infinite alternate;
+  mix-blend-mode: screen;
+}
+@keyframes lbg-aurora-drift {
+  0%   { background-position: 0% 20%; }
+  100% { background-position: 100% 80%; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .lbg-grad-layer, .lbg-orb, .lbg-particle { animation: none !important; }
+  .lbg-grad-layer, .lbg-orb, .lbg-particle, .lbg-aurora { animation: none !important; }
+}
+
+/* Edge rails — glowing nodes that occupy the wide gutters on ultra-wide
+   viewports so they read as design, not empty space.
+   Hidden below 2xl since the gutters barely exist on smaller screens. */
+.lbg-edge-rail {
+  display: none;
+}
+@media (min-width: 1536px) {
+  .lbg-edge-rail {
+    display: block;
+    position: absolute;
+    top: 4%;
+    bottom: 4%;
+    width: 1px;
+  }
+  .lbg-edge-rail--left  { left: 2.5%; }
+  .lbg-edge-rail--right { right: 2.5%; }
+}
+.lbg-edge-node {
+  position: absolute;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: #4fb4ff;
+  transform: translateX(-50%);
+  box-shadow: 0 0 14px 3px rgba(79,148,255,0.55);
+  animation: lbg-edge-pulse 5s ease-in-out infinite;
+}
+@keyframes lbg-edge-pulse {
+  0%, 100% { opacity: 0.35; transform: translateX(-50%) scale(0.85); }
+  50%      { opacity: 1;    transform: translateX(-50%) scale(1.15); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lbg-edge-node { animation: none; opacity: 0.7; }
 }
 
 .splash-logo     { animation: splashLogoIn 900ms ease-out both, splashLogoSpin 1.8s linear 900ms infinite; }

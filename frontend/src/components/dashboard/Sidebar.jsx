@@ -34,11 +34,8 @@ function SidebarContent({ active, onSelect, onClose, onLogout }) {
           onClick={() => { navigate('/dashboard'); onClose?.(); }}
           className="flex items-center gap-2.5 transition-opacity hover:opacity-85"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#3f9fff] to-[#7b5cff] shadow-[0_0_18px_rgba(79,107,255,0.35)]">
-            <span className="font-display text-[13px] font-bold text-white">AI</span>
-          </div>
           <span className="font-display text-[16px] font-semibold tracking-tight gradient-text-blue">
-            AI Dashboard
+            Dashboard
           </span>
         </button>
         {onClose && (

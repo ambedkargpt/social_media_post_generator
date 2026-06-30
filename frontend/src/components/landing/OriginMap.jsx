@@ -26,7 +26,7 @@ export default function OriginMap() {
           Born from the Land of Dr. B.R. Ambedkar
         </h2>
         <p className="mt-4 text-[15px] leading-relaxed" style={{ color: '#8b94b8' }}>
-          AmbedkarGPT draws its spirit from Mhow, Madhya Pradesh — the birthplace of Dr. Bhimrao Ramji Ambedkar,
+          AmbedkarGPT draws its spirit from Mhow, Madhya Pradesh, the birthplace of Dr. Bhimrao Ramji Ambedkar,
           the architect of the Indian Constitution and the champion of social justice.
         </p>
       </div>
