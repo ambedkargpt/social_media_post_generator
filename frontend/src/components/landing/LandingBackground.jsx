@@ -46,6 +46,11 @@ const ACCENT_ORBS = [
   { left: '50%',  top: '80%', w: 460, h: 420, color: 'rgba(123,92,255,0.06)',  blur: 155, anim: 'lbg-drift-a', dur: 50, delay: 17 },
 ];
 
+// ── Edge-rail nodes ─────────────────────────────────────────────────────────────
+// top values are percentages down the full page; only rendered on 2xl+ screens
+// (see .lbg-edge-rail in index.css) where the side gutters are wide enough to need it.
+const EDGE_NODES = [8, 24, 40, 56, 72, 88];
+
 // ── Twinkling sparkle accents ───────────────────────────────────────────────────
 const SPARKLES = [
   { left: '12%', top: '6%',  size: 18, color: '#5fa5ff', delay: false },
@@ -171,6 +176,18 @@ export default function LandingBackground() {
               willChange: 'transform, opacity',
             }}
           />
+        ))}
+      </div>
+
+      {/* ── 4. Edge rails — fill the wide side gutters on 2xl+ screens ── */}
+      <div className="lbg-edge-rail lbg-edge-rail--left">
+        {EDGE_NODES.map((top, i) => (
+          <span key={i} className="lbg-edge-node" style={{ top: `${top}%`, animationDelay: `${i * 0.7}s` }} />
+        ))}
+      </div>
+      <div className="lbg-edge-rail lbg-edge-rail--right">
+        {EDGE_NODES.map((top, i) => (
+          <span key={i} className="lbg-edge-node" style={{ top: `${top}%`, animationDelay: `${i * 0.7 + 1.4}s` }} />
         ))}
       </div>
 

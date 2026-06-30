@@ -9,18 +9,15 @@ import {
 } from '../utils/siteLanguage';
 
 const EXIT_MS = 700;
-const AUTO_DISMISS_MS = 2500;
 
 export default function OpeningSplash({ onDone }) {
-  const storedLang = getSiteLanguage();            // null = first visit
-  const isReturning = Boolean(storedLang);
+  const storedLang = getSiteLanguage();            // pre-fills the picker, if any
 
   const [phase,        setPhase]        = useState('enter');
   const [menuOpen,     setMenuOpen]     = useState(false);
   const [confirmed,    setConfirmed]    = useState(false); // user actively picked
   const [displayLang,  setDisplayLang]  = useState(storedLang); // what the button shows
   const langRef    = useRef(null);
-  const timerRef   = useRef(null);
 
   // Lock body scroll while splash is visible
   useEffect(() => {
@@ -39,16 +36,8 @@ export default function OpeningSplash({ onDone }) {
     }, EXIT_MS);
   }, [onDone]);
 
-  // Auto-dismiss for returning users — paused while menu is open
-  useEffect(() => {
-    if (!isReturning || confirmed) return;
-    if (menuOpen) {
-      clearTimeout(timerRef.current);
-      return;
-    }
-    timerRef.current = setTimeout(() => dismiss(storedLang), AUTO_DISMISS_MS);
-    return () => clearTimeout(timerRef.current);
-  }, [isReturning, menuOpen, confirmed, storedLang, dismiss]);
+  // Splash always waits for an explicit language choice — on every visit,
+  // not just the first one. No auto-dismiss.
 
   // Close menu on outside click / Escape
   useEffect(() => {
@@ -66,7 +55,6 @@ export default function OpeningSplash({ onDone }) {
   }, [menuOpen]);
 
   function handleSelect(code) {
-    clearTimeout(timerRef.current);
     setDisplayLang(code);
     setConfirmed(true);
     setMenuOpen(false);
@@ -76,11 +64,7 @@ export default function OpeningSplash({ onDone }) {
   if (phase === 'gone') return null;
 
   const buttonLabel = displayLang ? getSiteLanguageLabel(displayLang) : 'Select language';
-  const hint = isReturning && !menuOpen && !confirmed
-    ? 'Continuing shortly — or change language'
-    : confirmed
-      ? null
-      : 'Choose a language to continue';
+  const hint = confirmed ? null : 'Choose a language to continue';
 
   return (
     <div

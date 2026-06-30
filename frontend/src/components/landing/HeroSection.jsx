@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Play, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Sparkle  from './Sparkle';
 import { useAuth } from '../../context/AuthContext';
@@ -67,7 +67,7 @@ export default function HeroSection() {
       </div>
 
       {/* ── Main content ── */}
-      <div className="relative z-10 mx-auto grid max-w-[1180px] items-stretch gap-12 px-6 pb-12 pt-4 md:grid-cols-[1fr_auto] md:pb-20 md:pt-8">
+      <div className="relative z-10 mx-auto grid max-w-[1320px] items-stretch gap-12 px-6 pb-6 pt-4 md:grid-cols-[1fr_auto] md:pb-10 md:pt-8">
 
         {/* ── LEFT: text content ── */}
         <div className="flex flex-col items-start">
@@ -79,7 +79,7 @@ export default function HeroSection() {
           </div>
 
           {/* Headline */}
-          <h1 className="font-display max-w-[640px] text-[44px] font-bold leading-[1.05] tracking-tight text-white md:text-[66px]">
+          <h1 className="font-display max-w-[700px] text-[44px] font-bold leading-[1.05] tracking-tight text-white md:text-[66px]">
             Artificial Intelligence{' '}
             <span className="gradient-text-cyan italic">(AI) Meets</span>
             <br />
@@ -97,15 +97,6 @@ export default function HeroSection() {
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <button
               type="button"
-              className="btn-outline-blue group inline-flex h-12 items-center gap-2.5 rounded-xl px-7 font-count text-[15px] font-medium text-white"
-            >
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 transition group-hover:bg-white/20">
-                <Play size={11} fill="currentColor" strokeWidth={0} className="translate-x-[1px]" />
-              </span>
-              Build your narrative
-            </button>
-            <button
-              type="button"
               onClick={handleBheemBot}
               className="btn-gradient inline-flex h-12 items-center gap-2 rounded-xl px-7 font-count text-[15px] font-semibold text-white"
             >
@@ -117,10 +108,10 @@ export default function HeroSection() {
         </div>
 
         {/* ── RIGHT: image + EDUCATE text ── */}
-        <div className="relative hidden md:flex md:w-[380px] md:flex-col md:items-end">
+        <div className="relative hidden md:flex md:w-[460px] md:flex-col md:items-end">
 
           {/* Ambedkar image */}
-          <div className="relative w-full overflow-hidden rounded-2xl" style={{ height: '420px' }}>
+          <div className="relative w-full overflow-hidden rounded-2xl" style={{ height: '500px' }}>
             <img
               src={ambedkarPortrait}
               alt="Dr. BR Ambedkar"
@@ -139,7 +130,7 @@ export default function HeroSection() {
                 letterSpacing: '0.2em',
               }}
             >
-              EDUCATE . AGITATE . ORGANIZE
+              UNBIASED . EQUAL . TRUTHFUL
             </span>
           </div>
 

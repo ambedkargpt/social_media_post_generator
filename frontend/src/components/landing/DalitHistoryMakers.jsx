@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Play } from 'lucide-react';
 import SectionLabel from './SectionLabel';
 import savitribai from '../../assets/images/makers/savitribai.png';
 import gurram     from '../../assets/images/makers/gurram.png';
@@ -70,7 +71,7 @@ function MakerCard({ maker, idx }) {
         <h3 className="text-[22px] font-semibold leading-tight text-white md:text-[25px]">
           {maker.name}
         </h3>
-        <p className="mt-2 line-clamp-3 text-[13.5px] leading-relaxed text-[#aec0de]">
+        <p className="mt-2 line-clamp-3 text-[15px] leading-relaxed text-[#c2d2ee] md:text-[16px]">
           {maker.blurb}
         </p>
       </div>
@@ -118,7 +119,7 @@ function MobileCarousel() {
           />
           <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-[#030611] via-[#030611]/70 to-transparent p-5">
             <h3 className="text-[20px] font-semibold leading-tight text-white">{maker.name}</h3>
-            <p className="mt-2 line-clamp-3 text-[12.5px] leading-relaxed text-[#aec0de]">{maker.blurb}</p>
+            <p className="mt-2 line-clamp-3 text-[14.5px] leading-relaxed text-[#c2d2ee]">{maker.blurb}</p>
           </div>
         </div>
       </div>
@@ -170,13 +171,13 @@ function MobileCarousel() {
 
 export default function DalitHistoryMakers() {
   return (
-    <section className="relative py-16 md:py-24">
+    <section className="relative py-10 md:py-14">
       {/* Ambient glow — bleeds into Hero above and KnowledgeSection below */}
       <div className="pointer-events-none absolute inset-x-0 -top-28 -bottom-28">
         <div className="absolute left-1/2 top-1/3 h-[400px] w-[700px] -translate-x-1/2 rounded-full bg-[#1e4fb5]/10 blur-[140px]" />
       </div>
 
-      <div className="mx-auto max-w-[1180px] px-6">
+      <div className="mx-auto max-w-[1320px] px-6">
         <SectionLabel>Dalit History Makers</SectionLabel>
 
         <h2 className="mx-auto mt-8 max-w-[900px] text-center font-display text-[52px] font-bold leading-[1.05] text-white md:text-[72px]">
@@ -204,6 +205,19 @@ export default function DalitHistoryMakers() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Build your narrative CTA */}
+      <div className="mt-10 flex justify-center md:mt-14">
+        <button
+          type="button"
+          className="btn-gradient group inline-flex h-12 items-center gap-2.5 rounded-xl px-7 font-count text-[15px] font-semibold text-white"
+        >
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 transition group-hover:bg-white/20">
+            <Play size={11} fill="currentColor" strokeWidth={0} className="translate-x-[1px]" />
+          </span>
+          Build your narrative
+        </button>
       </div>
     </section>
   );

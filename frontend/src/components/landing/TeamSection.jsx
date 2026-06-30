@@ -63,14 +63,14 @@ function TeamCard({ member }) {
 // Team section — "A team like never seen before" with group header + member cards
 export default function TeamSection() {
   return (
-    <section id="charity" className="relative py-12 md:py-16">
+    <section id="charity" className="relative py-8 md:py-10">
       {/* Ambient glow — bottom glow bleeds into ContactSection */}
       <div className="pointer-events-none absolute inset-x-0 -top-28 -bottom-28">
         <div className="absolute left-1/4 top-1/4 h-[420px] w-[600px] rounded-full bg-[#1e4fb5]/8 blur-[150px]" />
         <div className="absolute right-1/4 bottom-0 h-[360px] w-[500px] rounded-full bg-[#2d6fff]/8 blur-[140px]" />
       </div>
 
-      <div className="mx-auto max-w-[1180px] px-6">
+      <div className="mx-auto max-w-[1320px] px-6">
         <SectionLabel>Work With Us</SectionLabel>
 
         <h2 className="mx-auto mt-8 max-w-[820px] text-center font-display text-[46px] font-bold leading-[1.05] text-white md:text-[62px]">

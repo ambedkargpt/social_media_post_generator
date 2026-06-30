@@ -4,7 +4,7 @@ import SectionLabel from './SectionLabel';
 import libraryImg   from '../../assets/images/corpus-library.png';
 
 const CORPUS = {
-  question: 'What is Dalit Corpus?',
+  question: 'What Is Dalit Corpus?',
   intro: [
     'For too long, our history was written by those who oppressed us. They erased our heroes, twisted our words, and buried our truth.',
     'Dalit Corpus is our answer.',
@@ -33,13 +33,13 @@ export default function DalitCorpusSection() {
   }
 
   return (
-    <section id="ambedkarverse" className="relative pb-12 pt-0 md:pb-16">
+    <section id="ambedkarverse" className="relative pb-8 pt-0 md:pb-10">
       <div className="pointer-events-none absolute inset-x-0 -top-28 -bottom-28">
         <div className="absolute left-[10%] top-[20%] h-[420px] w-[420px] rounded-full bg-[#2d7dfb]/9 blur-[130px]" />
         <div className="absolute right-[5%] bottom-[10%] h-[360px] w-[360px] rounded-full bg-[#1a3fa0]/7 blur-[130px]" />
       </div>
 
-      <div className="relative mx-auto max-w-[1180px] px-6">
+      <div className="relative mx-auto max-w-[1320px] px-6">
         <div className="flex justify-center">
           <SectionLabel size="lg">Dalit Corpus</SectionLabel>
         </div>
@@ -50,7 +50,7 @@ export default function DalitCorpusSection() {
         </h2>
 
         <p className="mx-auto mt-6 max-w-[760px] text-center text-[16px] leading-7 text-[#a6b9d6] md:text-[17px]">
-          A caste-bias-free knowledge base of Dalit history, texts, speeches, and political
+          A caste bias-free knowledge base of Dalit history, texts, speeches, and political
           thought for creators, researchers, and revolutionaries.
         </p>
 
@@ -59,31 +59,31 @@ export default function DalitCorpusSection() {
 
             {/* ── Col 1: Dalit Corpus ── */}
             <div className="border-b border-[#1a2d55]/50 p-8 md:border-b-0 md:border-r md:p-10">
-              <h3 className="font-display text-[24px] font-semibold text-white md:text-[28px]">
+              <h3 className="font-display text-[26px] font-semibold text-white md:text-[31px]">
                 {CORPUS.question}
               </h3>
               {CORPUS.intro.map((para) => (
-                <p key={para} className="mt-4 text-[15px] leading-[1.9] text-[#a6b9d6]">
+                <p key={para} className="mt-4 text-[17px] leading-[1.95] text-[#bdcdea] md:text-[18px]">
                   {para}
                 </p>
               ))}
 
-              <h4 className="mt-7 font-display text-[17px] font-semibold text-white">
-                Why it matters:
+              <h4 className="mt-7 font-display text-[19px] font-semibold text-white md:text-[20px]">
+                Why It Matters:
               </h4>
               <ul className="mt-3 space-y-3">
                 {CORPUS.whyItMatters.map((point) => (
-                  <li key={point} className="flex items-start gap-2.5 text-[14.5px] leading-relaxed text-[#aec3e0]">
-                    <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-[#4d94ff]" />
+                  <li key={point} className="flex items-start gap-2.5 text-[16px] leading-relaxed text-[#bdcdea] md:text-[17px]">
+                    <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-[#4d94ff]" />
                     {point}
                   </li>
                 ))}
               </ul>
 
-              <h4 className="mt-7 font-display text-[17px] font-semibold text-white">
-                Why we need it:
+              <h4 className="mt-7 font-display text-[19px] font-semibold text-white md:text-[20px]">
+                Why We Need It:
               </h4>
-              <p className="mt-3 text-[15px] leading-[1.9] text-[#a6b9d6]">
+              <p className="mt-3 text-[17px] leading-[1.95] text-[#bdcdea] md:text-[18px]">
                 {CORPUS.whyWeNeedIt}
               </p>
 
@@ -100,7 +100,7 @@ export default function DalitCorpusSection() {
                   onClick={handleBuyDataset}
                   className="btn-outline-blue inline-flex h-12 items-center gap-2 rounded-xl px-7 font-count text-[14px] font-medium text-white"
                 >
-                  Buy Dataset
+                  Buy Pre-built Annotated Corpus
                 </button>
               </div>
             </div>
