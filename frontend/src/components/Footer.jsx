@@ -38,7 +38,7 @@ export default function Footer() {
       <div className="pointer-events-none absolute -top-40 left-1/2 h-72 w-[65%] -translate-x-1/2 rounded-full bg-[#2d7dfb]/10 blur-[120px]" />
       <div className="pointer-events-none absolute -bottom-32 -right-20 h-64 w-64 rounded-full bg-[#7b5cff]/8 blur-[110px]" />
 
-      <div className="relative mx-auto max-w-[1180px] px-6 py-16 md:py-20">
+      <div className="relative mx-auto max-w-[1440px] px-6 py-16 md:py-20">
         {/* ─── Main grid: brand | About | Follow Us | Trusted By ─── */}
         <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-[1.25fr_1fr_1fr_1.1fr] md:gap-12">
           {/* Brand block */}

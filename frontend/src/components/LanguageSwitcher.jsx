@@ -27,7 +27,7 @@ export default function LanguageSwitcher() {
     setSiteLanguage(code);
     setCurrent(code);
     setOpen(false);
-    // Reload so the new language takes effect across the whole app
+    sessionStorage.setItem('skip-splash', '1');
     window.location.reload();
   }
 

@@ -1,4 +1,4 @@
-import { Mail, MapPin, Send, UserPlus } from 'lucide-react';
+﻿import { Mail, MapPin, Send, UserPlus } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import SectionLabel from './SectionLabel';
@@ -67,7 +67,7 @@ export default function ContactSection() {
         <div className="absolute left-[20%] top-[40%] h-[320px] w-[400px] rounded-full bg-[#1a3fa0]/7 blur-[130px]" />
       </div>
 
-      <div className="relative mx-auto max-w-[1320px] px-6">
+      <div className="relative mx-auto max-w-[1440px] px-6">
         {/* ══════════ Top: Work With Us CTA strip ══════════ */}
         <SectionLabel>Connect With Us</SectionLabel>
 
