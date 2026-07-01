@@ -13,10 +13,9 @@ const EXIT_MS = 700;
 export default function OpeningSplash({ onDone }) {
   const storedLang = getSiteLanguage();            // pre-fills the picker, if any
 
-  const [phase,        setPhase]        = useState('enter');
-  const [menuOpen,     setMenuOpen]     = useState(false);
-  const [confirmed,    setConfirmed]    = useState(false); // user actively picked
-  const [displayLang,  setDisplayLang]  = useState(storedLang); // what the button shows
+  const [phase,       setPhase]       = useState('enter');
+  const [menuOpen,    setMenuOpen]    = useState(false);
+  const [displayLang, setDisplayLang] = useState(storedLang);
   const langRef    = useRef(null);
 
   // Lock body scroll while splash is visible
@@ -56,15 +55,17 @@ export default function OpeningSplash({ onDone }) {
 
   function handleSelect(code) {
     setDisplayLang(code);
-    setConfirmed(true);
     setMenuOpen(false);
-    dismiss(code);
+    setSiteLanguage(code);
+  }
+
+  function handleContinue() {
+    dismiss(displayLang || 'en');
   }
 
   if (phase === 'gone') return null;
 
   const buttonLabel = displayLang ? getSiteLanguageLabel(displayLang) : 'Select language';
-  const hint = confirmed ? null : 'Choose a language to continue';
 
   return (
     <div
@@ -139,17 +140,16 @@ export default function OpeningSplash({ onDone }) {
         ESTD. 2026
       </p>
 
-      {/* Language picker — always shown; pre-selects stored lang for returning users */}
-      <div ref={langRef} className="splash-lang relative z-10 mt-6 flex flex-col items-center gap-2">
+      {/* Language picker — optional; pre-selects stored lang for returning users */}
+      <div ref={langRef} className="splash-lang relative z-10 mt-6 flex flex-col items-center gap-4">
         <div className="relative">
           <button
             type="button"
             aria-haspopup="listbox"
             aria-expanded={menuOpen}
             aria-label="Select site language"
-            disabled={confirmed}
             onClick={() => setMenuOpen((o) => !o)}
-            className="inline-flex min-w-[188px] items-center justify-between gap-3 rounded-full border px-5 py-2 font-count text-[14px] font-medium transition hover:brightness-110 disabled:cursor-default disabled:opacity-80"
+            className="inline-flex min-w-[188px] items-center justify-between gap-3 rounded-full border px-5 py-2 font-count text-[14px] font-medium transition hover:brightness-110"
             style={{
               borderColor: displayLang ? 'rgba(63,120,220,0.6)' : 'rgba(63,120,220,0.5)',
               backgroundColor: displayLang ? 'rgba(15,35,90,0.7)' : 'rgba(15,35,90,0.6)',
@@ -166,7 +166,7 @@ export default function OpeningSplash({ onDone }) {
             </svg>
           </button>
 
-          {menuOpen && !confirmed && (
+          {menuOpen && (
             <ul
               role="listbox"
               aria-label="Site language"
@@ -194,11 +194,21 @@ export default function OpeningSplash({ onDone }) {
           )}
         </div>
 
-        {hint && (
-          <p className="font-count text-[10px] uppercase tracking-[0.28em]" style={{ color: '#3d6a9e' }}>
-            {hint}
-          </p>
-        )}
+        {/* Next / Continue button */}
+        <button
+          type="button"
+          onClick={handleContinue}
+          className="group inline-flex items-center gap-2.5 rounded-full px-7 py-2.5 font-count text-[14px] font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110"
+          style={{
+            background: 'linear-gradient(135deg, #1a5fff 0%, #3f9fff 100%)',
+            boxShadow: '0 4px 20px rgba(63,159,255,0.35)',
+          }}
+        >
+          Continue
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
       </div>
     </div>
   );

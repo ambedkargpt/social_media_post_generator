@@ -46,7 +46,11 @@ function PageTransition({ children }) {
 }
 
 export default function App() {
-  const [splashDone, setSplashDone] = useState(false);
+  const [splashDone, setSplashDone] = useState(() => {
+    const skip = sessionStorage.getItem('skip-splash') === '1';
+    if (skip) sessionStorage.removeItem('skip-splash');
+    return skip;
+  });
   const handleSplashDone = useCallback(() => setSplashDone(true), []);
 
   return (

@@ -12,6 +12,7 @@ import DalitHistoryMakers  from '../components/landing/DalitHistoryMakers';
 import DalitCorpusSection  from '../components/landing/DalitCorpusSection';
 import TeamSection         from '../components/landing/TeamSection';
 import ContactSection      from '../components/landing/ContactSection';
+import FourIdeasSection    from '../components/landing/FourIdeasSection';
 
 export default function Home() {
   // support deep-linking to a section after navigating from another route
@@ -34,6 +35,10 @@ export default function Home() {
       <HeroSection />
 
       <TrustedByStrip />
+
+      <RevealOnScroll delayMs={60}>
+        <FourIdeasSection />
+      </RevealOnScroll>
 
       <RevealOnScroll delayMs={60}>
         <DalitCorpusSection />

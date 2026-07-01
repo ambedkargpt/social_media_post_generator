@@ -485,6 +485,24 @@ html { scroll-behavior: smooth; }
   from { transform: translateX(48px); opacity: 0; }
   to   { transform: translateX(0);    opacity: 1; }
 }
+@keyframes makerJumpInLeft {
+  from { transform: translateX(-48px); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+
+/* --- Hero entrance animations --- */
+@keyframes heroWordReveal {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes heroFadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes heroImgSlide {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
 
 /* --- Custom cursor --- */
 .custom-cursor {

@@ -1,4 +1,4 @@
-import { CheckCircle2 } from 'lucide-react';
+﻿import { CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SectionLabel from './SectionLabel';
 import libraryImg   from '../../assets/images/corpus-library.png';
@@ -39,7 +39,7 @@ export default function DalitCorpusSection() {
         <div className="absolute right-[5%] bottom-[10%] h-[360px] w-[360px] rounded-full bg-[#1a3fa0]/7 blur-[130px]" />
       </div>
 
-      <div className="relative mx-auto max-w-[1320px] px-6">
+      <div className="relative mx-auto max-w-[1440px] px-6">
         <div className="flex justify-center">
           <SectionLabel size="lg">Dalit Corpus</SectionLabel>
         </div>
@@ -49,12 +49,12 @@ export default function DalitCorpusSection() {
           <span className="italic gradient-text-blue">The Movement</span>
         </h2>
 
-        <p className="mx-auto mt-6 max-w-[760px] text-center text-[16px] leading-7 text-[#a6b9d6] md:text-[17px]">
+        <p className="mx-auto mt-6 max-w-[760px] text-center text-[19px] leading-8 text-[#bfcfe8] md:text-[21px]">
           A caste bias-free knowledge base of Dalit history, texts, speeches, and political
           thought for creators, researchers, and revolutionaries.
         </p>
 
-        <div className="mt-10 overflow-hidden rounded-2xl border border-[#1a2d55]/60 bg-[#070e22]">
+        <div className="mt-10 overflow-hidden rounded-2xl border border-[#2a3d66]/60 bg-[#0c1e48]">
           <div className="grid md:grid-cols-[1.4fr_0.6fr]">
 
             {/* ── Col 1: Dalit Corpus ── */}
@@ -63,7 +63,7 @@ export default function DalitCorpusSection() {
                 {CORPUS.question}
               </h3>
               {CORPUS.intro.map((para) => (
-                <p key={para} className="mt-4 text-[17px] leading-[1.95] text-[#bdcdea] md:text-[18px]">
+                <p key={para} className="mt-4 text-[18px] leading-[1.95] text-[#cddcf5] md:text-[19px]">
                   {para}
                 </p>
               ))}
@@ -73,7 +73,7 @@ export default function DalitCorpusSection() {
               </h4>
               <ul className="mt-3 space-y-3">
                 {CORPUS.whyItMatters.map((point) => (
-                  <li key={point} className="flex items-start gap-2.5 text-[16px] leading-relaxed text-[#bdcdea] md:text-[17px]">
+                  <li key={point} className="flex items-start gap-2.5 text-[17px] leading-relaxed text-[#cddcf5] md:text-[18px]">
                     <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-[#4d94ff]" />
                     {point}
                   </li>
@@ -83,11 +83,11 @@ export default function DalitCorpusSection() {
               <h4 className="mt-7 font-display text-[19px] font-semibold text-white md:text-[20px]">
                 Why We Need It:
               </h4>
-              <p className="mt-3 text-[17px] leading-[1.95] text-[#bdcdea] md:text-[18px]">
+              <p className="mt-3 text-[17px] leading-[1.95] text-[#cddcf5] md:text-[18px]">
                 {CORPUS.whyWeNeedIt}
               </p>
 
-              <div className="mt-7 flex flex-wrap items-center gap-4">
+              <div className="mt-7 inline-flex items-center gap-3">
                 <button
                   type="button"
                   onClick={handleContribute}

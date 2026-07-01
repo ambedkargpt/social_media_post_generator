@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import logoSrc from '../assets/images/logo-animation.png';
 import { useAuth } from '../context/AuthContext';
+import LanguageSwitcher from './LanguageSwitcher';
 
 // action: 'scroll' (default) | 'bheembot' | 'dashboard' | 'section:<id>'
 const navItems = [
@@ -168,6 +169,8 @@ export default function Navbar() {
               : <Menu size={16} strokeWidth={1.8} />
             }
           </button>
+
+          <LanguageSwitcher />
 
           <Link
             to="/login"
