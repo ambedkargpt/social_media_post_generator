@@ -67,7 +67,7 @@ export default function App() {
           <PageTransition>
           <Routes>
             {/* public */}
-            <Route path="/"          element={<Home />} />
+            <Route path="/"          element={<Home splashDone={splashDone} />} />
             <Route path="/about"     element={<About />} />
             <Route path="/solutions" element={<Solutions />} />
             <Route path="/pricing"   element={<Pricing />} />

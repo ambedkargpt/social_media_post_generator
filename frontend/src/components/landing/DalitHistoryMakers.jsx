@@ -308,7 +308,7 @@ export default function DalitHistoryMakers() {
           <span className="italic gradient-text-blue">Justice</span>
         </h2>
 
-        <p className="mx-auto mt-6 max-w-[760px] text-center text-[19px] leading-8 text-[#bfcfe8] md:text-[21px]">
+        <p className="mx-auto mt-6 max-w-[760px] text-center text-[22px] leading-9 text-[#bfcfe8] md:text-[24px]">
           Meet the reformers, poets, and thinkers whose ideas built the foundations of
           equality. Their stories live on in every line of the corpus.
         </p>

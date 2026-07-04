@@ -49,7 +49,7 @@ export default function DalitCorpusSection() {
           <span className="italic gradient-text-blue">The Movement</span>
         </h2>
 
-        <p className="mx-auto mt-6 max-w-[760px] text-center text-[19px] leading-8 text-[#bfcfe8] md:text-[21px]">
+        <p className="mx-auto mt-6 max-w-[760px] text-center text-[22px] leading-9 text-[#bfcfe8] md:text-[24px]">
           A caste bias-free knowledge base of Dalit history, texts, speeches, and political
           thought for creators, researchers, and revolutionaries.
         </p>
@@ -87,18 +87,18 @@ export default function DalitCorpusSection() {
                 {CORPUS.whyWeNeedIt}
               </p>
 
-              <div className="mt-7 inline-flex items-center gap-3">
+              <div className="mt-7 flex items-center justify-between gap-4">
                 <button
                   type="button"
                   onClick={handleContribute}
-                  className="btn-gradient inline-flex h-12 items-center gap-2 rounded-xl px-7 font-count text-[14px] font-semibold text-white"
+                  className="btn-gradient inline-flex h-14 flex-1 items-center justify-center gap-2 rounded-xl px-7 font-count text-[17px] font-semibold text-white"
                 >
                   Contribute to Corpus
                 </button>
                 <button
                   type="button"
                   onClick={handleBuyDataset}
-                  className="btn-outline-blue inline-flex h-12 items-center gap-2 rounded-xl px-7 font-count text-[14px] font-medium text-white"
+                  className="btn-outline-blue inline-flex h-14 flex-1 items-center justify-center gap-2 rounded-xl px-7 font-count text-[17px] font-medium text-white"
                 >
                   Buy Pre-built Annotated Corpus
                 </button>

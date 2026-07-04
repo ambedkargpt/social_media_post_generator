@@ -11,7 +11,7 @@ const USE_CASES = [
   {
     icon: Search,
     title: "Understanding Public Problems",
-    body: "AI scans local news and ground realities to reveal voter issues so you always speak to real concerns. Stop guessing what matters — know exactly what your constituency needs.",
+    body: "AI scans local news and ground realities to reveal voter issues so you always speak to real concerns. Stop guessing what matters. Know exactly what your constituency needs.",
   },
   {
     icon: Zap,
@@ -21,7 +21,7 @@ const USE_CASES = [
   {
     icon: Target,
     title: "Opponent Weakness Finder",
-    body: "AI scans opponents' past speeches, promises, and voting records to highlight inconsistencies and unfulfilled promises — all fact-based. Turn research into winning strategy.",
+    body: "AI scans opponents' past speeches, promises, and voting records to highlight inconsistencies and unfulfilled promises, all fact-based. Turn research into winning strategy.",
   },
 ];
 
@@ -47,15 +47,16 @@ function UseCaseCard({ icon: Icon, title, body }) {
         />
         <div className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-[#3f9fff]/15 blur-3xl" />
 
-        <span className="inline-flex h-14 w-14 items-center justify-center rounded-xl border border-[#2a4375]/80 bg-[#0c1735]/80 text-[#5fa5ff] shadow-[0_0_22px_rgba(63,159,255,0.25)]">
-          <Icon size={24} strokeWidth={1.7} />
-        </span>
-
-        <h3 className="mt-7 text-[24px] font-semibold text-white md:text-[26px]">
-          {title}
-        </h3>
+        <div className="flex items-center gap-5">
+          <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-[#2a4375]/80 bg-[#0c1735]/80 text-[#5fa5ff] shadow-[0_0_22px_rgba(63,159,255,0.25)]">
+            <Icon size={24} strokeWidth={1.7} />
+          </span>
+          <h3 className="text-[28px] font-semibold text-white md:text-[30px]">
+            {title}
+          </h3>
+        </div>
         <div className="mt-3 h-px w-12 rounded-full bg-[#2a4375]/60" />
-        <p className="mt-4 flex-1 text-[17px] leading-7 text-[#bfcfe8] md:text-[18px]">
+        <p className="mt-4 flex-1 text-[19px] leading-8 text-[#bfcfe8] md:text-[20px]">
           {body}
         </p>
       </div>
@@ -81,8 +82,8 @@ export default function UseCasesGrid() {
           <span className="italic gradient-text-blue">Guarantee</span>
         </h2>
 
-        <p className="mx-auto mt-6 max-w-[760px] text-center text-[19px] leading-8 text-[#bfcfe8] md:text-[21px]">
-          Every tool built for one purpose — to put the power of Ambedkarite knowledge into the hands of those who need it most.
+        <p className="mx-auto mt-6 max-w-[760px] text-center text-[22px] leading-9 text-[#bfcfe8] md:text-[24px]">
+          Every tool built for one purpose: to put the power of Ambedkarite knowledge into the hands of those who need it most.
         </p>
 
         <StaggerReveal step={100} className="mt-14 grid gap-6 md:grid-cols-2">

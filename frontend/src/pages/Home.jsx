@@ -14,7 +14,7 @@ import TeamSection         from '../components/landing/TeamSection';
 import ContactSection      from '../components/landing/ContactSection';
 import FourIdeasSection    from '../components/landing/FourIdeasSection';
 
-export default function Home() {
+export default function Home({ splashDone = true }) {
   // support deep-linking to a section after navigating from another route
   useEffect(() => {
     const pending = sessionStorage.getItem('pending-section-scroll');
@@ -32,7 +32,7 @@ export default function Home() {
       {/* Full-page animated background — absolute so it grows with page height */}
       <LandingBackground />
 
-      <HeroSection />
+      <HeroSection splashDone={splashDone} />
 
       <TrustedByStrip />
 

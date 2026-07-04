@@ -84,9 +84,9 @@ export default function KnowledgeSection() {
           <span className="gradient-text-blue italic">Creator Journey</span>
         </h2>
 
-        <p className="mx-auto mt-6 max-w-[760px] text-center text-[19px] leading-8 text-[#bfcfe8] md:text-[21px]">
+        <p className="mx-auto mt-6 max-w-[760px] text-center text-[22px] leading-9 text-[#bfcfe8] md:text-[24px]">
           Powerful AI tools built for Bahujan creators, researchers, and
-          changemakers — from social media to music, speeches to video.
+          changemakers, from social media to music, speeches to video.
         </p>
 
         {/* ── Service cards ── */}
@@ -159,7 +159,7 @@ export default function KnowledgeSection() {
                     <ArrowRight size={14} strokeWidth={2.2} />
                   </Link>
                 ) : (
-                  <p className="text-[17px] text-[#3d5a80]">Coming soon — stay tuned</p>
+                  <p className="text-[17px] text-[#3d5a80]">Coming soon, stay tuned</p>
                 )}
               </div>
             </div>
@@ -170,10 +170,10 @@ export default function KnowledgeSection() {
         <div className="mt-12 flex justify-center">
           <Link
             to="/signup"
-            className="inline-flex items-center gap-2 rounded-xl bg-[#2d6fff] px-8 py-3.5 text-[15px] font-semibold text-white shadow-[0_0_24px_rgba(45,111,255,0.4)] transition-all duration-300 hover:bg-[#3d7fff] hover:-translate-y-0.5 hover:shadow-[0_0_36px_rgba(45,111,255,0.6)]"
+            className="inline-flex h-14 items-center gap-3 rounded-xl bg-[#2d6fff] px-9 text-[17px] font-semibold text-white shadow-[0_0_24px_rgba(45,111,255,0.4)] transition-all duration-300 hover:bg-[#3d7fff] hover:-translate-y-0.5 hover:shadow-[0_0_36px_rgba(45,111,255,0.6)]"
           >
             Get Started Free
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </Link>
