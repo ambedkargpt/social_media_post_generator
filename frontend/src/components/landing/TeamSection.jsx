@@ -72,7 +72,7 @@ export default function TeamSection() {
           <span className="italic gradient-text-blue">never seen</span> before
         </h2>
 
-        <p className="mx-auto mt-10 max-w-[720px] text-center text-[19px] leading-8 text-[#bfcfe8] md:text-[21px]">
+        <p className="mx-auto mt-10 max-w-[720px] text-center text-[22px] leading-9 text-[#bfcfe8] md:text-[24px]">
           Our team connects scholars, creators, engineers, and changemakers,
           turning knowledge into meaningful action.
         </p>
