@@ -25,7 +25,7 @@ const IDEAS = [
 
 export default function FourIdeasSection() {
   return (
-    <section className="relative py-6 md:py-8">
+    <section className="relative pt-6 pb-20 md:pt-8 md:pb-28">
       <div className="pointer-events-none absolute inset-x-0 -top-20 -bottom-20">
         <div className="absolute left-1/2 top-1/2 h-[400px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2d3fa0]/10 blur-[140px]" />
       </div>
@@ -34,9 +34,9 @@ export default function FourIdeasSection() {
         <div className="flex flex-col items-center text-center">
           <SectionLabel>What We Stand For</SectionLabel>
 
-          <h2 className="mt-6 font-display text-[46px] font-extrabold leading-[1.05] text-white md:text-[64px]">
-            FOUR IDEAS.{' '}
-            <span className="gradient-text-blue">ONE BHARAT.</span>
+          <h2 className="mt-6 font-display text-[38px] font-extrabold leading-[1.05] text-white md:text-[58px]">
+            POLITICS DIVIDES.{' '}
+            <span className="gradient-text-blue">CONSTITUTION UNITES.</span>
           </h2>
         </div>
 
@@ -52,7 +52,7 @@ export default function FourIdeasSection() {
                 {title}
               </p>
 
-              <p className="mt-3 text-[16px] leading-relaxed text-[#9ab8d8] md:text-[17px]">
+              <p className="mt-3 text-[19px] leading-relaxed text-[#9ab8d8] md:text-[21px]">
                 {body}
               </p>
             </div>
