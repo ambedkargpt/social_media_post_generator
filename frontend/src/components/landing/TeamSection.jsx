@@ -1,6 +1,6 @@
-﻿import { LinkedinIcon, TwitterIcon } from "./SocialIcons";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { LinkedinIcon, TwitterIcon } from "./SocialIcons";
 import SectionLabel from "./SectionLabel";
-import StaggerReveal from "../ui/StaggerReveal";
 import team1 from "../../assets/images/team/team1.jpeg";
 import team2 from "../../assets/images/team/team2.jpeg";
 import team3 from "../../assets/images/team/team3.jpeg";
@@ -21,62 +21,284 @@ const TEAM = [
   { name: "Team Member", role: "AmbedkarGPT", photo: team7, position: "50% 40%" },
 ];
 
+function NavButton({ onClick, direction, label }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#2a4375]/60 bg-[#0a1430] text-[#7a90b8] transition hover:border-[#4a78c8]/80 hover:bg-[#0f1e45] hover:text-white"
+    >
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        {direction === "left"
+          ? <path d="M10 4l-4 4 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          : <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        }
+      </svg>
+    </button>
+  );
+}
+
+function SocialLinks() {
+  return (
+    <div className="flex shrink-0 gap-2">
+      <a
+        href="#"
+        aria-label="LinkedIn"
+        className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#2a4375]/70 bg-[#0a1430]/60 text-[#aec0de] backdrop-blur transition hover:border-[#4a78c8]/90 hover:text-white"
+      >
+        <LinkedinIcon width={13} height={13} />
+      </a>
+      <a
+        href="#"
+        aria-label="Twitter"
+        className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#2a4375]/70 bg-[#0a1430]/60 text-[#aec0de] backdrop-blur transition hover:border-[#4a78c8]/90 hover:text-white"
+      >
+        <TwitterIcon width={13} height={13} />
+      </a>
+    </div>
+  );
+}
+
 function TeamCard({ member }) {
   return (
-    <div className="glass-card hover-lift relative overflow-hidden p-4">
-      {/* photo */}
-      <div
-        className="aspect-[4/5] w-full overflow-hidden rounded-xl"
-        style={{
-          background:
-            "radial-gradient(120% 120% at 30% 20%, rgba(63,135,255,0.35) 0%, #0a1330 70%)",
-        }}
-      >
-        {member.photo ? (
-          <img
-            src={member.photo}
-            alt={member.name}
-            loading="lazy"
-            className="h-full w-full object-cover"
-            style={{ objectPosition: member.position || "50% 25%" }}
-          />
-        ) : (
-          <span className="flex h-full w-full items-center justify-center font-display text-[72px] font-bold text-white/20">
-            {member.initials}
-          </span>
-        )}
-      </div>
+    <div className="group relative h-[400px] w-[300px] shrink-0 overflow-hidden rounded-2xl border border-[#2a4375]/60 bg-[#0a1430] shadow-[0_20px_50px_rgba(0,0,0,0.45)] transition hover:-translate-y-1 hover:border-[#4a78c8]/80">
+      <div className="absolute inset-0 bg-gradient-to-b from-[#11204a] via-[#0b1633] to-[#070c1f]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_25%,rgba(63,159,255,0.18),transparent_65%)]" />
 
-      {/* info */}
-      <div className="mt-4 flex items-center justify-between px-1">
-        <div>
-          <p className="text-[17px] font-semibold text-white">{member.name}</p>
-          <p className="mt-0.5 text-[13px] uppercase tracking-[0.15em] text-[#7aa6e5]">
-            {member.role}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <a
-            href="#"
-            aria-label="LinkedIn"
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#2a4375]/70 text-[#aec0de] transition hover:border-[#4a78c8]/90 hover:text-white"
-          >
-            <LinkedinIcon width={12} height={12} />
-          </a>
-          <a
-            href="#"
-            aria-label="Twitter"
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#2a4375]/70 text-[#aec0de] transition hover:border-[#4a78c8]/90 hover:text-white"
-          >
-            <TwitterIcon width={12} height={12} />
-          </a>
+      <img
+        src={member.photo}
+        alt={member.name}
+        loading="lazy"
+        className="relative h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+        style={{ objectPosition: member.position || "50% 25%", filter: "saturate(1.05) contrast(1.02)" }}
+      />
+
+      <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-[#030611] via-[#030611]/70 to-transparent p-5">
+        <div className="flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="text-[22px] font-semibold leading-tight text-white md:text-[24px]">
+              {member.name}
+            </h3>
+            <p className="mt-1 text-[13px] uppercase tracking-[0.15em] text-[#7aa6e5]">
+              {member.role}
+            </p>
+          </div>
+          <SocialLinks />
         </div>
       </div>
     </div>
   );
 }
 
-// Team section — "A team like never seen before" with group header + member cards
+// Triple-clone so the track is always deep enough to loop seamlessly
+const TRACK        = [...TEAM, ...TEAM, ...TEAM];
+const CARD_W       = 300;
+const GAP          = 20;
+const STEP         = CARD_W + GAP;           // px per card slot
+const VIEWPORT_W   = 4 * CARD_W + 3 * GAP;  // show 4 cards = 1260px
+const AUTO_MS      = 3000;
+const SLIDE_EASE   = "transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94)";
+
+function DesktopCarousel() {
+  // Start in the middle copy so we can go left or right without hitting the edge
+  const [trackIdx, setTrackIdx] = useState(TEAM.length);
+  const [animated, setAnimated] = useState(true);
+  const trackIdxRef             = useRef(TEAM.length);
+  const timerRef                = useRef(null);
+
+  const startTimer = useCallback(() => {
+    clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      const next = trackIdxRef.current + 1;
+      trackIdxRef.current = next;
+      setAnimated(true);
+      setTrackIdx(next);
+    }, AUTO_MS);
+  }, []);
+
+  useEffect(() => {
+    startTimer();
+    return () => clearInterval(timerRef.current);
+  }, [startTimer]);
+
+  // After each slide completes, silently jump back to the middle copy if needed
+  function onTransitionEnd() {
+    const n   = TEAM.length;
+    const cur = trackIdxRef.current;
+    if (cur >= n * 2) {
+      const next = cur - n;
+      trackIdxRef.current = next;
+      setAnimated(false);
+      setTrackIdx(next);
+    } else if (cur < n) {
+      const next = cur + n;
+      trackIdxRef.current = next;
+      setAnimated(false);
+      setTrackIdx(next);
+    }
+  }
+
+  // Re-enable transition on the frame after the silent jump
+  useEffect(() => {
+    if (!animated) {
+      const id = requestAnimationFrame(() =>
+        requestAnimationFrame(() => setAnimated(true))
+      );
+      return () => cancelAnimationFrame(id);
+    }
+  }, [animated]);
+
+  function goPrev() {
+    const next = trackIdxRef.current - 1;
+    trackIdxRef.current = next;
+    setAnimated(true);
+    setTrackIdx(next);
+    startTimer();
+  }
+  function goNext() {
+    const next = trackIdxRef.current + 1;
+    trackIdxRef.current = next;
+    setAnimated(true);
+    setTrackIdx(next);
+    startTimer();
+  }
+  function goTo(memberIdx) {
+    const n    = TEAM.length;
+    const cur  = trackIdxRef.current;
+    // jump to whichever copy of memberIdx is closest to current position
+    const base = Math.round(cur / n) * n + memberIdx;
+    trackIdxRef.current = base;
+    setAnimated(true);
+    setTrackIdx(base);
+    startTimer();
+  }
+
+  const activeMember = ((trackIdx % TEAM.length) + TEAM.length) % TEAM.length;
+
+  return (
+    <div className="mt-14">
+      {/* Viewport + side buttons */}
+      <div className="relative" style={{ width: VIEWPORT_W, margin: "0 auto" }}>
+        {/* Left button — sits outside the left edge, vertically centred on the cards */}
+        <div className="absolute top-1/2 -translate-y-1/2" style={{ left: -64 }}>
+          <NavButton onClick={goPrev} direction="left" label="Previous" />
+        </div>
+
+        {/* Clipped viewport */}
+        <div style={{ overflow: "hidden" }}>
+          <div
+            onTransitionEnd={onTransitionEnd}
+            style={{
+              display:    "flex",
+              gap:        GAP,
+              transform:  `translateX(${-(trackIdx * STEP)}px)`,
+              transition: animated ? SLIDE_EASE : "none",
+            }}
+          >
+            {TRACK.map((member, i) => (
+              <div key={i} style={{ flexShrink: 0 }}>
+                <TeamCard member={member} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right button */}
+        <div className="absolute top-1/2 -translate-y-1/2" style={{ right: -64 }}>
+          <NavButton onClick={goNext} direction="right" label="Next" />
+        </div>
+      </div>
+
+      {/* Dots */}
+      <div className="mt-7 flex justify-center gap-2">
+        {TEAM.map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => goTo(i)}
+            className={[
+              "rounded-full transition-all duration-300",
+              i === activeMember
+                ? "h-2 w-6 bg-[#3f9fff]"
+                : "h-2 w-2 bg-[#2a4375]/60 hover:bg-[#3f9fff]/50",
+            ].join(" ")}
+            aria-label={`Go to team member ${i + 1}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MobileCarousel() {
+  const [activeIdx, setActiveIdx] = useState(0);
+
+  function goPrev() {
+    setActiveIdx((i) => (i - 1 + TEAM.length) % TEAM.length);
+  }
+  function goNext() {
+    setActiveIdx((i) => (i + 1) % TEAM.length);
+  }
+
+  const member = TEAM[activeIdx];
+
+  return (
+    <div className="mt-10 px-6">
+      <div className="relative mx-auto h-[420px] max-w-[360px] overflow-hidden rounded-2xl border border-[#2a4375]/60 bg-[#0a1430] shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
+        <div
+          key={activeIdx}
+          className="absolute inset-0"
+          style={{ animation: "makerJumpIn 0.22s ease-out both" }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-b from-[#11204a] via-[#0b1633] to-[#070c1f]" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_25%,rgba(63,159,255,0.18),transparent_65%)]" />
+          <img
+            src={member.photo}
+            alt={member.name}
+            loading="lazy"
+            className="relative h-full w-full object-cover"
+            style={{ objectPosition: member.position || "50% 25%", filter: "saturate(1.05) contrast(1.02)" }}
+          />
+          <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-[#030611] via-[#030611]/70 to-transparent p-5">
+            <div className="flex items-end justify-between gap-3">
+              <div className="min-w-0">
+                <h3 className="text-[22px] font-semibold leading-tight text-white">{member.name}</h3>
+                <p className="mt-1 text-[13px] uppercase tracking-[0.15em] text-[#7aa6e5]">{member.role}</p>
+              </div>
+              <SocialLinks />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 flex items-center justify-center gap-4">
+        <NavButton onClick={goPrev} direction="left" label="Previous" />
+
+        <div className="flex items-center gap-2">
+          {TEAM.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setActiveIdx(i)}
+              className={[
+                "rounded-full transition-all duration-200",
+                i === activeIdx
+                  ? "h-2 w-6 bg-[#3f9fff]"
+                  : "h-2 w-2 bg-[#2a4375]/60 hover:bg-[#3f9fff]/50",
+              ].join(" ")}
+              aria-label={`Go to team member ${i + 1}`}
+            />
+          ))}
+        </div>
+
+        <NavButton onClick={goNext} direction="right" label="Next" />
+      </div>
+    </div>
+  );
+}
+
+// Team section — "A team like never seen before" as a looping carousel
 export default function TeamSection() {
   return (
     <section id="charity" className="relative py-8 md:py-10">
@@ -98,16 +320,16 @@ export default function TeamSection() {
           Our team connects scholars, creators, engineers, and changemakers,
           turning knowledge into meaningful action.
         </p>
+      </div>
 
-        {/* Cards — stagger reveal */}
-        <StaggerReveal
-          step={110}
-          className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4"
-        >
-          {TEAM.map((m) => (
-            <TeamCard key={m.name} member={m} />
-          ))}
-        </StaggerReveal>
+      {/* Mobile: one-by-one carousel */}
+      <div className="md:hidden">
+        <MobileCarousel />
+      </div>
+
+      {/* Desktop: carousel with left/right nav */}
+      <div className="hidden md:block">
+        <DesktopCarousel />
       </div>
     </section>
   );

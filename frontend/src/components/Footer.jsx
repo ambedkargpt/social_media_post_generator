@@ -1,7 +1,5 @@
 import { Link } from "react-router-dom";
 import logoSrc from "../assets/images/logo-animation.png";
-import indiaAiLogo from "../assets/images/indiaai-logo.png";
-import digitalIndiaLogo from "../assets/images/digital-india-logo.png";
 import Sparkle from "./landing/Sparkle";
 import { FacebookIcon, LinkedinIcon, TwitterIcon, YoutubeIcon } from "./landing/SocialIcons";
 
@@ -39,8 +37,8 @@ export default function Footer() {
       <div className="pointer-events-none absolute -bottom-32 -right-20 h-64 w-64 rounded-full bg-[#7b5cff]/8 blur-[110px]" />
 
       <div className="relative mx-auto max-w-[1440px] px-6 py-16 md:py-20">
-        {/* ─── Main grid: brand | About | Follow Us | Trusted By ─── */}
-        <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-[1.25fr_1fr_1fr_1.1fr] md:gap-12">
+        {/* ─── Main grid: brand | About | Quick Links ─── */}
+        <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-[1.5fr_1fr_1fr] md:gap-12">
           {/* Brand block */}
           <div>
             <div className="flex items-center gap-2.5">
@@ -131,22 +129,6 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Trusted By column */}
-          <div>
-            <ColumnHeading>Trusted By</ColumnHeading>
-            <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-[#1e3260]/60 bg-[#070f24]/60 p-5">
-              <img
-                src={indiaAiLogo}
-                alt="INDIAai"
-                className="h-12 w-auto object-contain drop-shadow-[0_0_20px_rgba(63,159,255,0.25)] transition hover:scale-105"
-              />
-              <img
-                src={digitalIndiaLogo}
-                alt="Digital India"
-                className="h-12 w-auto object-contain drop-shadow-[0_0_20px_rgba(63,159,255,0.25)] transition hover:scale-105"
-              />
-            </div>
-          </div>
         </div>
 
         {/* ─── Separator with center glow ─── */}
