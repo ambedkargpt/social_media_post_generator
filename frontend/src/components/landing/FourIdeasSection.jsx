@@ -2,24 +2,19 @@ import SectionLabel from './SectionLabel';
 
 const IDEAS = [
   {
-    emoji: '🌐',
-    title: 'BE LOCAL,\nTHINK GLOBAL',
-    body: 'Local ideas with the potential to create global impact',
+    emoji: '🤝',
+    title: 'POLITICS MUST\nNOT DIVIDE',
+    body: 'Unity before political differences',
   },
   {
-    emoji: '🌱',
-    title: 'GRASSROOTS\nFIRST',
-    body: 'Discovering talent wherever it exists',
-  },
-  {
-    emoji: '⚙️',
-    title: 'BUILD FOR\nBHARAT',
-    body: "Solutions for India's unique challenges",
+    emoji: '📜',
+    title: 'CONSTITUTION\nSECURES ONE NATION',
+    body: 'The Constitution holds the nation together',
   },
   {
     emoji: '🇮🇳',
-    title: 'AATMANIRBHAR\nBHARAT',
-    body: 'Powering a self-reliant India',
+    title: 'PLACE COUNTRY\nABOVE CREED',
+    body: 'Nation first, always',
   },
 ];
 
@@ -40,7 +35,7 @@ export default function FourIdeasSection() {
           </h2>
         </div>
 
-        <div className="mt-10 grid grid-cols-2 gap-5 md:grid-cols-4">
+        <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-3">
           {IDEAS.map(({ emoji, title, body }) => (
             <div
               key={title}

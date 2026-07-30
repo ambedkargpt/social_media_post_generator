@@ -70,9 +70,9 @@ export default function PreferencesPanel({ questions = [], value, onChange, defa
   const isLoading = questions.length === 0;
 
   return (
-    <aside className="relative flex h-full w-full flex-col border-l border-[#141d3a]/80 bg-gradient-to-b from-[#0a1024]/95 to-[#070b1c]/95">
+    <aside className="relative flex h-full w-full flex-col border-l border-[#1a2130]/70 bg-gradient-to-b from-[#0a0e18] to-[#080b13]">
       {/* Header */}
-      <header className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-[#141d3a]/70 bg-[#070b1c]/90 px-5 py-5 backdrop-blur">
+      <header className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-[#1a2130]/70 bg-[#080b13]/90 px-5 py-5 backdrop-blur">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <span className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-[#3f9fff] to-[#7b5cff] text-white shadow-[0_4px_14px_rgba(63,159,255,0.4)]">
@@ -134,7 +134,7 @@ export default function PreferencesPanel({ questions = [], value, onChange, defa
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-[#141d3a]/70 bg-[#070b1c]/85 px-5 py-4 text-[10.5px] text-[#6b78a0] leading-snug">
+      <footer className="border-t border-[#1a2130]/70 bg-[#080b13]/85 px-5 py-4 text-[10.5px] text-[#6b78a0] leading-snug">
         <span className="flex items-center gap-1.5">
           <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e] shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
           {isLoading ? 'Loading…' : `${questions.length} signals active`}

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Search, Filter, Sparkles,
-  Copy, Check, RefreshCw, ChevronDown, Eye, FileText,
+  Copy, Check, RefreshCw, ChevronDown, Eye, FileText, Star,
 } from 'lucide-react';
 
 import PreferencesPanel from '../components/generate/PreferencesPanel';
@@ -68,8 +68,25 @@ function adaptNews(item) {
     category: item.tags?.[0] ?? 'General',
     title:    item.headline,
     content:  item.description || item.summary,
+    summary:  item.summary || item.description || '',
+    source:   item.source_name || '',
+    date:     item.published_at || '',
     topic:    item.summary || item.headline,
   };
+}
+
+function formatNewsDate(d) {
+  if (!d) return '';
+  const dt = new Date(d);
+  if (Number.isNaN(dt.getTime())) return '';
+  return dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+// Trim card body to a short teaser and append an ellipsis.
+function truncateText(text = '', max = 160) {
+  const t = text.trim();
+  if (t.length <= max) return t;
+  return `${t.slice(0, max).trimEnd()}…`;
 }
 
 export default function SocialMediaPostGenerator() {
@@ -80,7 +97,6 @@ export default function SocialMediaPostGenerator() {
   const [newsLoading,     setNewsLoading]     = useState(true);
   const [newsError,       setNewsError]       = useState(false);
   const [tone,            setTone]           = useState('Professional');
-  const [toneOpen,        setToneOpen]        = useState(false);
   const [search,          setSearch]          = useState('');
   const [activeFilter,    setActiveFilter]    = useState('All');
   const [filterOpen,      setFilterOpen]      = useState(false);
@@ -374,7 +390,7 @@ export default function SocialMediaPostGenerator() {
   return (
     <div
       className="relative flex min-h-screen text-[#e5e7eb]"
-      style={{ background: 'radial-gradient(1200px 700px at 50% -10%, #0d1636 0%, #070b1c 55%, #05081a 100%)' }}
+      style={{ background: 'radial-gradient(1200px 700px at 50% -10%, #0c111e 0%, #080b13 55%, #06080e 100%)' }}
     >
       {/* ambient glows */}
       <div className="pointer-events-none fixed left-[240px] top-0 h-[500px] w-[500px] rounded-full bg-[#3f9fff]/8 blur-[140px]" />
@@ -382,15 +398,20 @@ export default function SocialMediaPostGenerator() {
 
       {/* ── LEFT SIDEBAR ── */}
       <aside
-        className="hidden lg:flex w-[240px] shrink-0 flex-col overflow-y-auto border-r border-[#141d3a]/70"
-        style={{ background: 'linear-gradient(180deg,#0a1024 0%,#070b1c 100%)' }}
+        className="hidden lg:flex w-[240px] shrink-0 flex-col overflow-y-auto border-r border-[#1a2130]/70"
+        style={{ background: 'linear-gradient(180deg,#0a0e18 0%,#080b13 100%)' }}
       >
         {/* Brand header */}
         <div className="border-b border-[#141d3a]/70 px-5 py-4">
-          <div className="mb-3 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate('/dashboard')}
+            title="Go to Dashboard"
+            className="mb-3 flex items-center gap-2 rounded-lg transition hover:opacity-90"
+          >
             <img src={logoSrc} alt="AmbedkarGPT" className="h-8 w-8 object-contain drop-shadow-[0_0_10px_rgba(63,159,255,0.55)]" />
             <span className="font-display text-[15px] font-bold gradient-text-blue">AmbedkarGPT</span>
-          </div>
+          </button>
           <button
             type="button"
             onClick={() => navigate('/generate')}
@@ -401,55 +422,96 @@ export default function SocialMediaPostGenerator() {
           </button>
         </div>
 
-        {/* User profile */}
-        <div className="flex flex-col items-center px-5 pb-5 pt-6">
-          <div className="relative">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#3f9fff] to-[#7b5cff] text-[22px] font-bold text-white shadow-[0_0_24px_rgba(63,159,255,0.35)]">
-              {(currentUser?.username?.[0] ?? '?').toUpperCase()}
+        {/* User profile card */}
+        <div className="px-4 pt-4">
+          <div className="rounded-2xl border border-[#1e2636]/80 bg-[#0e1320] px-5 py-5">
+            <div className="flex flex-col items-center">
+              <div className="relative">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#3f9fff] to-[#7b5cff] text-[22px] font-bold text-white shadow-[0_0_24px_rgba(63,159,255,0.35)]">
+                  {(currentUser?.username?.[0] ?? '?').toUpperCase()}
+                </div>
+                <span className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full border-2 border-[#0e1320] bg-[#22c55e] shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+              </div>
+              <p className="mt-3 font-display text-[16px] font-semibold text-white">{currentUser?.username ?? '—'}</p>
+              <p className="mt-0.5 text-[11.5px] text-[#8b93a5]">{currentUser?.email ?? currentUser?.phone ?? ''}</p>
+              <button
+                type="button"
+                onClick={() => navigate('/profile-setup')}
+                className="mt-1 text-[11px] font-medium text-[#ef6a6a] transition hover:text-[#ff8a8a]"
+              >
+                Complete your profile →
+              </button>
             </div>
-            <span className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full border-2 border-[#070b1c] bg-[#22c55e] shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+
+            {/* Stat cards */}
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="rounded-xl border border-[#1e2636]/80 bg-[#0b0f18] px-3 py-3 text-center">
+                <p className="font-count text-[22px] font-bold text-[#4a9eff]">127</p>
+                <p className="mt-0.5 text-[10px] text-[#8b93a5]">Activity Score</p>
+              </div>
+              <div className="rounded-xl border border-[#3a3320]/80 bg-[#17130a] px-3 py-3 text-center">
+                <p className="flex items-center justify-center gap-1 font-display text-[18px] font-bold text-[#f5b73d]">
+                  <Star size={15} strokeWidth={2} className="fill-[#f5b73d]" />
+                  Pro
+                </p>
+                <p className="mt-0.5 text-[10px] text-[#8b93a5]">Subscription</p>
+              </div>
+            </div>
           </div>
-          <p className="mt-3 font-display text-[15px] font-semibold text-white">{currentUser?.username ?? '—'}</p>
-          <p className="mt-0.5 text-[11px] text-[#6b78a0]">{currentUser?.email ?? currentUser?.phone ?? ''}</p>
         </div>
 
-        <div className="mx-5 border-t border-[#141d3a]/70" />
+        {/* Target platform */}
+        <div className="px-4 pt-5">
+          <p className="mb-2.5 px-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#8b93a5]">Target Platform</p>
+          <div className="space-y-2">
+            {PLATFORMS.map((p) => {
+              const active = platform === p.id;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setPlatform(p.id)}
+                  className="flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left text-[13px] font-medium transition"
+                  style={{
+                    borderColor: active ? p.color : 'rgba(30,38,54,0.8)',
+                    backgroundColor: active ? `${p.color}1f` : '#0e1320',
+                    color: active ? '#ffffff' : '#8b93a5',
+                  }}
+                >
+                  <span className="flex h-6 w-6 items-center justify-center text-[13px] font-bold" style={{ color: p.color }}>
+                    {p.short}
+                  </span>
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-        {/* Tone selector */}
-        <div className="px-5 pt-5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-[#6aa8ff]">Select Tone</p>
-          <div className="relative mt-2">
-            <button
-              type="button"
-              onClick={() => setToneOpen((p) => !p)}
-              className="flex w-full items-center justify-between rounded-lg border border-[#1e3260]/70 bg-[#0a1130]/80 px-3 py-2.5 text-[12.5px] font-medium text-white transition hover:border-[#3f9fff]/50"
-            >
-              {tone}
-              <ChevronDown size={13} strokeWidth={2} className={`text-[#8b94b8] transition-transform duration-200 ${toneOpen ? 'rotate-180' : ''}`} />
-            </button>
-            {toneOpen && (
-              <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-30 overflow-hidden rounded-lg border border-[#1e3260]/70 bg-[#0d1531] shadow-xl">
-                {TONES.map((t) => (
+        {/* Select tone */}
+        <div className="flex-1 px-4 pb-2 pt-5">
+          <div className="rounded-2xl border border-[#1e2636]/80 bg-[#0e1320] p-4">
+            <p className="mb-3 text-[13px] font-semibold text-white">Select tone</p>
+            <div className="space-y-2">
+              {TONES.map((t) => {
+                const active = tone === t;
+                return (
                   <button
                     key={t}
                     type="button"
-                    onClick={() => { setTone(t); setToneOpen(false); }}
-                    className={`flex w-full items-center px-3 py-2.5 text-[12.5px] transition hover:bg-[#0f1a3a] ${t === tone ? 'text-[#3f9fff]' : 'text-white/80'}`}
+                    onClick={() => setTone(t)}
+                    className="w-full rounded-lg border py-2.5 text-center text-[12.5px] font-medium transition"
+                    style={{
+                      borderColor: active ? '#3f9fff' : 'rgba(30,38,54,0.8)',
+                      backgroundColor: active ? 'rgba(63,159,255,0.12)' : '#0b0f18',
+                      color: active ? '#6aa8ff' : '#8b93a5',
+                    }}
                   >
                     {t}
                   </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Posts generated counter */}
-        <div className="flex-1 px-5 pt-5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-[#6aa8ff]">This Session</p>
-          <div className="mt-3 rounded-xl border border-[#1e3260]/50 bg-[#0a1130]/60 px-4 py-4 text-center">
-            <p className="font-count text-[28px] font-bold text-white">{articles.filter((a) => a._backendId).length > 0 ? articles.length : '—'}</p>
-            <p className="mt-0.5 text-[10.5px] text-[#6b78a0]">News articles loaded</p>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -459,7 +521,10 @@ export default function SocialMediaPostGenerator() {
       </aside>
 
       {/* ── MAIN CONTENT ── */}
-      <div className="relative z-10 flex min-w-0 flex-1 flex-col overflow-hidden">
+      <div
+        className="relative z-10 flex min-w-0 flex-1 flex-col overflow-hidden border-x border-[#1a2130]/50"
+        style={{ background: 'linear-gradient(180deg,#0a0e18 0%,#080b12 100%)' }}
+      >
 
         {/* Top bar */}
         <header className="flex items-center gap-3 px-6 pb-3 pt-5 md:px-8">
@@ -554,13 +619,17 @@ export default function SocialMediaPostGenerator() {
 
         {/* ── Feed view ── */}
         {view === 'feed' && (
-          <div className="flex-1 space-y-3 overflow-y-auto px-6 pb-10 md:px-8">
-            {newsLoading && Array.from({ length: 5 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-[90px] w-full animate-pulse rounded-2xl border border-[#1e3260]/30 bg-[#0a1130]/40"
-              />
-            ))}
+          <div className="flex-1 overflow-y-auto px-6 pb-10 md:px-8">
+            {newsLoading && (
+              <div className="grid gap-5 lg:grid-cols-2">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-[240px] w-full animate-pulse rounded-2xl border border-[#1e2636]/60 bg-[#0e1320]/70"
+                  />
+                ))}
+              </div>
+            )}
             {!newsLoading && newsError && (
               <div className="flex flex-col items-center gap-3 rounded-2xl border border-red-500/20 bg-red-500/5 px-6 py-10 text-center">
                 <p className="text-[13px] text-red-400">Failed to load news articles.</p>
@@ -579,27 +648,51 @@ export default function SocialMediaPostGenerator() {
                 <p className="text-[12px] text-[#4a5a80]">Try a different search or filter</p>
               </div>
             )}
-            {!newsLoading && !newsError && filteredArticles.map((article) => (
-              <button
-                key={article.id}
-                type="button"
-                onClick={() => handlePreview(article)}
-                className="flex w-full items-start gap-4 rounded-2xl border border-[#1e3260]/50 bg-[#0a1130]/60 p-5 text-left transition hover:border-[#3f9fff]/40 hover:bg-[#0d1635]/80"
-              >
-                <div className="min-w-0 flex-1">
-                  <span className="mb-1.5 inline-block rounded-full border border-[#1e3a6e]/60 bg-[#0d1840]/60 px-2 py-0.5 font-count text-[10px] uppercase tracking-widest text-[#6aa8ff]">
-                    {article.category}
-                  </span>
-                  <p className="font-display text-[14px] font-semibold leading-snug text-white">{article.title}</p>
-                  <p className="mt-2 line-clamp-2 text-[12.5px] leading-[1.7] text-[#7a8ab0]">{article.content}</p>
-                </div>
-                <ChevronDown
-                  size={16}
-                  strokeWidth={2}
-                  className="-rotate-90 mt-1 shrink-0 text-[#3f6aaa]"
-                />
-              </button>
-            ))}
+            {!newsLoading && !newsError && filteredArticles.length > 0 && (
+              <div className="grid gap-5 lg:grid-cols-2">
+                {filteredArticles.map((article) => {
+                  const dateLabel = formatNewsDate(article.date);
+                  return (
+                    <button
+                      key={article.id}
+                      type="button"
+                      onClick={() => handlePreview(article)}
+                      className="group flex flex-col overflow-hidden rounded-2xl border border-[#1e2636]/80 bg-[#0e1320] p-6 text-left transition duration-200 hover:-translate-y-0.5 hover:border-[#3f9fff]/45 hover:bg-[#111726] hover:shadow-[0_12px_32px_rgba(0,0,0,0.45)]"
+                    >
+                      {/* Header row: NEWS ARTICLE label · category tag */}
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <span className="inline-flex items-center gap-1.5 font-count text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a6e9a]">
+                          <FileText size={12} strokeWidth={2} className="text-[#3f6aaa]" />
+                          News Article
+                        </span>
+                        <span className="shrink-0 rounded-full border border-[#1e3a6e]/60 bg-[#0d1840]/60 px-3 py-1 font-count text-[11px] uppercase tracking-wider text-[#6aa8ff]">
+                          {article.category}
+                        </span>
+                      </div>
+
+                      <p className="line-clamp-3 font-display text-[21px] font-bold leading-snug text-white">
+                        {article.title}
+                      </p>
+                      <p className="mt-2.5 line-clamp-3 flex-1 text-[17px] leading-[1.7] text-[#8a9ac0]">
+                        {truncateText(article.summary || article.content, 180)}
+                      </p>
+
+                      {/* Footer — short by {source} · date */}
+                      <div className="mt-4 flex items-center justify-between gap-2 border-t border-[#141d3a]/70 pt-3">
+                        <span className="min-w-0 truncate font-count text-[11.5px] text-[#5a6e9a]">
+                          {article.source ? `short by ${article.source}` : 'AmbedkarGPT'}
+                          {dateLabel && ` · ${dateLabel}`}
+                        </span>
+                        <span className="inline-flex shrink-0 items-center gap-1 text-[12.5px] font-semibold text-[#6aa8ff] transition group-hover:gap-1.5">
+                          <Sparkles size={12} strokeWidth={2} />
+                          Generate
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 

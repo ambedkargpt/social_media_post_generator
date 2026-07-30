@@ -156,11 +156,11 @@ export default function ContactSection() {
             </div>
 
             <div className="grid flex-1 gap-4 md:grid-cols-2">
-              <Field label="Full Identity"            placeholder="Jane Doe" />
-              <Field label="Email"                    type="email" placeholder="you@example.com" />
-              <Field label="Physical Origin (Address)" placeholder="123 Main St, City, Country" colSpan={2} />
-              <Field label="Frequency (Phone)"        type="tel"   placeholder="+91 90000 00000"        colSpan={2} />
-              <Field label="Transmission Message"     rows={5}     placeholder="Tell us what you need…" colSpan={2} grow />
+              <Field label="Name"    placeholder="Jane Doe" />
+              <Field label="Email"   type="email" placeholder="you@example.com" />
+              <Field label="Address" placeholder="123 Main St, City, Country" colSpan={2} />
+              <Field label="Phone"   type="tel"   placeholder="+91 90000 00000"        colSpan={2} />
+              <Field label="Message" rows={5}     placeholder="Tell us what you need…" colSpan={2} grow />
             </div>
 
             <button
@@ -172,7 +172,7 @@ export default function ContactSection() {
             </button>
 
             <p className="mt-4 text-center text-[11.5px] text-[#7aa6e5]">
-              By transmitting, you agree to our{' '}
+              By submitting, you agree to our{' '}
               <a href="#" className="underline underline-offset-2 hover:text-white">Terms of Service</a>
               {' '}here.
             </p>

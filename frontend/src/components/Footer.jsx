@@ -174,7 +174,7 @@ export default function Footer() {
           <div className="text-right text-[12.5px] leading-relaxed text-[#8296bd]">
             <p>Terms of use and privacy policy</p>
             <p className="mt-0.5">
-              AmbedkarGPT Developed by Kalpik Ltd (UK) ©{" "}
+              AmbedkarGPT Developed by KalpiT Ltd (UK) ©{" "}
               {new Date().getFullYear()}
             </p>
           </div>
