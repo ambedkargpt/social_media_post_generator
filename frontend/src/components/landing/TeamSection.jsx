@@ -1,12 +1,24 @@
 ﻿import { LinkedinIcon, TwitterIcon } from "./SocialIcons";
 import SectionLabel from "./SectionLabel";
 import StaggerReveal from "../ui/StaggerReveal";
+import team1 from "../../assets/images/team/team1.jpeg";
+import team2 from "../../assets/images/team/team2.jpeg";
+import team3 from "../../assets/images/team/team3.jpeg";
+import team4 from "../../assets/images/team/team4.jpeg";
+import team5 from "../../assets/images/team/team5.jpeg";
+import team6 from "../../assets/images/team/team6.jpeg";
+import team7 from "../../assets/images/team/team7.jpeg";
 
+// NOTE: names/roles are placeholders — photos to be matched to real names later.
+// `position` sets each photo's focal point so faces are never cropped out.
 const TEAM = [
-  { name: "Yuvraj Singh Kane", role: "Founder & CEO", initials: "YK" },
-  { name: "Tanishq Bhise", role: "Co-Founder, CTO", initials: "TB" },
-  { name: "Nishang Yadav", role: "Head of AI", initials: "NY" },
-  { name: "Anurag Deshmukh", role: "Head of Engineering", initials: "AD" },
+  { name: "Team Member", role: "AmbedkarGPT", photo: team1, position: "50% 25%" },
+  { name: "Team Member", role: "AmbedkarGPT", photo: team2, position: "50% 20%" },
+  { name: "Team Member", role: "AmbedkarGPT", photo: team3, position: "50% 30%" },
+  { name: "Team Member", role: "AmbedkarGPT", photo: team4, position: "50% 20%" },
+  { name: "Team Member", role: "AmbedkarGPT", photo: team5, position: "50% 55%" },
+  { name: "Team Member", role: "AmbedkarGPT", photo: team6, position: "50% 12%" },
+  { name: "Team Member", role: "AmbedkarGPT", photo: team7, position: "50% 40%" },
 ];
 
 function TeamCard({ member }) {
@@ -14,15 +26,25 @@ function TeamCard({ member }) {
     <div className="glass-card hover-lift relative overflow-hidden p-4">
       {/* photo */}
       <div
-        className="flex aspect-[4/5] w-full items-center justify-center overflow-hidden rounded-xl"
+        className="aspect-[4/5] w-full overflow-hidden rounded-xl"
         style={{
           background:
             "radial-gradient(120% 120% at 30% 20%, rgba(63,135,255,0.35) 0%, #0a1330 70%)",
         }}
       >
-        <span className="font-display text-[72px] font-bold text-white/20">
-          {member.initials}
-        </span>
+        {member.photo ? (
+          <img
+            src={member.photo}
+            alt={member.name}
+            loading="lazy"
+            className="h-full w-full object-cover"
+            style={{ objectPosition: member.position || "50% 25%" }}
+          />
+        ) : (
+          <span className="flex h-full w-full items-center justify-center font-display text-[72px] font-bold text-white/20">
+            {member.initials}
+          </span>
+        )}
       </div>
 
       {/* info */}
@@ -65,7 +87,7 @@ export default function TeamSection() {
       </div>
 
       <div className="mx-auto max-w-[1440px] px-6">
-        <SectionLabel>Work With Us</SectionLabel>
+        <SectionLabel>Our Team</SectionLabel>
 
         <h2 className="mx-auto mt-8 max-w-[820px] text-center font-display text-[46px] font-bold leading-[1.05] text-white md:text-[62px]">
           A Team like{" "}

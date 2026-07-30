@@ -21,6 +21,13 @@ const CORPUS = {
     'The internet is ruled by data, and that data has a caste. Dalit Corpus is our own digital land, built by us, owned by us, and growing with us.',
 };
 
+function handleCardMove(e) {
+  const el = e.currentTarget;
+  const rect = el.getBoundingClientRect();
+  el.style.setProperty('--mx', `${e.clientX - rect.left}px`);
+  el.style.setProperty('--my', `${e.clientY - rect.top}px`);
+}
+
 export default function DalitCorpusSection() {
   const navigate = useNavigate();
 
@@ -54,8 +61,21 @@ export default function DalitCorpusSection() {
           thought for creators, researchers, and revolutionaries.
         </p>
 
-        <div className="mt-10 overflow-hidden rounded-2xl border border-[#2a3d66]/60 bg-[#0c1e48]">
-          <div className="grid md:grid-cols-[1.4fr_0.6fr]">
+        <div
+          onMouseMove={handleCardMove}
+          className="group relative mt-10 overflow-hidden rounded-2xl border border-[#2a3d66]/60 bg-[#0c1e48]"
+        >
+          {/* cursor spotlight */}
+          <div
+            className="pointer-events-none absolute inset-0 z-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+            style={{ background: 'radial-gradient(320px circle at var(--mx,50%) var(--my,50%), #3f9fff26, transparent 65%)' }}
+          />
+          <div
+            className="pointer-events-none absolute -top-16 -right-16 z-0 h-40 w-40 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100"
+            style={{ background: '#3f9fff26' }}
+          />
+
+          <div className="relative z-10 grid md:grid-cols-[1.4fr_0.6fr]">
 
             {/* ── Col 1: Dalit Corpus ── */}
             <div className="border-b border-[#1a2d55]/50 p-8 md:border-b-0 md:border-r md:p-10">

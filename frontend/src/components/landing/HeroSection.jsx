@@ -135,7 +135,7 @@ export default function HeroSection({ splashDone = true }) {
             style={fadeUp(0)}
           >
             <Sparkle size={16} color="#4fb4ff" />
-            Amplify Bahujan Thought
+            An AI Tool For Political Dominance
           </div>
 
           {/* Headline — slow word-by-word */}
@@ -166,8 +166,9 @@ export default function HeroSection({ splashDone = true }) {
             className="font-count mt-6 max-w-[700px] text-[22px] leading-8 text-[#b7c6e1] md:text-[24px] md:leading-9"
             style={fadeUp(1050)}
           >
-            When you create with AmbedkarGPT, you don&apos;t just post. You
-            pierce the algorithm, shake the timeline, and wake millions.
+            Combine Ambedkar&apos;s vision with AI to write winning arguments,
+            turn viral posts into real-world votes, and lead the Bahujan leaders
+            to a historic victory.
           </p>
 
           {/* CTA */}
