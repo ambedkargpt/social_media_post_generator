@@ -1,0 +1,25 @@
+{
+  "tenants": [
+    {
+      "tenant_id": 0,
+      "slug": "general",
+      "name": "General News",
+      "source_name": "Ravish Kumar",
+      "is_general": true
+    },
+    {
+      "tenant_id": 1,
+      "slug": "congress",
+      "name": "Indian National Congress",
+      "source_name": "Indian National Congress",
+      "is_general": false
+    },
+    {
+      "tenant_id": 2,
+      "slug": "samajwadi",
+      "name": "Samajwadi Party",
+      "source_name": "Samajwadi Party",
+      "is_general": false
+    }
+  ]
+}

@@ -41,6 +41,9 @@ class NewsResponse(BaseModel):
     language: Optional[str]
     tags: list[str]
     embedding_ref: Optional[str]
+    # Tenant segmentation: 0/"general" is neutral news shown to every user.
+    tenant_id: int = 0
+    tenant_slug: str = "general"
     legacy_source: Optional[str] = None
     original_sort_timestamp: Optional[float] = None
     created_at: datetime

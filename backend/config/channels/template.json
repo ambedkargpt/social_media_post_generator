@@ -1,6 +1,14 @@
 {
   "name": "channel_name",
   "channel_url": "https://www.youtube.com/@channel/videos",
+  "channel_urls": [
+    "https://www.youtube.com/@channel/videos",
+    "https://www.youtube.com/@channel/streams"
+  ],
+  "lookback_days": 5,
+  "tenant_slug": "general",
+  "news_mode": "single",
+  "stories_per_video": 4,
   "channel_slug": "channel_slug",
   "transcripts_dir": "outputs/transcripts/channel_slug",
   "consolidated_txt_path": "outputs/transcripts/channel_slug/channel_all_transcripts.txt",

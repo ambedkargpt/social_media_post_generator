@@ -97,14 +97,26 @@ def ask_channel_url() -> str:
 
 
 
-def fetch_video_urls(channel_url: str, limit: int | None = None) -> list[str]:
+def fetch_video_urls(channel_url: str, limit: int | None = None, scan_limit: int | None = None) -> list[str]:
+    """
+    List video URLs for a channel tab or playlist, newest first.
+
+    ``scan_limit`` caps how many entries yt-dlp enumerates (playlistend). Large
+    channels hold tens of thousands of videos, and walking the whole listing is
+    slow, so date-windowed runs pass a cap instead of enumerating everything.
+    """
     # Only convert channel URLs to videos tab, not playlists
     is_playlist = "playlist?" in channel_url or "list=" in channel_url
-    
+
+    # Preserve an explicit tab (/videos, /streams, /shorts); default to /videos.
+    tab = "videos"
     if not is_playlist and "@" in channel_url:
-        channel_id = channel_url.split("@")[1].split("/")[0]
-        channel_url = f"https://www.youtube.com/@{channel_id}/videos"
-    
+        handle_and_rest = channel_url.split("@")[1]
+        channel_id = handle_and_rest.split("/")[0]
+        tab = handle_and_rest.split("/")[1].split("?")[0] if "/" in handle_and_rest else ""
+        tab = tab if tab in {"videos", "streams", "shorts", "live"} else "videos"
+        channel_url = f"https://www.youtube.com/@{channel_id}/{tab}"
+
     ydl_opts = {
         "flat_playlist": True,
         "quiet": False,
@@ -112,7 +124,9 @@ def fetch_video_urls(channel_url: str, limit: int | None = None) -> list[str]:
         "socket_timeout": 30,
         "extract_flat": "in_playlist",
     }
-    
+    if scan_limit and scan_limit > 0:
+        ydl_opts["playlistend"] = int(scan_limit)
+
     try:
         with YoutubeDL(ydl_opts) as ydl:
             print(" Fetching video list from {}...".format("playlist" if is_playlist else "channel"))
@@ -132,7 +146,7 @@ def fetch_video_urls(channel_url: str, limit: int | None = None) -> list[str]:
                     urls = urls[:limit]
                     break
             
-            source_label = "playlist" if is_playlist else "channel videos tab"
+            source_label = "playlist" if is_playlist else f"channel {tab} tab"
             print(f" Found {len(urls)} videos from {source_label} (shorts excluded)")
             return urls
     except Exception as e:
@@ -144,12 +158,17 @@ def fetch_video_urls(channel_url: str, limit: int | None = None) -> list[str]:
 def _publish_meta_from_ytdlp(info: dict) -> dict:
     """
     YouTube metadata from yt-dlp: upload_date (YYYYMMDD), timestamp (Unix UTC) when available.
+
+    Livestreams often carry release_timestamp instead of timestamp, so fall back
+    to it — otherwise streamed press conferences look undated to the date filter.
     """
     out: dict = {}
     ud = info.get("upload_date")
     if ud and isinstance(ud, str) and len(ud) == 8 and ud.isdigit():
         out["upload_date"] = ud
     ts = info.get("timestamp")
+    if ts is None:
+        ts = info.get("release_timestamp")
     if ts is not None:
         try:
             ts_i = int(ts)
@@ -181,6 +200,92 @@ def get_video_metadata(url: str) -> dict | None:
         print(f" Metadata error: {e}")
         return None
 
+
+
+def _published_ts(meta: dict) -> float | None:
+    """Best-effort publish time (epoch seconds) from a metadata dict."""
+    ts = meta.get("upload_timestamp")
+    if ts is not None:
+        try:
+            return float(ts)
+        except (TypeError, ValueError):
+            pass
+    ud = meta.get("upload_date")
+    if ud and isinstance(ud, str) and len(ud) == 8 and ud.isdigit():
+        try:
+            return datetime(
+                int(ud[0:4]), int(ud[4:6]), int(ud[6:8]), tzinfo=timezone.utc
+            ).timestamp()
+        except ValueError:
+            return None
+    return None
+
+
+def collect_recent_videos(
+    channel_urls: list[str],
+    lookback_days: int,
+    *,
+    scan_limit: int = 400,
+    delay: float = FETCH_DELAY,
+    stop_after_old: int = 6,
+) -> list[dict]:
+    """
+    Collect metadata for videos published within the last ``lookback_days``,
+    across every given channel tab (e.g. /videos and /streams).
+
+    Channel tabs are ordered newest-first, so each tab is walked in order and
+    abandoned once ``stop_after_old`` consecutive out-of-window videos appear.
+    That tolerance absorbs pinned or out-of-order entries without forcing a walk
+    through a channel's entire back catalogue.
+
+    Returns metadata dicts (including "url"), de-duplicated across tabs, so
+    callers do not have to re-fetch metadata.
+    """
+    cutoff = time.time() - (lookback_days * 86400)
+    collected: dict[str, dict] = {}
+    undated = 0
+
+    for tab_url in channel_urls:
+        print(f"\n Scanning tab: {tab_url}")
+        try:
+            urls = fetch_video_urls(tab_url, scan_limit=scan_limit)
+        except Exception as exc:
+            print(f" Could not list {tab_url}: {exc}")
+            continue
+
+        consecutive_old = 0
+        kept_here = 0
+        for url in urls:
+            if url in collected:
+                continue
+            meta = get_video_metadata(url)
+            time.sleep(delay)
+            if not meta:
+                continue
+            ts = _published_ts(meta)
+            if ts is None:
+                # Undated entries are skipped rather than guessed at, so a
+                # date-windowed run never silently pulls in old material.
+                undated += 1
+                continue
+            if ts >= cutoff:
+                meta["url"] = url
+                collected[url] = meta
+                kept_here += 1
+                consecutive_old = 0
+            else:
+                consecutive_old += 1
+                if consecutive_old >= stop_after_old:
+                    print(f" Reached videos older than {lookback_days}d - stopping this tab.")
+                    break
+        print(f" Kept {kept_here} video(s) from this tab.")
+
+    if undated:
+        print(f" Skipped {undated} video(s) with no resolvable publish date.")
+    # Newest first for predictable downstream ordering
+    ordered = sorted(collected.values(), key=lambda m: _published_ts(m) or 0.0, reverse=True)
+    print(f"\n Total videos within last {lookback_days} day(s): {len(ordered)}")
+    return ordered
 
 
 def fetch_transcript_text(video_id: str) -> str | None:

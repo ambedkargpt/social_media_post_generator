@@ -1,6 +1,7 @@
 {
   "name": "ravish",
   "channel_url": "https://www.youtube.com/@ravishkumar.official/videos",
+  "tenant_slug": "general",
   "channel_slug": "ravishkumar.official",
   "transcripts_dir": "outputs/transcripts/ravishkumar.official",
   "consolidated_txt_path": "outputs/transcripts/ravishkumar.official/ravishkumar_all_transcripts.txt",

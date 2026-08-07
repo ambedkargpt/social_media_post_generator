@@ -219,6 +219,16 @@ def _load_news_prompts(settings: Settings) -> Tuple[str, str]:
     )
 
 
+def _style_reference(settings: Settings) -> str:
+    """Ground-truth Hindi punctuation/grammar reference for headline prompts."""
+    from backend.pipeline.transcript_cleaner import load_style_reference
+
+    return load_style_reference(
+        settings.prompts_dir,
+        getattr(settings, "hindi_style_reference_file", "hindi_style_reference.txt"),
+    )
+
+
 def _generate_one_headline(
     client: OpenAI,
     model: str,
@@ -227,10 +237,12 @@ def _generate_one_headline(
     video_title: str,
     video_link: str,
     summary_text: str,
+    style_reference: str = "",
 ) -> Tuple[str, str]:
     user_msg = _fill_template(
         user_tpl,
         {
+            "style_reference": style_reference,
             "video_title": video_title or "",
             "video_link": video_link or "",
             "summary_text": summary_text or "",
@@ -292,6 +304,7 @@ def generate_news_items(
     client = deepseek_chat_client(settings)
     system_msg, user_tpl = _load_news_prompts(settings)
     model = settings.deepseek_model
+    style_ref = _style_reference(settings)
 
     out_items: List[Dict[str, Any]] = []
     for row in (
@@ -314,6 +327,7 @@ def generate_news_items(
                 row.video_title,
                 row.video_link,
                 row.summary_text,
+                style_ref,
             )
         except Exception as exc:
             headline, subhead = "", ""
@@ -406,17 +420,29 @@ def update_generated_news_rolling(
     new_summary_items: List[Dict[str, Any]],
     *,
     show_progress: bool = False,
+    generated_news_path: Optional[Path] = None,
+    generated_news_legacy_path: Optional[Path] = None,
+    pregenerated: bool = False,
 ) -> Dict[str, int]:
     """
     Generate headlines only for new summaries, keep only latest top-N in active news,
     and move evicted items to legacy archive.
+
+    Output paths default to the global settings paths, but per-channel callers must
+    pass the channel's own paths — otherwise every channel would read and overwrite
+    the same news file.
+
+    ``pregenerated`` marks rows that already carry a headline and subheadline (the
+    multi-story path writes several per video), so no headline call is made.
     """
     n = max(1, int(settings.news_generator_top_n))
     now_iso = datetime.now(timezone.utc).isoformat()
-    active_payload = _safe_load_generated_news(settings.generated_news_path)
+    active_path = generated_news_path or settings.generated_news_path
+    legacy_path = generated_news_legacy_path or settings.generated_news_legacy_path
+    active_payload = _safe_load_generated_news(active_path)
     active_items_raw = active_payload.get("items", [])
     active_items = [it for it in active_items_raw if isinstance(it, dict)]
-    legacy_items = _safe_load_legacy_items(settings.generated_news_legacy_path)
+    legacy_items = _safe_load_legacy_items(legacy_path)
 
     active_by_id: Dict[str, Dict[str, Any]] = {}
     for idx, rec in enumerate(active_items, start=1):
@@ -443,8 +469,9 @@ def update_generated_news_rolling(
 
     generated_count = 0
     if unique_new:
-        client = deepseek_chat_client(settings)
-        system_msg, user_tpl = _load_news_prompts(settings)
+        client = None if pregenerated else deepseek_chat_client(settings)
+        system_msg, user_tpl = ("", "") if pregenerated else _load_news_prompts(settings)
+        style_ref = "" if pregenerated else _style_reference(settings)
         model = settings.deepseek_model
         iterable = (
             tqdm(unique_new, desc="Generating rolling news", unit="video", dynamic_ncols=True)
@@ -452,21 +479,28 @@ def update_generated_news_rolling(
             else unique_new
         )
         for row in iterable:
-            try:
-                headline, subhead = _generate_one_headline(
-                    client,
-                    model,
-                    system_msg,
-                    user_tpl,
-                    str(row.get("video_title", "")),
-                    str(row.get("video_link", "")),
-                    str(row.get("summary_text", "")),
-                )
-            except Exception as exc:
-                headline, subhead = "", ""
-                err = str(exc)
+            if pregenerated:
+                # Headline/subheadline were produced upstream (multi-story path).
+                headline = str(row.get("headline", "")).strip()
+                subhead = str(row.get("subheadline", "")).strip()
+                err = "" if headline else "missing pregenerated headline"
             else:
-                err = ""
+                try:
+                    headline, subhead = _generate_one_headline(
+                        client,
+                        model,
+                        system_msg,
+                        user_tpl,
+                        str(row.get("video_title", "")),
+                        str(row.get("video_link", "")),
+                        str(row.get("summary_text", "")),
+                        style_ref,
+                    )
+                except Exception as exc:
+                    headline, subhead = "", ""
+                    err = str(exc)
+                else:
+                    err = ""
 
             rec: Dict[str, Any] = {
                 "video_title": str(row.get("video_title", "")),
@@ -475,6 +509,10 @@ def update_generated_news_rolling(
                 "headline": headline,
                 "subheadline": subhead,
             }
+            # Carry multi-story provenance so the source video stays traceable.
+            for k in ("story_index", "source_video_link", "topic"):
+                if row.get(k) is not None:
+                    rec[k] = row[k]
             for k in ("upload_timestamp", "upload_datetime_utc", "upload_date"):
                 if row.get(k) is not None and row.get(k) != "":
                     rec[k] = row[k]
@@ -494,8 +532,8 @@ def update_generated_news_rolling(
 
     if evicted:
         legacy_items.extend(evicted)
-        settings.generated_news_legacy_path.parent.mkdir(parents=True, exist_ok=True)
-        settings.generated_news_legacy_path.write_text(
+        legacy_path.parent.mkdir(parents=True, exist_ok=True)
+        legacy_path.write_text(
             json.dumps(
                 {
                     "updated_at": now_iso,
@@ -528,7 +566,7 @@ def update_generated_news_rolling(
             "run_log": run_log,
             "items": merged,
         },
-        settings.generated_news_path,
+        active_path,
     )
     return {
         "generated": generated_count,

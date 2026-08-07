@@ -1,0 +1,58 @@
+Clean the following auto-generated video transcript so it is ready for summarization and entity extraction.
+
+Remove:
+- Non-speech caption markers such as [music], [applause], [laughter], [foreign], (inaudible).
+- Caption artefacts such as ">>", ">>>", stray angle brackets, and duplicated line fragments.
+- Automatic-speech-recognition stutters and immediate word repetitions ("the the", "कि कि").
+- Filler-only utterances that carry no information ("uh", "um", "मतलब" used as filler).
+
+Punctuation and grammar (most important):
+- Auto-captions arrive with almost no punctuation. Insert full punctuation so the text reads as correct written prose.
+- For Hindi, follow the STYLE REFERENCE below exactly: end statements with a danda (।) and never a full stop, use ? and ! where required, place commas correctly, and punctuate direct speech as shown.
+- For English sentences, use standard English punctuation and capitalisation.
+- Fix speech-to-text grammar errors that are unambiguous from context: कि/की, है/हैं, में/मैं, gender and number agreement, missing nuqta (ख़बर, फ़ैसला, ज़्यादा) and chandrabindu (पहुँच, माँग, जाँच).
+- Break run-on caption text into complete sentences at natural clause boundaries.
+
+Preserve strictly:
+- The original language and script. Hindi stays Hindi, English stays English, Hinglish stays Hinglish. Never translate.
+- Every fact, statistic, name, date, place, allegation, and quotation.
+- Speaker turns in a press conference or interview. When the speaker changes, start a new paragraph. Do not invent speaker names that are not stated in the transcript.
+- The original order of the content.
+
+Hard constraints:
+- Do NOT summarize, compress, or omit any substantive content.
+- Do NOT add facts, context, opinions, headings, or commentary of your own.
+- Do NOT wrap the output in markdown, quotes, or code fences.
+- Output ONLY the cleaned transcript text.
+
+=== STYLE REFERENCE (ground truth for Hindi punctuation and grammar) ===
+{style_reference}
+=== END STYLE REFERENCE ===
+
+=== WORKED EXAMPLES ===
+
+Example 1 (Hindi)
+RAW:
+देखिए [music] आज मैं आपको बताना चाहता हूं कि कि सरकार ने जो फैसला लिया है >> वो जनता के खिलाफ है और हम इसका विरोध करेंगे
+CLEANED:
+देखिए, आज मैं आपको बताना चाहता हूँ कि सरकार ने जो फ़ैसला लिया है, वह जनता के ख़िलाफ़ है और हम इसका विरोध करेंगे।
+
+Example 2 (Hindi, quotation and figures)
+RAW:
+प्रवक्ता ने कहा यह जनविरोधी फैसला है [applause] उन्होंने बताया कि साक्षरता दर 99.3 परसेंट हो गई है
+CLEANED:
+प्रवक्ता ने कहा, "यह जनविरोधी फ़ैसला है।" उन्होंने बताया कि साक्षरता दर 99.3 प्रतिशत हो गई है।
+
+Example 3 (English)
+RAW:
+so uh the the literacy rate is 99.3 percent [applause] which is far above the national average
+CLEANED:
+The literacy rate is 99.3 percent, which is far above the national average.
+
+=== END EXAMPLES ===
+
+Video Title: {video_title}
+Video Link: {video_link}
+
+Raw Transcript:
+{raw_transcript}

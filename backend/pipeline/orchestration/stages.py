@@ -7,8 +7,11 @@ from pathlib import Path
 
 from backend.repositories.news_repo import NewsRepository
 from backend.services.news_migration import migrate_news
+from backend.pipeline.multi_news_generator import build_story_rows
 from backend.pipeline.news_generator import update_generated_news_rolling
 from backend.pipeline.orchestration.contracts import PipelineContext, StageResult
+from backend.pipeline.transcript_cleaner import clean_transcript
+from backend.tenants import general_tenant, get_tenant
 from backend.pipeline.video_summarizer import (
     deepseek_chat_client,
     get_or_create_video_summary,
@@ -36,19 +39,54 @@ def run_ingestion(context: PipelineContext) -> StageResult:
     fetch = _fetch_module()
     channel = context.channel
     channel.transcripts_dir.mkdir(parents=True, exist_ok=True)
-    video_urls = fetch.fetch_video_urls(channel.channel_url)
+
+    # Date-windowed runs collect metadata up front (across every configured tab,
+    # e.g. /videos and /streams) so we never enumerate a huge back catalogue.
+    meta_by_url: dict[str, dict] = {}
+    if channel.lookback_days:
+        recent = fetch.collect_recent_videos(
+            list(channel.source_urls), channel.lookback_days
+        )
+        meta_by_url = {m["url"]: m for m in recent}
+        video_urls = list(meta_by_url.keys())
+    else:
+        video_urls = []
+        for tab_url in channel.source_urls:
+            video_urls.extend(fetch.fetch_video_urls(tab_url))
+        # De-duplicate while preserving newest-first order across tabs
+        video_urls = list(dict.fromkeys(video_urls))
+
     processed_ids, processed_records = fetch.load_processed(channel.processed_json_path)
     filtered_urls, skipped_existing = fetch.filter_already_downloaded_urls(
         video_urls, processed_records, channel.transcripts_dir
     )
     entries: list[dict] = []
+    cleaned_count = 0
+    transcript_failures = 0
     for url in filtered_urls:
-        meta = fetch.get_video_metadata(url)
+        meta = meta_by_url.get(url) or fetch.get_video_metadata(url)
         if not meta:
             continue
         transcript = fetch.fetch_transcript_text(meta["id"])
         if not transcript:
+            # A failed fetch is usually YouTube throttling (HTTP 429). Backing off
+            # matters more here than after a success: continuing straight to the
+            # next request is what makes the rate limit cascade.
+            transcript_failures += 1
+            time.sleep(random.uniform(20, 35))
             continue
+        # Clean once here so summaries, RAG chunks and entity extraction all
+        # consume the same cleaned text rather than raw caption output.
+        cleaned = clean_transcript(
+            context.settings,
+            video_title=meta.get("title", ""),
+            video_link=url,
+            raw_transcript=transcript,
+        )
+        if cleaned:
+            if cleaned != transcript:
+                cleaned_count += 1
+            transcript = cleaned
         base_name = fetch.sanitize_filename(meta["title"])
         docx_path = channel.transcripts_dir / f"{base_name}.docx"
         fetch.create_docx(
@@ -86,6 +124,9 @@ def run_ingestion(context: PipelineContext) -> StageResult:
             "new_entries": len(entries),
             "appended_entries": appended,
             "skipped_existing": skipped_existing,
+            "cleaned_transcripts": cleaned_count,
+            "transcript_failures": transcript_failures,
+            "lookback_days": channel.lookback_days or 0,
         },
         artifacts_written=[str(channel.consolidated_txt_path), str(channel.processed_json_path)],
     )
@@ -177,14 +218,46 @@ def run_news_generation(context: PipelineContext) -> StageResult:
         return StageResult("news_generation", "skipped", warnings=["disabled-by-channel-config"])
     if context.dry_run:
         return StageResult("news_generation", "skipped", warnings=["dry-run"])
-    rows = context.runtime.get("new_summary_rows") or []
-    if not rows:
-        return StageResult("news_generation", "skipped", warnings=["no-new-summaries"])
-    stats = update_generated_news_rolling(context.settings, rows, show_progress=True)
+
+    multi = context.channel.news_mode == "multi"
+    if multi:
+        # Multi-story works from the transcripts, not the single-summary rows,
+        # because splitting a video into stories needs the full text.
+        entries = context.runtime.get("newly_fetched_entries") or []
+        if not entries:
+            return StageResult("news_generation", "skipped", warnings=["no-new-transcripts"])
+        rows = build_story_rows(
+            context.settings,
+            entries,
+            max_stories=context.channel.stories_per_video,
+            show_progress=True,
+        )
+        if not rows:
+            return StageResult("news_generation", "skipped", warnings=["no-stories-extracted"])
+        stats = update_generated_news_rolling(
+            context.settings,
+            rows,
+            show_progress=True,
+            generated_news_path=context.channel.generated_news_path,
+            generated_news_legacy_path=context.channel.generated_news_legacy_path,
+            pregenerated=True,
+        )
+        stats = {**stats, "source_videos": len(entries), "stories_built": len(rows)}
+    else:
+        rows = context.runtime.get("new_summary_rows") or []
+        if not rows:
+            return StageResult("news_generation", "skipped", warnings=["no-new-summaries"])
+        stats = update_generated_news_rolling(
+            context.settings,
+            rows,
+            show_progress=True,
+            generated_news_path=context.channel.generated_news_path,
+            generated_news_legacy_path=context.channel.generated_news_legacy_path,
+        )
     return StageResult(
         "news_generation",
         "success",
-        metrics=stats,
+        metrics={**stats, "news_mode": context.channel.news_mode},
         artifacts_written=[str(context.channel.generated_news_path), str(context.channel.generated_news_legacy_path)],
     )
 
@@ -195,10 +268,12 @@ def run_news_publish(context: PipelineContext) -> StageResult:
     if context.dry_run:
         return StageResult("news_publish", "skipped", warnings=["dry-run"])
     repo = NewsRepository()
+    tenant = get_tenant(context.channel.tenant_slug) or general_tenant()
     stats = migrate_news(
         repo,
         current_file=context.channel.generated_news_path,
         legacy_file=context.channel.generated_news_legacy_path,
+        tenant=tenant,
     )
     return StageResult(
         "news_publish",
