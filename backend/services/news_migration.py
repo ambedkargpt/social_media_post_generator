@@ -76,10 +76,21 @@ def load_and_dedupe_news(
     tenant: Any = None,
     tags: list[str] | None = None,
 ) -> tuple[list[dict[str, Any]], MigrationStats]:
-    current_raw = json.loads(current_file.read_text(encoding="utf-8"))
-    legacy_raw = json.loads(legacy_file.read_text(encoding="utf-8"))
-    current_items = current_raw.get("items", [])
-    legacy_items = legacy_raw.get("items", [])
+    # A new channel has no legacy archive until items are first evicted, and a
+    # channel can be published before either file exists. Treat both as empty
+    # rather than failing the publish stage.
+    def _items(path: Path) -> list[dict[str, Any]]:
+        if not path.is_file():
+            return []
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (ValueError, OSError):
+            return []
+        items = payload.get("items", []) if isinstance(payload, dict) else payload
+        return [i for i in items if isinstance(i, dict)] if isinstance(items, list) else []
+
+    current_items = _items(current_file)
+    legacy_items = _items(legacy_file)
 
     # Default to the general tenant so existing Ravish runs are unchanged.
     if tenant is None:
