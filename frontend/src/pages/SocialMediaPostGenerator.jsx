@@ -9,7 +9,7 @@ import PreferencesPanel from '../components/generate/PreferencesPanel';
 import PostContent from '../components/generate/PostContent';
 import logoSrc from '../assets/images/logo-animation.png';
 import { useAuth } from '../context/AuthContext';
-import { getNews } from '../api/news';
+import { getNews, getTenants } from '../api/news';
 import { generatePostForNews, regeneratePostFromSnapshot, translatePost, updatePost, getDailyQuota } from '../api/posts';
 import { getQuestions } from '../api/questions';
 import { getProfileAnswers, saveProfileAnswers } from '../api/profile';
@@ -48,6 +48,20 @@ const PLATFORMS = [
 
 const MIN_PANEL = 220;
 const MAX_PANEL = 500;
+const PAGE_SIZE = 12; // news cards per page
+
+// Build a compact page-number list with ellipsis gaps for the pager
+function getPageItems(current, total) {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const items = [1];
+  const left = Math.max(2, current - 1);
+  const right = Math.min(total - 1, current + 1);
+  if (left > 2) items.push('…');
+  for (let i = left; i <= right; i++) items.push(i);
+  if (right < total - 1) items.push('…');
+  items.push(total);
+  return items;
+}
 
 // Preference questions shown in the right panel, in display order
 const PREF_QUESTION_IDS = [
@@ -72,8 +86,28 @@ function adaptNews(item) {
     source:   item.source_name || '',
     date:     item.published_at || '',
     topic:    item.summary || item.headline,
+    tenantId:   item.tenant_id ?? 0,
+    tenantSlug: item.tenant_slug || 'general',
   };
 }
+
+// Signup stores a display name ("Indian National Congress (INC)"); the tenant
+// registry keys on a slug. Match on the registry name being contained in it.
+function resolveTenantForUser(partyName, tenants) {
+  const raw = (partyName ?? '').trim().toLowerCase();
+  if (!raw) return null;
+  return (
+    tenants.find((t) => !t.is_general && raw.includes(String(t.name).toLowerCase()))
+    ?? tenants.find((t) => !t.is_general && raw.includes(String(t.slug).toLowerCase()))
+    ?? null
+  );
+}
+
+// Accent per section so party news and general news are visually distinct.
+const SECTION_THEME = {
+  party:   { accent: '#3f9fff', soft: 'rgba(63,159,255,0.12)', ring: 'rgba(63,159,255,0.45)' },
+  general: { accent: '#f0a63a', soft: 'rgba(240,166,58,0.12)', ring: 'rgba(240,166,58,0.45)' },
+};
 
 function formatNewsDate(d) {
   if (!d) return '';
@@ -99,6 +133,9 @@ export default function SocialMediaPostGenerator() {
   const [tone,            setTone]           = useState('Professional');
   const [search,          setSearch]          = useState('');
   const [activeFilter,    setActiveFilter]    = useState('All');
+  const [page,            setPage]            = useState(1);
+  const [tenants,         setTenants]         = useState([]);
+  const [newsSection,     setNewsSection]     = useState('party'); // 'party' | 'general'
   const [filterOpen,      setFilterOpen]      = useState(false);
   const [view,            setView]            = useState('feed'); // 'feed' | 'preview' | 'generated'
   const [generating,      setGenerating]      = useState(false);
@@ -135,22 +172,36 @@ export default function SocialMediaPostGenerator() {
     getDailyQuota().then(setQuota).catch(() => {});
   }, [currentUser?.id]);
 
+  // The party comes from the user's signup choice — it is not switchable here.
+  // Declared before loadNews because that callback reads it.
+  const activeParty = useMemo(
+    () => resolveTenantForUser(currentUser?.political_party, tenants),
+    [currentUser?.political_party, tenants]
+  );
+  const selectedParty = activeParty?.slug ?? '';
+
   const loadNews = useCallback(() => {
     setNewsLoading(true);
     setNewsError(false);
-    getNews({ limit: 100, language: siteLang })
+    // Ask for the chosen party plus general news in one call; the UI splits
+    // them into the two sections locally.
+    const query = { limit: 100, language: siteLang };
+    if (selectedParty) { query.tenant = selectedParty; query.includeGeneral = true; }
+    getNews(query)
       .then((data) => {
         if (data?.length) {
           setArticles(data.map(adaptNews));
           setNewsLoading(false);
         } else {
-          getNews({ limit: 100 }).then((all) => {
+          const fallback = { limit: 100 };
+          if (selectedParty) { fallback.tenant = selectedParty; fallback.includeGeneral = true; }
+          getNews(fallback).then((all) => {
             if (all?.length) setArticles(all.map(adaptNews));
           }).catch(() => setNewsError(true)).finally(() => setNewsLoading(false));
         }
       })
       .catch(() => { setNewsLoading(false); setNewsError(true); });
-  }, [siteLang]);
+  }, [siteLang, selectedParty]);
 
   // Debounce search input 300ms before filtering
   useEffect(() => {
@@ -158,9 +209,14 @@ export default function SocialMediaPostGenerator() {
     return () => clearTimeout(id);
   }, [searchInput]);
 
-  // Fetch news filtered by site language; fall back to all if empty
+  // Fetch news filtered by site language + selected party; fall back to all if empty
   useEffect(() => {
     loadNews();
+  }, [loadNews]);
+
+  // Load the tenant registry (selectable parties) once
+  useEffect(() => {
+    getTenants().then(setTenants).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -221,11 +277,38 @@ export default function SocialMediaPostGenerator() {
     document.body.style.userSelect = 'none';
   }
 
-  const filteredArticles = useMemo(() => articles.filter((a) => {
+
+  // Split the feed into the two sections: the chosen party's news, and the
+  // neutral/general news (Ravish) that every user sees.
+  const partyArticles = useMemo(
+    () => (activeParty ? articles.filter((a) => a.tenantSlug === activeParty.slug) : []),
+    [articles, activeParty]
+  );
+  const generalArticles = useMemo(
+    () => articles.filter((a) => a.tenantSlug === 'general'),
+    [articles]
+  );
+
+  // Without a party chosen there is only one list, so show everything.
+  const sectionArticles = !activeParty
+    ? articles
+    : (newsSection === 'party' ? partyArticles : generalArticles);
+
+  const filteredArticles = useMemo(() => sectionArticles.filter((a) => {
     const matchSearch = !search || a.title.toLowerCase().includes(search.toLowerCase());
     const matchFilter = activeFilter === 'All' || a.category === activeFilter;
     return matchSearch && matchFilter;
-  }), [articles, search, activeFilter]);
+  }), [sectionArticles, search, activeFilter]);
+
+  // Numbered pagination — slice the filtered list into fixed-size pages.
+  // Clamp during render so a stale-high page never slices out of range
+  // (handlers reset to page 1 whenever the search/filter changes).
+  const totalPages = Math.max(1, Math.ceil(filteredArticles.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedArticles = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredArticles.slice(start, start + PAGE_SIZE);
+  }, [filteredArticles, currentPage]);
 
   const activeContent = showTranslated && translatedPost ? translatedPost : generatedPost;
   const chars = activeContent.trim().length;
@@ -460,6 +543,33 @@ export default function SocialMediaPostGenerator() {
           </div>
         </div>
 
+        {/* Party affiliation — set at signup, shown read-only */}
+        <div className="px-4 pt-5">
+          <p className="mb-2.5 px-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#8b93a5]">
+            Your Party
+          </p>
+          {activeParty ? (
+            <div
+              className="flex items-center gap-2.5 rounded-xl border px-3.5 py-3 text-[13px] font-medium text-white"
+              style={{ borderColor: 'rgba(63,159,255,0.55)', backgroundColor: 'rgba(63,159,255,0.10)' }}
+            >
+              <Check size={14} strokeWidth={2.5} className="shrink-0 text-[#6aa8ff]" />
+              <span className="min-w-0 truncate">{activeParty.name}</span>
+            </div>
+          ) : (
+            // No party on the profile (older accounts, or skipped at signup) —
+            // say so instead of silently hiding the whole party feed.
+            <button
+              type="button"
+              onClick={() => navigate('/profile-setup')}
+              className="w-full rounded-xl border border-[#1e2636]/80 bg-[#0e1320] px-3.5 py-3 text-left text-[12.5px] text-[#8b93a5] transition hover:border-[#3f9fff]/45 hover:text-white"
+            >
+              No party set — showing general news only.
+              <span className="mt-0.5 block text-[11.5px] text-[#6aa8ff]">Set your party →</span>
+            </button>
+          )}
+        </div>
+
         {/* Target platform */}
         <div className="px-4 pt-5">
           <p className="mb-2.5 px-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#8b93a5]">Target Platform</p>
@@ -526,8 +636,23 @@ export default function SocialMediaPostGenerator() {
         style={{ background: 'linear-gradient(180deg,#0a0e18 0%,#080b12 100%)' }}
       >
 
-        {/* Top bar */}
-        <header className="flex items-center gap-3 px-6 pb-3 pt-5 md:px-8">
+        {/* AmbedkarGPT identity banner — sits above the search bar */}
+        <div className="mx-6 mt-5 flex items-center gap-4 rounded-xl border border-[#1a2d55]/50 bg-[#070e22]/80 px-5 py-3.5 md:mx-8">
+          <img src={logoSrc} alt="AmbedkarGPT" className="h-8 w-8 shrink-0 object-contain opacity-90 drop-shadow-[0_0_8px_rgba(63,159,255,0.5)]" />
+          <div className="min-w-0">
+            <p className="font-display text-[15px] font-semibold text-white">Social Media Post Generator</p>
+            <p className="text-[11.5px] text-[#6b78a0]">
+              Educate &middot; Agitate &middot; Organize &mdash; Dr. B.R. Ambedkar
+            </p>
+          </div>
+          <span className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#3f9fff]/20 bg-[#3f9fff]/8 px-2.5 py-1 text-[10.5px] font-semibold text-[#6aa8ff]">
+            <Sparkles size={9} strokeWidth={2} />
+            AI-Powered
+          </span>
+        </div>
+
+        {/* Search + filter */}
+        <header className="flex items-center gap-3 px-6 pb-3 pt-4 md:px-8">
           <button
             type="button"
             onClick={() => navigate('/generate')}
@@ -541,7 +666,7 @@ export default function SocialMediaPostGenerator() {
             <input
               type="text"
               value={searchInput}
-              onChange={(e) => { setSearchInput(e.target.value); setView('feed'); }}
+              onChange={(e) => { setSearchInput(e.target.value); setPage(1); setView('feed'); }}
               placeholder="Search Your Content"
               className="w-full rounded-full border border-[#1e3260]/70 bg-[#0a1130]/80 py-2.5 pl-9 pr-4 text-[13px] text-white placeholder-[#6b78a0] outline-none transition focus:border-[#3f9fff]/70 focus:shadow-[0_0_0_3px_rgba(63,159,255,0.12)]"
             />
@@ -567,7 +692,7 @@ export default function SocialMediaPostGenerator() {
                   <button
                     key={cat}
                     type="button"
-                    onClick={() => { setActiveFilter(cat); setFilterOpen(false); setView('feed'); }}
+                    onClick={() => { setActiveFilter(cat); setPage(1); setFilterOpen(false); setView('feed'); }}
                     className={`flex w-full items-center justify-between px-4 py-2.5 text-[12.5px] transition hover:bg-[#0f1a3a] ${
                       cat === activeFilter ? 'text-[#3f9fff]' : 'text-white/80'
                     }`}
@@ -602,24 +727,72 @@ export default function SocialMediaPostGenerator() {
           </div>
         </div>
 
-        {/* AmbedkarGPT identity banner */}
-        <div className="mx-6 mb-3 flex items-center gap-4 rounded-xl border border-[#1a2d55]/50 bg-[#070e22]/80 px-5 py-3 md:mx-8">
-          <img src={logoSrc} alt="AmbedkarGPT" className="h-7 w-7 shrink-0 object-contain opacity-90 drop-shadow-[0_0_8px_rgba(63,159,255,0.5)]" />
-          <div className="min-w-0">
-            <p className="font-display text-[13px] font-semibold text-white">Social Post Generator</p>
-            <p className="text-[11px] text-[#6b78a0]">
-              Educate &middot; Agitate &middot; Organize &mdash; Dr. B.R. Ambedkar
-            </p>
-          </div>
-          <span className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#3f9fff]/20 bg-[#3f9fff]/8 px-2.5 py-1 text-[10.5px] font-semibold text-[#6aa8ff]">
-            <Sparkles size={9} strokeWidth={2} />
-            AI-Powered
-          </span>
-        </div>
-
         {/* ── Feed view ── */}
         {view === 'feed' && (
           <div className="flex-1 overflow-y-auto px-6 pb-10 md:px-8">
+            {/* Two news sections: chosen party vs general (neutral) news.
+                Underlined tabs rather than pills, and each section carries its
+                own accent so it is obvious which feed you are reading. */}
+            {activeParty && (
+              <div className="mb-5 flex items-end gap-1.5 border-b border-[#1e2636]/90">
+                {[
+                  { id: 'party',   label: activeParty.name, count: partyArticles.length },
+                  { id: 'general', label: 'General News',    count: generalArticles.length },
+                ].map((s) => {
+                  const active = newsSection === s.id;
+                  const tint = SECTION_THEME[s.id].accent;
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => { setNewsSection(s.id); setPage(1); }}
+                      title={s.label}
+                      className="group relative -mb-px flex items-center gap-2.5 rounded-t-xl px-4 pb-3 pt-2.5 text-[13.5px] font-semibold transition-colors duration-150"
+                      style={{
+                        // The active tab is lifted out of the strip and merges
+                        // with the feed below, the way a browser tab does.
+                        backgroundColor: active ? '#0e1320' : 'transparent',
+                        color: active ? '#ffffff' : '#7d8aa6',
+                        borderTop: `1px solid ${active ? 'rgba(30,38,54,0.9)' : 'transparent'}`,
+                        borderLeft: `1px solid ${active ? 'rgba(30,38,54,0.9)' : 'transparent'}`,
+                        borderRight: `1px solid ${active ? 'rgba(30,38,54,0.9)' : 'transparent'}`,
+                        borderBottom: `1px solid ${active ? '#0e1320' : 'transparent'}`,
+                      }}
+                      onMouseEnter={(e) => { if (!active) e.currentTarget.style.backgroundColor = 'rgba(20,26,40,0.7)'; }}
+                      onMouseLeave={(e) => { if (!active) e.currentTarget.style.backgroundColor = 'transparent'; }}
+                    >
+                      {/* Accent dot sits where a browser tab shows its favicon */}
+                      <span
+                        className="h-2 w-2 shrink-0 rounded-full transition"
+                        style={{
+                          backgroundColor: active ? tint : '#3a4560',
+                          boxShadow: active ? `0 0 8px ${tint}` : 'none',
+                        }}
+                      />
+                      <span className="max-w-[210px] truncate">{s.label}</span>
+                      <span
+                        className="rounded-md px-1.5 py-0.5 font-count text-[11px] leading-none"
+                        style={{
+                          backgroundColor: active ? `${tint}22` : 'rgba(30,38,54,0.9)',
+                          color: active ? tint : '#5a6e9a',
+                        }}
+                      >
+                        {s.count}
+                      </span>
+                      {/* Accent bar across the tab top, like a highlighted browser tab */}
+                      <span
+                        className="absolute inset-x-0 top-0 h-[3px] rounded-t-xl transition-all"
+                        style={{
+                          backgroundColor: active ? tint : 'transparent',
+                          boxShadow: active ? `0 0 10px ${tint}88` : 'none',
+                        }}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             {newsLoading && (
               <div className="grid gap-5 lg:grid-cols-2">
                 {Array.from({ length: 6 }).map((_, i) => (
@@ -649,15 +822,29 @@ export default function SocialMediaPostGenerator() {
               </div>
             )}
             {!newsLoading && !newsError && filteredArticles.length > 0 && (
+              <>
               <div className="grid gap-5 lg:grid-cols-2">
-                {filteredArticles.map((article) => {
+                {pagedArticles.map((article) => {
                   const dateLabel = formatNewsDate(article.date);
+                  // Colour follows the article's own tenant, so a mixed list
+                  // still reads correctly rather than following the active tab.
+                  const cardAccent = article.tenantSlug === 'general'
+                    ? SECTION_THEME.general.accent
+                    : SECTION_THEME.party.accent;
                   return (
                     <button
                       key={article.id}
                       type="button"
                       onClick={() => handlePreview(article)}
-                      className="group flex flex-col overflow-hidden rounded-2xl border border-[#1e2636]/80 bg-[#0e1320] p-6 text-left transition duration-200 hover:-translate-y-0.5 hover:border-[#3f9fff]/45 hover:bg-[#111726] hover:shadow-[0_12px_32px_rgba(0,0,0,0.45)]"
+                      className="group flex flex-col overflow-hidden rounded-2xl border p-6 text-left transition duration-200 hover:-translate-y-0.5 hover:bg-[#111726] hover:shadow-[0_12px_32px_rgba(0,0,0,0.45)]"
+                      style={{
+                        borderColor: 'rgba(30,38,54,0.8)',
+                        backgroundColor: '#0e1320',
+                        // Accent rail marks which feed the card belongs to
+                        borderLeft: `3px solid ${cardAccent}`,
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${cardAccent}70`; e.currentTarget.style.borderLeftColor = cardAccent; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(30,38,54,0.8)'; e.currentTarget.style.borderLeftColor = cardAccent; }}
                     >
                       {/* Header row: NEWS ARTICLE label · category tag */}
                       <div className="mb-3 flex items-center justify-between gap-3">
@@ -665,25 +852,34 @@ export default function SocialMediaPostGenerator() {
                           <FileText size={12} strokeWidth={2} className="text-[#3f6aaa]" />
                           News Article
                         </span>
-                        <span className="shrink-0 rounded-full border border-[#1e3a6e]/60 bg-[#0d1840]/60 px-3 py-1 font-count text-[11px] uppercase tracking-wider text-[#6aa8ff]">
+                        <span
+                          className="shrink-0 rounded-full border px-3 py-1 font-count text-[11px] uppercase tracking-wider"
+                          style={{
+                            borderColor: `${cardAccent}55`,
+                            backgroundColor: `${cardAccent}14`,
+                            color: cardAccent,
+                          }}
+                        >
                           {article.category}
                         </span>
                       </div>
 
-                      <p className="line-clamp-3 font-display text-[21px] font-bold leading-snug text-white">
+                      <p className="line-clamp-3 font-hindi text-[21px] font-bold leading-[1.6] pt-0.5 text-white">
                         {article.title}
                       </p>
-                      <p className="mt-2.5 line-clamp-3 flex-1 text-[17px] leading-[1.7] text-[#8a9ac0]">
-                        {truncateText(article.summary || article.content, 180)}
+                      <p className="font-hindi mt-3 line-clamp-3 flex-1 text-[16.5px] leading-[1.85] text-[#b9c8e4]">
+                        {truncateText(article.summary || article.content, 200)}
                       </p>
 
                       {/* Footer — short by {source} · date */}
                       <div className="mt-4 flex items-center justify-between gap-2 border-t border-[#141d3a]/70 pt-3">
                         <span className="min-w-0 truncate font-count text-[11.5px] text-[#5a6e9a]">
-                          {article.source ? `short by ${article.source}` : 'AmbedkarGPT'}
-                          {dateLabel && ` · ${dateLabel}`}
+                          {dateLabel || 'AmbedkarGPT'}
                         </span>
-                        <span className="inline-flex shrink-0 items-center gap-1 text-[12.5px] font-semibold text-[#6aa8ff] transition group-hover:gap-1.5">
+                        <span
+                          className="inline-flex shrink-0 items-center gap-1 text-[12.5px] font-semibold transition group-hover:gap-1.5"
+                          style={{ color: cardAccent }}
+                        >
                           <Sparkles size={12} strokeWidth={2} />
                           Generate
                         </span>
@@ -692,6 +888,53 @@ export default function SocialMediaPostGenerator() {
                   );
                 })}
               </div>
+
+              {/* ── Pagination ── */}
+              {totalPages > 1 && (
+                <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#1e2636]/80 bg-[#0e1320] px-3 text-[12.5px] font-medium text-[#8a9ac0] transition hover:border-[#3f9fff]/45 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ChevronDown size={13} strokeWidth={2} className="rotate-90" />
+                    Prev
+                  </button>
+
+                  {getPageItems(currentPage, totalPages).map((item, i) =>
+                    item === '…' ? (
+                      <span key={`gap-${i}`} className="px-1.5 text-[13px] text-[#4a5a80]">…</span>
+                    ) : (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => setPage(item)}
+                        aria-current={item === currentPage ? 'page' : undefined}
+                        className="inline-flex h-9 min-w-9 items-center justify-center rounded-lg border px-2 font-count text-[12.5px] font-semibold transition"
+                        style={{
+                          borderColor: item === currentPage ? '#3f9fff' : 'rgba(30,38,54,0.8)',
+                          backgroundColor: item === currentPage ? 'rgba(63,159,255,0.14)' : '#0e1320',
+                          color: item === currentPage ? '#6aa8ff' : '#8a9ac0',
+                        }}
+                      >
+                        {item}
+                      </button>
+                    )
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#1e2636]/80 bg-[#0e1320] px-3 text-[12.5px] font-medium text-[#8a9ac0] transition hover:border-[#3f9fff]/45 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Next
+                    <ChevronDown size={13} strokeWidth={2} className="-rotate-90" />
+                  </button>
+                </div>
+              )}
+              </>
             )}
           </div>
         )}
@@ -713,13 +956,23 @@ export default function SocialMediaPostGenerator() {
               </span>
             </div>
 
-            <div className="rounded-2xl border border-[#1e3260]/60 bg-[#0a1130]/70 p-6">
-              <h2 className="font-display text-[20px] font-bold leading-snug text-white md:text-[22px]">
+            <div className="rounded-2xl border border-[#1e3260]/60 bg-[#0a1130]/70 p-7 md:p-8">
+              <h2 className="font-hindi text-[24px] font-bold leading-[1.55] pt-0.5 text-white md:text-[28px]">
                 {selectedArticle.title}
               </h2>
-              <p className="mt-4 text-[13.5px] leading-[1.8] text-[#9aafd4]">
-                {selectedArticle.content}
+              {/* Prefer the fuller summary over the one-line description, and keep
+                  Devanagari at a larger size — it needs more height than Latin
+                  to stay legible. */}
+              <p className="font-hindi mt-5 text-[19px] leading-[2] text-[#e6eefb] md:text-[21px]">
+                {selectedArticle.summary || selectedArticle.content}
               </p>
+              {selectedArticle.summary
+                && selectedArticle.content
+                && selectedArticle.content !== selectedArticle.summary && (
+                <p className="font-hindi mt-5 border-t border-[#1e3260]/50 pt-5 text-[17px] leading-[1.95] text-[#c3d3ee] md:text-[18px]">
+                  {selectedArticle.content}
+                </p>
+              )}
             </div>
 
             {/* Platform selector */}

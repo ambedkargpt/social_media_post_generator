@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, AtSign, ArrowRight } from 'lucide-react';
+import { User, AtSign, ArrowRight, ChevronDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCurtain } from '../context/CurtainContext';
+import { POLITICAL_PARTIES } from '../utils/politicalParties';
 import logoSrc     from '../assets/images/logo-animation.png';
 import ambedkarSrc from '../assets/images/qna-ambedkar.png';
 
@@ -51,6 +52,7 @@ export default function ProfileSetup() {
 
   const [fullName, setFullName]   = useState('');
   const [username, setUsername]   = useState(currentUser?.username || '');
+  const [politicalParty, setPoliticalParty] = useState(currentUser?.political_party || '');
   const [errors, setErrors]       = useState({});
   const [loading, setLoading]     = useState(false);
   const [authError, setAuthError] = useState('');
@@ -62,6 +64,7 @@ export default function ProfileSetup() {
     if (!username.trim())          e.username = 'Username is required.';
     else if (username.trim().length < 3) e.username = 'Username must be at least 3 characters.';
     else if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) e.username = 'Only letters, numbers and underscores.';
+    if (!politicalParty) e.politicalParty = 'Please select a political party.';
     return e;
   }
 
@@ -73,7 +76,11 @@ export default function ProfileSetup() {
     setAuthError('');
     setLoading(true);
     try {
-      await updateProfile({ full_name: fullName.trim(), username: username.trim() });
+      await updateProfile({
+        full_name: fullName.trim(),
+        username: username.trim(),
+        political_party: politicalParty || undefined,
+      });
       curtainGo('/questionnaire', { replace: true });
     } catch (err) {
       const detail = err?.response?.data?.detail || err?.message || '';
@@ -176,6 +183,41 @@ export default function ProfileSetup() {
               hint="Only letters, numbers and underscores. Shown as @username."
               maxLength={50}
             />
+
+            {/* Party affiliation — decides which news feed the user sees */}
+            <div>
+              <label className="mb-1.5 block text-[13px] font-medium text-white">
+                Political party you support
+              </label>
+              <div className="relative">
+                <select
+                  value={politicalParty}
+                  onChange={(e) => { setPoliticalParty(e.target.value); setErrors((p) => ({ ...p, politicalParty: '' })); }}
+                  className="w-full appearance-none rounded-xl px-4 py-3.5 pr-10 text-[14px] outline-none transition"
+                  style={{
+                    backgroundColor: '#0a1130',
+                    border: `1px solid ${errors.politicalParty ? '#ef4444' : '#1e3260'}`,
+                    color: politicalParty ? '#ffffff' : '#8b94b8',
+                  }}
+                >
+                  <option value="" className="bg-[#0a1130]">Select a political party</option>
+                  {POLITICAL_PARTIES.map((p) => (
+                    <option key={p.name} value={p.name} className="bg-[#0a1130] text-white">
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  size={16}
+                  strokeWidth={2}
+                  className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2"
+                  style={{ color: '#8b94b8' }}
+                />
+              </div>
+              {errors.politicalParty
+                ? <p className="mt-1.5 text-[12px]" style={{ color: '#ef4444' }}>{errors.politicalParty}</p>
+                : <p className="mt-1.5 text-[12px]" style={{ color: '#5a6e9a' }}>Your news feed is tailored to this choice.</p>}
+            </div>
 
             <button
               type="submit"

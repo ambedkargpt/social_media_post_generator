@@ -11,24 +11,7 @@ import PrimaryButton from '../components/PrimaryButton';
 import GoogleButton  from '../components/GoogleButton';
 import LegalModal    from '../components/LegalModal';
 
-const POLITICAL_PARTIES = [
-  { name: 'Indian National Congress (INC)',      logo: '/party-logos/inc.png' },
-  { name: 'Bharatiya Janata Party (BJP)',         logo: '/party-logos/bjp.png' },
-  { name: 'Trinamool Congress (TMC)',             logo: '/party-logos/tmc.png' },
-  { name: 'Communist Party of India (CPI)',       logo: '/party-logos/cpi.png' },
-  { name: 'Samajwadi Party (SP)',                 logo: '/party-logos/sp.png' },
-  { name: 'Aam Aadmi Party (AAP)',               logo: '/party-logos/aap.png' },
-  { name: 'Bahujan Samaj Party (BSP)',           logo: '/party-logos/bsp.png' },
-  { name: 'Rashtriya Janata Dal (RJD)',          logo: '/party-logos/rjd.png' },
-  { name: 'Janata Dal (Loktantrik)',             logo: '/party-logos/jdl.png' },
-  { name: 'Azad Samaj Party',                    logo: '/party-logos/azad-samaj.png' },
-  { name: 'Jan Suraaj Party',                    logo: '/party-logos/jan-suraaj.png' },
-  { name: 'Vikassheel Insaan Party (VIP)',       logo: '/party-logos/vip.png' },
-  { name: 'Indian National Lok Dal (INLD)',      logo: '/party-logos/inld.png' },
-  { name: 'Jannayak Janta Party (JJP)',          logo: '/party-logos/jjp.png' },
-  { name: 'Bharat Adivasi Party (BAP)',          logo: '/party-logos/bap.png' },
-  { name: 'None / Not Affiliated',               logo: null },
-];
+import { POLITICAL_PARTIES } from '../utils/politicalParties';
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -226,6 +209,7 @@ export default function Signup() {
                       alt=""
                       className="w-5 h-5 object-contain rounded-sm"
                       style={{ background: 'white', padding: '1px' }}
+                      onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
                     />
                   )}
                   {politicalParty}
@@ -261,7 +245,14 @@ export default function Signup() {
                     onMouseLeave={(e) => { if (politicalParty !== party.name) e.currentTarget.style.backgroundColor = 'transparent'; }}
                   >
                     {party.logo ? (
-                      <img src={party.logo} alt={party.name} className="w-6 h-6 object-contain rounded-sm shrink-0" style={{ background: 'white', padding: '1px' }} />
+                      <img
+                        src={party.logo}
+                        alt={party.name}
+                        className="w-6 h-6 object-contain rounded-sm shrink-0"
+                        style={{ background: 'white', padding: '1px' }}
+                        // A missing/broken logo should not render as a broken-image icon
+                        onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
+                      />
                     ) : (
                       <span className="w-6 h-6 rounded-sm shrink-0 flex items-center justify-center text-xs" style={{ background: '#1e3260' }}>—</span>
                     )}

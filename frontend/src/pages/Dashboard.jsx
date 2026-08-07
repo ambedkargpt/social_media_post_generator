@@ -55,6 +55,13 @@ export default function Dashboard() {
     navigate('/login', { replace: true });
   }
 
+  function handleNavSelect(id) {
+    setActive(id);
+    if (id === 'profile') {
+      document.getElementById('profile-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
   const displayName  = currentUser?.username ?? '—';
   const displayEmail = currentUser?.email ?? currentUser?.phone ?? '—';
   const joinedLabel  = (() => {
@@ -81,7 +88,7 @@ export default function Dashboard() {
     >
       <Sidebar
         active={active}
-        onSelect={setActive}
+        onSelect={handleNavSelect}
         mobileOpen={mobileSidebarOpen}
         onMobileClose={() => setMobileSidebarOpen(false)}
         onLogout={handleLogout}
@@ -163,7 +170,7 @@ export default function Dashboard() {
         </div>
 
         {/* ── Profile + Quota + Preferences ── */}
-        <div className="mt-5 grid gap-5 grid-cols-1 lg:grid-cols-3">
+        <div id="profile-section" className="mt-5 grid gap-5 grid-cols-1 lg:grid-cols-3 scroll-mt-6">
           <div className="flex flex-col gap-5">
             <ProfileCard user={profileUser} />
             <DailyQuotaWidget quota={quota} loading={quotaLoading} />

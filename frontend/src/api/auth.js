@@ -113,10 +113,11 @@ export async function getMe() {
 }
 
 // ── Update profile (full_name, username) ─────────────────────────────────────
-export async function updateProfile({ full_name, username }) {
+export async function updateProfile({ full_name, username, political_party }) {
   const { data } = await client.patch('/auth/me', {
     ...(full_name  !== undefined ? { full_name }  : {}),
     ...(username   !== undefined ? { username }   : {}),
+    ...(political_party !== undefined ? { political_party } : {}),
   });
   saveUser(data);
   return data;
