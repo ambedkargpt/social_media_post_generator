@@ -288,7 +288,13 @@ class AuthService:
             user, access_token, refresh_token, access_expires_at, refresh_expires_at, otp_required, otp_target
         )
 
-    def update_profile(self, bearer_token: str, full_name: str | None, username: str | None) -> UserPublic:
+    def update_profile(
+        self,
+        bearer_token: str,
+        full_name: str | None,
+        username: str | None,
+        political_party: str | None = None,
+    ) -> UserPublic:
         payload = decode_token(bearer_token)
         if payload.get("type") != "access":
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid access token.")
@@ -305,6 +311,8 @@ class AuthService:
             if existing and str(existing["_id"]) != str(user["_id"]):
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username already taken.")
             fields["username"] = username
+        if political_party is not None:
+            fields["political_party"] = political_party.strip()
 
         if fields:
             user = self.users_repo.update_profile(user["_id"], fields)

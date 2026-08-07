@@ -86,6 +86,7 @@ class UserPublic(BaseModel):
 class UpdateProfileRequest(BaseModel):
     full_name: Optional[str] = Field(default=None, min_length=1, max_length=100)
     username: Optional[str] = Field(default=None, min_length=3, max_length=50)
+    political_party: Optional[str] = Field(default=None, min_length=1, max_length=120)
 
 
 class AuthTokens(BaseModel):
