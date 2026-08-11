@@ -69,6 +69,16 @@ class Settings:
     generated_news_legacy_path: Path
     news_headline_prompt_system: str
     news_headline_prompt_user: str
+    # Multi-story news: split one long video into several news items
+    news_multi_story_prompt_system: str
+    news_multi_story_prompt_user: str
+    news_stories_per_video: int
+    # Transcript cleaning (runs before summarization / entity extraction)
+    transcript_cleaning_prompt_system: str
+    transcript_cleaning_prompt_user: str
+    transcript_cleaning_enabled: bool
+    # Ground-truth Hindi punctuation/grammar reference injected into prompts
+    hindi_style_reference_file: str
     # User profiles on disk (Parquet)
     user_profiles_parquet_path: Path
     # gTTS (optional; Streamlit / test_retrieval --tts)
@@ -167,6 +177,11 @@ def get_settings() -> Settings:
     - GENERATED_NEWS_PATH (optional, defaults to ./outputs/generated_news.json)
     - GENERATED_NEWS_LEGACY_PATH (optional, defaults to ./outputs/generated_news_legacy.json)
     - NEWS_HEADLINE_SYSTEM / NEWS_HEADLINE_USER (optional prompt filenames under PROMPTS_DIR)
+    - NEWS_MULTI_STORY_SYSTEM / NEWS_MULTI_STORY_USER (optional prompt filenames under PROMPTS_DIR)
+    - NEWS_STORIES_PER_VIDEO (optional, defaults to 4)
+    - TRANSCRIPT_CLEANING_SYSTEM / TRANSCRIPT_CLEANING_USER (optional prompt filenames under PROMPTS_DIR)
+    - TRANSCRIPT_CLEANING_ENABLED (optional, defaults to true)
+    - HINDI_STYLE_REFERENCE (optional filename under PROMPTS_DIR; ground truth for Hindi punctuation)
     - USER_PROFILES_PARQUET (optional, defaults to ./data/user_profiles.parquet)
     - GTTS_LANG (optional, ISO 639-1 code for gTTS, defaults to hi)
     - MONGODB_URI (required for backend MongoDB connection)
@@ -271,6 +286,25 @@ def get_settings() -> Settings:
     ).resolve()
     news_headline_prompt_system = (os.getenv("NEWS_HEADLINE_SYSTEM") or "news_headline_system.txt").strip()
     news_headline_prompt_user = (os.getenv("NEWS_HEADLINE_USER") or "news_headline_user.txt").strip()
+    news_multi_story_prompt_system = (
+        os.getenv("NEWS_MULTI_STORY_SYSTEM") or "news_multi_story_system.txt"
+    ).strip()
+    news_multi_story_prompt_user = (
+        os.getenv("NEWS_MULTI_STORY_USER") or "news_multi_story_user.txt"
+    ).strip()
+    news_stories_per_video = int(os.getenv("NEWS_STORIES_PER_VIDEO", "4"))
+    transcript_cleaning_prompt_system = (
+        os.getenv("TRANSCRIPT_CLEANING_SYSTEM") or "transcript_cleaning_system.txt"
+    ).strip()
+    transcript_cleaning_prompt_user = (
+        os.getenv("TRANSCRIPT_CLEANING_USER") or "transcript_cleaning_user.txt"
+    ).strip()
+    hindi_style_reference_file = (
+        os.getenv("HINDI_STYLE_REFERENCE") or "hindi_style_reference.txt"
+    ).strip()
+    transcript_cleaning_enabled = (
+        os.getenv("TRANSCRIPT_CLEANING_ENABLED", "true").lower() in {"1", "true", "yes", "on"}
+    )
     _profiles_parquet_raw = (os.getenv("USER_PROFILES_PARQUET") or "").strip()
     user_profiles_parquet_path = (
         Path(_profiles_parquet_raw).expanduser()
@@ -349,6 +383,13 @@ def get_settings() -> Settings:
         generated_news_legacy_path=generated_news_legacy_path,
         news_headline_prompt_system=news_headline_prompt_system,
         news_headline_prompt_user=news_headline_prompt_user,
+        news_multi_story_prompt_system=news_multi_story_prompt_system,
+        news_multi_story_prompt_user=news_multi_story_prompt_user,
+        news_stories_per_video=news_stories_per_video,
+        transcript_cleaning_prompt_system=transcript_cleaning_prompt_system,
+        transcript_cleaning_prompt_user=transcript_cleaning_prompt_user,
+        transcript_cleaning_enabled=transcript_cleaning_enabled,
+        hindi_style_reference_file=hindi_style_reference_file,
         user_profiles_parquet_path=user_profiles_parquet_path,
         gtts_lang=gtts_lang,
         mongodb_uri=mongodb_uri,

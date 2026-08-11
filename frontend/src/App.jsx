@@ -1,7 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { CurtainProvider } from './context/CurtainContext';
 import ProtectedRoute   from './components/ProtectedRoute';
 
@@ -29,6 +29,7 @@ import BheemBot                  from './pages/BheemBot';
 import CustomCursor        from './components/CustomCursor';
 import ScrollProgress      from './components/ScrollProgress';
 import OpeningSplash       from './components/OpeningSplash';
+import LanguagePopup       from './components/LanguagePopup';
 import TransitionCurtain   from './components/TransitionCurtain';
 import ErrorBoundary       from './components/ErrorBoundary';
 
@@ -45,13 +46,36 @@ function PageTransition({ children }) {
   );
 }
 
+// Splash + language popup are for first-time visitors only. Signed-in users
+// have already chosen a language, so refreshing should not ask them again.
+// Rendered inside AuthProvider so it can read the session, and it waits for
+// `loading` to settle — otherwise the popup flashes before auth resolves.
+function IntroGate({ stage, onSplashDone, onLanguageDone }) {
+  const { currentUser, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && currentUser && stage !== 'done') onLanguageDone();
+  }, [loading, currentUser, stage, onLanguageDone]);
+
+  if (loading || currentUser) return null;
+  return (
+    <>
+      {stage === 'splash'   && <OpeningSplash onDone={onSplashDone} />}
+      {stage === 'language' && <LanguagePopup onDone={onLanguageDone} />}
+    </>
+  );
+}
+
 export default function App() {
-  const [splashDone, setSplashDone] = useState(() => {
+  // stage: 'splash' -> 'language' -> 'done'
+  const [stage, setStage] = useState(() => {
     const skip = sessionStorage.getItem('skip-splash') === '1';
     if (skip) sessionStorage.removeItem('skip-splash');
-    return skip;
+    return skip ? 'done' : 'splash';
   });
-  const handleSplashDone = useCallback(() => setSplashDone(true), []);
+  const handleSplashDone   = useCallback(() => setStage('language'), []);
+  const handleLanguageDone = useCallback(() => setStage('done'), []);
+  const splashDone = stage === 'done';
 
   return (
     <ErrorBoundary>
@@ -59,7 +83,11 @@ export default function App() {
       <BrowserRouter>
         <CurtainProvider>
         <AuthProvider>
-          {!splashDone && <OpeningSplash onDone={handleSplashDone} />}
+          <IntroGate
+            stage={stage}
+            onSplashDone={handleSplashDone}
+            onLanguageDone={handleLanguageDone}
+          />
           <TransitionCurtain />
           <ScrollProgress />
           <CustomCursor />

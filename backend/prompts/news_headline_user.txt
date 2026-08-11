@@ -7,8 +7,16 @@ Summary (source):
 Rules to follow STRICTLY:
 - Headline: EXACTLY 12–15 words (space-delimited) and nothing else.
 - Sub-headline: EXACTLY 25–35 words (space-delimited) and nothing else.
-- Language must match the summary (usually Hindi/Hinglish).
+- Output must ALWAYS be Hindi in Devanagari script, whatever language the summary is in. No Latin letters anywhere: transliterate names, places and initialisms (Amit Shah -> अमित शाह, MSME -> एमएसएमई), and prefer a natural Hindi word where one exists.
 - Do not add facts beyond the summary.
+- Hindi must be grammatically correct and correctly punctuated. Follow the style
+  reference below: end the sub-headline with a danda (।) and never a full stop,
+  keep कि/की, है/हैं agreement correct, and retain nuqta and chandrabindu where
+  standard usage requires them. A headline takes no trailing danda.
+
+=== HINDI STYLE REFERENCE (ground truth) ===
+{style_reference}
+=== END STYLE REFERENCE ===
 
 Quality step (do internally):
 - Generate 3 variations, then choose the best one.

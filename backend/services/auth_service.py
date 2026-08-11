@@ -1,3 +1,4 @@
+import jwt
 from fastapi import HTTPException, status
 
 from backend.core.auth_constants import (
@@ -244,9 +245,7 @@ class AuthService:
         session_doc = self.sessions_repo.find_active_by_refresh(refresh_token)
         if not session_doc:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token.")
-        payload = decode_token(refresh_token)
-        if payload.get("type") != "refresh":
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type.")
+        payload = self._decode_or_401(refresh_token, "refresh")
         user = self.users_repo.find_by_id(str(session_doc["user_id"]))
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
@@ -264,10 +263,33 @@ class AuthService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found.")
         return {"message": "Logged out successfully."}
 
+    def _decode_or_401(self, token: str, expected_type: str) -> dict:
+        """
+        Decode a token, converting JWT library errors into 401s.
+
+        decode_token raises jwt exceptions. Uncaught, an expired token surfaces
+        as a 500, which a client cannot tell apart from a server fault — so it
+        never knows to refresh the session or send the user back to login.
+        """
+        try:
+            payload = decode_token(token)
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired."
+            ) from None
+        except jwt.InvalidTokenError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token."
+            ) from None
+        if payload.get("type") != expected_type:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid {expected_type} token.",
+            )
+        return payload
+
     def me(self, bearer_token: str) -> UserPublic:
-        payload = decode_token(bearer_token)
-        if payload.get("type") != "access":
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid access token.")
+        payload = self._decode_or_401(bearer_token, "access")
         user = self.users_repo.find_by_id(payload["sub"])
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
@@ -288,10 +310,14 @@ class AuthService:
             user, access_token, refresh_token, access_expires_at, refresh_expires_at, otp_required, otp_target
         )
 
-    def update_profile(self, bearer_token: str, full_name: str | None, username: str | None) -> UserPublic:
-        payload = decode_token(bearer_token)
-        if payload.get("type") != "access":
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid access token.")
+    def update_profile(
+        self,
+        bearer_token: str,
+        full_name: str | None,
+        username: str | None,
+        political_party: str | None = None,
+    ) -> UserPublic:
+        payload = self._decode_or_401(bearer_token, "access")
         user = self.users_repo.find_by_id(payload["sub"])
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
@@ -305,6 +331,8 @@ class AuthService:
             if existing and str(existing["_id"]) != str(user["_id"]):
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username already taken.")
             fields["username"] = username
+        if political_party is not None:
+            fields["political_party"] = political_party.strip()
 
         if fields:
             user = self.users_repo.update_profile(user["_id"], fields)

@@ -31,10 +31,40 @@ def load_channel_config(project_root: Path, channel: str) -> ChannelConfig:
     channel_url = _required(payload, "channel_url")
     channel_slug = _required(payload, "channel_slug")
 
+    # Optional list of tabs to scrape (e.g. /videos and /streams). When absent,
+    # ChannelConfig.source_urls falls back to the single channel_url.
+    raw_urls = payload.get("channel_urls") or []
+    channel_urls = tuple(str(u).strip() for u in raw_urls if str(u).strip())
+
+    raw_lookback = payload.get("lookback_days")
+    lookback_days: int | None = None
+    if raw_lookback not in (None, ""):
+        lookback_days = int(raw_lookback)
+        if lookback_days <= 0:
+            lookback_days = None
+
+    def _opt_path(key: str) -> Path | None:
+        raw = str(payload.get(key, "")).strip()
+        return (project_root / raw).resolve() if raw else None
+
+    ns = str(payload.get("pinecone_namespace", "")).strip()
+
     return ChannelConfig(
         name=name,
+        semrag_graph_path=_opt_path("semrag_graph_path"),
+        semrag_chunks_path=_opt_path("semrag_chunks_path"),
+        semrag_cache_path=_opt_path("semrag_cache_path"),
+        rag_chunks_path=_opt_path("rag_chunks_path"),
+        rag_video_context_path=_opt_path("rag_video_context_path"),
+        rag_title_embeddings_path=_opt_path("rag_title_embeddings_path"),
+        pinecone_namespace=ns or None,
         channel_url=channel_url,
         channel_slug=channel_slug,
+        channel_urls=channel_urls,
+        lookback_days=lookback_days,
+        tenant_slug=str(payload.get("tenant_slug") or "general").strip().lower(),
+        news_mode=("multi" if str(payload.get("news_mode") or "single").strip().lower() == "multi" else "single"),
+        stories_per_video=int(payload.get("stories_per_video") or 4),
         transcripts_dir=(project_root / _required(payload, "transcripts_dir")).resolve(),
         consolidated_txt_path=(project_root / _required(payload, "consolidated_txt_path")).resolve(),
         processed_json_path=(project_root / _required(payload, "processed_json_path")).resolve(),

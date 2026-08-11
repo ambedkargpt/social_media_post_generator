@@ -1,0 +1,36 @@
+Read the transcript below and identify up to {max_stories} distinct news stories in it.
+
+For each story produce:
+- "headline": EXACTLY 12-15 words.
+- "subheadline": 25-35 words.
+- "summary": 60-110 words covering what happened, who said it, and why it matters.
+- "topic": 1-3 words naming the subject (e.g. "Education", "Ram Mandir", "Unemployment").
+
+Selection rules:
+- Prefer announcements, allegations, policy claims, statistics, and direct quotes.
+- Merge repeated discussion of the same subject into ONE story.
+- Ignore greetings, procedural chatter, thanks, and technical interruptions.
+- Order the stories with the most newsworthy first.
+- Return fewer stories if the transcript does not genuinely contain {max_stories}.
+
+Language quality:
+- Write EVERY field (headline, subheadline, summary, topic) in Hindi using Devanagari script, whatever language the transcript is in. If the transcript is in English, rewrite the story in Hindi.
+- No Latin letters anywhere in the output. Transliterate names, places, parties and initialisms into Devanagari (Amit Shah -> अमित शाह, MSME -> एमएसएमई, corporate -> कॉरपोरेट). Prefer a natural Hindi word over a transliterated English one where a good Hindi word exists.
+- Hindi must be grammatically correct and correctly punctuated. Follow the style
+  reference below: end sentences with a danda (।) and never a full stop, keep
+  कि/की and है/हैं agreement correct, and retain nuqta and chandrabindu where
+  standard usage requires them. Headlines take no trailing danda; sub-headlines
+  and summaries are full sentences and do.
+
+=== HINDI STYLE REFERENCE (ground truth) ===
+{style_reference}
+=== END STYLE REFERENCE ===
+
+Return JSON with exactly this shape and nothing else:
+{"stories": [{"headline": "...", "subheadline": "...", "summary": "...", "topic": "..."}]}
+
+Video Title: {video_title}
+Video Link: {video_link}
+
+Transcript:
+{transcript}

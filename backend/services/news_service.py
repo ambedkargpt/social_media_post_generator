@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from fastapi import HTTPException, status
 
 from backend.repositories.news_repo import NewsRepository
@@ -25,8 +27,43 @@ class NewsService:
         doc = self.repo.create(data)
         return self._to_response(doc)
 
-    def list(self, limit: int = 100, skip: int = 0, include_summary: bool = True, language: str | None = None) -> list[NewsResponse]:
-        return [self._to_response(doc, include_summary=include_summary) for doc in self.repo.list(limit=limit, skip=skip, language=language)]
+    def list(
+        self,
+        limit: int = 100,
+        skip: int = 0,
+        include_summary: bool = True,
+        language: str | None = None,
+        tenant: str | int | None = None,
+        include_general: bool = True,
+    ) -> list[NewsResponse]:
+        tenant_ids = self._resolve_tenant_ids(tenant, include_general)
+        docs = self.repo.list(limit=limit, skip=skip, language=language, tenant_ids=tenant_ids)
+        return [self._to_response(doc, include_summary=include_summary) for doc in docs]
+
+    def count(self, language: str | None = None, tenant: str | int | None = None, include_general: bool = True) -> int:
+        return self.repo.count(language=language, tenant_ids=self._resolve_tenant_ids(tenant, include_general))
+
+    def _resolve_tenant_ids(self, tenant: str | int | None, include_general: bool) -> list[int] | None:
+        """
+        Map a tenant selector to the ids to query.
+
+        None            -> no tenant filter (everything)
+        party           -> that party, plus general news unless opted out
+        """
+        if tenant is None or tenant == "":
+            return None
+        from backend.tenants import general_tenant, get_tenant
+
+        resolved = get_tenant(tenant)
+        if resolved is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unknown tenant: {tenant}",
+            )
+        ids = {resolved.tenant_id}
+        if include_general:
+            ids.add(general_tenant().tenant_id)
+        return sorted(ids)
 
     def get(self, news_id: str) -> NewsResponse:
         doc = self.repo.get_by_id(news_id)
@@ -68,6 +105,10 @@ class NewsService:
             language=doc.get("language"),
             tags=doc.get("tags", []),
             embedding_ref=doc.get("embedding_ref"),
+            # Pre-tenant documents default to general news.
+            tenant_id=int(doc.get("tenant_id") or 0),
+            tenant_slug=str(doc.get("tenant_slug") or "general"),
+            content_type=str(doc.get("content_type") or "news"),
             legacy_source=doc.get("legacy_source"),
             original_sort_timestamp=doc.get("original_sort_timestamp"),
             created_at=doc["created_at"],

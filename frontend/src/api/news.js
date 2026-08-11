@@ -1,11 +1,21 @@
 import client from './client';
 
 // GET /news — paginated news list, optional language filter ("en" | "hi")
-export async function getNews({ limit = 100, skip = 0, language } = {}) {
+// `tenant` selects a political party (id or slug); `includeGeneral` controls
+// whether neutral/general news is mixed in alongside that party's news.
+export async function getNews({ limit = 100, skip = 0, language, tenant, includeGeneral } = {}) {
   const params = { limit, skip };
   if (language) params.language = language;
+  if (tenant !== undefined && tenant !== null && tenant !== '') params.tenant = tenant;
+  if (includeGeneral !== undefined) params.include_general = includeGeneral;
   const { data } = await client.get('/news', { params });
   return data;
+}
+
+// GET /news/tenants — registry of selectable parties (+ the general tenant)
+export async function getTenants() {
+  const { data } = await client.get('/news/tenants');
+  return data?.tenants ?? [];
 }
 
 // GET /news/:id

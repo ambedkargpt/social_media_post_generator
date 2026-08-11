@@ -14,14 +14,47 @@ def create_news(payload: NewsCreateRequest, _: str = Depends(get_current_user_id
     return service.create(payload)
 
 
+@router.get("/tenants")
+def list_tenants() -> dict:
+    """Tenant registry for the client's party selector."""
+    from backend.tenants import load_tenants
+
+    return {
+        "tenants": [
+            {
+                "tenant_id": t.tenant_id,
+                "slug": t.slug,
+                "name": t.name,
+                "is_general": t.is_general,
+            }
+            for t in load_tenants()
+        ]
+    }
+
+
 @router.get("/", response_model=list[NewsResponse])
 def list_news(
     limit: int = Query(default=100, ge=1, le=500),
     skip: int = Query(default=0, ge=0),
     include_summary: bool = Query(default=True),
     language: str | None = Query(default=None),
+    tenant: str | None = Query(
+        default=None,
+        description="Party tenant id or slug. Omit for all news.",
+    ),
+    include_general: bool = Query(
+        default=True,
+        description="When a tenant is given, also include general (neutral) news.",
+    ),
 ) -> list[NewsResponse]:
-    return service.list(limit=limit, skip=skip, include_summary=include_summary, language=language)
+    return service.list(
+        limit=limit,
+        skip=skip,
+        include_summary=include_summary,
+        language=language,
+        tenant=tenant,
+        include_general=include_general,
+    )
 
 
 @router.get("/by-news-id/{news_id}", response_model=NewsResponse)

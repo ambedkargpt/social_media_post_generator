@@ -1,0 +1,110 @@
+HINDI STYLE GROUND TRUTH
+Reference for correctly punctuated, grammatically correct Hindi news prose.
+Match this register, punctuation, and spelling. Do not copy the content itself.
+
+=== 1. PUNCTUATION RULES ===
+
+- A statement ends with a danda (।), never a full stop (.).
+  सही: सरकार ने नई योजना की घोषणा की है।
+  ग़लत: सरकार ने नई योजना की घोषणा की है.
+
+- Questions end with ? and exclamations with ! (not a danda).
+  क्या सरकार इन आरोपों पर जवाब देगी?
+  यह जनता के साथ सरासर अन्याय है!
+
+- Commas separate clauses and list items; no space before the comma.
+  उन्होंने शिक्षा, स्वास्थ्य और रोज़गार पर सवाल उठाए।
+
+- A subordinate clause introduced by "कि" takes no comma before it.
+  सही: उन्होंने कहा कि जाँच जारी है।
+  ग़लत: उन्होंने कहा, कि जाँच जारी है।
+
+- Direct speech: comma before the quote, danda inside the closing quote.
+  प्रवक्ता ने कहा, "यह फ़ैसला जनविरोधी है।"
+
+- Decimals, percentages and years stay in Arabic numerals.
+  साक्षरता दर 99.3 प्रतिशत तक पहुँच गई है।
+  यह बैठक 2 अगस्त 2026 को दिल्ली में हुई।
+
+- An abbreviation keeps its full stops, and the sentence still ends with a danda.
+  यह मामला सी.बी.आई. को सौंप दिया गया है।
+
+=== 2. SPELLING AND AGREEMENT ===
+
+- कि = "that" (conjunction). की = "of" (feminine possessive).
+  उन्होंने कहा कि सरकार की नीति विफल रही है।
+
+- है = singular. हैं = plural or honorific.
+  नेता ने कहा है। / नेताओं ने कहा है कि वे सहमत हैं।
+
+- में = "in". मैं = "I".
+  मैं सदन में यह मुद्दा उठाऊँगा।
+
+- Keep the nuqta where standard usage requires it.
+  ख़बर, ख़िलाफ़, फ़ैसला, क़ीमत, ज़्यादा, ग़लत, ज़िम्मेदारी
+
+- Use chandrabindu where standard usage requires it.
+  पहुँच, माँग, जाँच, आँकड़े, हूँ
+
+- Gender and number must agree with the subject.
+  सही: सरकार ने घोषणा की। / मंत्री ने घोषणा की।
+  सही: दोनों नेताओं ने आरोप लगाए।
+
+=== 3. NEWS SENTENCES (declarative) ===
+
+कांग्रेस ने महँगाई और बेरोज़गारी को लेकर सरकार पर सवाल उठाए हैं।
+मुख्यमंत्री ने कहा कि राज्य में शिक्षा का स्तर लगातार सुधर रहा है।
+इस योजना के तहत लगभग दस लाख परिवारों को सीधा लाभ मिलेगा।
+पार्टी ने इस मामले की निष्पक्ष जाँच की माँग की है।
+विपक्ष ने आरोप लगाया कि जाँच में जानबूझकर देरी की जा रही है।
+प्रदेश सरकार ने दावा किया है कि विद्यालयों में शिक्षक-छात्र अनुपात देश में सबसे बेहतर है।
+
+=== 4. STATISTICS AND COMPARISONS ===
+
+हिमाचल प्रदेश की साक्षरता दर 99.3 प्रतिशत दर्ज की गई है, जो राष्ट्रीय औसत से कहीं अधिक है।
+ब्रांड फ़ाइनेंस की सूची में नंदिनी 43वें से 38वें स्थान पर पहुँच गई है।
+पिछले वर्ष की तुलना में इस आँकड़े में उल्लेखनीय सुधार दर्ज किया गया है।
+
+=== 5. QUOTATIONS AND ATTRIBUTION ===
+
+उन्होंने कहा, "यह जनता के साथ अन्याय है।"
+प्रवक्ता ने मीडिया के सवालों का जवाब देते हुए कहा, "हम हर सवाल का जवाब देने को तैयार हैं।"
+नेता प्रतिपक्ष ने कहा कि यह मुद्दा आगामी सत्र में संसद में उठाया जाएगा।
+
+=== 6. PRESS CONFERENCE REGISTER ===
+
+प्रेस वार्ता को संबोधित करते हुए उन्होंने यह जानकारी दी।
+आज की प्रेस वार्ता में मुख्य रूप से तीन मुद्दे उठाए गए।
+मीडिया के एक सवाल के जवाब में उन्होंने कहा कि रिपोर्ट अभी प्रतीक्षित है।
+उन्होंने दोहराया कि पार्टी अपने रुख़ पर क़ायम है।
+
+=== 7. DEVANAGARI ONLY - NO ENGLISH, NO HINGLISH ===
+
+Published output is always Hindi in Devanagari script. Latin letters must never
+appear. This holds even when the source material is entirely in English: the
+story is rewritten in Hindi.
+
+- Prefer the natural Hindi word.
+  ग़लत: बड़े corporate houses को hair cut, MSME का गला कट
+  सही: बड़े कॉरपोरेट घरानों को राहत, एमएसएमई का गला घोंटा गया
+
+- Where an English term is standard in Hindi journalism, transliterate it into
+  Devanagari rather than leaving it in Latin script.
+  पुलिस, रिपोर्ट, बजट, कॉरपोरेट, कमेटी, संसद सत्र, टोल, क्वालिटी
+
+- Initialisms are written in Devanagari.
+  MSME -> एमएसएमई,  CBI -> सीबीआई,  NHAI -> एनएचएआई,  BJP -> भाजपा
+
+- Names of people, parties and places are written in Devanagari.
+  Amit Shah -> अमित शाह
+  KC Venugopal -> के.सी. वेणुगोपाल
+  Ajay Maken -> अजय माकन
+  Congress -> कांग्रेस
+  Parliament -> संसद
+
+- Rewriting an English sentence into Hindi:
+  स्रोत: "Opposition demands Home Minister Amit Shah answer in Parliament on attacks against students"
+  सही: छात्रों पर हमलों के मुद्दे पर विपक्ष ने संसद में गृह मंत्री अमित शाह से जवाब माँगा
+
+  स्रोत: "Home Minister and Corporation minister were not present in the House"
+  सही: गृह मंत्री और निगम मंत्री सदन में मौजूद नहीं थे।

@@ -1,0 +1,32 @@
+{
+  "name": "samajwadi",
+  "channel_url": "https://www.youtube.com/@SamajwadiPartyOfficial/videos",
+  "channel_urls": [
+    "https://www.youtube.com/@SamajwadiPartyOfficial/videos",
+    "https://www.youtube.com/@SamajwadiPartyOfficial/streams"
+  ],
+  "lookback_days": 5,
+  "tenant_slug": "samajwadi",
+  "channel_slug": "SamajwadiPartyOfficial",
+  "transcripts_dir": "outputs/transcripts/SamajwadiPartyOfficial",
+  "consolidated_txt_path": "outputs/transcripts/SamajwadiPartyOfficial/samajwadi_all_transcripts.txt",
+  "processed_json_path": "outputs/transcripts/SamajwadiPartyOfficial/processed.json",
+  "master_transcript_path": "data/samajwadi_all_transcripts.txt",
+  "video_summaries_path": "data/video_summaries_samajwadi.json",
+  "generated_news_path": "outputs/generated_news_samajwadi.json",
+  "generated_news_legacy_path": "outputs/generated_news_legacy_samajwadi.json",
+  "news_mode": "multi",
+  "stories_per_video": 4,
+  "semrag_graph_path": "data/semrag/samajwadi/semrag_graph.json",
+  "semrag_chunks_path": "data/semrag/samajwadi/semrag_chunks.json",
+  "semrag_cache_path": "data/semrag/samajwadi/semrag_extraction_cache.json",
+  "rag_chunks_path": "data/samajwadi/argument_chunks.json",
+  "rag_video_context_path": "data/samajwadi/video_context.json",
+  "rag_title_embeddings_path": "data/samajwadi/video_title_embeddings.json",
+  "pinecone_namespace": "samajwadi",
+  "rebuild_rag": true,
+  "rebuild_semrag": true,
+  "run_summarizer": false,
+  "run_news_generator": true,
+  "run_news_publish": true
+}

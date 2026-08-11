@@ -1,0 +1,32 @@
+{
+  "name": "congress",
+  "channel_url": "https://www.youtube.com/@IndianNationalCongress/videos",
+  "channel_urls": [
+    "https://www.youtube.com/@IndianNationalCongress/videos",
+    "https://www.youtube.com/@IndianNationalCongress/streams"
+  ],
+  "lookback_days": 5,
+  "tenant_slug": "congress",
+  "channel_slug": "IndianNationalCongress",
+  "transcripts_dir": "outputs/transcripts/IndianNationalCongress",
+  "consolidated_txt_path": "outputs/transcripts/IndianNationalCongress/congress_all_transcripts.txt",
+  "processed_json_path": "outputs/transcripts/IndianNationalCongress/processed.json",
+  "master_transcript_path": "data/congress_all_transcripts.txt",
+  "video_summaries_path": "data/video_summaries_congress.json",
+  "generated_news_path": "outputs/generated_news_congress.json",
+  "generated_news_legacy_path": "outputs/generated_news_legacy_congress.json",
+  "news_mode": "multi",
+  "stories_per_video": 4,
+  "semrag_graph_path": "data/semrag/congress/semrag_graph.json",
+  "semrag_chunks_path": "data/semrag/congress/semrag_chunks.json",
+  "semrag_cache_path": "data/semrag/congress/semrag_extraction_cache.json",
+  "rag_chunks_path": "data/congress/argument_chunks.json",
+  "rag_video_context_path": "data/congress/video_context.json",
+  "rag_title_embeddings_path": "data/congress/video_title_embeddings.json",
+  "pinecone_namespace": "congress",
+  "rebuild_rag": true,
+  "rebuild_semrag": true,
+  "run_summarizer": false,
+  "run_news_generator": true,
+  "run_news_publish": true
+}

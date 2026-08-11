@@ -161,3 +161,8 @@ test_*.py
 # --- Legacy ---
 legacy/
 **/legacy/
+
+# --- Per-channel SEMRAG / RAG build artifacts ---
+# Regenerate with: python -m backend.scripts.build_channel_graph --channel <name> --semrag
+**/data/semrag/*/
+**/data/*_all_transcripts.txt

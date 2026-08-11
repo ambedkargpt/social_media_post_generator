@@ -26,7 +26,45 @@ def _parse_dt(value: Any) -> datetime | None:
         return None
 
 
-def _normalize_item(item: dict[str, Any], source: str) -> dict[str, Any] | None:
+# Titles that mark a broadcast even when it was filed under the videos tab.
+_PRESS_TITLE_HINTS = (
+    "live",
+    "press conference",
+    "press briefing",
+    "briefing",
+    "प्रेस वार्ता",
+    "प्रेस कॉन्फ्रेंस",
+)
+
+
+def classify_content_type(item: dict[str, Any]) -> str:
+    """
+    "press_conference" for livestreamed briefings, "news" for regular uploads.
+
+    The source tab is authoritative because titles are inconsistent — some
+    streams never say "LIVE". Title hints are only a fallback for items
+    ingested before the tab was recorded.
+    """
+    tab = str(item.get("source_tab") or "").strip().lower()
+    if tab in {"streams", "live"}:
+        return "press_conference"
+    if tab == "videos":
+        # An ended livestream still shows up under videos, so honour the title.
+        title = str(item.get("video_title") or "").lower()
+        return "press_conference" if any(h in title for h in _PRESS_TITLE_HINTS) else "news"
+    title = str(item.get("video_title") or "").lower()
+    return "press_conference" if any(h in title for h in _PRESS_TITLE_HINTS) else "news"
+
+
+def _normalize_item(
+    item: dict[str, Any],
+    source: str,
+    *,
+    tenant_id: int = 0,
+    tenant_slug: str = "general",
+    source_name: str = "Ravish Kumar",
+    tags: list[str] | None = None,
+) -> dict[str, Any] | None:
     source_url = (item.get("video_link") or "").strip().lower()
     headline = (item.get("headline") or "").strip()
     summary = (item.get("summary_text") or "").strip()
@@ -46,30 +84,65 @@ def _normalize_item(item: dict[str, Any], source: str) -> dict[str, Any] | None:
         "headline": headline,
         "description": description,
         "summary": summary,
-        "source_name": "Ravish Kumar",
+        "source_name": source_name,
         "published_at": published_at,
+        # Tenant stamp drives party vs general news segmentation in the API.
+        "tenant_id": tenant_id,
+        "tenant_slug": tenant_slug,
+        # "press_conference" (livestreamed briefing) vs "news" (regular upload).
+        "content_type": classify_content_type(item),
         # Keep null by default to avoid Mongo text index language override conflicts.
         "language": None,
-        "tags": [],
+        # Multi-story items carry their own topic; fall back to the channel tags.
+        "tags": ([item["topic"].strip().lower()] if str(item.get("topic") or "").strip() else list(tags or [])),
         "embedding_ref": None,
         "legacy_source": source,
         "original_sort_timestamp": sort_ts,
     }
 
 
-def load_and_dedupe_news(current_file: Path, legacy_file: Path) -> tuple[list[dict[str, Any]], MigrationStats]:
-    current_raw = json.loads(current_file.read_text(encoding="utf-8"))
-    legacy_raw = json.loads(legacy_file.read_text(encoding="utf-8"))
-    current_items = current_raw.get("items", [])
-    legacy_items = legacy_raw.get("items", [])
+def load_and_dedupe_news(
+    current_file: Path,
+    legacy_file: Path,
+    *,
+    tenant: Any = None,
+    tags: list[str] | None = None,
+) -> tuple[list[dict[str, Any]], MigrationStats]:
+    # A new channel has no legacy archive until items are first evicted, and a
+    # channel can be published before either file exists. Treat both as empty
+    # rather than failing the publish stage.
+    def _items(path: Path) -> list[dict[str, Any]]:
+        if not path.is_file():
+            return []
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (ValueError, OSError):
+            return []
+        items = payload.get("items", []) if isinstance(payload, dict) else payload
+        return [i for i in items if isinstance(i, dict)] if isinstance(items, list) else []
+
+    current_items = _items(current_file)
+    legacy_items = _items(legacy_file)
+
+    # Default to the general tenant so existing Ravish runs are unchanged.
+    if tenant is None:
+        from backend.tenants import general_tenant
+
+        tenant = general_tenant()
+    tenant_kwargs = {
+        "tenant_id": tenant.tenant_id,
+        "tenant_slug": tenant.slug,
+        "source_name": tenant.source_name,
+        "tags": tags,
+    }
 
     merged: list[dict[str, Any]] = []
     for item in current_items:
-        normalized = _normalize_item(item, "current")
+        normalized = _normalize_item(item, "current", **tenant_kwargs)
         if normalized:
             merged.append(normalized)
     for item in legacy_items:
-        normalized = _normalize_item(item, "legacy")
+        normalized = _normalize_item(item, "legacy", **tenant_kwargs)
         if normalized:
             merged.append(normalized)
 
@@ -93,8 +166,15 @@ def load_and_dedupe_news(current_file: Path, legacy_file: Path) -> tuple[list[di
     return deduped, stats
 
 
-def migrate_news(repo, current_file: Path, legacy_file: Path) -> MigrationStats:
-    deduped, stats = load_and_dedupe_news(current_file, legacy_file)
+def migrate_news(
+    repo,
+    current_file: Path,
+    legacy_file: Path,
+    *,
+    tenant: Any = None,
+    tags: list[str] | None = None,
+) -> MigrationStats:
+    deduped, stats = load_and_dedupe_news(current_file, legacy_file, tenant=tenant, tags=tags)
     existing_ids = {
         d.get("news_id")
         for d in repo.collection.find({"news_id": {"$regex": r"^news_\d+$"}}, {"news_id": 1})

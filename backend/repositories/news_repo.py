@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime, timezone
 from typing import Any, Optional
 
@@ -33,15 +35,59 @@ class NewsRepository:
         doc["_id"] = result.inserted_id
         return doc
 
-    def list(self, limit: int = 100, skip: int = 0, language: str | None = None) -> list[dict]:
-        query: dict = {}
+    def list(
+        self,
+        limit: int = 100,
+        skip: int = 0,
+        language: str | None = None,
+        tenant_ids: list[int] | None = None,
+    ) -> list[dict]:
+        clauses: list[dict] = []
         if language:
             if language == "en":
                 # English: include articles tagged "en" OR with no language tag
-                query = {"$or": [{"language": "en"}, {"language": None}, {"language": {"$exists": False}}]}
+                clauses.append(
+                    {"$or": [{"language": "en"}, {"language": None}, {"language": {"$exists": False}}]}
+                )
             else:
-                query = {"language": language}
-        return list(self.collection.find(query).sort("created_at", -1).skip(skip).limit(limit))
+                clauses.append({"language": language})
+        if tenant_ids is not None:
+            tenant_clause: dict = {"tenant_id": {"$in": tenant_ids}}
+            # Documents published before tenants existed carry no tenant_id and
+            # are treated as general news (tenant 0).
+            if 0 in tenant_ids:
+                tenant_clause = {"$or": [tenant_clause, {"tenant_id": {"$exists": False}}]}
+            clauses.append(tenant_clause)
+
+        query: dict = {"$and": clauses} if len(clauses) > 1 else (clauses[0] if clauses else {})
+        # Newest news first. Order by when the story was published, not when the
+        # row was written — a bulk import gives every row the same created_at,
+        # which would leave the feed in arbitrary order. created_at is the
+        # tiebreaker for the few documents with no published_at.
+        return list(
+            self.collection.find(query)
+            .sort([("published_at", -1), ("created_at", -1)])
+            .skip(skip)
+            .limit(limit)
+        )
+
+    def count(self, language: str | None = None, tenant_ids: list[int] | None = None) -> int:
+        """Total matching documents — used for paginated listings."""
+        clauses: list[dict] = []
+        if language:
+            if language == "en":
+                clauses.append(
+                    {"$or": [{"language": "en"}, {"language": None}, {"language": {"$exists": False}}]}
+                )
+            else:
+                clauses.append({"language": language})
+        if tenant_ids is not None:
+            tenant_clause: dict = {"tenant_id": {"$in": tenant_ids}}
+            if 0 in tenant_ids:
+                tenant_clause = {"$or": [tenant_clause, {"tenant_id": {"$exists": False}}]}
+            clauses.append(tenant_clause)
+        query: dict = {"$and": clauses} if len(clauses) > 1 else (clauses[0] if clauses else {})
+        return self.collection.count_documents(query)
 
     def get_by_id(self, news_id: str) -> Optional[dict]:
         return self.collection.find_one({"_id": ObjectId(news_id)})
@@ -81,6 +127,10 @@ class NewsRepository:
             "language": doc.get("language"),
             "tags": doc.get("tags", []),
             "embedding_ref": doc.get("embedding_ref"),
+            # Tenant stamp drives party vs general segmentation in the API.
+            "tenant_id": doc.get("tenant_id", 0),
+            "tenant_slug": doc.get("tenant_slug", "general"),
+            "content_type": doc.get("content_type", "news"),
             "legacy_source": doc.get("legacy_source"),
             "original_sort_timestamp": doc.get("original_sort_timestamp"),
             "updated_at": now,

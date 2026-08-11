@@ -1,22 +1,12 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import logoSrc from '../assets/images/logo-animation.png';
-import { markAppReady } from '../utils/appReady';
-import {
-  SITE_LANGUAGES,
-  setSiteLanguage,
-  getSiteLanguage,
-  getSiteLanguageLabel,
-} from '../utils/siteLanguage';
 
-const EXIT_MS = 700;
+const EXIT_MS = 180;
+// How long the splash holds before handing off to the landing page.
+const HOLD_MS = 2600;
 
 export default function OpeningSplash({ onDone }) {
-  const storedLang = getSiteLanguage();            // pre-fills the picker, if any
-
-  const [phase,       setPhase]       = useState('enter');
-  const [menuOpen,    setMenuOpen]    = useState(false);
-  const [displayLang, setDisplayLang] = useState(storedLang);
-  const langRef    = useRef(null);
+  const [phase, setPhase] = useState('enter');
 
   // Lock body scroll while splash is visible
   useEffect(() => {
@@ -25,54 +15,41 @@ export default function OpeningSplash({ onDone }) {
     return () => { document.documentElement.style.overflow = prev; };
   }, []);
 
-  const dismiss = useCallback((code) => {
-    setSiteLanguage(code);
-    setPhase('exit');
-    setTimeout(() => {
-      setPhase('gone');
-      markAppReady();
-      onDone?.();
-    }, EXIT_MS);
+  const dismiss = useCallback(() => {
+    setPhase((p) => {
+      if (p !== 'enter') return p; // a click and the timer must not both fire
+      setTimeout(() => {
+        setPhase('gone');
+        onDone?.();
+      }, EXIT_MS);
+      return 'exit';
+    });
   }, [onDone]);
 
-  // Splash always waits for an explicit language choice — on every visit,
-  // not just the first one. No auto-dismiss.
-
-  // Close menu on outside click / Escape
+  // Auto-advance to the landing page; no interaction required.
   useEffect(() => {
-    if (!menuOpen) return;
-    function onPointerDown(e) {
-      if (langRef.current && !langRef.current.contains(e.target)) setMenuOpen(false);
-    }
-    function onKeyDown(e) { if (e.key === 'Escape') setMenuOpen(false); }
-    document.addEventListener('pointerdown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
+    const id = setTimeout(dismiss, HOLD_MS);
+    return () => clearTimeout(id);
+  }, [dismiss]);
+
+  // Let an impatient visitor skip ahead with a click, tap or key.
+  useEffect(() => {
+    window.addEventListener('keydown', dismiss);
+    window.addEventListener('pointerdown', dismiss);
     return () => {
-      document.removeEventListener('pointerdown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keydown', dismiss);
+      window.removeEventListener('pointerdown', dismiss);
     };
-  }, [menuOpen]);
-
-  function handleSelect(code) {
-    setDisplayLang(code);
-    setMenuOpen(false);
-    setSiteLanguage(code);
-  }
-
-  function handleContinue() {
-    dismiss(displayLang || 'en');
-  }
+  }, [dismiss]);
 
   if (phase === 'gone') return null;
-
-  const buttonLabel = displayLang ? getSiteLanguageLabel(displayLang) : 'Select language';
 
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-label="Welcome to AmbedkarGPT"
-      className={`fixed inset-0 z-[200] flex flex-col items-center justify-center overflow-hidden transition-opacity duration-[700ms] ease-out ${
+      className={`fixed inset-0 z-[200] flex flex-col items-center justify-center overflow-hidden transition-opacity duration-180 ease-out ${
         phase === 'exit' ? 'pointer-events-none opacity-0' : 'opacity-100'
       }`}
       style={{ background: 'radial-gradient(ellipse at 50% 30%, #0e1d4a 0%, #080e22 45%, #04080f 100%)' }}
@@ -140,76 +117,30 @@ export default function OpeningSplash({ onDone }) {
         ESTD. 2026
       </p>
 
-      {/* Language picker — optional; pre-selects stored lang for returning users */}
-      <div ref={langRef} className="splash-lang relative z-10 mt-6 flex flex-col items-center gap-4">
-        <div className="relative">
-          <button
-            type="button"
-            aria-haspopup="listbox"
-            aria-expanded={menuOpen}
-            aria-label="Select site language"
-            onClick={() => setMenuOpen((o) => !o)}
-            className="inline-flex min-w-[188px] items-center justify-between gap-3 rounded-full border px-5 py-2 font-count text-[14px] font-medium transition hover:brightness-110"
-            style={{
-              borderColor: displayLang ? 'rgba(63,120,220,0.6)' : 'rgba(63,120,220,0.5)',
-              backgroundColor: displayLang ? 'rgba(15,35,90,0.7)' : 'rgba(15,35,90,0.6)',
-              color: displayLang ? '#9ec4f5' : '#7aabea',
-            }}
-          >
-            <span>{buttonLabel}</span>
-            <svg width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true">
-              <path
-                d="M1 1l4 4 4-4"
-                stroke={displayLang ? '#9ec4f5' : '#7aabea'}
-                strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-
-          {menuOpen && (
-            <ul
-              role="listbox"
-              aria-label="Site language"
-              className="absolute left-0 right-0 top-[calc(100%+8px)] overflow-hidden rounded-2xl border py-1 shadow-[0_16px_40px_rgba(0,0,0,0.45)]"
-              style={{ borderColor: 'rgba(63,120,220,0.45)', backgroundColor: 'rgba(8,18,48,0.98)' }}
-            >
-              {SITE_LANGUAGES.map((lang) => (
-                <li key={lang.code} role="presentation">
-                  <button
-                    type="button"
-                    role="option"
-                    aria-selected={lang.code === displayLang}
-                    className="flex w-full items-center justify-between px-4 py-2 text-left font-count text-[14px] font-medium transition hover:bg-[rgba(63,120,220,0.2)]"
-                    style={{ color: lang.code === displayLang ? '#6aa8ff' : '#9ec4f5' }}
-                    onClick={() => handleSelect(lang.code)}
-                  >
-                    {lang.label}
-                    {lang.code === displayLang && (
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#3f9fff]" />
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        {/* Next / Continue button */}
-        <button
-          type="button"
-          onClick={handleContinue}
-          className="group inline-flex items-center gap-2.5 rounded-full px-7 py-2.5 font-count text-[14px] font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110"
-          style={{
-            background: 'linear-gradient(135deg, #1a5fff 0%, #3f9fff 100%)',
-            boxShadow: '0 4px 20px rgba(63,159,255,0.35)',
-          }}
+      {/* Progress bar — replaces the old Continue button now that the splash
+          advances on its own. It shows the wait is finite and deliberate. */}
+      <div className="splash-lang relative z-10 mt-9 flex flex-col items-center gap-3">
+        <div
+          className="h-[3px] w-[148px] overflow-hidden rounded-full"
+          style={{ background: 'rgba(90,130,192,0.22)' }}
         >
-          Continue
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
+          <div
+            className="h-full rounded-full"
+            style={{
+              background: 'linear-gradient(90deg, #1a5fff 0%, #3f9fff 100%)',
+              boxShadow: '0 0 10px rgba(63,159,255,0.6)',
+              animation: `splashProgress ${HOLD_MS}ms linear forwards`,
+            }}
+          />
+        </div>
+        <span className="font-count text-[10.5px] uppercase tracking-[0.28em]" style={{ color: '#4d6da6' }}>
+          Loading
+        </span>
       </div>
+
+      <style>{`
+        @keyframes splashProgress { from { width: 0%; } to { width: 100%; } }
+      `}</style>
     </div>
   );
 }
