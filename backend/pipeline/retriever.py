@@ -1,6 +1,7 @@
 from typing import List, Dict, Tuple, Set, Optional
 from pathlib import Path
 import json
+import os
 import unicodedata
 
 import numpy as np
@@ -16,7 +17,8 @@ MIN_SIMILARITY_RARE_QUERY = 0.2
 BM25_NORM_KEEP_FLOOR = 0.15
 TITLE_TOP_N = 5
 STAGE2_SEARCH_K = 250
-TITLE_EMB_PATH = Path(__file__).resolve().parents[1] / "data" / "video_title_embeddings.json"
+_ARTIFACTS_DIR = Path(os.environ["LAMBDA_ARTIFACTS_DIR"]) if os.getenv("LAMBDA_ARTIFACTS_DIR") else Path(__file__).resolve().parents[1] / "data"
+TITLE_EMB_PATH = _ARTIFACTS_DIR / "video_title_embeddings.json"
 STRICT_TITLE_TOP_N = 2
 RRF_K = 60
 BM25_TOP_N = 250

@@ -155,7 +155,7 @@ class PostsService:
             retrieved_chunks=retrieved_chunks,
             full_contexts=full_contexts,
             temperature=temperature,
-            language="hi",
+            language=language,
         )
         if not post_text or not post_text.strip():
             raise HTTPException(
@@ -240,7 +240,7 @@ class PostsService:
             retrieved_chunks=chunks,
             full_contexts=full_contexts,
             temperature=payload.temperature,
-            language="hi",
+            language=payload.language,
             refinement_note=payload.refinement_note,
         )
         if not post_text or not post_text.strip():
