@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
 
 
 @dataclass
@@ -24,6 +25,27 @@ def _parse_dt(value: Any) -> datetime | None:
         return datetime.fromisoformat(value.replace("Z", "+00:00"))
     except Exception:
         return None
+
+
+def normalize_source_url(raw: Any) -> str:
+    """
+    Canonical form of a source URL, used both for display and for deduplication.
+
+    Only the scheme and host are lowercased. Lowercasing the whole URL breaks
+    YouTube: video ids are case-sensitive, so "watch?v=HYwfi4eZ6mE" became
+    "watch?v=hywfi4ez6me" and the stored link no longer resolved to the video.
+    Host casing is the only part that varies in practice, so normalising just
+    that keeps deduplication working while leaving the id intact.
+    """
+    url = str(raw or "").strip()
+    if not url:
+        return ""
+    parts = urlsplit(url)
+    if not parts.scheme and not parts.netloc:
+        return url  # not a URL we recognise; leave it untouched
+    return urlunsplit(
+        (parts.scheme.lower(), parts.netloc.lower(), parts.path, parts.query, parts.fragment)
+    )
 
 
 # Titles that mark a broadcast even when it was filed under the videos tab.
@@ -65,7 +87,7 @@ def _normalize_item(
     source_name: str = "Ravish Kumar",
     tags: list[str] | None = None,
 ) -> dict[str, Any] | None:
-    source_url = (item.get("video_link") or "").strip().lower()
+    source_url = normalize_source_url(item.get("video_link"))
     headline = (item.get("headline") or "").strip()
     summary = (item.get("summary_text") or "").strip()
     description = (item.get("subheadline") or "").strip() or summary
