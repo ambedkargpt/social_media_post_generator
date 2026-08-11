@@ -457,13 +457,32 @@ class PostsService:
             _logging.getLogger(__name__).warning("semrag retrieval failed, falling back to base retrieval: %s", exc)
             retrieval_cfg["semrag_enabled"] = False
             retrieval_cfg.pop("semrag_candidates", None)
-        return retrieve_relevant_chunks(
-            news_text=query_text,
-            embedder=embedder,
-            store=store,
-            top_k=settings.retrieval_top_k,
-            retrieval_cfg=retrieval_cfg,
-        )
+        try:
+            return retrieve_relevant_chunks(
+                news_text=query_text,
+                embedder=embedder,
+                store=store,
+                top_k=settings.retrieval_top_k,
+                retrieval_cfg=retrieval_cfg,
+            )
+        except Exception as exc:  # noqa: BLE001 - surface a usable error, not a traceback
+            # The retrieved chunks are the post's ideological grounding, not an
+            # optional extra: the generation prompt refuses to write without them.
+            # So a retrieval failure cannot be degraded past silently -- report it
+            # as an unavailable dependency rather than returning a post that just
+            # says it had no sources.
+            import logging as _logging
+
+            _logging.getLogger(__name__).error("chunk retrieval failed: %s", exc)
+            detail = "Retrieval is unavailable, so a grounded post cannot be generated."
+            if "API key not valid" in str(exc) or "API_KEY_INVALID" in str(exc):
+                detail = (
+                    "The embedding API key is invalid, so source material could not be "
+                    "retrieved. Set a valid GEMINI_API_KEY and try again."
+                )
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=detail
+            ) from exc
 
     def _full_contexts_for_chunks(self, chunks: list[dict[str, Any]], context_by_title: dict[str, Any]) -> list[dict[str, Any]]:
         contexts: list[dict[str, Any]] = []
