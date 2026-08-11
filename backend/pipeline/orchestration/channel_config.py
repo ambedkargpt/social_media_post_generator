@@ -43,8 +43,21 @@ def load_channel_config(project_root: Path, channel: str) -> ChannelConfig:
         if lookback_days <= 0:
             lookback_days = None
 
+    def _opt_path(key: str) -> Path | None:
+        raw = str(payload.get(key, "")).strip()
+        return (project_root / raw).resolve() if raw else None
+
+    ns = str(payload.get("pinecone_namespace", "")).strip()
+
     return ChannelConfig(
         name=name,
+        semrag_graph_path=_opt_path("semrag_graph_path"),
+        semrag_chunks_path=_opt_path("semrag_chunks_path"),
+        semrag_cache_path=_opt_path("semrag_cache_path"),
+        rag_chunks_path=_opt_path("rag_chunks_path"),
+        rag_video_context_path=_opt_path("rag_video_context_path"),
+        rag_title_embeddings_path=_opt_path("rag_title_embeddings_path"),
+        pinecone_namespace=ns or None,
         channel_url=channel_url,
         channel_slug=channel_slug,
         channel_urls=channel_urls,

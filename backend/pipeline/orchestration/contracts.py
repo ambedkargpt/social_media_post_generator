@@ -32,6 +32,17 @@ class ChannelConfig:
     # "multi"  = split each video into several stories (live/press conferences).
     news_mode: str = "single"
     stories_per_video: int = 4
+    # Knowledge-graph and vector outputs. When unset the global settings paths
+    # are used, which keeps the original single-channel behaviour. Setting them
+    # gives a channel its own graph instead of merging into a shared one.
+    semrag_graph_path: Path | None = None
+    semrag_chunks_path: Path | None = None
+    semrag_cache_path: Path | None = None
+    rag_chunks_path: Path | None = None
+    rag_video_context_path: Path | None = None
+    rag_title_embeddings_path: Path | None = None
+    # Pinecone namespace isolates a channel's vectors within the shared index.
+    pinecone_namespace: str | None = None
     rebuild_rag: bool = True
     rebuild_semrag: bool = True
     run_summarizer: bool = True

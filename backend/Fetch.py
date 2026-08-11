@@ -247,6 +247,10 @@ def collect_recent_videos(
 
     for tab_url in channel_urls:
         print(f"\n Scanning tab: {tab_url}")
+        # Which tab a video came from is the only reliable signal of whether it
+        # was a livestream: titles are inconsistent (some streams never say
+        # "LIVE"), so record it here rather than guessing downstream.
+        source_tab = "streams" if "/streams" in tab_url or "/live" in tab_url else "videos"
         try:
             urls = fetch_video_urls(tab_url, scan_limit=scan_limit)
         except Exception as exc:
@@ -270,6 +274,7 @@ def collect_recent_videos(
                 continue
             if ts >= cutoff:
                 meta["url"] = url
+                meta["source_tab"] = source_tab
                 collected[url] = meta
                 kept_here += 1
                 consecutive_old = 0
@@ -399,6 +404,7 @@ def rebuild_rag_artifacts_from_data_file(
     chunks_path: Path | None = None,
     video_context_path: Path | None = None,
     title_emb_path: Path | None = None,
+    namespace: str | None = None,
 ) -> None:
     """
     Rebuild RAG artifacts after transcript data grows.
@@ -454,7 +460,10 @@ def rebuild_rag_artifacts_from_data_file(
     # Connect to Pinecone and upsert (replaces faiss.write_index)
     _pc = _Pinecone(api_key=settings.pinecone_api_key)
     pinecone_index = _pc.Index(settings.pinecone_index_name)
-    store = build_index(embeddings, chunks, pinecone_index, namespace=settings.pinecone_namespace)
+    # A per-channel namespace keeps one channel's vectors from being retrieved
+    # alongside another's; falls back to the global namespace when unset.
+    _namespace = namespace if namespace is not None else settings.pinecone_namespace
+    store = build_index(embeddings, chunks, pinecone_index, namespace=_namespace)
     save_vector_store(store, RAG_INDEX_PATH, _chunks_path)  # index_path ignored; chunks re-saved
 
     # --- Title embeddings with cache ---
