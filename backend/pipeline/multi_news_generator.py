@@ -262,7 +262,7 @@ def build_story_rows(
             }
             if story.get("topic"):
                 row["topic"] = story["topic"]
-            for key in ("upload_timestamp", "upload_datetime_utc", "upload_date"):
+            for key in ("upload_timestamp", "upload_datetime_utc", "upload_date", "source_tab"):
                 if item.get(key) is not None:
                     row[key] = item[key]
             rows.append(row)

@@ -108,6 +108,7 @@ class NewsService:
             # Pre-tenant documents default to general news.
             tenant_id=int(doc.get("tenant_id") or 0),
             tenant_slug=str(doc.get("tenant_slug") or "general"),
+            content_type=str(doc.get("content_type") or "news"),
             legacy_source=doc.get("legacy_source"),
             original_sort_timestamp=doc.get("original_sort_timestamp"),
             created_at=doc["created_at"],

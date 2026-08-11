@@ -44,6 +44,8 @@ class NewsResponse(BaseModel):
     # Tenant segmentation: 0/"general" is neutral news shown to every user.
     tenant_id: int = 0
     tenant_slug: str = "general"
+    # "press_conference" (livestreamed briefing) or "news" (regular upload)
+    content_type: str = "news"
     legacy_source: Optional[str] = None
     original_sort_timestamp: Optional[float] = None
     created_at: datetime

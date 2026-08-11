@@ -130,6 +130,7 @@ class NewsRepository:
             # Tenant stamp drives party vs general segmentation in the API.
             "tenant_id": doc.get("tenant_id", 0),
             "tenant_slug": doc.get("tenant_slug", "general"),
+            "content_type": doc.get("content_type", "news"),
             "legacy_source": doc.get("legacy_source"),
             "original_sort_timestamp": doc.get("original_sort_timestamp"),
             "updated_at": now,

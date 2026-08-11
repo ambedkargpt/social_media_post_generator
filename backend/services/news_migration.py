@@ -26,6 +26,36 @@ def _parse_dt(value: Any) -> datetime | None:
         return None
 
 
+# Titles that mark a broadcast even when it was filed under the videos tab.
+_PRESS_TITLE_HINTS = (
+    "live",
+    "press conference",
+    "press briefing",
+    "briefing",
+    "प्रेस वार्ता",
+    "प्रेस कॉन्फ्रेंस",
+)
+
+
+def classify_content_type(item: dict[str, Any]) -> str:
+    """
+    "press_conference" for livestreamed briefings, "news" for regular uploads.
+
+    The source tab is authoritative because titles are inconsistent — some
+    streams never say "LIVE". Title hints are only a fallback for items
+    ingested before the tab was recorded.
+    """
+    tab = str(item.get("source_tab") or "").strip().lower()
+    if tab in {"streams", "live"}:
+        return "press_conference"
+    if tab == "videos":
+        # An ended livestream still shows up under videos, so honour the title.
+        title = str(item.get("video_title") or "").lower()
+        return "press_conference" if any(h in title for h in _PRESS_TITLE_HINTS) else "news"
+    title = str(item.get("video_title") or "").lower()
+    return "press_conference" if any(h in title for h in _PRESS_TITLE_HINTS) else "news"
+
+
 def _normalize_item(
     item: dict[str, Any],
     source: str,
@@ -59,6 +89,8 @@ def _normalize_item(
         # Tenant stamp drives party vs general news segmentation in the API.
         "tenant_id": tenant_id,
         "tenant_slug": tenant_slug,
+        # "press_conference" (livestreamed briefing) vs "news" (regular upload).
+        "content_type": classify_content_type(item),
         # Keep null by default to avoid Mongo text index language override conflicts.
         "language": None,
         # Multi-story items carry their own topic; fall back to the channel tags.

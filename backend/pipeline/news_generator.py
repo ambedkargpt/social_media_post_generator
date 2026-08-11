@@ -510,7 +510,7 @@ def update_generated_news_rolling(
                 "subheadline": subhead,
             }
             # Carry multi-story provenance so the source video stays traceable.
-            for k in ("story_index", "source_video_link", "topic"):
+            for k in ("story_index", "source_video_link", "topic", "source_tab", "video_title"):
                 if row.get(k) is not None:
                     rec[k] = row[k]
             for k in ("upload_timestamp", "upload_datetime_utc", "upload_date"):

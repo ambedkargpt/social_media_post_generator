@@ -103,7 +103,7 @@ def run_ingestion(context: PipelineContext) -> StageResult:
             "url": url,
             "transcript": transcript,
         }
-        for key in ("upload_date", "upload_timestamp", "upload_datetime_utc"):
+        for key in ("upload_date", "upload_timestamp", "upload_datetime_utc", "source_tab"):
             if meta.get(key) is not None:
                 entry[key] = meta[key]
         entries.append(entry)
@@ -114,6 +114,12 @@ def run_ingestion(context: PipelineContext) -> StageResult:
         time.sleep(delay)
 
     appended = fetch.append_entries_to_consolidated(channel.consolidated_txt_path, entries)
+    # The RAG and knowledge-graph stages read master_transcript_path, so mirror
+    # new entries into it. Without this those stages find no file and silently
+    # do nothing, which is how the legacy Ravish flow kept its dataset in sync.
+    mirrored = 0
+    if channel.master_transcript_path != channel.consolidated_txt_path:
+        mirrored = fetch.append_entries_to_consolidated(channel.master_transcript_path, entries)
     context.runtime["newly_fetched_entries"] = entries
     return StageResult(
         stage_name="ingestion",
@@ -123,6 +129,7 @@ def run_ingestion(context: PipelineContext) -> StageResult:
             "filtered_pending": len(filtered_urls),
             "new_entries": len(entries),
             "appended_entries": appended,
+            "mirrored_to_master": mirrored,
             "skipped_existing": skipped_existing,
             "cleaned_transcripts": cleaned_count,
             "transcript_failures": transcript_failures,
@@ -138,11 +145,19 @@ def run_rag_artifacts(context: PipelineContext) -> StageResult:
     if context.dry_run:
         return StageResult("rag_artifacts", "skipped", warnings=["dry-run"])
     fetch = _fetch_module()
-    fetch.rebuild_rag_artifacts_from_data_file(context.channel.master_transcript_path)
+    channel = context.channel
+    fetch.rebuild_rag_artifacts_from_data_file(
+        channel.master_transcript_path,
+        chunks_path=channel.rag_chunks_path,
+        video_context_path=channel.rag_video_context_path,
+        title_emb_path=channel.rag_title_embeddings_path,
+        namespace=channel.pinecone_namespace,
+    )
     return StageResult(
         "rag_artifacts",
         "success",
-        artifacts_written=[str(context.channel.master_transcript_path)],
+        metrics={"namespace": channel.pinecone_namespace or "(default)"},
+        artifacts_written=[str(channel.master_transcript_path)],
     )
 
 
@@ -152,11 +167,20 @@ def run_semrag_artifacts(context: PipelineContext) -> StageResult:
     if context.dry_run:
         return StageResult("semrag_artifacts", "skipped", warnings=["dry-run"])
     fetch = _fetch_module()
-    fetch.rebuild_semrag_artifacts_from_data_file(context.channel.master_transcript_path)
+    channel = context.channel
+    fetch.rebuild_semrag_artifacts_from_data_file(
+        channel.master_transcript_path,
+        graph_path=channel.semrag_graph_path,
+        cache_path=channel.semrag_cache_path,
+        chunks_path=channel.semrag_chunks_path,
+    )
     return StageResult(
         "semrag_artifacts",
         "success",
-        artifacts_written=[str(context.settings.semrag_graph_path), str(context.settings.semrag_chunks_path)],
+        artifacts_written=[
+            str(channel.semrag_graph_path or context.settings.semrag_graph_path),
+            str(channel.semrag_chunks_path or context.settings.semrag_chunks_path),
+        ],
     )
 
 
