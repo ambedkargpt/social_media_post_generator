@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import HTTPException, status
 
 from backend.repositories.news_repo import NewsRepository
+from backend.services.news_migration import normalize_source_url
 from backend.schemas.news import NewsCreateRequest, NewsResponse, NewsUpdateRequest
 
 
@@ -19,7 +20,7 @@ class NewsService:
         if "language" in data:
             data["language"] = self._normalize_language(data.get("language"))
         if data.get("source_url"):
-            data["source_url"] = data["source_url"].strip().lower()
+            data["source_url"] = normalize_source_url(data["source_url"])
         if self.repo.get_by_custom_news_id(data["news_id"]):
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="news_id already exists.")
         if data.get("tags"):
@@ -84,7 +85,7 @@ class NewsService:
         if "language" in updates:
             updates["language"] = self._normalize_language(updates.get("language"))
         if "source_url" in updates and updates["source_url"]:
-            updates["source_url"] = updates["source_url"].strip().lower()
+            updates["source_url"] = normalize_source_url(updates["source_url"])
         if "tags" in updates and updates["tags"] is not None:
             updates["tags"] = sorted({t.strip().lower() for t in updates["tags"] if t.strip()})
         doc = self.repo.update(news_id, updates)
