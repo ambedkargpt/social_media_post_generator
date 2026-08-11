@@ -2,6 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import logoSrc from '../assets/images/logo-animation.png';
 
 const EXIT_MS = 180;
+// How long the splash holds before handing off to the landing page.
+const HOLD_MS = 2600;
 
 export default function OpeningSplash({ onDone }) {
   const [phase, setPhase] = useState('enter');
@@ -14,16 +16,31 @@ export default function OpeningSplash({ onDone }) {
   }, []);
 
   const dismiss = useCallback(() => {
-    setPhase('exit');
-    setTimeout(() => {
-      setPhase('gone');
-      onDone?.();
-    }, EXIT_MS);
+    setPhase((p) => {
+      if (p !== 'enter') return p; // a click and the timer must not both fire
+      setTimeout(() => {
+        setPhase('gone');
+        onDone?.();
+      }, EXIT_MS);
+      return 'exit';
+    });
   }, [onDone]);
 
-  function handleContinue() {
-    dismiss();
-  }
+  // Auto-advance to the landing page; no interaction required.
+  useEffect(() => {
+    const id = setTimeout(dismiss, HOLD_MS);
+    return () => clearTimeout(id);
+  }, [dismiss]);
+
+  // Let an impatient visitor skip ahead with a click, tap or key.
+  useEffect(() => {
+    window.addEventListener('keydown', dismiss);
+    window.addEventListener('pointerdown', dismiss);
+    return () => {
+      window.removeEventListener('keydown', dismiss);
+      window.removeEventListener('pointerdown', dismiss);
+    };
+  }, [dismiss]);
 
   if (phase === 'gone') return null;
 
@@ -100,23 +117,30 @@ export default function OpeningSplash({ onDone }) {
         ESTD. 2026
       </p>
 
-      {/* Continue button */}
-      <div className="splash-lang relative z-10 mt-8">
-        <button
-          type="button"
-          onClick={handleContinue}
-          className="group inline-flex items-center gap-2.5 rounded-full px-7 py-2.5 font-count text-[14px] font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110"
-          style={{
-            background: 'linear-gradient(135deg, #1a5fff 0%, #3f9fff 100%)',
-            boxShadow: '0 4px 20px rgba(63,159,255,0.35)',
-          }}
+      {/* Progress bar — replaces the old Continue button now that the splash
+          advances on its own. It shows the wait is finite and deliberate. */}
+      <div className="splash-lang relative z-10 mt-9 flex flex-col items-center gap-3">
+        <div
+          className="h-[3px] w-[148px] overflow-hidden rounded-full"
+          style={{ background: 'rgba(90,130,192,0.22)' }}
         >
-          Continue
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
+          <div
+            className="h-full rounded-full"
+            style={{
+              background: 'linear-gradient(90deg, #1a5fff 0%, #3f9fff 100%)',
+              boxShadow: '0 0 10px rgba(63,159,255,0.6)',
+              animation: `splashProgress ${HOLD_MS}ms linear forwards`,
+            }}
+          />
+        </div>
+        <span className="font-count text-[10.5px] uppercase tracking-[0.28em]" style={{ color: '#4d6da6' }}>
+          Loading
+        </span>
       </div>
+
+      <style>{`
+        @keyframes splashProgress { from { width: 0%; } to { width: 100%; } }
+      `}</style>
     </div>
   );
 }

@@ -9,16 +9,16 @@ import team5 from "../../assets/images/team/team5.jpeg";
 import team6 from "../../assets/images/team/team6.jpeg";
 import team7 from "../../assets/images/team/team7.jpeg";
 
-// NOTE: names/roles are placeholders — photos to be matched to real names later.
-// `position` sets each photo's focal point so faces are never cropped out.
+// `position` sets each photo's focal point so faces are never cropped out, and
+// stays tied to its photo when the display order changes.
 const TEAM = [
-  { name: "Team Member", role: "AmbedkarGPT", photo: team1, position: "50% 25%" },
-  { name: "Team Member", role: "AmbedkarGPT", photo: team2, position: "50% 20%" },
-  { name: "Team Member", role: "AmbedkarGPT", photo: team3, position: "50% 30%" },
-  { name: "Team Member", role: "AmbedkarGPT", photo: team4, position: "50% 20%" },
-  { name: "Team Member", role: "AmbedkarGPT", photo: team5, position: "50% 55%" },
-  { name: "Team Member", role: "AmbedkarGPT", photo: team6, position: "50% 12%" },
-  { name: "Team Member", role: "AmbedkarGPT", photo: team7, position: "50% 40%" },
+  { name: "Kinjalk Singh",         role: "Founder",                 photo: team4, position: "50% 20%" },
+  { name: "Kishore Jain",          role: "Advisor",                 photo: team5, position: "50% 55%" },
+  { name: "Chaudhary Arpit Singh", role: "Research Associate",      photo: team6, position: "50% 0%" },
+  { name: "Michale Randle",        role: "Advisor",                 photo: team7, position: "50% 40%" },
+  { name: "Kunal Lonhare",         role: "Influencer",              photo: team1, position: "50% 25%" },
+  { name: "Kalpik Singh",          role: "Knowledge Graph Analyst", photo: team2, position: "50% 20%" },
+  { name: "Sajjal Dixit",          role: "Operation Manager",       photo: team3, position: "50% 30%" },
 ];
 
 function NavButton({ onClick, direction, label }) {

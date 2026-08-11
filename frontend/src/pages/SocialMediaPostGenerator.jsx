@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Search, Filter, Sparkles,
-  Copy, Check, RefreshCw, ChevronDown, Eye, FileText, Star,
+  Copy, Check, RefreshCw, ChevronDown, Eye, FileText, Star, Radio,
 } from 'lucide-react';
 
 import PreferencesPanel from '../components/generate/PreferencesPanel';
@@ -88,7 +88,31 @@ function adaptNews(item) {
     topic:    item.summary || item.headline,
     tenantId:   item.tenant_id ?? 0,
     tenantSlug: item.tenant_slug || 'general',
+    contentType: item.content_type || 'news',
   };
+}
+
+// Livestreamed briefings read differently from regular uploads, so the card
+// says which it is.
+const CONTENT_TYPES = {
+  press_conference: { label: 'Press Conference', color: '#f0a63a' },
+  news:             { label: 'News Article',     color: '#5a6e9a' },
+};
+
+// Date buckets for the filter menu. `days: null` means no date restriction.
+const DATE_FILTERS = [
+  { id: 'all',   label: 'All dates',   days: null },
+  { id: 'today', label: 'Today',       days: 1 },
+  { id: '7d',    label: 'Last 7 days', days: 7 },
+  { id: '30d',   label: 'Last 30 days', days: 30 },
+];
+
+function withinDays(dateValue, days) {
+  if (!days) return true;
+  if (!dateValue) return false;
+  const t = new Date(dateValue).getTime();
+  if (Number.isNaN(t)) return false;
+  return t >= Date.now() - days * 86400000;
 }
 
 // Signup stores a display name ("Indian National Congress (INC)"); the tenant
@@ -133,6 +157,8 @@ export default function SocialMediaPostGenerator() {
   const [tone,            setTone]           = useState('Professional');
   const [search,          setSearch]          = useState('');
   const [activeFilter,    setActiveFilter]    = useState('All');
+  const [dateFilter,      setDateFilter]      = useState('all');
+  const [typeFilter,      setTypeFilter]      = useState('all'); // all | news | press_conference
   const [page,            setPage]            = useState(1);
   const [tenants,         setTenants]         = useState([]);
   const [newsSection,     setNewsSection]     = useState('party'); // 'party' | 'general'
@@ -294,11 +320,24 @@ export default function SocialMediaPostGenerator() {
     ? articles
     : (newsSection === 'party' ? partyArticles : generalArticles);
 
-  const filteredArticles = useMemo(() => sectionArticles.filter((a) => {
-    const matchSearch = !search || a.title.toLowerCase().includes(search.toLowerCase());
-    const matchFilter = activeFilter === 'All' || a.category === activeFilter;
-    return matchSearch && matchFilter;
-  }), [sectionArticles, search, activeFilter]);
+  // Accent for the section currently on screen; falls back to the party colour
+  // when no party is set, so the heading is never unstyled.
+  const theme = SECTION_THEME[activeParty ? newsSection : 'party'] ?? SECTION_THEME.party;
+
+  const filteredArticles = useMemo(() => {
+    const days = DATE_FILTERS.find((d) => d.id === dateFilter)?.days ?? null;
+    return sectionArticles.filter((a) => {
+      const matchSearch = !search || a.title.toLowerCase().includes(search.toLowerCase());
+      const matchFilter = activeFilter === 'All' || a.category === activeFilter;
+      const matchDate   = withinDays(a.date, days);
+      const matchType   = typeFilter === 'all' || a.contentType === typeFilter;
+      return matchSearch && matchFilter && matchDate && matchType;
+    });
+  }, [sectionArticles, search, activeFilter, dateFilter, typeFilter]);
+
+  const filtersActive = (dateFilter !== 'all' ? 1 : 0)
+    + (typeFilter !== 'all' ? 1 : 0)
+    + (activeFilter !== 'All' ? 1 : 0);
 
   // Numbered pagination — slice the filtered list into fixed-size pages.
   // Clamp during render so a stale-high page never slices out of range
@@ -638,10 +677,12 @@ export default function SocialMediaPostGenerator() {
 
         {/* AmbedkarGPT identity banner — sits above the search bar */}
         <div className="mx-6 mt-5 flex items-center gap-4 rounded-xl border border-[#1a2d55]/50 bg-[#070e22]/80 px-5 py-3.5 md:mx-8">
-          <img src={logoSrc} alt="AmbedkarGPT" className="h-8 w-8 shrink-0 object-contain opacity-90 drop-shadow-[0_0_8px_rgba(63,159,255,0.5)]" />
+          <img src={logoSrc} alt="AmbedkarGPT" className="h-10 w-10 shrink-0 object-contain opacity-90 drop-shadow-[0_0_8px_rgba(63,159,255,0.5)]" />
           <div className="min-w-0">
-            <p className="font-display text-[15px] font-semibold text-white">Social Media Post Generator</p>
-            <p className="text-[11.5px] text-[#6b78a0]">
+            <p className="font-display text-[20px] font-bold leading-tight text-white md:text-[23px]">
+              Social Media Post Generator
+            </p>
+            <p className="mt-0.5 text-[12.5px] text-[#6b78a0]">
               Educate &middot; Agitate &middot; Organize &mdash; Dr. B.R. Ambedkar
             </p>
           </div>
@@ -677,30 +718,71 @@ export default function SocialMediaPostGenerator() {
               type="button"
               onClick={() => { setFilterOpen((p) => !p); setView('feed'); }}
               className={`inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-[12.5px] font-medium transition ${
-                activeFilter !== 'All'
+                filtersActive
                   ? 'border-[#3f9fff]/60 bg-[#0d1a3a] text-[#6aa8ff]'
                   : 'border-[#1e3260]/70 bg-[#0d1531]/80 text-[#8b94b8] hover:border-[#3a6bc4]/60 hover:text-white'
               }`}
             >
               <Filter size={13} strokeWidth={2} />
-              {activeFilter === 'All' ? 'Filter News' : activeFilter}
+              Filter News
+              {filtersActive > 0 && (
+                <span className="rounded-full bg-[#3f9fff] px-1.5 py-0.5 font-count text-[10px] leading-none text-white">
+                  {filtersActive}
+                </span>
+              )}
             </button>
 
             {filterOpen && (
-              <div className="absolute right-0 top-[calc(100%+6px)] z-40 w-40 overflow-hidden rounded-xl border border-[#1e3260]/70 bg-[#0d1531] shadow-xl">
-                {CATEGORIES.map((cat) => (
+              <div className="absolute right-0 top-[calc(100%+6px)] z-40 w-56 overflow-hidden rounded-xl border border-[#1e3260]/70 bg-[#0d1531] shadow-xl">
+                {/* Date */}
+                <p className="px-4 pb-1.5 pt-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#5a6e9a]">
+                  Date
+                </p>
+                {DATE_FILTERS.map((d) => (
                   <button
-                    key={cat}
+                    key={d.id}
                     type="button"
-                    onClick={() => { setActiveFilter(cat); setPage(1); setFilterOpen(false); setView('feed'); }}
-                    className={`flex w-full items-center justify-between px-4 py-2.5 text-[12.5px] transition hover:bg-[#0f1a3a] ${
-                      cat === activeFilter ? 'text-[#3f9fff]' : 'text-white/80'
+                    onClick={() => { setDateFilter(d.id); setPage(1); setView('feed'); }}
+                    className={`flex w-full items-center justify-between px-4 py-2 text-[12.5px] transition hover:bg-[#0f1a3a] ${
+                      d.id === dateFilter ? 'text-[#3f9fff]' : 'text-white/80'
                     }`}
                   >
-                    {cat}
-                    {cat === activeFilter && <span className="h-1.5 w-1.5 rounded-full bg-[#3f9fff]" />}
+                    {d.label}
+                    {d.id === dateFilter && <span className="h-1.5 w-1.5 rounded-full bg-[#3f9fff]" />}
                   </button>
                 ))}
+
+                {/* Type */}
+                <p className="border-t border-[#1e3260]/60 px-4 pb-1.5 pt-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#5a6e9a]">
+                  Type
+                </p>
+                {[
+                  { id: 'all', label: 'All types' },
+                  { id: 'news', label: CONTENT_TYPES.news.label },
+                  { id: 'press_conference', label: CONTENT_TYPES.press_conference.label },
+                ].map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => { setTypeFilter(t.id); setPage(1); setView('feed'); }}
+                    className={`flex w-full items-center justify-between px-4 py-2 text-[12.5px] transition hover:bg-[#0f1a3a] ${
+                      t.id === typeFilter ? 'text-[#3f9fff]' : 'text-white/80'
+                    }`}
+                  >
+                    {t.label}
+                    {t.id === typeFilter && <span className="h-1.5 w-1.5 rounded-full bg-[#3f9fff]" />}
+                  </button>
+                ))}
+
+                {filtersActive > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => { setDateFilter('all'); setTypeFilter('all'); setActiveFilter('All'); setPage(1); }}
+                    className="w-full border-t border-[#1e3260]/60 px-4 py-2.5 text-left text-[12px] text-[#8b94b8] transition hover:bg-[#0f1a3a] hover:text-white"
+                  >
+                    Clear filters
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -823,6 +905,29 @@ export default function SocialMediaPostGenerator() {
             )}
             {!newsLoading && !newsError && filteredArticles.length > 0 && (
               <>
+              {/* Section heading for the card grid */}
+              <div className="mb-5 mt-1">
+                <div className="flex items-center gap-3">
+                  {/* Accent bar ties the heading to the active section's colour */}
+                  <span
+                    className="h-7 w-[4px] shrink-0 rounded-full"
+                    style={{ backgroundColor: theme.accent, boxShadow: `0 0 12px ${theme.accent}88` }}
+                  />
+                  <h3 className="font-display text-[26px] font-bold leading-none tracking-tight text-white">
+                    Headlines
+                  </h3>
+                  <span
+                    className="rounded-full px-2.5 py-1 font-count text-[12.5px] font-semibold leading-none"
+                    style={{ backgroundColor: `${theme.accent}1f`, color: theme.accent }}
+                  >
+                    {filteredArticles.length}
+                  </span>
+                </div>
+                <p className="mt-2 pl-[19px] text-[13px] text-[#7d8aa6]">
+                  Pick a story below to generate a post from it.
+                </p>
+              </div>
+
               <div className="grid gap-5 lg:grid-cols-2">
                 {pagedArticles.map((article) => {
                   const dateLabel = formatNewsDate(article.date);
@@ -848,9 +953,14 @@ export default function SocialMediaPostGenerator() {
                     >
                       {/* Header row: NEWS ARTICLE label · category tag */}
                       <div className="mb-3 flex items-center justify-between gap-3">
-                        <span className="inline-flex items-center gap-1.5 font-count text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a6e9a]">
-                          <FileText size={12} strokeWidth={2} className="text-[#3f6aaa]" />
-                          News Article
+                        <span
+                          className="inline-flex items-center gap-1.5 font-count text-[11px] font-semibold uppercase tracking-[0.18em]"
+                          style={{ color: (CONTENT_TYPES[article.contentType] ?? CONTENT_TYPES.news).color }}
+                        >
+                          {article.contentType === 'press_conference'
+                            ? <Radio size={12} strokeWidth={2} />
+                            : <FileText size={12} strokeWidth={2} />}
+                          {(CONTENT_TYPES[article.contentType] ?? CONTENT_TYPES.news).label}
                         </span>
                         <span
                           className="shrink-0 rounded-full border px-3 py-1 font-count text-[11px] uppercase tracking-wider"
