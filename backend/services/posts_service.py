@@ -35,6 +35,13 @@ from backend.pipeline.retriever import retrieve_relevant_chunks
 from backend.semrag.runtime import semrag_candidates_for_query
 
 
+# Published output is Hindi regardless of the UI language. The site language
+# switches the interface, but a post written in English cannot carry the
+# Devanagari-only editorial standard the news pipeline enforces, and switching
+# the interface to English silently produced English posts.
+POST_OUTPUT_LANGUAGE = "hi"
+
+
 class PostsService:
     def __init__(self) -> None:
         self.repo = PostsRepository()
@@ -155,7 +162,7 @@ class PostsService:
             retrieved_chunks=retrieved_chunks,
             full_contexts=full_contexts,
             temperature=temperature,
-            language=language,
+            language=POST_OUTPUT_LANGUAGE,
         )
         if not post_text or not post_text.strip():
             raise HTTPException(
@@ -240,7 +247,7 @@ class PostsService:
             retrieved_chunks=chunks,
             full_contexts=full_contexts,
             temperature=payload.temperature,
-            language=payload.language,
+            language=POST_OUTPUT_LANGUAGE,
             refinement_note=payload.refinement_note,
         )
         if not post_text or not post_text.strip():
