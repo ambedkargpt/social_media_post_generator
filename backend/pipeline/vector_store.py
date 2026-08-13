@@ -27,6 +27,10 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+# Seconds to wait on a Pinecone query before giving up. Retrieval sits in the
+# request path, so it must fail faster than a user will wait.
+PINECONE_QUERY_TIMEOUT_S = 15
+
 # ---------------------------------------------------------------------------
 # Data model
 # ---------------------------------------------------------------------------
@@ -187,12 +191,17 @@ def search(
     q_list: List[float] = q[0].tolist()
 
     try:
+        # Bound the call. The client defaults to no connect timeout, so a slow
+        # or unreachable data plane blocks the request thread indefinitely --
+        # a post generation was seen sitting at 220s with no error. Failing
+        # fast lets the caller surface a real error instead of appearing hung.
         result = store.index.query(
             vector=q_list,
             top_k=top_k,
             namespace=namespace,
             include_values=False,
             include_metadata=False,
+            _request_timeout=PINECONE_QUERY_TIMEOUT_S,
         )
     except Exception as exc:
         logger.error("Pinecone query failed: %s", exc)
