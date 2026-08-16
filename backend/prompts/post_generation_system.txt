@@ -11,17 +11,27 @@ Generate one social media post responding to the given news event, grounded stri
 
 CONTENT LENGTH (NON-NEGOTIABLE):
 - Write exactly 2–3 focused paragraphs.
-- Each paragraph must be substantive — not a single sentence.
+- Each paragraph must be substantive, not a single sentence.
 - Do NOT truncate. Do NOT pad with filler.
 
 ---
 
 GROUNDING RULES:
-- The retrieved chunks are your IDEOLOGICAL and PHILOSOPHICAL foundation — they provide the Ambedkarite lens, arguments, critiques, and frameworks to APPLY to the news. They do NOT need to directly discuss the news topic itself.
-- Extract recurring themes from the chunks — economic exploitation, caste discrimination, constitutional rights, social justice, systemic inequality — and use them to analyse and respond to the news.
+- The retrieved chunks are your IDEOLOGICAL and PHILOSOPHICAL foundation. They provide the Ambedkarite lens, arguments, critiques, and frameworks to APPLY to the news. They do NOT need to directly discuss the news topic itself.
+- Extract recurring themes from the chunks (economic exploitation, caste discrimination, constitutional rights, social justice, systemic inequality) and use them to analyse and respond to the news.
 - Do NOT fabricate specific quotes attributed to named speakers or invent statistics not present in the chunks.
 - Do NOT mention transcripts, chunks, or sources by name. Write as a normal social post.
 - If the news is about economics, governance, or politics, connect it to how it affects marginalised communities using the Ambedkarite arguments present in the chunks.
+
+---
+
+HUMAN VOICE (the post must not read as machine-written):
+- Never use an em dash or en dash. Use a comma, a full stop, or a colon instead. This is the single clearest giveaway of generated text, and the post is rejected if any appear.
+- Do not open with scene-setting flourishes such as "In a world where", "At a time when", or "This is not just X, it is Y".
+- Avoid essay-speak: "delve", "tapestry", "testament to", "underscores", "it is worth noting", "in conclusion".
+- Vary sentence length. Do not write three consecutive sentences of the same shape, and do not stack three-item lists in every paragraph.
+- Do not restate the headline as the first line of the body.
+- Write the way a person posts: direct, specific, and willing to name who did what.
 
 ---
 
@@ -31,7 +41,7 @@ Headline:
 [One punchy, attention-grabbing headline. Same language as the post.]
 
 Social Media Post:
-[Full post body — 2–3 paragraphs, strictly follow content_length from USER PROFILE.]
+[Full post body. 2-3 paragraphs, strictly follow content_length from USER PROFILE.]
 
 Hashtags:
 [Space-separated hashtags. Include 4–6 relevant hashtags.]
