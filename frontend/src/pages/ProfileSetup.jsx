@@ -50,7 +50,12 @@ export default function ProfileSetup() {
   const { go: curtainGo } = useCurtain();
   const { currentUser, updateProfile } = useAuth();
 
-  const [fullName, setFullName]   = useState('');
+  const [fullName, setFullName]   = useState(currentUser?.full_name || '');
+  // Onboarding sends the user on to the questionnaire; someone editing an
+  // existing profile from the sidebar should land back on the dashboard
+  // instead of being pushed through onboarding again.
+  const isOnboarding = !currentUser?.full_name;
+  const nextRoute = isOnboarding ? '/questionnaire' : '/dashboard';
   const [username, setUsername]   = useState(currentUser?.username || '');
   const [politicalParty, setPoliticalParty] = useState(currentUser?.political_party || '');
   const [errors, setErrors]       = useState({});
@@ -81,7 +86,7 @@ export default function ProfileSetup() {
         username: username.trim(),
         political_party: politicalParty || undefined,
       });
-      curtainGo('/questionnaire', { replace: true });
+      curtainGo(nextRoute, { replace: true });
     } catch (err) {
       const detail = err?.response?.data?.detail || err?.message || '';
       if (detail.toLowerCase().includes('already taken') || detail.toLowerCase().includes('already exists')) {
@@ -95,7 +100,7 @@ export default function ProfileSetup() {
   }
 
   function handleSkip() {
-    curtainGo('/questionnaire', { replace: true });
+    curtainGo(nextRoute, { replace: true });
   }
 
   return (
@@ -147,14 +152,16 @@ export default function ProfileSetup() {
           {/* Step badge */}
           <div className="mb-5 inline-flex items-center gap-2 rounded-full px-3 py-1" style={{ background: 'rgba(63,159,255,0.1)', border: '1px solid rgba(63,159,255,0.2)' }}>
             <span className="h-1.5 w-1.5 rounded-full bg-[#3f9fff]" />
-            <span className="text-[11px] font-medium tracking-wide" style={{ color: '#6baaff' }}>PROFILE SETUP</span>
+            <span className="text-[11px] font-medium tracking-wide" style={{ color: '#6baaff' }}>{isOnboarding ? 'PROFILE SETUP' : 'YOUR PROFILE'}</span>
           </div>
 
           <h1 className="font-display text-[28px] font-bold leading-tight text-white md:text-[32px]">
-            Tell us your name
+            {isOnboarding ? 'Tell us your name' : 'Edit your profile'}
           </h1>
           <p className="mt-2 text-[13.5px] leading-relaxed" style={{ color: '#7a8db5' }}>
-            This will be shown on your profile and posts. You can change it later.
+            {isOnboarding
+              ? 'This will be shown on your profile and posts. You can change it later.'
+              : 'Your name, handle and party. Your party decides which news feed you see.'}
           </p>
 
           {authError && (
@@ -235,7 +242,7 @@ export default function ProfileSetup() {
                 </>
               ) : (
                 <>
-                  Continue
+                  {isOnboarding ? 'Continue' : 'Save changes'}
                   <ArrowRight size={15} strokeWidth={2.2} />
                 </>
               )}
@@ -248,7 +255,7 @@ export default function ProfileSetup() {
             className="mt-4 w-full py-2 text-center text-[13px] transition-opacity hover:opacity-100"
             style={{ color: '#4a5e8a', opacity: 0.7 }}
           >
-            Skip for now
+            {isOnboarding ? 'Skip for now' : 'Cancel'}
           </button>
         </div>
 
