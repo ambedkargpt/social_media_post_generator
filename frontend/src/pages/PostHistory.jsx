@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Copy, Check, Search, Sparkles, Trash2, BookmarkCheck, Languages } from 'lucide-react';
+import { ArrowLeft, Copy, Check, Search, Sparkles, Trash2, BookmarkCheck, Languages, X, Maximize2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getPosts, updatePost, deletePost, translatePost } from '../api/posts';
+import PostContent from '../components/generate/PostContent';
 import logoSrc from '../assets/images/logo-animation.png';
 
 const STATUS_COLORS = {
@@ -23,8 +25,109 @@ function StatusBadge({ status }) {
   );
 }
 
-function PostCard({ post, onCopy, onPublish, onArchive, copiedId }) {
-  const [expanded, setExpanded] = useState(false);
+// Full-screen reader for one post. A dialog rather than a route so the list
+// keeps its scroll position and filters when it closes.
+function PostModal({ post, onClose, onCopy, copiedId }) {
+  const [translating, setTranslating]       = useState(false);
+  const [translated, setTranslated]         = useState('');
+  const [showTranslated, setShowTranslated] = useState(false);
+
+  const content = showTranslated && translated ? translated : (post?.content ?? '');
+
+  // Escape to close, and hold the background still while the dialog is open.
+  useEffect(() => {
+    function onKey(e) { if (e.key === 'Escape') onClose(); }
+    window.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [onClose]);
+
+  async function handleTranslate() {
+    if (showTranslated) { setShowTranslated(false); return; }
+    if (translated) { setShowTranslated(true); return; }
+    setTranslating(true);
+    try {
+      const res = await translatePost(post.id, 'en');
+      setTranslated(res.translated_content ?? '');
+      setShowTranslated(true);
+    } catch { /* ignore */ }
+    finally { setTranslating(false); }
+  }
+
+  const date = post.created_at
+    ? new Date(post.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+    : '';
+
+  // Rendered into document.body. An ancestor with will-change/transform becomes
+  // the containing block for position:fixed, which pinned the dialog inside the
+  // page instead of the viewport and pushed its header off screen.
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[200] flex items-start justify-center overflow-y-auto p-4 md:p-8"
+      style={{ backgroundColor: 'rgba(3,6,17,0.86)', backdropFilter: 'blur(6px)' }}
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="relative my-auto flex w-full max-w-[860px] flex-col overflow-hidden rounded-2xl border"
+        style={{
+          backgroundColor: '#0a1130',
+          borderColor: '#1e3260',
+          boxShadow: '0 30px 80px rgba(0,0,0,0.6)',
+          maxHeight: 'calc(100vh - 4rem)',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* header */}
+        <div className="flex shrink-0 items-center gap-3 border-b border-[#1a2c55]/80 px-6 py-4"
+             style={{ backgroundColor: '#0a1130' }}>
+          <StatusBadge status={post.status} />
+          <span className="text-[12px] text-[#5a6e9a]">{date}</span>
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleTranslate}
+              disabled={translating}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#1e3a6e]/80 bg-[#0d1840]/80 px-3 py-2 text-[12px] font-medium text-[#6aa8ff] transition hover:text-white disabled:opacity-40"
+            >
+              <Languages size={13} strokeWidth={2} />
+              {translating ? 'Translating…' : showTranslated ? 'Show original' : 'Translate'}
+            </button>
+            <button
+              type="button"
+              onClick={() => onCopy(post.id, content)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#1e3260]/80 bg-[#0d1531]/80 px-3 py-2 text-[12px] font-medium text-[#8b94b8] transition hover:text-white"
+            >
+              {copiedId === post.id ? <Check size={13} strokeWidth={2.4} /> : <Copy size={13} strokeWidth={2} />}
+              {copiedId === post.id ? 'Copied' : 'Copy'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#1e3260]/80 text-[#8b94b8] transition hover:text-white"
+            >
+              <X size={15} strokeWidth={2} />
+            </button>
+          </div>
+        </div>
+
+        {/* body — same renderer as the generator, so it reads identically */}
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-7 md:px-8">
+          <PostContent content={content} />
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+function PostCard({ post, onOpen, onCopy, onPublish, onArchive, copiedId }) {
   const [translating, setTranslating]     = useState(false);
   const [translated, setTranslated]       = useState('');
   const [showTranslated, setShowTranslated] = useState(false);
@@ -134,19 +237,18 @@ function PostCard({ post, onCopy, onPublish, onArchive, copiedId }) {
         className="whitespace-pre-wrap text-[13.5px] leading-relaxed"
         style={{ color: '#c5d0e8' }}
       >
-        {expanded || !hasMore ? content : preview + '…'}
+        {hasMore ? preview + '…' : content}
       </p>
 
-      {hasMore && (
-        <button
-          type="button"
-          onClick={() => setExpanded((p) => !p)}
-          className="self-start text-[12px] font-medium transition hover:opacity-80"
-          style={{ color: '#3f9fff' }}
-        >
-          {expanded ? 'Show less' : 'Read full post'}
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={() => onOpen(post)}
+        className="group/open self-start inline-flex items-center gap-1.5 text-[12.5px] font-semibold transition hover:opacity-80"
+        style={{ color: '#3f9fff' }}
+      >
+        <Maximize2 size={12} strokeWidth={2.2} />
+        Read full post
+      </button>
 
       {/* hashtags */}
       {post.hashtags?.length > 0 && (
@@ -175,6 +277,7 @@ export default function PostHistory() {
   const [filter,   setFilter]  = useState('all');
   const [search,   setSearch]  = useState('');
   const [copiedId, setCopied]  = useState(null);
+  const [openPost, setOpenPost] = useState(null);
 
   useEffect(() => {
     getPosts({ limit: 200 })
@@ -333,6 +436,7 @@ export default function PostHistory() {
               <PostCard
                 key={post.id}
                 post={post}
+                onOpen={setOpenPost}
                 onCopy={handleCopy}
                 onPublish={handlePublish}
                 onArchive={handleArchive}
@@ -340,6 +444,15 @@ export default function PostHistory() {
               />
             ))}
           </div>
+        )}
+
+        {openPost && (
+          <PostModal
+            post={openPost}
+            onClose={() => setOpenPost(null)}
+            onCopy={handleCopy}
+            copiedId={copiedId}
+          />
         )}
       </main>
     </div>

@@ -37,7 +37,7 @@ Additionally:
 
 PROCESS YOU MUST FOLLOW:
 
-Step 1 — Understand the USER PROFILE
+Step 1, Understand the USER PROFILE
 
 The USER PROFILE controls:
 
@@ -56,13 +56,13 @@ The USER PROFILE controls:
 
 The generated post must strictly follow these settings.
 
-Step 2 — Analyze the NEWS
+Step 2, Analyze the NEWS
 
 Identify the main issue in the news and the broader social or political conflict involved.
 
-Step 3 — Analyze the RETRIEVED TRANSCRIPT CHUNKS
+Step 3, Analyze the RETRIEVED TRANSCRIPT CHUNKS
 
-The retrieved chunks are your IDEOLOGICAL LENS — they provide the Ambedkarite philosophical framework to apply to the news. They do not need to be directly about the news topic.
+The retrieved chunks are your IDEOLOGICAL LENS, they provide the Ambedkarite philosophical framework to apply to the news. They do not need to be directly about the news topic.
 
 Carefully read the provided chunks and identify:
 
@@ -76,7 +76,7 @@ Then apply these ideological themes (economic exploitation, caste rights, consti
 
 Do NOT fabricate specific statistics or quotes attributed to named speakers.
 
-Step 4 — Generate the Social Media Post
+Step 4, Generate the Social Media Post
 
 Create a post that:
 
@@ -98,7 +98,7 @@ Hashtags:
 
 IMPORTANT RULES:
 
-1. Use the transcript chunks as the Ambedkarite ideological framework — apply their arguments and themes to any news topic.
+1. Use the transcript chunks as the Ambedkarite ideological framework, apply their arguments and themes to any news topic.
 2. Do not fabricate specific quotes or statistics not present in the chunks.
 3. Do not mention the transcript source or speakers.
 4. Only refuse if NO chunks at all were provided. If any chunks exist, always generate a post using the Ambedkarite lens from those chunks.

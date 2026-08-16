@@ -1,3 +1,4 @@
+import os
 import re
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -86,6 +87,13 @@ _LANGUAGE_INSTRUCTIONS: dict[str, str] = {
 }
 
 
+# Reasoning models count their chain-of-thought against max_tokens, so the cap
+# has to cover the thinking as well as the answer. At 4096 the reasoning
+# consumed nearly the whole budget and posts were cut off mid-word regardless of
+# the requested length. Devanagari also costs more tokens per word than Latin,
+# so a Hindi post needs noticeably more headroom than the word count suggests.
+_MAX_COMPLETION_TOKENS = int(os.getenv("POST_MAX_COMPLETION_TOKENS", "16000"))
+
 # Matches section headers in English OR Hindi (LLM sometimes translates labels when
 # generating Hindi content).
 _SECTION_RE = re.compile(
@@ -99,6 +107,29 @@ _KEY_NORM: dict[str, str] = {
     'सोशल मीडिया पोस्ट':  'social media post',
     'हैशटेग':              'hashtags',
 }
+
+
+def _strip_ai_tells(text: str) -> str:
+    """
+    Remove the em dash habit from generated posts.
+
+    The prompt forbids it, but instructions on punctuation are followed
+    inconsistently, and a single stray dash is enough to make a post read as
+    machine-written. Substituting deterministically is more reliable than
+    asking again: an em dash used parenthetically reads correctly as a comma,
+    and one used as a sentence break reads correctly as a full stop.
+    """
+    if not text:
+        return text
+    # " word — word "  ->  " word, word "
+    out = re.sub(r"\s*[—–]\s*", ", ", text)
+    # Tidy the artefacts that substitution can create.
+    out = re.sub(r",\s*,", ",", out)
+    out = re.sub(r"\s+,", ",", out)
+    out = re.sub(r",(\s*)([.!?।])", r"\2", out)
+    # A comma directly before a closing quote or bracket reads wrong.
+    out = re.sub(r",(\s*)([\"'’”)\]])", r"\2", out)
+    return out
 
 
 def _extract_post_body(raw: str) -> str:
@@ -199,10 +230,10 @@ def generate_post(
             {"role": "user", "content": user_content},
         ],
         temperature=temperature,
-        max_tokens=4096,
+        max_tokens=_MAX_COMPLETION_TOKENS,
     )
 
     text = (response.choices[0].message.content or "").strip()
     if not text:
         return ""
-    return _extract_post_body(text)
+    return _strip_ai_tells(_extract_post_body(text))

@@ -99,13 +99,15 @@ const CONTENT_TYPES = {
   news:             { label: 'News Article',     color: '#5a6e9a' },
 };
 
-// Date buckets for the filter menu. `days: null` means no date restriction.
-const DATE_FILTERS = [
-  { id: 'all',   label: 'All dates',   days: null },
-  { id: 'today', label: 'Today',       days: 1 },
-  { id: '7d',    label: 'Last 7 days', days: 7 },
-  { id: '30d',   label: 'Last 30 days', days: 30 },
+// Two standing ranges, plus a per-day jump built from the days that actually
+// carry articles. A free calendar would let the user land on a day with nothing
+// published; a list built from the data cannot be picked wrong.
+const DATE_RANGES = [
+  { id: 'all', label: 'All dates',   days: null },
+  { id: '7d',  label: 'Last 7 days', days: 7 },
 ];
+
+const DAY_PREFIX = 'day:';
 
 function withinDays(dateValue, days) {
   if (!days) return true;
@@ -113,6 +115,44 @@ function withinDays(dateValue, days) {
   const t = new Date(dateValue).getTime();
   if (Number.isNaN(t)) return false;
   return t >= Date.now() - days * 86400000;
+}
+
+// Day buckets for the feed headings. Compared on local calendar days so an
+// article published late yesterday does not read as "Today" on a time diff.
+function startOfDay(d) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x.getTime();
+}
+
+function dayGroupLabel(dateValue) {
+  if (!dateValue) return 'Undated';
+  const t = new Date(dateValue);
+  if (Number.isNaN(t.getTime())) return 'Undated';
+  const diffDays = Math.round((startOfDay(new Date()) - startOfDay(t)) / 86400000);
+  if (diffDays <= 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays === 2) return 'Day before yesterday';
+  return t.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' });
+}
+
+// Stable per-day identity for the day picker. Articles without a usable date
+// still need a bucket, otherwise they vanish from the day list entirely.
+function dayKey(dateValue) {
+  if (!dateValue) return 'undated';
+  const t = new Date(dateValue);
+  return Number.isNaN(t.getTime()) ? 'undated' : String(startOfDay(t));
+}
+
+function dayKeyLabel(key) {
+  return key === 'undated' ? 'Undated' : dayGroupLabel(Number(key));
+}
+
+function matchesDate(dateValue, filterId) {
+  if (filterId.startsWith(DAY_PREFIX)) {
+    return dayKey(dateValue) === filterId.slice(DAY_PREFIX.length);
+  }
+  return withinDays(dateValue, DATE_RANGES.find((d) => d.id === filterId)?.days ?? null);
 }
 
 // Signup stores a display name ("Indian National Congress (INC)"); the tenant
@@ -324,16 +364,53 @@ export default function SocialMediaPostGenerator() {
   // when no party is set, so the heading is never unstyled.
   const theme = SECTION_THEME[activeParty ? newsSection : 'party'] ?? SECTION_THEME.party;
 
-  const filteredArticles = useMemo(() => {
-    const days = DATE_FILTERS.find((d) => d.id === dateFilter)?.days ?? null;
+  // Everything except the date rule. The day picker counts off this list, so the
+  // number beside each day is what that day will actually show.
+  const dateScopedArticles = useMemo(() => {
+    const q = search.toLowerCase();
     return sectionArticles.filter((a) => {
-      const matchSearch = !search || a.title.toLowerCase().includes(search.toLowerCase());
+      const matchSearch = !search || a.title.toLowerCase().includes(q);
       const matchFilter = activeFilter === 'All' || a.category === activeFilter;
-      const matchDate   = withinDays(a.date, days);
       const matchType   = typeFilter === 'all' || a.contentType === typeFilter;
-      return matchSearch && matchFilter && matchDate && matchType;
+      return matchSearch && matchFilter && matchType;
     });
-  }, [sectionArticles, search, activeFilter, dateFilter, typeFilter]);
+  }, [sectionArticles, search, activeFilter, typeFilter]);
+
+  const filteredArticles = useMemo(
+    () => dateScopedArticles.filter((a) => matchesDate(a.date, dateFilter)),
+    [dateScopedArticles, dateFilter],
+  );
+
+  // Days holding at least one article, newest first. Undated sorts last.
+  const availableDays = useMemo(() => {
+    const counts = new Map();
+    for (const a of dateScopedArticles) {
+      const key = dayKey(a.date);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return [...counts.entries()]
+      .map(([key, count]) => ({ key, count, label: dayKeyLabel(key) }))
+      .sort((a, b) => {
+        if (a.key === 'undated') return 1;
+        if (b.key === 'undated') return -1;
+        return Number(b.key) - Number(a.key);
+      });
+  }, [dateScopedArticles]);
+
+  // Switching party, section or type can retire the chosen day. Left alone that
+  // reads as an empty feed with no visible cause, so fall back to all dates.
+  useEffect(() => {
+    if (!dateFilter.startsWith(DAY_PREFIX)) return;
+    const key = dateFilter.slice(DAY_PREFIX.length);
+    if (!availableDays.some((d) => d.key === key)) {
+      setDateFilter('all');
+      setPage(1);
+    }
+  }, [availableDays, dateFilter]);
+
+  const selectedDayLabel = dateFilter.startsWith(DAY_PREFIX)
+    ? dayKeyLabel(dateFilter.slice(DAY_PREFIX.length))
+    : null;
 
   const filtersActive = (dateFilter !== 'all' ? 1 : 0)
     + (typeFilter !== 'all' ? 1 : 0)
@@ -348,6 +425,22 @@ export default function SocialMediaPostGenerator() {
     const start = (currentPage - 1) * PAGE_SIZE;
     return filteredArticles.slice(start, start + PAGE_SIZE);
   }, [filteredArticles, currentPage]);
+
+  // Group the current page into day buckets, preserving the newest-first order
+  // the API already applied.
+  const pagedGroups = useMemo(() => {
+    const groups = [];
+    let current = null;
+    for (const article of pagedArticles) {
+      const label = dayGroupLabel(article.date);
+      if (!current || current.label !== label) {
+        current = { label, items: [] };
+        groups.push(current);
+      }
+      current.items.push(article);
+    }
+    return groups;
+  }, [pagedArticles]);
 
   const activeContent = showTranslated && translatedPost ? translatedPost : generatedPost;
   const chars = activeContent.trim().length;
@@ -724,7 +817,7 @@ export default function SocialMediaPostGenerator() {
               }`}
             >
               <Filter size={13} strokeWidth={2} />
-              Filter News
+              {selectedDayLabel ?? 'Filter News'}
               {filtersActive > 0 && (
                 <span className="rounded-full bg-[#3f9fff] px-1.5 py-0.5 font-count text-[10px] leading-none text-white">
                   {filtersActive}
@@ -733,12 +826,12 @@ export default function SocialMediaPostGenerator() {
             </button>
 
             {filterOpen && (
-              <div className="absolute right-0 top-[calc(100%+6px)] z-40 w-56 overflow-hidden rounded-xl border border-[#1e3260]/70 bg-[#0d1531] shadow-xl">
+              <div className="absolute right-0 top-[calc(100%+6px)] z-40 w-64 overflow-hidden rounded-xl border border-[#1e3260]/70 bg-[#0d1531] shadow-xl">
                 {/* Date */}
                 <p className="px-4 pb-1.5 pt-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#5a6e9a]">
                   Date
                 </p>
-                {DATE_FILTERS.map((d) => (
+                {DATE_RANGES.map((d) => (
                   <button
                     key={d.id}
                     type="button"
@@ -752,27 +845,35 @@ export default function SocialMediaPostGenerator() {
                   </button>
                 ))}
 
-                {/* Type */}
-                <p className="border-t border-[#1e3260]/60 px-4 pb-1.5 pt-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#5a6e9a]">
-                  Type
-                </p>
-                {[
-                  { id: 'all', label: 'All types' },
-                  { id: 'news', label: CONTENT_TYPES.news.label },
-                  { id: 'press_conference', label: CONTENT_TYPES.press_conference.label },
-                ].map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => { setTypeFilter(t.id); setPage(1); setView('feed'); }}
-                    className={`flex w-full items-center justify-between px-4 py-2 text-[12.5px] transition hover:bg-[#0f1a3a] ${
-                      t.id === typeFilter ? 'text-[#3f9fff]' : 'text-white/80'
-                    }`}
-                  >
-                    {t.label}
-                    {t.id === typeFilter && <span className="h-1.5 w-1.5 rounded-full bg-[#3f9fff]" />}
-                  </button>
-                ))}
+                {availableDays.length > 0 && (
+                  <>
+                    <p className="mt-1 border-t border-[#1e3260]/60 px-4 pb-1.5 pt-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#5a6e9a]">
+                      Pick a day
+                    </p>
+                    <div className="max-h-52 overflow-y-auto">
+                      {availableDays.map((d) => {
+                        const id = `${DAY_PREFIX}${d.key}`;
+                        const selected = id === dateFilter;
+                        return (
+                          <button
+                            key={id}
+                            type="button"
+                            onClick={() => { setDateFilter(id); setPage(1); setView('feed'); }}
+                            className={`flex w-full items-center justify-between gap-3 px-4 py-2 text-[12.5px] transition hover:bg-[#0f1a3a] ${
+                              selected ? 'text-[#3f9fff]' : 'text-white/80'
+                            }`}
+                          >
+                            <span className="truncate">{d.label}</span>
+                            <span className="flex shrink-0 items-center gap-2">
+                              <span className="font-count text-[11px] text-[#5a6e9a]">{d.count}</span>
+                              {selected && <span className="h-1.5 w-1.5 rounded-full bg-[#3f9fff]" />}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
 
                 {filtersActive > 0 && (
                   <button
@@ -875,6 +976,47 @@ export default function SocialMediaPostGenerator() {
               </div>
             )}
 
+            {/* Content type — pills rather than tabs, so the party tabs above
+                stay the primary level of navigation. */}
+            <div className="mb-5 flex flex-wrap items-center gap-2">
+              {[
+                { id: 'all',              label: 'All',                         color: '#8a9ac0' },
+                { id: 'press_conference', label: CONTENT_TYPES.press_conference.label, color: CONTENT_TYPES.press_conference.color },
+                { id: 'news',             label: CONTENT_TYPES.news.label,      color: '#6aa8ff' },
+              ].map((t) => {
+                const active = typeFilter === t.id;
+                const count = t.id === 'all'
+                  ? sectionArticles.length
+                  : sectionArticles.filter((a) => a.contentType === t.id).length;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => { setTypeFilter(t.id); setPage(1); setView('feed'); }}
+                    className="inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[12.5px] font-medium transition"
+                    style={{
+                      borderColor: active ? t.color : 'rgba(30,38,54,0.9)',
+                      backgroundColor: active ? `${t.color}1f` : 'transparent',
+                      color: active ? t.color : '#7d8aa6',
+                    }}
+                  >
+                    {t.id === 'press_conference' && <Radio size={12} strokeWidth={2} />}
+                    {t.id === 'news' && <FileText size={12} strokeWidth={2} />}
+                    {t.label}
+                    <span
+                      className="rounded-full px-1.5 py-0.5 font-count text-[10.5px] leading-none"
+                      style={{
+                        backgroundColor: active ? `${t.color}26` : 'rgba(30,38,54,0.9)',
+                        color: active ? t.color : '#5a6e9a',
+                      }}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
             {newsLoading && (
               <div className="grid gap-5 lg:grid-cols-2">
                 {Array.from({ length: 6 }).map((_, i) => (
@@ -916,20 +1058,25 @@ export default function SocialMediaPostGenerator() {
                   <h3 className="font-display text-[26px] font-bold leading-none tracking-tight text-white">
                     Headlines
                   </h3>
-                  <span
-                    className="rounded-full px-2.5 py-1 font-count text-[12.5px] font-semibold leading-none"
-                    style={{ backgroundColor: `${theme.accent}1f`, color: theme.accent }}
-                  >
-                    {filteredArticles.length}
-                  </span>
                 </div>
                 <p className="mt-2 pl-[19px] text-[13px] text-[#7d8aa6]">
                   Pick a story below to generate a post from it.
                 </p>
               </div>
 
-              <div className="grid gap-5 lg:grid-cols-2">
-                {pagedArticles.map((article) => {
+              {pagedGroups.map((group) => (
+                <div key={group.label} className="mb-7 last:mb-0">
+                  {/* Day heading */}
+                  <div className="mb-3 flex items-center gap-3">
+                    <h4 className="font-count text-[11.5px] font-semibold uppercase tracking-[0.2em] text-[#8a9ac0]">
+                      {group.label}
+                    </h4>
+                    <span className="font-count text-[11px] text-[#5a6e9a]">{group.items.length}</span>
+                    <span className="h-px flex-1 bg-[#1e2636]/80" />
+                  </div>
+
+                  <div className="grid gap-5 lg:grid-cols-2">
+                {group.items.map((article) => {
                   const dateLabel = formatNewsDate(article.date);
                   // Colour follows the article's own tenant, so a mixed list
                   // still reads correctly rather than following the active tab.
@@ -997,7 +1144,9 @@ export default function SocialMediaPostGenerator() {
                     </button>
                   );
                 })}
-              </div>
+                  </div>
+                </div>
+              ))}
 
               {/* ── Pagination ── */}
               {totalPages > 1 && (

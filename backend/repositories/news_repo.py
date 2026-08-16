@@ -8,6 +8,17 @@ from bson import ObjectId
 from backend.db.mongo import db
 
 
+def _language_clause(language: str) -> dict:
+    """Match the requested language, plus documents with no language tag."""
+    return {
+        "$or": [
+            {"language": language},
+            {"language": None},
+            {"language": {"$exists": False}},
+        ]
+    }
+
+
 class NewsRepository:
     def __init__(self) -> None:
         self.collection = db["news"]
@@ -44,13 +55,11 @@ class NewsRepository:
     ) -> list[dict]:
         clauses: list[dict] = []
         if language:
-            if language == "en":
-                # English: include articles tagged "en" OR with no language tag
-                clauses.append(
-                    {"$or": [{"language": "en"}, {"language": None}, {"language": {"$exists": False}}]}
-                )
-            else:
-                clauses.append({"language": language})
+            # Untagged documents always match. The publish path deliberately
+            # stores language=None (a real value would clash with Mongo's text
+            # index language override), so an exact match on any language other
+            # than "en" hid every item we publish.
+            clauses.append(_language_clause(language))
         if tenant_ids is not None:
             tenant_clause: dict = {"tenant_id": {"$in": tenant_ids}}
             # Documents published before tenants existed carry no tenant_id and
@@ -75,12 +84,7 @@ class NewsRepository:
         """Total matching documents — used for paginated listings."""
         clauses: list[dict] = []
         if language:
-            if language == "en":
-                clauses.append(
-                    {"$or": [{"language": "en"}, {"language": None}, {"language": {"$exists": False}}]}
-                )
-            else:
-                clauses.append({"language": language})
+            clauses.append(_language_clause(language))
         if tenant_ids is not None:
             tenant_clause: dict = {"tenant_id": {"$in": tenant_ids}}
             if 0 in tenant_ids:

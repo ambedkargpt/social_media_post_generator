@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Send, SlidersHorizontal, LogOut, Bot, Sparkles } from 'lucide-react';
+import { FileText, Send, SlidersHorizontal, LogOut, Bot, Sparkles, Music, ChevronRight } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
 import { getPosts, getDailyQuota } from '../api/posts';
@@ -121,6 +121,71 @@ export default function Dashboard() {
             <LogOut size={13} strokeWidth={1.9} />
             Log out
           </button>
+        </div>
+
+        {/* ── Quick actions ──
+            The Topbar's Generate button routes to an intermediate services page,
+            which was the only way in. These surface the destinations directly. */}
+        <div className="mb-7 grid gap-4 grid-cols-1 sm:grid-cols-3">
+          {[
+            {
+              label: 'Social Post',
+              desc: 'Turn today’s news into a post',
+              Icon: Sparkles,
+              route: '/generate/social-media',
+              accent: '#3f9fff',
+            },
+            {
+              label: 'Music Studio',
+              desc: 'Compose an Ambedkarite track',
+              Icon: Music,
+              route: '/generate/music',
+              accent: '#7b5cff',
+            },
+            {
+              label: 'BheemBot',
+              desc: 'Ask the corpus a question',
+              Icon: Bot,
+              route: '/bheembot',
+              accent: '#22c55e',
+            },
+          ].map(({ label, desc, Icon, route, accent }) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() => navigate(route)}
+              className="group flex items-center gap-3.5 rounded-2xl border p-4 text-left transition-all duration-200 hover:-translate-y-0.5"
+              style={{
+                borderColor: 'rgba(30,50,96,0.7)',
+                background: 'linear-gradient(135deg, rgba(13,21,49,0.9) 0%, rgba(10,17,48,0.6) 100%)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = `${accent}66`;
+                e.currentTarget.style.boxShadow = `0 10px 30px ${accent}22`;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(30,50,96,0.7)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              <span
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
+                style={{ backgroundColor: `${accent}1f`, color: accent }}
+              >
+                <Icon size={19} strokeWidth={2} />
+              </span>
+              <span className="min-w-0">
+                <span className="block font-display text-[15px] font-semibold text-white">{label}</span>
+                <span className="mt-0.5 block truncate text-[12.5px] text-[#8b94b8]">{desc}</span>
+              </span>
+              <ChevronRight
+                size={16}
+                strokeWidth={2}
+                className="ml-auto shrink-0 text-[#3f6aaa] transition-transform duration-200 group-hover:translate-x-0.5"
+                style={{ color: accent }}
+              />
+            </button>
+          ))}
         </div>
 
         {/* ── Stat cards ── */}

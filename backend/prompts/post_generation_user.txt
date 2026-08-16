@@ -9,5 +9,5 @@ Use the system instructions. Here are your inputs for this generation.
 ### 3. RETRIEVED TRANSCRIPT CHUNKS
 {retrieved_chunks}
 
-### 4. VIDEO SUMMARIES (short summaries for the videos that supplied retrieved chunks; same grounding rules as chunks — do not invent beyond chunks + these summaries)
+### 4. VIDEO SUMMARIES (short summaries for the videos that supplied retrieved chunks; same grounding rules as chunks, do not invent beyond chunks + these summaries)
 {video_summaries}

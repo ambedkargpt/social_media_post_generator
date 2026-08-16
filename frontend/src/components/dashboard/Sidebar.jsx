@@ -10,17 +10,25 @@ import {
   Bot,
   X,
   LogOut,
+  Sparkles,
+  ChevronRight,
 } from 'lucide-react';
 
+// Generating a post is the product's primary action, so it leads the nav and is
+// styled as a call to action rather than another list item.
+const PRIMARY = { id: 'generate', label: 'Generate', Icon: Sparkles, route: '/generate' };
+
+// `soon: true` marks a destination that does not exist yet. Rendering these as
+// plain items made them look broken: clicking did nothing and gave no feedback.
 const NAV = [
   { id: 'dashboard',  label: 'Dashboard',        Icon: LayoutGrid },
   { id: 'bheembot',   label: 'BheemBot',         Icon: Bot, route: '/bheembot' },
-  { id: 'searches',   label: 'Post History',      Icon: Search, route: '/posts' },
+  { id: 'searches',   label: 'Post History',     Icon: Search, route: '/posts' },
   { id: 'prefs',      label: 'Preferences',      Icon: SlidersHorizontal, route: '/preferences' },
-  { id: 'saved',      label: 'Saved Prompts',    Icon: Bookmark },
-  { id: 'analytics',  label: 'Analytics',        Icon: BarChart3 },
-  { id: 'profile',    label: 'Profile',          Icon: User },
-  { id: 'settings',   label: 'Settings',         Icon: Settings },
+  { id: 'saved',      label: 'Saved Prompts',    Icon: Bookmark, soon: true },
+  { id: 'analytics',  label: 'Analytics',        Icon: BarChart3, soon: true },
+  { id: 'profile',    label: 'Profile',          Icon: User, route: '/profile-setup' },
+  { id: 'settings',   label: 'Settings',         Icon: Settings, soon: true },
 ];
 
 function SidebarContent({ active, onSelect, onClose, onLogout }) {
@@ -52,9 +60,45 @@ function SidebarContent({ active, onSelect, onClose, onLogout }) {
 
       {/* nav */}
       <nav className="flex-1 px-4 space-y-1.5">
+        {/* Primary action */}
+        <button
+          type="button"
+          onClick={() => { navigate(PRIMARY.route); onClose?.(); }}
+          className="group mb-3 flex w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-[14px] font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110"
+          style={{
+            background: 'linear-gradient(135deg, #1a5fff 0%, #3f9fff 100%)',
+            boxShadow: '0 6px 22px rgba(26,95,255,0.38)',
+          }}
+        >
+          <PRIMARY.Icon size={17} strokeWidth={2} />
+          <span>{PRIMARY.label}</span>
+          <ChevronRight
+            size={15}
+            strokeWidth={2}
+            className="ml-auto transition-transform duration-200 group-hover:translate-x-0.5"
+          />
+        </button>
+
         {NAV.map((item) => {
           const isActive = item.id === active;
           const IconComp = item.Icon;
+          if (item.soon) {
+            // Not navigable yet — say so instead of failing silently on click.
+            return (
+              <div
+                key={item.id}
+                title={`${item.label} — coming soon`}
+                aria-disabled="true"
+                className="flex w-full cursor-not-allowed items-center gap-3 rounded-xl px-3.5 py-2.5 text-[13.5px] font-medium text-[#4d587a]"
+              >
+                <IconComp size={17} strokeWidth={1.8} />
+                <span>{item.label}</span>
+                <span className="ml-auto rounded-full bg-[#141d3a] px-1.5 py-0.5 font-count text-[9.5px] uppercase tracking-wider text-[#5a6e9a]">
+                  Soon
+                </span>
+              </div>
+            );
+          }
           return (
             <button
               key={item.id}
