@@ -11,7 +11,7 @@ export default function PostContent({ content, className = '' }) {
   if (!hasStructure) {
     return (
       <div className={`space-y-3 ${className}`} style={{ fontFamily: "'Mangal', 'Noto Sans Devanagari', serif" }}>
-        <p className="whitespace-pre-wrap text-[16px] leading-[1.9] text-[#c7d1eb]">
+        <p className="whitespace-pre-wrap text-[18px] leading-[1.95] text-[#dbe6f7] md:text-[19px]">
           {content.trim()}
         </p>
       </div>
@@ -19,15 +19,15 @@ export default function PostContent({ content, className = '' }) {
   }
 
   return (
-    <div className={`space-y-4 ${className}`} style={{ fontFamily: "'Mangal', 'Noto Sans Devanagari', serif" }}>
+    <div className={`space-y-5 ${className}`} style={{ fontFamily: "'Mangal', 'Noto Sans Devanagari', serif" }}>
       {headline && (
-        <p className="text-[19px] font-bold leading-snug text-white">
+        <p className="text-[24px] font-bold leading-[1.45] text-white md:text-[27px]">
           {headline}
         </p>
       )}
 
       {paragraphs.map((para, i) => (
-        <p key={i} className="text-[16px] leading-[1.9] text-[#c7d1eb]">
+        <p key={i} className="text-[18px] leading-[1.95] text-[#dbe6f7] md:text-[19px]">
           {para}
         </p>
       ))}
@@ -37,7 +37,7 @@ export default function PostContent({ content, className = '' }) {
           {hashtags.map((tag) => (
             <span
               key={tag}
-              className="rounded-full px-2.5 py-0.5 text-[13.5px] font-medium"
+              className="rounded-full px-3 py-1 text-[14.5px] font-medium"
               style={{
                 backgroundColor: 'rgba(63,159,255,0.1)',
                 border: '1px solid rgba(63,159,255,0.25)',
