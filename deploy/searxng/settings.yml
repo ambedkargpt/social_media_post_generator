@@ -1,0 +1,71 @@
+# SearXNG configuration for the research step.
+#
+# Two settings here are the whole point and are easy to miss:
+#   search.formats must include "json", because SearXNG serves HTML only by
+#   default and the API silently 403s otherwise;
+#   server.limiter must be false, because the bot limiter blocks our own
+#   backend's requests as scripted traffic.
+use_default_settings: true
+
+general:
+  instance_name: "AmbedkarGPT Research"
+  # No public instance, so no need to advertise metrics or donation links.
+  enable_metrics: false
+
+server:
+  secret_key: "ambedkar-local-dev-secret-change-me"
+  limiter: false
+  public_instance: false
+  image_proxy: false
+  method: "GET"
+
+search:
+  safe_search: 0
+  autocomplete: ""
+  default_lang: ""
+  formats:
+    - html
+    - json
+
+outgoing:
+  # Engines rate limit a server that queries them in bursts. A modest pool with
+  # a real timeout keeps failures to individual engines rather than the request.
+  request_timeout: 10.0
+  max_request_timeout: 15.0
+  pool_connections: 100
+  pool_maxsize: 20
+  enable_http2: true
+
+engines:
+  # Claims here are Indian political and policy facts, settled by news archives,
+  # government pages and legislative records. Google carries those best, so it
+  # leads; DuckDuckGo backs it up when Google rate limits.
+  #
+  # Bing is disabled deliberately. When its coverage is thin it returns generic
+  # high-authority filler rather than nothing: a Japanese Windows support page
+  # and a Windows 11 forum came back for a query about a student protest, were
+  # fetched, and were handed to the fact-check as evidence.
+  #
+  # Brave and Startpage are disabled because this instance is suspended on both
+  # ("too many requests" and "CAPTCHA"), so they only add latency.
+  - name: google
+    disabled: false
+    weight: 3
+  - name: google news
+    disabled: false
+    weight: 3
+  - name: duckduckgo
+    disabled: false
+    weight: 2
+  - name: wikipedia
+    disabled: false
+    weight: 1
+  - name: wikidata
+    disabled: false
+    weight: 1
+  - name: bing
+    disabled: true
+  - name: brave
+    disabled: true
+  - name: startpage
+    disabled: true

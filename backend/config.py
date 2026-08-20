@@ -61,6 +61,13 @@ class Settings:
     deepseek_base_url: str
     deepseek_model: str
     deepseek_summary_model: str
+    # Post writing is a separate model choice from research and summarisation
+    post_generation_model: str
+    research_model: str
+    # 'angle' leads with findings that help the INC/SP case; 'strict' uses all
+    research_stance_mode: str
+    # 'support' looks for evidence that backs the story; 'verify' fact-checks it
+    research_purpose: str
     # Prompt templates (video summarizer, etc.)
     prompts_dir: Path
     # Generated news headlines (from video summaries + DeepSeek reasoner)
@@ -79,6 +86,15 @@ class Settings:
     transcript_cleaning_enabled: bool
     # Ground-truth Hindi punctuation/grammar reference injected into prompts
     hindi_style_reference_file: str
+    # Web research: verify a news item's claims before the post is written
+    web_research_enabled: bool
+    searxng_url: str
+    web_research_max_claims: int
+    web_research_top_k: int
+    # Check the finished post's figures and dates against the material it used
+    post_validation_enabled: bool
+    # When set, every research run dumps its artefacts here for inspection
+    web_research_debug_dir: Path | None
     # User profiles on disk (Parquet)
     user_profiles_parquet_path: Path
     # gTTS (optional; Streamlit / test_retrieval --tts)
@@ -270,6 +286,33 @@ def get_settings() -> Settings:
     semrag_model = semrag_cfg.semrag_model
     _summary_model_raw = (os.getenv("DEEPSEEK_MODEL_SUMMARY") or "").strip()
     deepseek_summary_model = _summary_model_raw or deepseek_model
+    # Writing a post is instruction-following, not deduction. On a reasoning
+    # model the chain-of-thought consumed the entire completion budget and
+    # returned an empty post, and each rule added to the prompt made it worse:
+    # 24,000 tokens of reasoning, 0 characters, 175 seconds. deepseek-chat does
+    # the same job in about 13 seconds. Research keeps the reasoning model,
+    # because weighing sources against each other is what it is good at.
+    post_generation_model = (os.getenv("POST_GENERATION_MODEL") or "deepseek-chat").strip()
+    # The fact-check prompt asks six numbered questions and demands a source per
+    # fact, so most of the reasoning is already spelled out in the instructions.
+    # On the Sukh-Ashraya case both models reached the same verdict and both
+    # spotted that the wording came from a government press release, but the
+    # reasoning model took 31s against 12s, and 141s on a harder claim. Set
+    # RESEARCH_MODEL=deepseek-reasoner to trade the latency back for depth.
+    research_model = (os.getenv("RESEARCH_MODEL") or "deepseek-chat").strip()
+    # "angle": build the post on findings that support the Congress and
+    # Samajwadi case, and hold the rest as constraints the post must not
+    # contradict. "strict": use every verified finding as evidence.
+    # Selection is partisan either way; assertion never is, because a post
+    # that states something the record contradicts is the failure this whole
+    # step exists to prevent.
+    research_stance_mode = (os.getenv("RESEARCH_STANCE_MODE") or "angle").strip().lower()
+    # "support": find the figures, records and precedents that make the story
+    # land, and note anything cutting the other way only as a guardrail.
+    # "verify": interrogate each claim and correct it. Same machinery, opposite
+    # posture; the guardrail survives in both because a post that states what
+    # the record contradicts hurts the cause more than a missing fact does.
+    research_purpose = (os.getenv("RESEARCH_PURPOSE") or "support").strip().lower()
     prompts_dir = semrag_cfg.prompts_dir
     news_generator_top_n = int(os.getenv("NEWS_GENERATOR_TOP_N", "10"))
     _gen_news_raw = (os.getenv("GENERATED_NEWS_PATH") or "").strip()
@@ -284,6 +327,18 @@ def get_settings() -> Settings:
         if _gen_news_legacy_raw
         else (_PROJECT_ROOT / "outputs" / "generated_news_legacy.json")
     ).resolve()
+    # Off by default: the research step costs a search round trip plus two LLM
+    # calls per post, so it is opted into per environment rather than assumed.
+    web_research_enabled = (os.getenv("WEB_RESEARCH_ENABLED") or "").strip().lower() in {"1", "true", "yes", "on"}
+    searxng_url = (os.getenv("SEARXNG_URL") or "http://localhost:8080").strip().rstrip("/")
+    web_research_max_claims = int(os.getenv("WEB_RESEARCH_MAX_CLAIMS", "3"))
+    web_research_top_k = int(os.getenv("WEB_RESEARCH_TOP_K", "6"))
+    # On by default: it is cheap, it only re-asks when something is actually
+    # wrong, and a post that states an unsourced figure is the failure this
+    # whole pipeline exists to prevent.
+    post_validation_enabled = (os.getenv("POST_VALIDATION_ENABLED") or "true").strip().lower() in {"1", "true", "yes", "on"}
+    _debug_dir_raw = (os.getenv("WEB_RESEARCH_DEBUG_DIR") or "").strip()
+    web_research_debug_dir = Path(_debug_dir_raw).expanduser().resolve() if _debug_dir_raw else None
     news_headline_prompt_system = (os.getenv("NEWS_HEADLINE_SYSTEM") or "news_headline_system.txt").strip()
     news_headline_prompt_user = (os.getenv("NEWS_HEADLINE_USER") or "news_headline_user.txt").strip()
     news_multi_story_prompt_system = (
@@ -377,6 +432,10 @@ def get_settings() -> Settings:
         deepseek_base_url=deepseek_base_url,
         deepseek_model=deepseek_model,
         deepseek_summary_model=deepseek_summary_model,
+        post_generation_model=post_generation_model,
+        research_model=research_model,
+        research_stance_mode=research_stance_mode,
+        research_purpose=research_purpose,
         prompts_dir=prompts_dir,
         news_generator_top_n=news_generator_top_n,
         generated_news_path=generated_news_path,
@@ -390,6 +449,12 @@ def get_settings() -> Settings:
         transcript_cleaning_prompt_user=transcript_cleaning_prompt_user,
         transcript_cleaning_enabled=transcript_cleaning_enabled,
         hindi_style_reference_file=hindi_style_reference_file,
+        web_research_enabled=web_research_enabled,
+        searxng_url=searxng_url,
+        web_research_max_claims=web_research_max_claims,
+        web_research_top_k=web_research_top_k,
+        post_validation_enabled=post_validation_enabled,
+        web_research_debug_dir=web_research_debug_dir,
         user_profiles_parquet_path=user_profiles_parquet_path,
         gtts_lang=gtts_lang,
         mongodb_uri=mongodb_uri,

@@ -1,3 +1,4 @@
 # Default install path for AmbedkarGPT API services.
 # For artifact rebuild servers use ``requirements-worker.txt`` instead.
 -r requirements-api.txt
+trafilatura>=1.12
