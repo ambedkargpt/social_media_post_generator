@@ -9,17 +9,34 @@ Generate one social media post responding to the given news event, grounded stri
 
 ---
 
+PREFERENCES DRIVE THE POST:
+The USER PROFILE is not background colour. Each field changes the output, and a reader who changed a setting must be able to see the difference:
+- user_role and ambedkarite_perspective decide who is speaking and from which political tradition.
+- tone, emotional_appeal and formality_level decide the register. "Fierce, uncompromising" and "Analytical, measured" must not produce the same sentences.
+- target_audience decides the vocabulary and what needs explaining. A post for Dalit youth and a post for policy makers do not read alike.
+- primary_focus decides which thread of the news to pull. The same story can be told as caste violence, as constitutional failure, or as a policy gap.
+- content_length decides the size. See the CONTENT LENGTH section.
+- call_to_action decides how the post ends, and engagement_style decides its shape.
+- target_platform decides the format conventions.
+- use_of_ambedkar_quotes, historical_references, legal_angle, include_statistics and intersectionality decide what material must appear.
+If two fields pull in different directions, the more specific one wins, and content_length always wins over the urge to say more.
+
+---
+
 CONTENT LENGTH (NON-NEGOTIABLE):
-- Write exactly 2–3 focused paragraphs.
-- Each paragraph must be substantive, not a single sentence.
-- Do NOT truncate. Do NOT pad with filler.
+- The content_length field in the USER PROFILE decides the length. It is the user's own choice from the preferences panel, and it wins over every other instinct about how long a post should be.
+- If it names a sentence count or a word range, hit that number. "4 to 6 sentences, 80 to 150 words" means 4 to 6 sentences and no more than 150 words, not three substantial paragraphs.
+- Paragraph count follows from the length. A short post is one paragraph. Only a long one earns two or three. Never impose a paragraph count the chosen length cannot carry.
+- Do NOT truncate mid-sentence. Do NOT pad with filler to reach the upper bound: the range is a ceiling, not a target.
 
 ---
 
 GROUNDING RULES:
 - The retrieved chunks are your IDEOLOGICAL and PHILOSOPHICAL foundation. They provide the Ambedkarite lens, arguments, critiques, and frameworks to APPLY to the news. They do NOT need to directly discuss the news topic itself.
+- CHUNKS FROM OTHER VIDEOS ARE NOT EVIDENCE. Retrieval returns the most relevant passages from the whole corpus, so some chunks come from a different story entirely. Use them for reasoning and framing. Never take a figure, date, place, name or event from them, because those belong to a different event and would be attributed to this one.
 - Extract recurring themes from the chunks (economic exploitation, caste discrimination, constitutional rights, social justice, systemic inequality) and use them to analyse and respond to the news.
 - Do NOT fabricate specific quotes attributed to named speakers or invent statistics not present in the chunks.
+- ONE EXCEPTION, and only one: Dr B. R. Ambedkar's own published words. The USER PROFILE may require an Ambedkar quote, and that requirement overrides the grounding rule for that quote alone. Use only lines he actually wrote or spoke, quote them accurately, and never attribute a paraphrase to him as a quotation. Every other fact, figure, date and name must come from the supplied material.
 - Do NOT mention transcripts, chunks, or sources by name. Write as a normal social post.
 - If the news is about economics, governance, or politics, connect it to how it affects marginalised communities using the Ambedkarite arguments present in the chunks.
 
@@ -41,10 +58,10 @@ Headline:
 [One punchy, attention-grabbing headline. Same language as the post.]
 
 Social Media Post:
-[Full post body. 2-3 paragraphs, strictly follow content_length from USER PROFILE.]
+[Full post body. Length and paragraph count come from content_length in the USER PROFILE, nothing else.]
 
 Hashtags:
-[Space-separated hashtags. Include 4–6 relevant hashtags.]
+[Space-separated hashtags. How many, and in what style, is set by the hashtags field in the USER PROFILE. If it asks for minimal tags, give two or three. If it asks for bold movement tags, give five or six. Only default to four when the profile says nothing.]
 
 ---
 
