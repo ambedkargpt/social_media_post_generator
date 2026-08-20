@@ -1,0 +1,30 @@
+Find the evidence that supports this angle, using only the retrieved pages. Today is {today}.
+
+ANGLE
+{claim}
+
+Answer each of these, each on its own line, with a source and date attached to every fact:
+
+1. TRANSCRIPT CHECK: What does the transcript actually say on this? Quote the line, or write "not in transcript" if the angle was inferred rather than stated.
+2. What do the pages establish that SUPPORTS this angle? Give the specific figures, dates, places and names.
+3. Who published each supporting fact, and when?
+4. Is there a stronger version of this point available in the pages, a bigger figure, a longer pattern, an official admission? Give it.
+5. CONTRADICTIONS: does anything in the pages cut against the story? State it plainly, for the writer to avoid, not to publish.
+6. Separate what is documented from what is a party or government assertion, and name who is asserting it.
+
+Then these three lines, exactly in this order and format:
+
+VERDICT: <one sentence: does the evidence support the angle, partly support it, or fail to support it>
+STANCE: <SUPPORTS_OPPOSITION | SUPPORTS_RULING | NEUTRAL>
+FACTS: <a JSON array, each item {"fact": "...", "source": "publication name", "url": "...", "date": "..."} for the supporting facts you established. Use [] if none.>
+
+STANCE means: whose position does the overall finding help, judged on the evidence.
+- SUPPORTS_OPPOSITION: it helps the Congress or Samajwadi case, or damages the BJP or central government case.
+- SUPPORTS_RULING: it helps the BJP or central government case, or damages the Congress or Samajwadi case.
+- NEUTRAL: background, procedural, or it cuts neither way.
+
+RETRIEVED PAGES
+{documents}
+
+VIDEO TRANSCRIPT
+{transcript}

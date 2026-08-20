@@ -1,0 +1,16 @@
+Read the news item below and extract at most {max_claims} checkable factual claims from it.
+
+For each claim produce:
+- "claim": one sentence in English stating what was claimed and who claimed it.
+- "query": plain search terms that would verify it.
+- "source_quote": the verbatim transcript sentence this claim rests on.
+- "kind": one of "number", "date", "event", "superlative", "legal", "other".
+
+Return JSON with exactly this shape and nothing else:
+{"claims": [{"claim": "...", "query": "...", "kind": "...", "source_quote": "..."}]}
+
+NEWS ITEM
+{news_item}
+
+SUPPORTING TRANSCRIPT EXCERPTS
+{transcript_excerpt}

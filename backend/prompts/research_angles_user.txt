@@ -1,0 +1,16 @@
+Read the story and transcript below and produce at most {max_claims} research angles.
+
+For each angle produce:
+- "claim": one sentence naming what the story asserts or implies that evidence would strengthen.
+- "query": plain search terms that would find that evidence.
+- "source_quote": the verbatim transcript sentence this angle rests on.
+- "kind": one of "figure", "record", "precedent", "pattern", "official_statement", "other".
+
+Return JSON with exactly this shape and nothing else:
+{"claims": [{"claim": "...", "query": "...", "kind": "...", "source_quote": "..."}]}
+
+NEWS STORY
+{news_item}
+
+VIDEO TRANSCRIPT
+{transcript_excerpt}
