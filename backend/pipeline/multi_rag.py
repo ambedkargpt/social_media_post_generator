@@ -124,6 +124,11 @@ def settings_for_tenant(settings: Any, art: TenantArtifacts) -> Any:
             "semrag_graph_path": art.semrag_graph_path,
             "semrag_chunks_path": art.semrag_chunks_path,
             "pinecone_namespace": art.pinecone_namespace,
+            # semrag_candidates_for_query returns empty on its first line unless
+            # this is set, and the global setting is off. Turning it on here
+            # rather than globally keeps it scoped to a tenant that actually has
+            # a graph on disk, so no other channel changes behaviour.
+            "semrag_enabled": True if art.has_graph else None,
         },
     )
 
