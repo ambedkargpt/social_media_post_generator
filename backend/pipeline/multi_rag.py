@@ -43,6 +43,7 @@ class TenantArtifacts:
     semrag_graph_path: Path | None
     semrag_chunks_path: Path | None
     pinecone_namespace: str | None
+    rag_chunks_path: Path | None = None
 
     @property
     def has_graph(self) -> bool:
@@ -51,6 +52,42 @@ class TenantArtifacts:
     @property
     def has_chunks(self) -> bool:
         return bool(self.semrag_chunks_path and self.semrag_chunks_path.is_file())
+
+    @property
+    def has_rag_chunks(self) -> bool:
+        return bool(self.rag_chunks_path and self.rag_chunks_path.is_file())
+
+    @property
+    def declares_isolation(self) -> bool:
+        """
+        The channel config asked for its own retrieval material.
+
+        Setting either a namespace or a corpus path is a statement that this
+        tenant's posts must be built from its own material and nothing else.
+        """
+        return bool(self.pinecone_namespace or self.rag_chunks_path)
+
+    @property
+    def isolation_gaps(self) -> tuple[str, ...]:
+        """
+        What is still missing before this tenant is actually isolated.
+
+        Empty means the declaration is backed by artifacts on disk. Anything
+        listed here is a place where retrieval falls back to shared material,
+        which is how one party's words end up behind another party's post.
+        """
+        if not self.declares_isolation:
+            return ()
+        gaps = []
+        if not self.pinecone_namespace:
+            gaps.append("no pinecone_namespace")
+        if not self.rag_chunks_path:
+            gaps.append("no rag_chunks_path configured")
+        elif not self.has_rag_chunks:
+            gaps.append(f"corpus not built: {self.rag_chunks_path}")
+        if not self.has_graph:
+            gaps.append("semrag graph missing")
+        return tuple(gaps)
 
 
 @lru_cache(maxsize=1)
@@ -93,6 +130,7 @@ def artifacts_for_tenant(tenant: str | int | None) -> TenantArtifacts | None:
         semrag_graph_path=channel.semrag_graph_path,
         semrag_chunks_path=channel.semrag_chunks_path,
         pinecone_namespace=channel.pinecone_namespace,
+        rag_chunks_path=channel.rag_chunks_path,
     )
 
 
