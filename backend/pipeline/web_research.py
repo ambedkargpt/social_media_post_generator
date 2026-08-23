@@ -508,6 +508,22 @@ def _treatment(verdict: str) -> str:
         return (
             "This claim is FALSE as stated. Correct it in the post and give the accurate version."
         )
+    # Checked before "accurate", because the interesting verdicts are mixed:
+    # "supported only for the 2017-18 period, not for the present, and official
+    # data contradicts any current four-decade high claim" matched none of the
+    # keywords above and fell through to the mildest note in the file, which is
+    # how a contradicted figure reached the writer as usable material.
+    if "contradict" in v:
+        return (
+            "Part of this claim is CONTRADICTED by the evidence. Do not state the contradicted "
+            "part at all. If you use this claim, use only the part the evidence supports, and "
+            "date it explicitly so a reader cannot take a past figure for a current one."
+        )
+    if "only for" in v or "not for the present" in v or "no longer" in v or "outdated" in v:
+        return (
+            "This claim held for one period only and does not describe the present. State the "
+            "period it belongs to, and do not write it as a current fact."
+        )
     if "accurate" in v:
         return "This claim is supported. You may state it, and you may cite the sourced detail."
     return "Follow the verdict exactly. Do not overstate what the evidence supports."
