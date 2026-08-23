@@ -164,16 +164,24 @@ class PostsService:
         # Which story, and which video it was cut from. Without this the log
         # jumps straight to search queries with no way to tell what was clicked,
         # and no way to open the source and check the post against it.
+        #
+        # One record per line, rather than one record carrying newlines:
+        # retrieval drives a tqdm bar on the same stream, and a bar redrawing
+        # with a carriage return can land on top of the tail of a multi-line
+        # record. The video URL was the last line, so it was the line that
+        # went missing from the console.
         import logging as _logging
 
-        _logging.getLogger(__name__).info(
-            "[generate] news_id=%s tenant=%s type=%s\n"
-            "[generate]   headline: %s\n"
-            "[generate]   video   : %s",
+        _log = _logging.getLogger(__name__)
+        _log.info(
+            "[generate] news_id=%s tenant=%s type=%s",
             news_id,
             news_doc.get("tenant_slug") or "-",
             news_doc.get("content_type") or "-",
-            article.get("title") or "(untitled)",
+        )
+        _log.info("[generate] headline: %s", article.get("title") or "(untitled)")
+        _log.info(
+            "[generate] video   : %s",
             article.get("source_url") or "(no source_url on this news item)",
         )
 

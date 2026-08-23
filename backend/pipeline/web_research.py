@@ -25,6 +25,7 @@ import json
 import logging
 import os
 import re
+import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
@@ -644,11 +645,29 @@ def search_urls(
 # ─────────────────────────── extraction ───────────────────────────
 
 
+# Warned once per process, not once per page. A run fetches dozens of URLs and
+# the repeated warning buried the one line that mattered.
+_TRAFILATURA_WARNED = False
+
+
 def _extract_one(result: SearchResult, timeout: float) -> Optional[str]:
+    global _TRAFILATURA_WARNED
     try:
         import trafilatura
     except ImportError:
-        logger.warning("trafilatura is not installed; falling back to search snippets")
+        if not _TRAFILATURA_WARNED:
+            _TRAFILATURA_WARNED = True
+            # Name the interpreter: this is nearly always a virtualenv
+            # mismatch, the server running on a Python that never got the
+            # requirements rather than a package that failed to build.
+            logger.warning(
+                "trafilatura is not importable by %s, so pages cannot be read "
+                "and research falls back to search snippets, which are a "
+                "sentence or two each. Install it into THAT interpreter: "
+                "%s -m pip install trafilatura",
+                sys.executable,
+                sys.executable,
+            )
         return None
     try:
         downloaded = trafilatura.fetch_url(result.url)
