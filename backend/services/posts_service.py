@@ -42,7 +42,12 @@ from backend.semrag.runtime import semrag_candidates_for_query
 # Claims repeat heavily: several stories are cut from one video, and several
 # users generate posts from the same story. Keyed on normalised claim text, so
 # the same assertion is searched once per process rather than once per post.
-_RESEARCH_CACHE: dict[str, ClaimFinding] = {}
+#
+# Partitioned by tenant. The key is the claim text alone, so a single flat dict
+# let a finding researched for one channel be served to another, which breaks
+# the isolation the channels are supposed to have and silently attributes one
+# party's sourcing to another's post.
+_RESEARCH_CACHE: dict[str, dict[str, ClaimFinding]] = {}
 
 
 # Published output is Hindi regardless of the UI language. The site language
@@ -489,6 +494,9 @@ class PostsService:
             "content": str(doc.get("summary") or "").strip(),
             "source_url": str(doc.get("source_url") or "").strip(),
             "video_title": str(doc.get("video_title") or doc.get("headline") or "").strip(),
+            # Needed downstream to keep one channel's research off another's
+            # posts. Without it every tenant shared one cache.
+            "tenant_slug": str(doc.get("tenant_slug") or "general").strip().lower(),
             "source": "backend_news_collection",
         }
 
@@ -896,7 +904,9 @@ class PostsService:
                 searxng_url=settings.searxng_url,
                 max_claims=settings.web_research_max_claims,
                 top_k=settings.web_research_top_k,
-                cache=_RESEARCH_CACHE,
+                cache=_RESEARCH_CACHE.setdefault(
+                    str(article.get("tenant_slug") or "general"), {}
+                ),
                 debug_dir=settings.web_research_debug_dir,
                 transcript=transcript,
                 video_link=video_link,
