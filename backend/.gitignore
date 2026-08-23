@@ -90,9 +90,15 @@ outputs/tts/
 data/chunk_embedding_cache.json
 data/video_title_embeddings.json
 
-# Transcript corpora (local / fetched — do not commit)
+# Transcript corpora (local / fetched)
+# The per-channel ones are tracked: transcripts.py reads them at request time
+# to give the writer what the speaker actually said, so on a clone without them
+# every post silently falls back to retrieved chunks. Ravish stays out, it is
+# the large legacy corpus and nothing reads it per request.
 data/ravishkumar_all_transcripts.txt
 data/*_all_transcripts.txt
+!data/congress_all_transcripts.txt
+!data/samajwadi_all_transcripts.txt
 
 # SEMRAG generated artifacts (large/runtime)
 data/semrag/checkpoints/
