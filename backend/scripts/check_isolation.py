@@ -38,6 +38,30 @@ def _channels() -> list[str]:
     return sorted(p.stem for p in _CHANNELS.glob("*.json") if p.stem != "template")
 
 
+def _namespace_counts() -> dict[str, int] | None:
+    """
+    Vectors per Pinecone namespace, or None when the index cannot be reached.
+
+    A corpus file on disk proves nothing. Chunks are written before the upsert,
+    so a failed or quota-blocked upsert leaves the file present and the
+    namespace empty, and a check that looks only at the filesystem calls that
+    isolated. It is not: retrieval against an empty namespace returns nothing.
+    """
+    try:
+        from backend.config import get_settings
+        from pinecone import Pinecone
+
+        s = get_settings()
+        idx = Pinecone(api_key=s.pinecone_api_key).Index(s.pinecone_index_name)
+        stats = idx.describe_index_stats()
+        return {
+            ns: int(info.get("vector_count") or 0)
+            for ns, info in (stats.get("namespaces") or {}).items()
+        }
+    except Exception:
+        return None
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Per-tenant retrieval isolation report.")
     ap.add_argument(
@@ -45,7 +69,14 @@ def main() -> int:
         action="store_true",
         help="Exit 1 if any tenant declaring isolation is still sharing material.",
     )
+    ap.add_argument(
+        "--offline",
+        action="store_true",
+        help="Skip the Pinecone namespace check (filesystem only, cannot confirm isolation).",
+    )
     args = ap.parse_args()
+
+    counts = None if args.offline else _namespace_counts()
 
     rows = []
     for name in _channels():
@@ -85,6 +116,12 @@ def main() -> int:
                 collisions.append(f"{name} and {seen_namespace[ns]} both use namespace {ns!r}")
             seen_namespace[ns] = name
 
+        vectors = None if counts is None else counts.get(ns or "", 0)
+        if counts is None:
+            print("  vectors in ns      : unknown (index not reachable)")
+        else:
+            print(f"  vectors in ns      : {vectors}")
+
         if art is None:
             print("  status             : UNRESOLVED (tenant maps to no channel)")
             failing += 1
@@ -92,7 +129,13 @@ def main() -> int:
         if not art.declares_isolation:
             print("  status             : shared by design (declares no namespace or corpus)")
             continue
-        gaps = art.isolation_gaps
+        gaps = list(art.isolation_gaps)
+        # The upsert is the step that actually isolates retrieval. Everything
+        # before it is preparation.
+        if counts is None:
+            gaps.append("namespace not verified (index unreachable)")
+        elif not vectors:
+            gaps.append(f"namespace {ns!r} holds no vectors: corpus never upserted")
         if gaps:
             failing += 1
             print("  status             : NOT ISOLATED, falls back to shared material")
