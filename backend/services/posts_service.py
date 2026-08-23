@@ -192,6 +192,10 @@ class PostsService:
         full_contexts = self._full_contexts_for_chunks(retrieved_chunks, context_by_title)
         brief = self._research_for_article(article, retrieved_chunks)
         brief_payload = brief.as_payload() if brief else None
+        # Loaded once here and handed to the writer as well as the research
+        # step, so the post is written against what the speaker actually said
+        # rather than only the excerpts a retriever happened to rank.
+        transcript = self._transcript_for_article(article, retrieved_chunks)
 
         post_text = self._generate_with_llm(
             article=article,
@@ -201,6 +205,7 @@ class PostsService:
             temperature=temperature,
             language=POST_OUTPUT_LANGUAGE,
             research_payload=brief_payload,
+            transcript=transcript,
         )
         if not post_text or not post_text.strip():
             raise HTTPException(
@@ -216,6 +221,7 @@ class PostsService:
             temperature=temperature,
             brief_payload=brief_payload,
             trace_dir=brief.trace_dir if brief else None,
+            transcript=transcript,
         )
         if brief and brief.trace_dir:
             self._trace_write(brief.trace_dir, "14_post_final.txt", post_text)
@@ -307,6 +313,7 @@ class PostsService:
             language=POST_OUTPUT_LANGUAGE,
             refinement_note=payload.refinement_note,
             research_payload=self._payload_from_meta(prior_research),
+            transcript=self._transcript_for_article(article, chunks),
         )
         if not post_text or not post_text.strip():
             raise HTTPException(
@@ -593,6 +600,7 @@ class PostsService:
         language: str | None = None,
         refinement_note: str | None = None,
         research_payload: dict[str, Any] | None = None,
+        transcript: str | None = None,
     ) -> str:
         try:
             if not settings.deepseek_api_key:
@@ -612,6 +620,7 @@ class PostsService:
                 language=language,
                 refinement_note=refinement_note,
                 research_payload=research_payload,
+                transcript=transcript,
             )
         except OpenAIRateLimitError as exc:
             import logging as _logging
@@ -691,6 +700,7 @@ class PostsService:
         temperature: float | None,
         brief_payload: dict[str, Any] | None,
         trace_dir: "Path | None" = None,
+        transcript: str | None = None,
     ) -> tuple[str, "ValidationReport | None"]:
         """
         Check the post's figures and dates against the material, and re-ask once
@@ -714,6 +724,10 @@ class PostsService:
         own_chunks = [c for c in retrieved_chunks if _is_own(c, article)]
         other_chunks = [c for c in retrieved_chunks if not _is_own(c, article)]
         sources = [
+            # The writer is now shown the transcript, so anything in it is
+            # sourced. Without this line every figure the speaker said aloud
+            # would come back flagged as invented.
+            transcript or "",
             "\n".join(str(article.get(k) or "") for k in ("title", "description", "content")),
             "\n".join(str(c.get("chunk_text") or "") for c in own_chunks),
             json.dumps(brief_payload, ensure_ascii=False) if brief_payload else "",
@@ -740,6 +754,7 @@ class PostsService:
                 full_contexts=full_contexts,
                 temperature=temperature,
                 language=POST_OUTPUT_LANGUAGE,
+                transcript=transcript,
                 refinement_note=report.as_correction_note(),
                 research_payload=brief_payload,
             )
@@ -808,6 +823,30 @@ class PostsService:
             return None
         return {"stance_mode": mode, "use_these": use, "do_not_contradict": avoid}
 
+    def _transcript_for_article(
+        self, article: dict[str, Any], retrieved_chunks: list[dict[str, Any]]
+    ) -> str:
+        """
+        The story's own transcript, from the scraper's output on disk.
+
+        Falling back to whichever chunks ranked highest was actively harmful:
+        with no chunks indexed for this video, claims were extracted from a
+        different video entirely, so a paper-leak story produced claims about
+        vote rolls. No transcript is the honest answer, another video's is not,
+        so the fallback is limited to chunks from this same video.
+
+        Shared by research and by writing, so both work from the same text.
+        """
+        from backend.pipeline.generator import _is_own
+        from backend.pipeline.transcripts import transcript_for_video
+
+        video_link = str(article.get("source_url") or "").strip()
+        transcript = transcript_for_video(video_link)[:12000]
+        if not transcript:
+            own = [c for c in retrieved_chunks if _is_own(c, article)]
+            transcript = "\n\n".join(str(c.get("chunk_text") or "") for c in own)[:12000]
+        return transcript
+
     def _research_for_article(
         self,
         article: dict[str, Any],
@@ -834,18 +873,7 @@ class PostsService:
             return None
 
         video_link = str(article.get("source_url") or "").strip()
-        # The story's own transcript, from the scraper's output on disk. Falling
-        # back to whichever chunks ranked highest was actively harmful: with no
-        # chunks indexed for this video, claims were extracted from a different
-        # video entirely, so a paper-leak story produced claims about vote rolls.
-        # No transcript is the honest answer; another video's is not.
-        from backend.pipeline.generator import _is_own
-        from backend.pipeline.transcripts import transcript_for_video
-
-        transcript = transcript_for_video(video_link)[:12000]
-        if not transcript:
-            own = [c for c in retrieved_chunks if _is_own(c, article)]
-            transcript = "\n\n".join(str(c.get("chunk_text") or "") for c in own)[:12000]
+        transcript = self._transcript_for_article(article, retrieved_chunks)
         import logging as _logging
         _log = _logging.getLogger(__name__)
         if transcript:

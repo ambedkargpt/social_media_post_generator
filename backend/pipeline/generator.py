@@ -142,6 +142,9 @@ _LANGUAGE_INSTRUCTIONS: dict[str, str] = {
 # the requested length. Devanagari also costs more tokens per word than Latin,
 # so a Hindi post needs noticeably more headroom than the word count suggests.
 _MAX_COMPLETION_TOKENS = int(os.getenv("POST_MAX_COMPLETION_TOKENS", "24000"))
+# Devanagari costs roughly a token per character or two, so an unbounded
+# transcript would dominate the prompt.
+_MAX_TRANSCRIPT_CHARS = int(os.getenv("POST_TRANSCRIPT_CHARS", "12000"))
 
 # Matches section headers in English OR Hindi (LLM sometimes translates labels when
 # generating Hindi content).
@@ -314,6 +317,7 @@ def generate_post(
     language: Optional[str] = None,
     refinement_note: Optional[str] = None,
     research_payload: Optional[Dict] = None,
+    transcript: Optional[str] = None,
     on_prompt=None,
 ) -> str:
     """
@@ -381,6 +385,12 @@ def generate_post(
             "description": news.get("description", ""),
             "content": news.get("content", ""),
         },
+        # What the speaker actually said, which the workflow puts in front of
+        # the writer alongside the research. Chunks are excerpts chosen by a
+        # retriever and can be empty for a video that was never indexed, so
+        # without this the writer could be asked to cover a video while holding
+        # nothing the speaker said.
+        "transcript": (transcript or "")[:_MAX_TRANSCRIPT_CHARS],
         "video": {
             "source_url": news.get("source_url", "") or "",
             "title": news.get("video_title", "") or "",
