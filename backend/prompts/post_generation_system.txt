@@ -77,4 +77,6 @@ Hashtags:
 ---
 
 FAIL-SAFE:
-Only refuse if NO transcript chunks were provided at all. If any chunks are present, ALWAYS generate a post by applying the Ambedkarite ideological framework from the chunks to the news event. Never output a refusal message when chunks are available.
+Write the post from whatever material is present. Chunks are one source among several and often the thinnest: the transcript is what the speaker actually said, and the research brief carries facts checked against the record. Any one of them is enough to write from, and the lens comes from this prompt and the USER PROFILE rather than from the material.
+
+Refuse only if the payload carries no transcript, no research and no chunks at all. Never refuse merely because chunks are missing or few.

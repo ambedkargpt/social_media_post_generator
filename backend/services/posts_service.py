@@ -203,6 +203,17 @@ class PostsService:
         # rather than only the excerpts a retriever happened to rank.
         transcript = self._transcript_for_article(article, retrieved_chunks)
 
+        # Chunks are optional now, but writing from nothing is not. A post with
+        # no chunks, no transcript and no research would be invention.
+        if not retrieved_chunks and not transcript and not brief_payload:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=(
+                    "No source material could be gathered for this story, so a "
+                    "grounded post cannot be written. Please try again."
+                ),
+            )
+
         post_text = self._generate_with_llm(
             article=article,
             profile=profile,
@@ -599,23 +610,18 @@ class PostsService:
                 retrieval_cfg=retrieval_cfg,
             )
         except Exception as exc:  # noqa: BLE001 - surface a usable error, not a traceback
-            # The retrieved chunks are the post's ideological grounding, not an
-            # optional extra: the generation prompt refuses to write without them.
-            # So a retrieval failure cannot be degraded past silently -- report it
-            # as an unavailable dependency rather than returning a post that just
-            # says it had no sources.
+            # Chunks used to be the post's only grounding, so failing here was
+            # right. They are not any more: the Ambedkarite lens moved into the
+            # prompt, and the transcript and research brief carry the substance.
+            # Refusing on the weakest dependency would take the whole feature
+            # down over material the post can now do without. The caller checks
+            # that SOMETHING survived before writing.
             import logging as _logging
 
-            _logging.getLogger(__name__).error("chunk retrieval failed: %s", exc)
-            detail = "Retrieval is unavailable, so a grounded post cannot be generated."
-            if "API key not valid" in str(exc) or "API_KEY_INVALID" in str(exc):
-                detail = (
-                    "The embedding API key is invalid, so source material could not be "
-                    "retrieved. Set a valid GEMINI_API_KEY and try again."
-                )
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=detail
-            ) from exc
+            _logging.getLogger(__name__).error(
+                "chunk retrieval failed, continuing without chunks: %s", exc
+            )
+            return []
 
     def _full_contexts_for_chunks(self, chunks: list[dict[str, Any]], context_by_title: dict[str, Any]) -> list[dict[str, Any]]:
         contexts: list[dict[str, Any]] = []
