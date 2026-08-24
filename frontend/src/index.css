@@ -245,6 +245,25 @@ html { scroll-behavior: smooth; }
   transform: translateY(-2px);
 }
 
+/* Secondary hero CTA. Distinct from .btn-gradient in form as well as hue: a
+   frosted outline rather than a solid fill, so the two read as primary and
+   secondary rather than as two competing primaries. The violet is already in
+   the palette, used by the section glows. */
+.btn-glass-violet {
+  background: rgba(123, 92, 255, 0.10);
+  border: 1px solid rgba(155, 130, 255, 0.55);
+  backdrop-filter: blur(6px);
+  transition: background-color .25s ease, border-color .25s ease,
+              box-shadow .25s ease, transform .15s ease;
+}
+.btn-glass-violet:hover {
+  background: rgba(123, 92, 255, 0.18);
+  border-color: rgba(180, 160, 255, 0.9);
+  box-shadow: 0 10px 34px rgba(123, 92, 255, 0.32);
+  transform: translateY(-2px);
+}
+.btn-glass-violet:active { transform: translateY(0) scale(0.98); }
+
 .btn-google {
   transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
 }
