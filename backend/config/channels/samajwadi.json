@@ -1,11 +1,11 @@
 {
   "name": "samajwadi",
-  "channel_url": "https://www.youtube.com/@SamajwadiPartyOfficial/videos",
+  "channel_url": "https://www.youtube.com/@SamajwadiAkhilesh/videos",
   "channel_urls": [
-    "https://www.youtube.com/@SamajwadiPartyOfficial/videos",
+    "https://www.youtube.com/@SamajwadiAkhilesh/videos",
     "https://www.youtube.com/@SamajwadiPartyOfficial/streams"
   ],
-  "lookback_days": 5,
+  "lookback_days": 7,
   "tenant_slug": "samajwadi",
   "channel_slug": "SamajwadiPartyOfficial",
   "transcripts_dir": "outputs/transcripts/SamajwadiPartyOfficial",
