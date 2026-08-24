@@ -188,22 +188,34 @@ def _ytdlp_auth_opts() -> dict:
 
     YouTube answers unauthenticated metadata requests from some IPs with
     "Sign in to confirm you're not a bot", which fails every video in a scrape
-    while the channel listing itself still succeeds. Cookies from a signed-in
-    browser get past it.
+    while the channel listing itself still succeeds.
 
+        YTDLP_PLAYER_CLIENT=android          # the default here; "default" to opt out
         YTDLP_COOKIES_FROM_BROWSER=brave     # or chrome, edge, firefox
         YTDLP_COOKIES_FILE=C:/path/cookies.txt
 
-    The browser must be closed for the first form on Windows: Chromium locks
-    its cookie database while running.
+    Cookies are the documented fix and are close to unusable on Windows, so the
+    client override is tried first and is what actually gets a scrape through.
     """
+    opts: dict = {}
+
+    # Ask YouTube as its Android client. The default web client is the one that
+    # gets challenged, and cookies are not a usable answer on Windows: Chromium
+    # locks its cookie database while running, and since Chrome 127 App-Bound
+    # Encryption stops an external process decrypting it even when closed.
+    # The android client answers the same metadata request without a login.
+    client = (os.getenv("YTDLP_PLAYER_CLIENT") or "android").strip()
+    if client and client.lower() != "default":
+        opts["extractor_args"] = {"youtube": {"player_client": [client]}}
+
     browser = (os.getenv("YTDLP_COOKIES_FROM_BROWSER") or "").strip()
     if browser:
-        return {"cookiesfrombrowser": (browser,)}
+        opts["cookiesfrombrowser"] = (browser,)
+        return opts
     cookiefile = (os.getenv("YTDLP_COOKIES_FILE") or "").strip()
     if cookiefile:
-        return {"cookiefile": cookiefile}
-    return {}
+        opts["cookiefile"] = cookiefile
+    return opts
 
 
 def get_video_metadata(url: str) -> dict | None:
