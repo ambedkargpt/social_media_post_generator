@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 import time
 import random
@@ -124,6 +125,7 @@ def fetch_video_urls(channel_url: str, limit: int | None = None, scan_limit: int
         "no_warnings": True,
         "socket_timeout": 30,
         "extract_flat": "in_playlist",
+        **_ytdlp_auth_opts(),
     }
     if scan_limit and scan_limit > 0:
         ydl_opts["playlistend"] = int(scan_limit)
@@ -180,11 +182,36 @@ def _publish_meta_from_ytdlp(info: dict) -> dict:
     return out
 
 
+def _ytdlp_auth_opts() -> dict:
+    """
+    Cookie options for yt-dlp, or an empty dict when none are configured.
+
+    YouTube answers unauthenticated metadata requests from some IPs with
+    "Sign in to confirm you're not a bot", which fails every video in a scrape
+    while the channel listing itself still succeeds. Cookies from a signed-in
+    browser get past it.
+
+        YTDLP_COOKIES_FROM_BROWSER=brave     # or chrome, edge, firefox
+        YTDLP_COOKIES_FILE=C:/path/cookies.txt
+
+    The browser must be closed for the first form on Windows: Chromium locks
+    its cookie database while running.
+    """
+    browser = (os.getenv("YTDLP_COOKIES_FROM_BROWSER") or "").strip()
+    if browser:
+        return {"cookiesfrombrowser": (browser,)}
+    cookiefile = (os.getenv("YTDLP_COOKIES_FILE") or "").strip()
+    if cookiefile:
+        return {"cookiefile": cookiefile}
+    return {}
+
+
 def get_video_metadata(url: str) -> dict | None:
     ydl_opts = {
         "quiet": True,
         "no_warnings": True,
         "skip_download": True,
+        **_ytdlp_auth_opts(),
     }
     try:
         with YoutubeDL(ydl_opts) as ydl:
