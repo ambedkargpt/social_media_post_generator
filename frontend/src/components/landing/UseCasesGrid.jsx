@@ -1,4 +1,4 @@
-﻿import { Cpu, Search, Zap, Target } from "lucide-react";
+﻿import { Cpu, Search, Zap, Target, ArrowRight } from "lucide-react";
 import SectionLabel from "./SectionLabel";
 import StaggerReveal from "../ui/StaggerReveal";
 
@@ -82,15 +82,29 @@ export default function UseCasesGrid() {
           <span className="italic gradient-text-blue">Guarantee</span>
         </h2>
 
-        <p className="mx-auto mt-6 max-w-[760px] text-center text-[22px] leading-9 text-[#bfcfe8] md:text-[24px]">
-          Every tool built for one purpose: to put the power of Ambedkarite knowledge into the hands of those who need it most.
-        </p>
-
         <StaggerReveal step={100} className="mt-14 grid gap-6 md:grid-cols-2">
           {USE_CASES.map((uc) => (
             <UseCaseCard key={uc.title} {...uc} />
           ))}
         </StaggerReveal>
+
+        <div className="mt-14 flex justify-center px-2">
+          <button
+            type="button"
+            onClick={() =>
+              document
+                .getElementById("contact")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" })
+            }
+            className="btn-gradient group inline-flex min-h-[3.5rem] max-w-full items-center justify-center gap-3 rounded-xl px-7 py-3.5 text-center font-count text-[16px] font-semibold leading-snug text-white md:px-9 md:text-[17px]"
+          >
+            Contest election as an independent candidate
+            <ArrowRight
+              size={18}
+              className="shrink-0 transition-transform group-hover:translate-x-1"
+            />
+          </button>
+        </div>
       </div>
     </section>
   );
