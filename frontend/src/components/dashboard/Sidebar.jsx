@@ -136,13 +136,11 @@ function SidebarContent({ active, onSelect, onClose, onLogout }) {
       </nav>
 
       <div className="px-4 pb-4 pt-2">
-        {/* Logout — shown in mobile overlay only */}
         {onLogout && (
           <button
             type="button"
             onClick={() => { onClose?.(); onLogout(); }}
-            className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-[13.5px] font-medium text-[#7b88ad] transition hover:bg-[#0f173a]/70 hover:text-red-400 lg:hidden"
-            style={{ border: '1px solid transparent' }}
+            className="flex w-full items-center gap-3 rounded-xl border-t border-[#141d3a]/70 px-3.5 py-3 text-[13.5px] font-medium text-[#7b88ad] transition hover:bg-[#0f173a]/70 hover:text-red-400"
           >
             <LogOut size={17} strokeWidth={1.8} />
             <span>Log Out</span>
@@ -164,7 +162,7 @@ export default function Sidebar({ active = 'dashboard', onSelect, mobileOpen = f
         className="hidden lg:flex flex-col w-[232px] shrink-0 border-r border-[#141d3a]/70"
         style={{ background: 'linear-gradient(180deg,#0a1024 0%,#070b1c 100%)' }}
       >
-        <SidebarContent active={active} onSelect={onSelect} />
+        <SidebarContent active={active} onSelect={onSelect} onLogout={onLogout} />
       </aside>
 
       {/* Mobile overlay */}
