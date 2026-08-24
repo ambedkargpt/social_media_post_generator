@@ -94,7 +94,7 @@ export default function Footer() {
             </p>
 
             <div className="mt-5 space-y-1 text-[13px] leading-relaxed text-[#8296bd]">
-              <p className="text-[#9fb2d1]">Kalpik Ltd</p>
+              <p className="text-[#9fb2d1]">KalpiT Ltd</p>
               <p>71-75 Shelton Street, Covent Garden, London WC2H 9JQ</p>
               <p>
                 <a href={`mailto:${EMAIL}`} className="transition hover:text-white">
@@ -133,7 +133,7 @@ export default function Footer() {
             was plain text, and every link in both went nowhere. */}
         <div className="mt-7 flex flex-col-reverse items-start justify-between gap-4 text-[12.5px] text-[#8296bd] md:flex-row md:items-center">
           <p>
-            AmbedkarGPT, developed by Kalpik Ltd (UK) © {new Date().getFullYear()}
+            AmbedkarGPT, developed by KalpiT Ltd (UK) © {new Date().getFullYear()}
           </p>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
             <button
