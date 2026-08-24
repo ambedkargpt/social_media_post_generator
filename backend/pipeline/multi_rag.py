@@ -44,6 +44,7 @@ class TenantArtifacts:
     semrag_chunks_path: Path | None
     pinecone_namespace: str | None
     rag_chunks_path: Path | None = None
+    rag_video_context_path: Path | None = None
 
     @property
     def has_graph(self) -> bool:
@@ -131,6 +132,7 @@ def artifacts_for_tenant(tenant: str | int | None) -> TenantArtifacts | None:
         semrag_chunks_path=channel.semrag_chunks_path,
         pinecone_namespace=channel.pinecone_namespace,
         rag_chunks_path=channel.rag_chunks_path,
+        rag_video_context_path=channel.rag_video_context_path,
     )
 
 
@@ -393,7 +395,7 @@ def rag_stack_for_tenant(settings: Any, tenant: str | int | None) -> tuple[Any, 
 
     from backend.pipeline.vector_store import VectorStore
 
-    embedder, _shared_store, context_by_title = shared
+    embedder, _shared_store, shared_context = shared
     chunks = json.loads(art.rag_chunks_path.read_text(encoding="utf-8"))
     if isinstance(chunks, dict):
         chunks = chunks.get("chunks") or []
@@ -407,6 +409,23 @@ def rag_stack_for_tenant(settings: Any, tenant: str | int | None) -> tuple[Any, 
         chunks=chunks,
         namespace=art.pinecone_namespace,
     )
+    # This channel's video context, not the shared one. Reusing the shared map
+    # meant a Congress post looked its video summaries up among Ravish titles:
+    # missing at best, and a title collision would put another channel's
+    # summary into the post, which is the leak this whole split exists to stop.
+    context_by_title = shared_context
+    ctx_path = art.rag_video_context_path
+    if ctx_path and ctx_path.is_file():
+        try:
+            rows = json.loads(ctx_path.read_text(encoding="utf-8"))
+            context_by_title = {v["video_title"]: v for v in rows}
+        except Exception:
+            context_by_title = {}
+    else:
+        # No context of its own is better than another channel's: an absent
+        # summary is dropped, a wrong one is asserted.
+        context_by_title = {}
+
     stack = (embedder, store, context_by_title)
     _TENANT_STACKS[slug] = stack
     return stack, True
