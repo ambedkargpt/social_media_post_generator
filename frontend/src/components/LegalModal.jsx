@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 const CONTENT = {
@@ -94,9 +95,13 @@ export default function LegalModal({ type, onClose }) {
 
   if (!content) return null;
 
-  return (
+  // Into document.body: the footer renders inside PageTransition, whose
+  // transform becomes the containing block for position:fixed and strands the
+  // panel outside the viewport. Signup got away without this only because it
+  // has no such ancestor.
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4"
       style={{ backgroundColor: 'rgba(3,6,17,0.82)', backdropFilter: 'blur(6px)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
@@ -140,6 +145,7 @@ export default function LegalModal({ type, onClose }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -1,10 +1,32 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import MilestoneBanner from '../components/MilestoneBanner';
 
 export default function MainLayout({ children }) {
   const [bannerVisible, setBannerVisible] = useState(true);
+  const { pathname, hash } = useLocation();
+
+  // Scroll to #section after a route change. Nothing did this, so a link from
+  // another page to "/#contact" landed at the top of the home page and the
+  // reader had to find the section themselves. The section may not be mounted
+  // on the first frame, so retry briefly before giving up.
+  useEffect(() => {
+    if (!hash) return undefined;
+    const id = hash.slice(1);
+    let tries = 0;
+    const timer = setInterval(() => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        clearInterval(timer);
+      } else if (++tries > 20) {
+        clearInterval(timer);
+      }
+    }, 50);
+    return () => clearInterval(timer);
+  }, [pathname, hash]);
 
   return (
     <>
