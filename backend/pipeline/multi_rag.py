@@ -332,3 +332,81 @@ def tenant_corpus_summary() -> list[dict[str, Any]]:
             }
         )
     return rows
+
+
+# --------------------------------------------------------------------------
+# Per-tenant retrieval stack
+# --------------------------------------------------------------------------
+
+# One stack per tenant, built once per process. ensure_rag_stack caches a single
+# global stack, which is why every channel has been searching the same corpus.
+_TENANT_STACKS: dict[str, Any] = {}
+# describe_index_stats is a network call, so the readiness answer is cached.
+# A namespace does not gain vectors while a process is running unless someone
+# runs the corpus build, and that is not a live path.
+_NAMESPACE_READY: dict[str, bool] = {}
+
+
+def _namespace_has_vectors(settings: Any, namespace: str) -> bool:
+    if namespace in _NAMESPACE_READY:
+        return _NAMESPACE_READY[namespace]
+    try:
+        from pinecone import Pinecone
+
+        idx = Pinecone(api_key=settings.pinecone_api_key).Index(settings.pinecone_index_name)
+        stats = idx.describe_index_stats()
+        count = int((stats.get("namespaces") or {}).get(namespace, {}).get("vector_count") or 0)
+        ready = count > 0
+    except Exception:
+        # Unreachable index is not evidence the namespace is empty, and guessing
+        # "ready" would point retrieval at a namespace that may hold nothing.
+        ready = False
+    _NAMESPACE_READY[namespace] = ready
+    return ready
+
+
+def rag_stack_for_tenant(settings: Any, tenant: str | int | None) -> tuple[Any, bool]:
+    """
+    Return ``(stack, isolated)`` for one tenant.
+
+    ``isolated`` is False when the tenant falls back to the shared stack, which
+    is the honest answer while its corpus is unbuilt or its namespace is empty.
+    Retrieval against an empty namespace returns nothing at all, so the fallback
+    is deliberate: a post from the wrong corpus beats no post, and the caller
+    logs which one it got.
+    """
+    from backend.pipeline_cli import ensure_rag_stack
+
+    shared = ensure_rag_stack(settings)
+    art = artifacts_for_tenant(tenant)
+    if art is None or not art.declares_isolation:
+        return shared, False
+
+    slug = art.tenant_slug
+    if slug in _TENANT_STACKS:
+        return _TENANT_STACKS[slug], True
+
+    if not art.has_rag_chunks or not art.pinecone_namespace:
+        return shared, False
+    if not _namespace_has_vectors(settings, art.pinecone_namespace):
+        return shared, False
+
+    from backend.pipeline.vector_store import VectorStore
+
+    embedder, _shared_store, context_by_title = shared
+    chunks = json.loads(art.rag_chunks_path.read_text(encoding="utf-8"))
+    if isinstance(chunks, dict):
+        chunks = chunks.get("chunks") or []
+    if not chunks:
+        return shared, False
+
+    # Same Pinecone handle, different namespace, and this tenant's chunks for
+    # BM25 and metadata. Sharing the handle keeps one connection per process.
+    store = VectorStore(
+        index=_shared_store.index,
+        chunks=chunks,
+        namespace=art.pinecone_namespace,
+    )
+    stack = (embedder, store, context_by_title)
+    _TENANT_STACKS[slug] = stack
+    return stack, True

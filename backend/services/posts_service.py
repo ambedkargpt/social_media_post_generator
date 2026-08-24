@@ -192,8 +192,9 @@ class PostsService:
 
         query_text = self._query_from_article(article)
         profile = self._profile_for_user(user_id, tone=tone, profile_overrides=profile_overrides)
-        embedder, store, context_by_title = ensure_rag_stack(settings)
-        retrieved_chunks = self._retrieve_chunks(query_text, embedder, store)
+        tenant = article.get("tenant_slug") or "general"
+        embedder, store, context_by_title = self._rag_stack(tenant)
+        retrieved_chunks = self._retrieve_chunks(query_text, embedder, store, tenant=tenant)
         full_contexts = self._full_contexts_for_chunks(retrieved_chunks, context_by_title)
         brief = self._research_for_article(article, retrieved_chunks)
         brief_payload = brief.as_payload() if brief else None
@@ -302,7 +303,9 @@ class PostsService:
                 if field in PROFILE_FIELDS and value:
                     profile[field] = value
 
-        _, _, context_by_title = ensure_rag_stack(settings)
+        # The tenant's own stack, so a title lookup cannot pull another
+        # channel's video summary into this post.
+        _, _, context_by_title = self._rag_stack(article.get("tenant_slug") or "general")
         full_contexts = self._full_contexts_for_chunks(chunks, context_by_title)
         # Regeneration reuses the retrieval snapshot, so it reuses the research
         # too. Searching again would spend two LLM calls and a round of requests
@@ -542,13 +545,43 @@ class PostsService:
             default_profile["tone"] = tone.strip()
         return default_profile
 
-    def _retrieve_chunks(self, query_text: str, embedder: Any, store: Any) -> list[dict[str, Any]]:
+    def _rag_stack(self, tenant: str) -> tuple[Any, Any, Any]:
+        """
+        This tenant's retrieval stack, or the shared one when it has none yet.
+
+        Logged either way: falling back means the post is written from another
+        channel's material, which is invisible in the output and worth saying.
+        """
+        import logging as _logging
+        from backend.pipeline.multi_rag import rag_stack_for_tenant
+
+        stack, isolated = rag_stack_for_tenant(settings, tenant)
+        _log = _logging.getLogger(__name__)
+        if isolated:
+            _log.info("[retrieval] tenant=%s using its own corpus and namespace", tenant)
+        else:
+            _log.info(
+                "[retrieval] tenant=%s falling back to the shared corpus "
+                "(run backend.scripts.check_isolation to see why)", tenant,
+            )
+        return stack
+
+    def _retrieve_chunks(
+        self, query_text: str, embedder: Any, store: Any, *, tenant: str = "general"
+    ) -> list[dict[str, Any]]:
         retrieval_cfg = _retrieval_cfg_from_settings(settings)
         retrieval_cfg["semrag_enabled"] = True
         try:
+            # Tenant-scoped settings so the graph consulted is this channel's.
+            # The global semrag_enabled is off and the global graph path does
+            # not exist, so passing plain settings returned no candidates at all.
+            from backend.pipeline.multi_rag import artifacts_for_tenant, settings_for_tenant
+
+            _art = artifacts_for_tenant(tenant)
+            _cfg_settings = settings_for_tenant(settings, _art) if _art else settings
             semrag_candidates, _ = semrag_candidates_for_query(
                 query_text,
-                settings,
+                _cfg_settings,
                 mode=getattr(settings, "semrag_search_mode", "hybrid"),
             )
             retrieval_cfg["semrag_candidates"] = semrag_candidates

@@ -44,6 +44,11 @@ class VectorStore:
     """
     index: Any                    # pinecone.data.index.Index
     chunks: List[Dict[str, Any]]
+    # Which slice of the index this store reads. Empty is the shared default
+    # namespace. A per-channel store sets it so one tenant's search cannot
+    # return another tenant's vectors, and search() picks it up without every
+    # call site having to pass it.
+    namespace: str = ""
 
 
 # ---------------------------------------------------------------------------
@@ -166,7 +171,7 @@ def search(
     store: VectorStore,
     query_embedding: np.ndarray,
     top_k: int = 5,
-    namespace: str = "",
+    namespace: Optional[str] = None,
 ) -> List[Tuple[str, float]]:
     """Query the Pinecone index.
 
@@ -181,6 +186,11 @@ def search(
     if store.index is None:
         logger.error("search() called but VectorStore.index is None — Pinecone not initialised.")
         return []
+
+    # An explicit argument still wins; otherwise the store decides, which is how
+    # a tenant store keeps its own namespace without threading it through every
+    # caller in the retrieval path.
+    ns = namespace if namespace is not None else getattr(store, "namespace", "")
 
     if query_embedding.ndim == 1:
         query_embedding = query_embedding.reshape(1, -1)
@@ -198,7 +208,7 @@ def search(
         result = store.index.query(
             vector=q_list,
             top_k=top_k,
-            namespace=namespace,
+            namespace=ns,
             include_values=False,
             include_metadata=False,
             _request_timeout=PINECONE_QUERY_TIMEOUT_S,
