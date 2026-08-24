@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Mail, Copy, Check } from 'lucide-react';
 
 const EMAIL = 'smartbhaujan@gmail.com';
@@ -59,9 +60,13 @@ export default function CorpusContactModal({ type, onClose }) {
     }
   }
 
-  return (
+  // Rendered into document.body. The landing sections sit inside ancestors that
+  // set transform/will-change, and such an ancestor becomes the containing block
+  // for position:fixed, which pinned this panel inside the section and pushed it
+  // off screen while the backdrop still covered the page.
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-[200] flex items-center justify-center overflow-y-auto p-4"
       style={{ backgroundColor: 'rgba(3,6,17,0.82)', backdropFilter: 'blur(6px)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       role="dialog"
@@ -115,6 +120,7 @@ export default function CorpusContactModal({ type, onClose }) {
           </a>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
