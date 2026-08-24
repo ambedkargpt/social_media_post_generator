@@ -73,32 +73,32 @@ export default function CorpusContactModal({ type, onClose }) {
       aria-modal="true"
       aria-labelledby="corpus-contact-title"
     >
-      <div className="relative flex w-full max-w-[520px] flex-col rounded-2xl border border-[#1e3260] bg-[#080e24] shadow-[0_32px_80px_rgba(0,0,0,0.7)]">
+      <div className="relative flex w-full max-w-[580px] flex-col rounded-2xl border border-[#1e3260] bg-[#080e24] shadow-[0_32px_80px_rgba(0,0,0,0.7)]">
 
-        <div className="flex items-center justify-between border-b border-[#1a2c55] px-6 py-4">
-          <h2 id="corpus-contact-title" className="font-display text-[20px] font-semibold text-white">
+        <div className="flex items-center justify-between border-b border-[#1a2c55] px-7 py-5">
+          <h2 id="corpus-contact-title" className="font-display text-[23px] font-semibold text-white">
             {content.title}
           </h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#1e3260] text-[#8b94b8] transition hover:border-[#3a6bc4] hover:text-white"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#1e3260] text-[#8b94b8] transition hover:border-[#3a6bc4] hover:text-white"
           >
-            <X size={15} />
+            <X size={17} />
           </button>
         </div>
 
-        <div className="px-6 py-6">
-          <p className="text-[14px] leading-relaxed text-[#a6b9d6]">
+        <div className="px-7 py-7">
+          <p className="text-[17px] leading-[1.75] text-[#c3d3ec]">
             {content.body}
           </p>
 
-          <div className="mt-5 flex items-center gap-3 rounded-xl border border-[#1e3260] bg-[#0b1330] px-4 py-3.5">
-            <Mail size={17} className="shrink-0 text-[#9dc3ff]" />
+          <div className="mt-6 flex items-center gap-3 rounded-xl border border-[#1e3260] bg-[#0b1330] px-4 py-4">
+            <Mail size={19} className="shrink-0 text-[#9dc3ff]" />
             <a
               href={`mailto:${EMAIL}?subject=${encodeURIComponent(content.subject)}`}
-              className="min-w-0 flex-1 truncate font-count text-[15px] font-medium text-white underline decoration-[#3a6bc4] underline-offset-4 transition hover:decoration-white"
+              className="min-w-0 flex-1 truncate font-count text-[17px] font-medium text-white underline decoration-[#3a6bc4] underline-offset-4 transition hover:decoration-white"
             >
               {EMAIL}
             </a>
@@ -106,15 +106,15 @@ export default function CorpusContactModal({ type, onClose }) {
               type="button"
               onClick={copyEmail}
               aria-label={copied ? 'Email copied' : 'Copy email address'}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#1e3260] text-[#8b94b8] transition hover:border-[#3a6bc4] hover:text-white"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#1e3260] text-[#8b94b8] transition hover:border-[#3a6bc4] hover:text-white"
             >
-              {copied ? <Check size={14} className="text-[#7ee0a8]" /> : <Copy size={14} />}
+              {copied ? <Check size={16} className="text-[#7ee0a8]" /> : <Copy size={16} />}
             </button>
           </div>
 
           <a
             href={`mailto:${EMAIL}?subject=${encodeURIComponent(content.subject)}`}
-            className="btn-gradient mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl font-count text-[16px] font-semibold text-white"
+            className="btn-gradient mt-6 inline-flex h-14 w-full items-center justify-center gap-2 rounded-xl font-count text-[17px] font-semibold text-white"
           >
             Write to us
           </a>
