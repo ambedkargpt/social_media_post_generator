@@ -2,10 +2,15 @@
 Delivery for landing-page contact submissions.
 
 Plain SMTP rather than a provider SDK, so the account behind it is an env-file
-change rather than a code change. That matters here because the address
-currently configured, ``sandbox.smtp.mailtrap.io``, is a testing inbox: it
-captures mail in Mailtrap's web UI and never delivers to a real mailbox. Point
-SMTP_HOST/USER/PASSWORD at Gmail, SES or Mailtrap Sending to deliver for real.
+change rather than a code change. It runs on Gmail with an App Password, which
+caps at roughly 500 messages a day: fine for a contact form, and the reason to
+move to SES if this ever fronts something busier or needs to send from the
+ambedkargpt.in domain.
+
+Watch for hosts that accept mail and never deliver it, such as
+``sandbox.smtp.mailtrap.io``, which this was pointed at first. Everything looks
+successful and nothing arrives. ``backend.scripts.check_contact_email`` names
+those hosts rather than reporting a clean send.
 """
 
 from __future__ import annotations
