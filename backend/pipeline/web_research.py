@@ -107,6 +107,13 @@ _MAX_TRANSCRIPT_CHARS = int(os.getenv("RESEARCH_TRANSCRIPT_CHARS", "8000"))
 
 # Drop an angle whose quoted transcript line cannot be found. Set to 0 to keep
 # them and rely on the fact-check's own transcript question instead.
+# Shared secret for a SearXNG that is reachable from the internet. A public
+# instance is a free search proxy and gets found and abused, so the AWS
+# deployment puts an ALB rule in front that demands this header and the client
+# has to send it. Unset for a local container on localhost.
+_SEARXNG_AUTH_HEADER = (os.getenv("SEARXNG_AUTH_HEADER") or "X-SearXNG-Auth").strip()
+_SEARXNG_AUTH_TOKEN = (os.getenv("SEARXNG_AUTH_TOKEN") or "").strip()
+
 _REQUIRE_SOURCE_QUOTE = (os.getenv("RESEARCH_REQUIRE_SOURCE_QUOTE") or "1").strip().lower() in {"1", "true", "yes", "on"}
 
 
@@ -583,6 +590,13 @@ def _result_relevance(result: "SearchResult", terms: list) -> int:
     return sum(1 for t in terms if t in blob)
 
 
+def _search_headers() -> Dict[str, str]:
+    headers = {"User-Agent": "AmbedkarGPT-Research/1.0"}
+    if _SEARXNG_AUTH_TOKEN:
+        headers[_SEARXNG_AUTH_HEADER] = _SEARXNG_AUTH_TOKEN
+    return headers
+
+
 def search_urls(
     query: str,
     *,
@@ -602,7 +616,7 @@ def search_urls(
             endpoint,
             params={"q": query, "format": "json", "language": "en", "safesearch": 0},
             timeout=timeout,
-            headers={"User-Agent": "AmbedkarGPT-Research/1.0"},
+            headers=_search_headers(),
         )
         resp.raise_for_status()
         payload = resp.json()
