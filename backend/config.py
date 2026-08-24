@@ -86,6 +86,14 @@ class Settings:
     transcript_cleaning_enabled: bool
     # Ground-truth Hindi punctuation/grammar reference injected into prompts
     hindi_style_reference_file: str
+    # Contact form delivery. SMTP rather than a provider SDK so the account can
+    # be swapped from an env file without a code change.
+    smtp_host: str
+    smtp_port: int
+    smtp_user: str
+    smtp_password: str
+    contact_recipient_email: str
+    contact_from_email: str
     # Web research: verify a news item's claims before the post is written
     web_research_enabled: bool
     searxng_url: str
@@ -329,6 +337,19 @@ def get_settings() -> Settings:
     ).resolve()
     # Off by default: the research step costs a search round trip plus two LLM
     # calls per post, so it is opted into per environment rather than assumed.
+    smtp_host = (os.getenv("SMTP_HOST") or "").strip()
+    smtp_port = int(os.getenv("SMTP_PORT") or "587")
+    smtp_user = (os.getenv("SMTP_USER") or "").strip()
+    smtp_password = os.getenv("SMTP_PASSWORD") or ""
+    # Where contact form submissions land.
+    contact_recipient_email = (
+        os.getenv("CONTACT_RECIPIENT_EMAIL") or "krishprakash1232@gmail.com"
+    ).strip()
+    # The envelope sender. Many providers reject a From they do not own, so this
+    # defaults to the authenticated user rather than to the visitor's address.
+    contact_from_email = (
+        os.getenv("CONTACT_FROM_EMAIL") or smtp_user or "no-reply@ambedkargpt.in"
+    ).strip()
     web_research_enabled = (os.getenv("WEB_RESEARCH_ENABLED") or "").strip().lower() in {"1", "true", "yes", "on"}
     searxng_url = (os.getenv("SEARXNG_URL") or "http://localhost:8080").strip().rstrip("/")
     web_research_max_claims = int(os.getenv("WEB_RESEARCH_MAX_CLAIMS", "3"))
@@ -449,6 +470,12 @@ def get_settings() -> Settings:
         transcript_cleaning_prompt_user=transcript_cleaning_prompt_user,
         transcript_cleaning_enabled=transcript_cleaning_enabled,
         hindi_style_reference_file=hindi_style_reference_file,
+        smtp_host=smtp_host,
+        smtp_port=smtp_port,
+        smtp_user=smtp_user,
+        smtp_password=smtp_password,
+        contact_recipient_email=contact_recipient_email,
+        contact_from_email=contact_from_email,
         web_research_enabled=web_research_enabled,
         searxng_url=searxng_url,
         web_research_max_claims=web_research_max_claims,
