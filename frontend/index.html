@@ -7,10 +7,68 @@
     <link rel="icon" type="image/png" sizes="96x96" href="/logo.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#05081a" />
     <title>AmbedkarGPT</title>
+    <!--
+      Painted before any JavaScript runs. The shell is otherwise an empty div,
+      so the whole boot showed a dead navy screen: on a slow connection that
+      lasted about seventeen seconds on mobile Safari and read as a broken
+      site rather than a loading one. #boot is removed by main.jsx once React
+      has mounted.
+    -->
+    <style>
+      html, body { margin: 0; padding: 0; background-color: #05081a; }
+      #boot {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        background: #05081a;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      #boot-mark {
+        font-size: 21px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: #ffffff;
+      }
+      #boot-mark span { color: #3f9fff; }
+      #boot-bar {
+        width: 132px;
+        height: 2px;
+        border-radius: 2px;
+        overflow: hidden;
+        background: rgba(63, 159, 255, 0.16);
+      }
+      #boot-bar::after {
+        content: "";
+        display: block;
+        width: 40%;
+        height: 100%;
+        border-radius: 2px;
+        background: linear-gradient(90deg, #0a7dff, #3a9fff);
+        animation: boot-slide 1.15s ease-in-out infinite;
+      }
+      @keyframes boot-slide {
+        0%   { transform: translateX(-100%); }
+        100% { transform: translateX(330%); }
+      }
+      /* A moving bar is the wrong signal when motion is unwelcome; hold it
+         steady and let the wordmark carry the state. */
+      @media (prefers-reduced-motion: reduce) {
+        #boot-bar::after { animation: none; width: 100%; opacity: 0.5; }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+    <div id="boot" role="status" aria-label="Loading AmbedkarGPT">
+      <div id="boot-mark">Ambedkar<span>GPT</span></div>
+      <div id="boot-bar"></div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

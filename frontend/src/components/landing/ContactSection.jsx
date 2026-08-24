@@ -1,19 +1,48 @@
-﻿import { useState } from 'react';
+﻿import { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import { Mail, MapPin, Send, UserPlus, Loader2, CheckCircle2 } from 'lucide-react';
 import { sendContactMessage } from '../../api/contact';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
 import SectionLabel from './SectionLabel';
 
-// Fix Leaflet default marker icons broken by Vite asset bundling
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl:       'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl:     'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-});
+// Leaflet is 43 kB gzipped plus a stylesheet, for a map at the very bottom of
+// the page. Loading it on render would only move the cost, not remove it, so
+// the chunk is not requested until the map is close to the viewport.
+const OfficeMap = lazy(() => import('./OfficeMap'));
 
-const OFFICE = [51.5145, -0.1227];
+function LazyOfficeMap() {
+  const ref = useRef(null);
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    if (typeof IntersectionObserver === 'undefined') {
+      // No observer, no deferral: showing the map beats hiding it forever.
+      setShow(true);
+      return undefined;
+    }
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShow(true);
+          obs.disconnect();
+        }
+      },
+      { rootMargin: '400px' },   // start fetching just before it is reached
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} className="h-full w-full">
+      {show && (
+        <Suspense fallback={<div className="h-full w-full bg-[#0a1428]" />}>
+          <OfficeMap />
+        </Suspense>
+      )}
+    </div>
+  );
+}
 
 // ─── Individual form field — label + input/textarea ───
 function Field({
@@ -159,21 +188,7 @@ export default function ContactSection() {
             </div>
 
             <div className="mt-7 overflow-hidden rounded-2xl border border-[#1e3260]/60" style={{ height: 220 }}>
-              <MapContainer
-                center={OFFICE}
-                zoom={15}
-                scrollWheelZoom={false}
-                zoomControl={false}
-                style={{ height: '100%', width: '100%' }}
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                <Marker position={OFFICE}>
-                  <Popup>AmbedkarGPT<br />71-75 Shelton Street, Covent Garden, London (WC2H 9JQ)</Popup>
-                </Marker>
-              </MapContainer>
+              <LazyOfficeMap />
             </div>
           </div>
 
