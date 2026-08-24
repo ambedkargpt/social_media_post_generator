@@ -114,6 +114,15 @@ _MAX_TRANSCRIPT_CHARS = int(os.getenv("RESEARCH_TRANSCRIPT_CHARS", "8000"))
 _SEARXNG_AUTH_HEADER = (os.getenv("SEARXNG_AUTH_HEADER") or "X-SearXNG-Auth").strip()
 _SEARXNG_AUTH_TOKEN = (os.getenv("SEARXNG_AUTH_TOKEN") or "").strip()
 
+# Which search backend to use.
+#   "auto"    try SearXNG, fall back to DuckDuckGo when it cannot be reached
+#   "searxng" SearXNG only; no results if it is down
+#   "ddg"     DuckDuckGo only, no server and no key
+# auto is the default because the two deployments differ: a laptop runs the
+# SearXNG container and gets Google results through it, while the Lambda has no
+# container to talk to and must not depend on one.
+_SEARCH_PROVIDER = (os.getenv("SEARCH_PROVIDER") or "auto").strip().lower()
+
 _REQUIRE_SOURCE_QUOTE = (os.getenv("RESEARCH_REQUIRE_SOURCE_QUOTE") or "1").strip().lower() in {"1", "true", "yes", "on"}
 
 
@@ -597,19 +606,12 @@ def _search_headers() -> Dict[str, str]:
     return headers
 
 
-def search_urls(
-    query: str,
-    *,
-    base_url: str,
-    top_k: int = 6,
-    timeout: float = 20.0,
-) -> List[SearchResult]:
-    """
-    Query SearXNG and return de-duplicated results, best first.
+class _SearxngUnreachable(Exception):
+    """Raised so the caller can fall back rather than return no results."""
 
-    The only place a search provider is named. To move to a hosted API, replace
-    the body of this function and nothing else changes.
-    """
+
+def _raw_searxng(query: str, base_url: str, timeout: float) -> List[Dict[str, str]]:
+    """Rows from a self-hosted SearXNG, in the shared shape."""
     endpoint = base_url.rstrip("/") + "/search"
     try:
         resp = requests.get(
@@ -620,25 +622,105 @@ def search_urls(
         )
         resp.raise_for_status()
         payload = resp.json()
-    except requests.exceptions.ConnectionError:
-        # The container is not running. A stack of connection errors, one per
-        # claim, buries the single thing worth knowing, so say it plainly.
-        logger.error(
-            "SearXNG is not reachable at %s. Start it with: "
-            "docker compose -f deploy/searxng/docker-compose.yml up -d   "
-            "(Docker Desktop has to be running first). Posts will still generate, "
-            "without any web research.", base_url,
-        )
-        return []
+    except requests.exceptions.ConnectionError as exc:
+        raise _SearxngUnreachable(base_url) from exc
     except Exception as exc:
         logger.warning("SearXNG query failed for %r: %s", query, exc)
         return []
+    return [
+        {
+            "url": (r.get("url") or "").strip(),
+            "title": (r.get("title") or "").strip(),
+            "content": (r.get("content") or "").strip(),
+            "engine": (r.get("engine") or "").strip(),
+        }
+        for r in payload.get("results", [])
+    ]
+
+
+def _raw_ddg(query: str, top_k: int, timeout: float) -> List[Dict[str, str]]:
+    """
+    Rows from DuckDuckGo, in the shared shape.
+
+    No key and no host, which is the whole point: it runs inside the API Lambda
+    where there is nothing to deploy alongside it. Narrower than SearXNG, which
+    fans out to Google as well, so results are thinner on obscure queries.
+    """
+    try:
+        try:
+            from ddgs import DDGS
+        except ImportError:
+            from duckduckgo_search import DDGS
+    except ImportError:
+        logger.error(
+            "SEARCH_PROVIDER wants DuckDuckGo but ddgs is not installed. "
+            "Add it to requirements-api.txt and rebuild. Posts will still "
+            "generate, without any web research."
+        )
+        return []
+    try:
+        # Ask for more than needed: the host cap and relevance gate below
+        # discard some, and asking again costs another round trip.
+        with DDGS(timeout=int(timeout)) as ddg:
+            rows = list(ddg.text(query, max_results=max(top_k * 3, 12)))
+    except Exception as exc:
+        logger.warning("DuckDuckGo query failed for %r: %s", query, exc)
+        return []
+    return [
+        {
+            "url": (r.get("href") or r.get("url") or "").strip(),
+            "title": (r.get("title") or "").strip(),
+            "content": (r.get("body") or "").strip(),
+            "engine": "duckduckgo",
+        }
+        for r in rows
+    ]
+
+
+def search_urls(
+    query: str,
+    *,
+    base_url: str,
+    top_k: int = 6,
+    timeout: float = 20.0,
+) -> List[SearchResult]:
+    """
+    Search the web and return de-duplicated results, best first.
+
+    The only place a search provider is named. Everything downstream reads
+    SearchResult, so adding a provider means adding a _raw_* function and a
+    branch here, and nothing else changes.
+    """
+    rows: List[Dict[str, str]] = []
+    if _SEARCH_PROVIDER == "ddg" or not base_url:
+        rows = _raw_ddg(query, top_k, timeout)
+    else:
+        try:
+            rows = _raw_searxng(query, base_url, timeout)
+        except _SearxngUnreachable:
+            if _SEARCH_PROVIDER == "auto":
+                logger.warning(
+                    "SearXNG unreachable at %s, falling back to DuckDuckGo. "
+                    "Set SEARCH_PROVIDER=ddg to make this the intended path.",
+                    base_url,
+                )
+                rows = _raw_ddg(query, top_k, timeout)
+            else:
+                # A stack of connection errors, one per claim, buries the single
+                # thing worth knowing, so say it plainly and once.
+                logger.error(
+                    "SearXNG is not reachable at %s. Start it with: "
+                    "docker compose -f deploy/searxng/docker-compose.yml up -d   "
+                    "(Docker Desktop has to be running first). Posts will still "
+                    "generate, without any web research.", base_url,
+                )
+                return []
 
     terms = _query_terms(query)
     out: List[SearchResult] = []
     seen_hosts: Dict[str, int] = {}
     dropped = 0
-    for row in payload.get("results", []):
+    for row in rows:
         url = (row.get("url") or "").strip()
         if not url:
             continue
@@ -649,10 +731,10 @@ def search_urls(
         if seen_hosts.get(host, 0) >= 2:
             continue
         candidate = SearchResult(
-            title=(row.get("title") or "").strip(),
+            title=row.get("title", ""),
             url=url,
-            snippet=(row.get("content") or "").strip(),
-            engine=(row.get("engine") or "").strip(),
+            snippet=row.get("content", ""),
+            engine=row.get("engine", ""),
         )
         # A result carrying not one word of the query is not a weak match, it is
         # a different subject. Engines pad thin queries with their own filler,

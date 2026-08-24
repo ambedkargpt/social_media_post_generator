@@ -28,3 +28,4 @@ mongomock==4.3.0
 newsapi-python==0.2.7
 pyarrow==19.0.1
 trafilatura>=1.12
+ddgs>=9.0
