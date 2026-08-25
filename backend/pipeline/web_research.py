@@ -26,6 +26,7 @@ import logging
 import os
 import re
 import sys
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
@@ -136,6 +137,17 @@ _GOOGLE_CSE_CX = (os.getenv("GOOGLE_CSE_CX") or "").strip()
 # wasted round trips per post, every post, until the quota resets. The entry
 # goes stale on its own so a long-running process picks the provider back up
 # after the daily reset without needing to be restarted.
+_BRAVE_KEY = (os.getenv("BRAVE_SEARCH_API_KEY") or "").strip()
+
+# Brave's free tier allows one request per second. Claims are researched in
+# parallel, so three of them start at once and two get a 429 that has nothing
+# to do with the monthly quota. Serialise Brave calls behind a minimum gap
+# rather than letting the chain fall through on a limit that a short wait
+# clears.
+_BRAVE_MIN_INTERVAL_S = float(os.getenv("BRAVE_MIN_INTERVAL_SECONDS", "1.1"))
+_brave_lock = threading.Lock()
+_brave_last_call = 0.0
+
 _QUOTA_EXHAUSTED: Dict[str, float] = {}
 _QUOTA_RETRY_AFTER_S = float(os.getenv("SEARCH_QUOTA_RETRY_SECONDS", "1800"))
 
@@ -668,6 +680,73 @@ def _raw_searxng(query: str, base_url: str, timeout: float) -> List[Dict[str, st
     ]
 
 
+def _brave_configured() -> bool:
+    return bool(_BRAVE_KEY)
+
+
+def _raw_brave(query: str, top_k: int, timeout: float) -> List[Dict[str, str]]:
+    """
+    Rows from the Brave Search API, in the shared shape.
+
+    Brave crawls its own index rather than reselling Bing or Google, so it
+    returns things the others miss, and unlike Google's Programmable Search it
+    still searches the open web. Free tier is 2,000 queries a month, which at
+    one query per claim is several hundred posts.
+    """
+    global _brave_last_call
+    if not _brave_configured():
+        logger.error(
+            "SEARCH_PROVIDER wants Brave but BRAVE_SEARCH_API_KEY is unset. "
+            "Posts will still generate, without any web research."
+        )
+        return []
+
+    # One request per second on the free tier, and claims run in parallel.
+    with _brave_lock:
+        gap = time.time() - _brave_last_call
+        if gap < _BRAVE_MIN_INTERVAL_S:
+            time.sleep(_BRAVE_MIN_INTERVAL_S - gap)
+        _brave_last_call = time.time()
+
+    try:
+        resp = requests.get(
+            "https://api.search.brave.com/res/v1/web/search",
+            params={"q": query, "count": min(max(top_k * 2, 10), 20), "country": "in"},
+            headers={
+                "X-Subscription-Token": _BRAVE_KEY,
+                "Accept": "application/json",
+            },
+            timeout=timeout,
+        )
+        if resp.status_code == 429:
+            # Could be the per-second limit or the monthly one. Treating both as
+            # exhausted for a while is the safe read: a short pause costs one
+            # search, and hammering a spent monthly quota costs every search.
+            _mark_exhausted("brave")
+            logger.warning(
+                "Brave returned 429; skipping it for %d minutes and falling "
+                "through to the next backend.",
+                int(_QUOTA_RETRY_AFTER_S // 60),
+            )
+            return []
+        resp.raise_for_status()
+        payload = resp.json()
+    except Exception as exc:
+        logger.warning("Brave query failed for %r: %s", query, exc)
+        return []
+
+    return [
+        {
+            "url": (r.get("url") or "").strip(),
+            "title": (r.get("title") or "").strip(),
+            # Brave marks query terms in the description with <strong> tags.
+            "content": re.sub(r"</?strong>", "", (r.get("description") or "")).strip(),
+            "engine": "brave",
+        }
+        for r in (payload.get("web", {}).get("results") or [])
+    ]
+
+
 def _google_cse_configured() -> bool:
     return bool(_GOOGLE_CSE_KEY and _GOOGLE_CSE_CX)
 
@@ -782,10 +861,12 @@ def search_urls(
     branch here, and nothing else changes.
 
     SEARCH_PROVIDER picks the backend:
-      auto    walk searxng -> google -> ddg, taking the first that answers
+      auto    walk searxng -> brave -> ddg, taking the first that answers
       searxng SearXNG only, pinned
-      google  Google Custom Search JSON API only, pinned
+      brave   Brave Search API only, pinned
       ddg     DuckDuckGo only, pinned
+      google  Google Programmable Search only, pinned; covers just the sites
+              configured on the engine, since entire-web is deprecated
 
     On auto, a backend that is unreachable, unconfigured or out of quota is
     stepped over rather than failing the search. DuckDuckGo sits last because
@@ -811,16 +892,22 @@ def search_urls(
                         base_url,
                     )
                 return []
+        if name == "brave":
+            return _raw_brave(query, top_k, timeout) if _brave_configured() else []
         if name == "google":
             return _raw_google_cse(query, top_k, timeout) if _google_cse_configured() else []
         if name == "ddg":
             return _raw_ddg(query, top_k, timeout)
         return []
 
-    # Preference order, best first. DuckDuckGo is last on purpose: it is
-    # narrower than the others and it is also the only one that cannot run out,
-    # having neither a key nor a quota, so it is what the chain lands on.
-    CHAIN = ("searxng", "google", "ddg")
+    # Preference order, best first. DuckDuckGo is last on purpose: it is the
+    # only one with neither a key nor a quota, so it is what the chain lands on.
+    #
+    # Google is not in the chain. Programmable Search can no longer be set to
+    # search the entire web, so a new engine only covers the sites listed on it
+    # and is a curated index rather than a search backend. It stays selectable
+    # explicitly for anyone holding an older engine that kept the setting.
+    CHAIN = ("searxng", "brave", "ddg")
 
     rows: List[Dict[str, str]] = []
     if _SEARCH_PROVIDER in CHAIN:
