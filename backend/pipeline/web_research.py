@@ -690,8 +690,9 @@ def _raw_brave(query: str, top_k: int, timeout: float) -> List[Dict[str, str]]:
 
     Brave crawls its own index rather than reselling Bing or Google, so it
     returns things the others miss, and unlike Google's Programmable Search it
-    still searches the open web. Free tier is 2,000 queries a month, which at
-    one query per claim is several hundred posts.
+    still searches the open web. Priced in credits rather than a free tier:
+    $5 of credit a month against $5 per 1,000 requests, so roughly 1,000
+    searches, and it bills past that rather than refusing.
     """
     global _brave_last_call
     if not _brave_configured():
