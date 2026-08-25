@@ -4,7 +4,7 @@ import { User, AtSign, ArrowRight, ArrowLeft, ChevronDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCurtain } from '../context/CurtainContext';
 import { POLITICAL_PARTIES } from '../utils/politicalParties';
-import { ROLE_GROUPS, roleLabel } from '../utils/partyRoles';
+import { ROLE_GROUPS, roleLabel, groupForId, rolesInGroup } from '../utils/partyRoles';
 import logoSrc     from '../assets/images/logo-animation.png';
 import ambedkarSrc from '../assets/images/qna-ambedkar.png';
 
@@ -60,6 +60,16 @@ export default function ProfileSetup() {
   const [username, setUsername]   = useState(currentUser?.username || '');
   const [politicalParty, setPoliticalParty] = useState(currentUser?.political_party || '');
   const [partyPosition, setPartyPosition] = useState(currentUser?.party_position || '');
+  // Derived from the saved position so reopening the form lands on the level
+  // already chosen, rather than asking someone to find it again.
+  const [partyLevel, setPartyLevel] = useState(() => groupForId(currentUser?.party_position || ''));
+
+  function handleLevelChange(level) {
+    setPartyLevel(level);
+    // The old position belongs to the old level, so keeping it would leave the
+    // two selects disagreeing about what was chosen.
+    setPartyPosition('');
+  }
   const [errors, setErrors]       = useState({});
   const [loading, setLoading]     = useState(false);
   const [authError, setAuthError] = useState('');
@@ -270,47 +280,81 @@ export default function ProfileSetup() {
                 : <p className="mt-1.5 text-[12px]" style={{ color: '#5a6e9a' }}>Your news feed is tailored to this choice.</p>}
             </div>
 
-            {/* Position in the party. Titles differ between parties for the same
-                post, so the options are relabelled from the party above rather
-                than listing one party's vocabulary to everyone. Optional: a
-                supporter with no office is a legitimate answer. */}
+            {/* Position in the party, asked in two steps. One list of 41 titles
+                was accurate and unreadable: someone new does not know whether a
+                Zila Mahamantri is above or below a Mandal Adhyaksh, but they do
+                know which level they work at. Titles differ between parties for
+                the same post, so the options are relabelled from the party
+                above. Optional throughout: a supporter with no office is a
+                legitimate answer. */}
             <div>
               <label className="mb-1.5 block text-[13px] font-medium text-white">
                 Your position in the party
                 <span className="ml-1.5 font-normal" style={{ color: '#5a6e9a' }}>(optional)</span>
               </label>
-              <div className="relative">
-                <select
-                  value={partyPosition}
-                  onChange={(e) => setPartyPosition(e.target.value)}
-                  disabled={!politicalParty}
-                  className="w-full appearance-none rounded-xl px-4 py-3.5 pr-10 text-[14px] outline-none transition disabled:cursor-not-allowed disabled:opacity-50"
-                  style={{
-                    backgroundColor: '#0a1130',
-                    border: '1px solid #1e3260',
-                    color: partyPosition ? '#ffffff' : '#8b94b8',
-                  }}
-                >
-                  <option value="" className="bg-[#0a1130]">
-                    {politicalParty ? 'Supporter, no position' : 'Choose a party first'}
-                  </option>
-                  {ROLE_GROUPS.map((g) => (
-                    <optgroup key={g.group} label={g.group} className="bg-[#0a1130]">
-                      {g.roles.map((r) => (
-                        <option key={r.id} value={r.id} className="bg-[#0a1130] text-white">
-                          {roleLabel(r, politicalParty)}
-                        </option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={16}
-                  strokeWidth={2}
-                  className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2"
-                  style={{ color: '#8b94b8' }}
-                />
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="relative">
+                  <select
+                    value={partyLevel}
+                    onChange={(e) => handleLevelChange(e.target.value)}
+                    disabled={!politicalParty}
+                    aria-label="Level"
+                    className="w-full appearance-none rounded-xl px-4 py-3.5 pr-10 text-[14px] outline-none transition disabled:cursor-not-allowed disabled:opacity-50"
+                    style={{
+                      backgroundColor: '#0a1130',
+                      border: '1px solid #1e3260',
+                      color: partyLevel ? '#ffffff' : '#8b94b8',
+                    }}
+                  >
+                    <option value="" className="bg-[#0a1130]">
+                      {politicalParty ? 'Level' : 'Choose a party first'}
+                    </option>
+                    {ROLE_GROUPS.map((g) => (
+                      <option key={g.group} value={g.group} className="bg-[#0a1130] text-white">
+                        {g.group}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={16}
+                    strokeWidth={2}
+                    className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2"
+                    style={{ color: '#8b94b8' }}
+                  />
+                </div>
+
+                <div className="relative">
+                  <select
+                    value={partyPosition}
+                    onChange={(e) => setPartyPosition(e.target.value)}
+                    disabled={!partyLevel}
+                    aria-label="Position"
+                    className="w-full appearance-none rounded-xl px-4 py-3.5 pr-10 text-[14px] outline-none transition disabled:cursor-not-allowed disabled:opacity-50"
+                    style={{
+                      backgroundColor: '#0a1130',
+                      border: '1px solid #1e3260',
+                      color: partyPosition ? '#ffffff' : '#8b94b8',
+                    }}
+                  >
+                    <option value="" className="bg-[#0a1130]">
+                      {partyLevel ? 'Position' : 'Pick a level first'}
+                    </option>
+                    {rolesInGroup(partyLevel).map((r) => (
+                      <option key={r.id} value={r.id} className="bg-[#0a1130] text-white">
+                        {roleLabel(r, politicalParty)}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={16}
+                    strokeWidth={2}
+                    className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2"
+                    style={{ color: '#8b94b8' }}
+                  />
+                </div>
               </div>
+
               <p className="mt-1.5 text-[12px]" style={{ color: '#5a6e9a' }}>
                 Sets how your posts speak: what they claim, and whether they speak for the party.
               </p>

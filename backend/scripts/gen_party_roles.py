@@ -123,6 +123,18 @@ js = [
     "  return '';",
     "}",
     "",
+    "// Which group a stored id belongs to, so reopening the form can preselect",
+    "// the level someone chose last time rather than making them find it again.",
+    "export function groupForId(id) {",
+    "  const g = ROLE_GROUPS.find((grp) => grp.roles.some((r) => r.id === id));",
+    "  return g ? g.group : '';",
+    "}",
+    "",
+    "export function rolesInGroup(group) {",
+    "  const g = ROLE_GROUPS.find((grp) => grp.group === group);",
+    "  return g ? g.roles : [];",
+    "}",
+    "",
 ]
 fe.write_text("\n".join(js), encoding="utf-8")
 print(f"wrote {fe.relative_to(ROOT)}  ({len(groups)} groups)")

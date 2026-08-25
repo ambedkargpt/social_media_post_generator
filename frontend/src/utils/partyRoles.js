@@ -308,3 +308,15 @@ export function labelForId(id, party) {
   }
   return '';
 }
+
+// Which group a stored id belongs to, so reopening the form can preselect
+// the level someone chose last time rather than making them find it again.
+export function groupForId(id) {
+  const g = ROLE_GROUPS.find((grp) => grp.roles.some((r) => r.id === id));
+  return g ? g.group : '';
+}
+
+export function rolesInGroup(group) {
+  const g = ROLE_GROUPS.find((grp) => grp.group === group);
+  return g ? g.roles : [];
+}
