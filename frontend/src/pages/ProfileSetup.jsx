@@ -154,20 +154,29 @@ export default function ProfileSetup() {
         )}
       </header>
 
-      {/* Main */}
-      <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 pb-12 pt-6">
-        {/* Ambedkar image */}
-        <div className="relative flex items-center justify-center mb-8">
-          <div
-            className="absolute h-[220px] w-[220px] rounded-full blur-[60px]"
-            style={{ background: 'radial-gradient(circle, rgba(63,159,255,0.22) 0%, rgba(123,92,255,0.10) 55%, transparent 75%)' }}
-          />
-          <img
-            src={ambedkarSrc}
-            alt="Dr. B.R. Ambedkar"
-            className="relative z-10 w-[140px] object-contain drop-shadow-[0_12px_40px_rgba(0,0,0,0.55)] md:w-[160px]"
-          />
-        </div>
+      {/* Main
+          Two columns from lg up: portrait left, form right. Stacked, the
+          portrait was a small image floating above a card with a lot of empty
+          space either side of it, and giving it a column of its own is what
+          lets it be large enough to read as a portrait rather than a thumbnail. */}
+      <main className="relative z-10 flex flex-1 items-center justify-center px-6 pb-12 pt-6">
+        <div className="grid w-full max-w-[1060px] items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,480px)] lg:gap-16">
+
+          {/* Left: portrait */}
+          <div className="relative flex items-center justify-center">
+            <div
+              className="absolute h-[300px] w-[300px] rounded-full blur-[70px] lg:h-[440px] lg:w-[440px] lg:blur-[90px]"
+              style={{ background: 'radial-gradient(circle, rgba(63,159,255,0.22) 0%, rgba(123,92,255,0.10) 55%, transparent 75%)' }}
+            />
+            <img
+              src={ambedkarSrc}
+              alt="Dr. B.R. Ambedkar"
+              className="relative z-10 w-[200px] object-contain drop-shadow-[0_18px_50px_rgba(0,0,0,0.6)] sm:w-[260px] lg:w-[380px]"
+            />
+          </div>
+
+          {/* Right: form */}
+          <div className="flex w-full flex-col items-center">
 
         {/* Card */}
         <div
@@ -304,6 +313,9 @@ export default function ProfileSetup() {
           ))}
         </div>
         <p className="mt-2 text-[11px]" style={{ color: '#3a4e72' }}>Step 1 of 3</p>
+
+          </div>
+        </div>
       </main>
     </div>
   );
