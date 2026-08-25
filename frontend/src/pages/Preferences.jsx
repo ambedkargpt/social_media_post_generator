@@ -4,167 +4,35 @@ import { ArrowLeft, Check, Save, Home, ArrowUp, Loader2 } from 'lucide-react';
 import logoSrc from '../assets/images/logo-animation.png';
 import { useAuth } from '../context/AuthContext';
 import { saveProfileAnswers, getProfileAnswers } from '../api/profile';
+import { getQuestions } from '../api/questions';
+import { CORE_QUESTION_IDS, shortLabel } from '../utils/preferenceQuestions';
 
 // ─── Question data ────────────────────────────────────────────────────────────
 
-const COMPULSORY = [
-  {
-    id: 'profile_user_role',
-    label: 'Which role best reflects how you engage with social or political issues?',
-    options: ['Mobilizer', 'Analyst', 'Communicator', 'Community Leader', 'Learner'],
-  },
-  {
-    id: 'profile_tone',
-    label: 'What tone should be strictly followed?',
-    options: ['Assertive', 'Analytical', 'Confrontational', 'Empathetic', 'Hopeful'],
-  },
-  {
-    id: 'profile_target_audience',
-    label: 'Who is the primary audience?',
-    options: ['General Public', 'Affected Communities', 'Youth / Students', 'Policymakers', 'Opposing Groups'],
-  },
-  {
-    id: 'profile_primary_focus',
-    label: 'What should the content focus on most?',
-    options: ['Historical Context', 'Current Event', 'Policy Critique', 'Human Impact', 'Systemic Analysis'],
-  },
-  {
-    id: 'profile_ambedkarite_perspective',
-    label: 'Which ideological lens should guide interpretation?',
-    options: ['Radical Anti-Caste', 'Constitutional', 'Buddhist', 'Caste + Class', 'Human Rights'],
-  },
-  {
-    id: 'profile_language',
-    label: 'What language style should be used?',
-    options: ['English', 'Hindi', 'Regional', 'Hinglish', 'Adaptive'],
-  },
-  {
-    id: 'profile_formality_level',
-    label: 'What writing style should be enforced?',
-    options: ['Formal', 'Semi-formal', 'Conversational', 'Informal', 'Raw'],
-  },
-  {
-    id: 'profile_call_to_action',
-    label: 'What type of ending should be enforced?',
-    options: ['Action', 'Institutional', 'Awareness', 'Reflective', 'None'],
-  },
-  {
-    id: 'profile_intersectionality',
-    label: 'How should intersectionality be handled?',
-    options: ['Strong', 'Moderate', 'Light', 'Focused', 'None'],
-  },
-  {
-    id: 'profile_target_platform',
-    label: 'Where will the content be posted?',
-    options: ['Twitter / X', 'Instagram', 'LinkedIn', 'Facebook', 'Messaging Apps'],
-  },
-  {
-    id: 'profile_regional_context',
-    label: 'What geographical framing should be used?',
-    options: ['Local', 'National', 'Global', 'Mixed', 'Neutral'],
-  },
-  {
-    id: 'profile_content_length',
-    label: 'What exact length must the output follow?',
-    options: ['Ultra-short', 'Short', 'Medium', 'Long', 'Extended'],
-  },
-  {
-    id: 'profile_engagement_style',
-    label: 'What structure should the content follow?',
-    options: ['Question-led', 'Declarative', 'Confrontational', 'Narrative', 'Hybrid'],
-  },
-  {
-    id: 'profile_emotional_appeal',
-    label: 'What emotional tone should dominate?',
-    options: ['Anger', 'Grief', 'Hope', 'Pride', 'Controlled'],
-  },
-];
+// Questions come from the API, not from this file.
+//
+// They used to be written out here as well, which meant the same 25 questions
+// were defined twice: once here and once in the database the generator's panel
+// reads. They had already drifted, this file offering "Youth / Students" where
+// the database holds "Youth/Students", and only the backend's fuzzy matching
+// kept that from silently failing to save.
+//
+// The database is the source. Short labels for the buttons are derived from
+// the stored "Label -> Description" options, and is_required decides which
+// section a question belongs to.
 
-const OPTIONAL = [
-  {
-    id: 'profile_use_of_ambedkar_quotes',
-    label: "How should Ambedkar's quotes be used?",
-    options: ['Mandatory', 'Preferred', 'Occasional', 'Indirect', 'None'],
-  },
-  {
-    id: 'profile_buddhist_references',
-    label: 'How should Buddhist references be handled?',
-    options: ['Core', 'Contextual', 'Symbolic', 'Secular', 'None'],
-  },
-  {
-    id: 'profile_include_statistics',
-    label: 'How should data / statistics be used?',
-    options: ['Mandatory', 'Preferred', 'Optional', 'Minimal', 'None'],
-  },
-  {
-    id: 'profile_personal_story',
-    label: 'How should personal narratives be used?',
-    options: ['Mandatory', 'Preferred', 'Generalized', 'Minimal', 'None'],
-  },
-  {
-    id: 'profile_hashtags',
-    label: 'How should hashtags be used?',
-    options: ['High (4–6)', 'Moderate (2–3)', 'Minimal (1)', 'Rare', 'None'],
-  },
-  {
-    id: 'profile_caste_identity',
-    label: 'How should identity perspective be reflected?',
-    options: ['Insider', 'Ally', 'Neutral', 'Contextual', 'Hidden'],
-  },
-  {
-    id: 'profile_religious_affiliation',
-    label: 'How should religion influence the narrative?',
-    options: ['Core', 'Contextual', 'Symbolic', 'Secular', 'None'],
-  },
-  {
-    id: 'profile_historical_references',
-    label: 'How should historical context be used?',
-    options: ['Strong', 'Moderate', 'Light', 'Rare', 'None'],
-  },
-  {
-    id: 'profile_legal_angle',
-    label: 'How should legal references be used?',
-    options: ['Mandatory', 'Preferred', 'Light', 'Minimal', 'None'],
-  },
-  {
-    id: 'profile_solidarity_expression',
-    label: 'How should solidarity be expressed?',
-    options: ['Strong', 'Moderate', 'Limited', 'Minimal', 'None'],
-  },
-  {
-    id: 'profile_visual_suggestion',
-    label: 'What visual suggestion should be added (if any)?',
-    options: ['Poster', 'Data / Infographic', 'Clean', 'Real imagery', 'None'],
-  },
-];
+function toUiQuestion(q) {
+  return {
+    id: q.question_id,
+    label: q.question_text,
+    options: (q.options ?? []).map(shortLabel),
+  };
+}
 
-const DEFAULTS = {
-  profile_user_role:               'Communicator',
-  profile_tone:                    'Analytical',
-  profile_target_audience:         'General Public',
-  profile_primary_focus:           'Current Event',
-  profile_ambedkarite_perspective: 'Constitutional',
-  profile_language:                'English',
-  profile_formality_level:         'Semi-formal',
-  profile_call_to_action:          'Awareness',
-  profile_intersectionality:       'Moderate',
-  profile_target_platform:         'LinkedIn',
-  profile_regional_context:        'National',
-  profile_content_length:          'Medium',
-  profile_engagement_style:        'Declarative',
-  profile_emotional_appeal:        'Hope',
-  profile_use_of_ambedkar_quotes:  'Preferred',
-  profile_buddhist_references:     'Contextual',
-  profile_include_statistics:      'Preferred',
-  profile_personal_story:          'Generalized',
-  profile_hashtags:                'Moderate (2–3)',
-  profile_caste_identity:          'Neutral',
-  profile_religious_affiliation:   'Secular',
-  profile_historical_references:   'Moderate',
-  profile_legal_angle:             'Preferred',
-  profile_solidarity_expression:   'Moderate',
-  profile_visual_suggestion:       'None',
-};
+// Filled once the questions load. Empty until then, so nothing is written
+// against a question this build has not seen.
+const DEFAULTS = {};
+
 
 const STORAGE_KEY = 'ambedkargpt-preferences';
 
@@ -251,7 +119,26 @@ export default function Preferences() {
   const { currentUser } = useAuth();
 
   // Initialise from localStorage immediately so nothing flashes to defaults on revisit
+  const [compulsory, setCompulsory] = useState([]);
+  const [optional, setOptional]     = useState([]);
   const [prefs, setPrefs]       = useState(() => readLocalPrefs() ?? DEFAULTS);
+
+  // Load the question set first: the answer map is keyed on it, and rendering
+  // buttons for a question the database no longer has would let someone save
+  // an answer nothing reads.
+  useEffect(() => {
+    getQuestions(200)
+      .then((rows) => {
+        const active = (rows ?? []).filter((q) => q.question_id?.startsWith('profile_'));
+        const byId = Object.fromEntries(active.map((q) => [q.question_id, q]));
+        // Core is the seven the generator's panel shows, in that order, rather
+        // than is_required: the database marks fourteen questions required,
+        // which would move seven of them into this page's Core section.
+        setCompulsory(CORE_QUESTION_IDS.map((id) => byId[id]).filter(Boolean).map(toUiQuestion));
+        setOptional(active.filter((q) => !CORE_QUESTION_IDS.includes(q.question_id)).map(toUiQuestion));
+      })
+      .catch(() => {});
+  }, []);
   const [saved, setSaved]       = useState(false);
   const [saving, setSaving]     = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -262,7 +149,7 @@ export default function Preferences() {
     getProfileAnswers(currentUser.id)
       .then((rows) => {
         if (!rows?.length) return;
-        const merged = { ...DEFAULTS };
+        const merged = { ...prefs };
         for (const row of rows) {
           // Backend normalises short labels to "Label -> Description" on save.
           // Strip the description so the short label matches the UI option buttons.
@@ -300,12 +187,12 @@ export default function Preferences() {
   }
 
   function handleReset() {
-    setPrefs(DEFAULTS);
+    setPrefs({});
     setSaved(false);
   }
 
   const answeredCount = Object.values(prefs).filter(Boolean).length;
-  const totalCount    = COMPULSORY.length + OPTIONAL.length;
+  const totalCount    = compulsory.length + optional.length;
 
   return (
     <div
@@ -375,7 +262,7 @@ export default function Preferences() {
           description="These signals directly shape every piece of content AmbedkarGPT generates for you."
         />
         <div className="space-y-4">
-          {COMPULSORY.map((q, i) => (
+          {compulsory.map((q, i) => (
             <QuestionCard
               key={q.id}
               q={q}
@@ -394,11 +281,11 @@ export default function Preferences() {
             description="Add more granularity. Skip anything that doesn't apply to you."
           />
           <div className="space-y-4">
-            {OPTIONAL.map((q, i) => (
+            {optional.map((q, i) => (
               <QuestionCard
                 key={q.id}
                 q={q}
-                num={COMPULSORY.length + i + 1}
+                num={compulsory.length + i + 1}
                 value={prefs[q.id]}
                 onSelect={(v) => select(q.id, v)}
               />
