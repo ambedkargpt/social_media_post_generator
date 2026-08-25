@@ -175,18 +175,18 @@ export default function ProfileSetup() {
           space either side of it, and giving it a column of its own is what
           lets it be large enough to read as a portrait rather than a thumbnail. */}
       <main className="relative z-10 flex flex-1 items-center justify-center px-6 pb-12 pt-6">
-        <div className="grid w-full max-w-[1060px] items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,480px)] lg:gap-16">
+        <div className="grid w-full max-w-[1140px] items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,480px)] lg:gap-16">
 
           {/* Left: portrait */}
           <div className="relative flex items-center justify-center">
             <div
-              className="absolute h-[300px] w-[300px] rounded-full blur-[70px] lg:h-[440px] lg:w-[440px] lg:blur-[90px]"
+              className="absolute h-[340px] w-[340px] rounded-full blur-[80px] lg:h-[540px] lg:w-[540px] lg:blur-[100px]"
               style={{ background: 'radial-gradient(circle, rgba(63,159,255,0.22) 0%, rgba(123,92,255,0.10) 55%, transparent 75%)' }}
             />
             <img
               src={ambedkarSrc}
               alt="Dr. B.R. Ambedkar"
-              className="relative z-10 w-[200px] object-contain drop-shadow-[0_18px_50px_rgba(0,0,0,0.6)] sm:w-[260px] lg:w-[380px]"
+              className="relative z-10 w-[230px] object-contain drop-shadow-[0_20px_56px_rgba(0,0,0,0.6)] sm:w-[300px] lg:w-[460px]"
             />
           </div>
 
