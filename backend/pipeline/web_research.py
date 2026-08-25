@@ -129,6 +129,30 @@ _SEARCH_PROVIDER = (os.getenv("SEARCH_PROVIDER") or "auto").strip().lower()
 _GOOGLE_CSE_KEY = (os.getenv("GOOGLE_CSE_API_KEY") or "").strip()
 _GOOGLE_CSE_CX = (os.getenv("GOOGLE_CSE_CX") or "").strip()
 
+# Providers known to be out of quota, and when that was learned.
+#
+# A post asks one query per claim, so without this a provider that answered 429
+# for the first claim would be asked again for the second and the third: three
+# wasted round trips per post, every post, until the quota resets. The entry
+# goes stale on its own so a long-running process picks the provider back up
+# after the daily reset without needing to be restarted.
+_QUOTA_EXHAUSTED: Dict[str, float] = {}
+_QUOTA_RETRY_AFTER_S = float(os.getenv("SEARCH_QUOTA_RETRY_SECONDS", "1800"))
+
+
+def _mark_exhausted(provider: str) -> None:
+    _QUOTA_EXHAUSTED[provider] = time.time()
+
+
+def _is_exhausted(provider: str) -> bool:
+    at = _QUOTA_EXHAUSTED.get(provider)
+    if at is None:
+        return False
+    if time.time() - at >= _QUOTA_RETRY_AFTER_S:
+        _QUOTA_EXHAUSTED.pop(provider, None)
+        return False
+    return True
+
 _REQUIRE_SOURCE_QUOTE = (os.getenv("RESEARCH_REQUIRE_SOURCE_QUOTE") or "1").strip().lower() in {"1", "true", "yes", "on"}
 
 
@@ -681,9 +705,11 @@ def _raw_google_cse(query: str, top_k: int, timeout: float) -> List[Dict[str, st
             timeout=timeout,
         )
         if resp.status_code == 429:
-            logger.error(
-                "Google CSE daily quota exhausted. Research is off until it "
-                "resets, and posts will generate without it."
+            _mark_exhausted("google")
+            logger.warning(
+                "Google CSE daily quota exhausted; skipping it for %d minutes "
+                "and falling through to the next backend.",
+                int(_QUOTA_RETRY_AFTER_S // 60),
             )
             return []
         resp.raise_for_status()
@@ -756,46 +782,58 @@ def search_urls(
     branch here, and nothing else changes.
 
     SEARCH_PROVIDER picks the backend:
-      auto    SearXNG, falling back to Google CSE or DuckDuckGo (default)
-      searxng SearXNG only; no results when it is down
-      google  Google Custom Search JSON API; needs a key and a cx
-      ddg     DuckDuckGo; no host and no key
+      auto    walk searxng -> google -> ddg, taking the first that answers
+      searxng SearXNG only, pinned
+      google  Google Custom Search JSON API only, pinned
+      ddg     DuckDuckGo only, pinned
+
+    On auto, a backend that is unreachable, unconfigured or out of quota is
+    stepped over rather than failing the search. DuckDuckGo sits last because
+    it has no key and no quota, so the chain always has somewhere to land.
     """
-    def _fallback() -> List[Dict[str, str]]:
-        """Best backend that needs no host: Google if it has keys, else DDG."""
-        if _google_cse_configured():
-            return _raw_google_cse(query, top_k, timeout)
-        return _raw_ddg(query, top_k, timeout)
+    def _try(name: str) -> List[Dict[str, str]]:
+        """One backend, or an empty list if it is unavailable for any reason."""
+        if _is_exhausted(name):
+            return []
+        if name == "searxng":
+            if not base_url:
+                return []
+            try:
+                return _raw_searxng(query, base_url, timeout)
+            except _SearxngUnreachable:
+                # One line, not one per claim: a stack of identical connection
+                # errors buries the single thing worth knowing.
+                if not _is_exhausted("searxng_notice"):
+                    _mark_exhausted("searxng_notice")
+                    logger.warning(
+                        "SearXNG is not reachable at %s. Start it with: "
+                        "docker compose -f deploy/searxng/docker-compose.yml up -d",
+                        base_url,
+                    )
+                return []
+        if name == "google":
+            return _raw_google_cse(query, top_k, timeout) if _google_cse_configured() else []
+        if name == "ddg":
+            return _raw_ddg(query, top_k, timeout)
+        return []
+
+    # Preference order, best first. DuckDuckGo is last on purpose: it is
+    # narrower than the others and it is also the only one that cannot run out,
+    # having neither a key nor a quota, so it is what the chain lands on.
+    CHAIN = ("searxng", "google", "ddg")
 
     rows: List[Dict[str, str]] = []
-    if _SEARCH_PROVIDER == "google":
-        rows = _raw_google_cse(query, top_k, timeout)
-    elif _SEARCH_PROVIDER == "ddg":
-        rows = _raw_ddg(query, top_k, timeout)
-    elif not base_url:
-        rows = _fallback()
+    if _SEARCH_PROVIDER in CHAIN:
+        # An explicit choice is pinned: no silent substitution when the point of
+        # setting it was to know which backend answered.
+        rows = _try(_SEARCH_PROVIDER)
     else:
-        try:
-            rows = _raw_searxng(query, base_url, timeout)
-        except _SearxngUnreachable:
-            if _SEARCH_PROVIDER == "auto":
-                logger.warning(
-                    "SearXNG unreachable at %s, falling back to %s. Set "
-                    "SEARCH_PROVIDER explicitly to make this the intended path.",
-                    base_url,
-                    "Google CSE" if _google_cse_configured() else "DuckDuckGo",
-                )
-                rows = _fallback()
-            else:
-                # A stack of connection errors, one per claim, buries the single
-                # thing worth knowing, so say it plainly and once.
-                logger.error(
-                    "SearXNG is not reachable at %s. Start it with: "
-                    "docker compose -f deploy/searxng/docker-compose.yml up -d   "
-                    "(Docker Desktop has to be running first). Posts will still "
-                    "generate, without any web research.", base_url,
-                )
-                return []
+        for i, name in enumerate(CHAIN):
+            rows = _try(name)
+            if rows:
+                if i:
+                    logger.info("[research] %s answered after %s could not", name, ", ".join(CHAIN[:i]))
+                break
 
     terms = _query_terms(query)
     out: List[SearchResult] = []
