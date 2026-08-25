@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, AtSign, ArrowRight, ChevronDown } from 'lucide-react';
+import { User, AtSign, ArrowRight, ArrowLeft, ChevronDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCurtain } from '../context/CurtainContext';
 import { POLITICAL_PARTIES } from '../utils/politicalParties';
@@ -114,14 +114,44 @@ export default function ProfileSetup() {
       <div className="pointer-events-none fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-[#7b5cff]/5 blur-[140px]" />
 
       {/* Top nav */}
-      <header className="relative z-10 flex items-center px-8 pt-7 md:px-14">
-        <div className="flex items-center gap-2.5">
-          <img src={logoSrc} alt="AmbedkarGPT" className="h-9 w-9 object-contain drop-shadow-[0_0_12px_rgba(63,159,255,0.5)]" />
-          <span className="font-display text-[20px] font-bold leading-none tracking-tight">
-            <span className="text-white">Ambedkar</span>
-            <span className="gradient-text-cyan">GPT</span>
-          </span>
-        </div>
+      {/* The only way out used to be a Cancel link under the form, below the
+          fold on a laptop, so the page read as a dead end. Editing offers a way
+          back at the top; onboarding does not, because a new account has no
+          dashboard to return to and an exit there would strand the sign-up. */}
+      <header className="relative z-10 flex items-center gap-4 px-8 pt-7 md:px-14">
+        {isOnboarding ? (
+          <div className="flex items-center gap-2.5">
+            <img src={logoSrc} alt="AmbedkarGPT" className="h-9 w-9 object-contain drop-shadow-[0_0_12px_rgba(63,159,255,0.5)]" />
+            <span className="font-display text-[20px] font-bold leading-none tracking-tight">
+              <span className="text-white">Ambedkar</span>
+              <span className="gradient-text-cyan">GPT</span>
+            </span>
+          </div>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={handleSkip}
+              aria-label="Back to dashboard"
+              className="inline-flex h-10 items-center gap-2 rounded-full border border-[#1e3260]/70 px-4 text-[13px] font-medium text-[#8b9dc4] transition hover:border-[#3a6bc4]/70 hover:text-white"
+            >
+              <ArrowLeft size={15} strokeWidth={2} />
+              <span className="hidden sm:inline">Back</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleSkip}
+              className="flex items-center gap-2.5 transition-opacity hover:opacity-85"
+              aria-label="Back to dashboard"
+            >
+              <img src={logoSrc} alt="" className="h-9 w-9 object-contain drop-shadow-[0_0_12px_rgba(63,159,255,0.5)]" />
+              <span className="font-display text-[20px] font-bold leading-none tracking-tight">
+                <span className="text-white">Ambedkar</span>
+                <span className="gradient-text-cyan">GPT</span>
+              </span>
+            </button>
+          </>
+        )}
       </header>
 
       {/* Main */}
