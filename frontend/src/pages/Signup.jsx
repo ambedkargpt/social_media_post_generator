@@ -294,7 +294,7 @@ export default function Signup() {
           </label>
           {errors.terms && <p className="text-xs mt-0.5 px-1" style={{ color: '#ef4444' }}>{errors.terms}</p>}
 
-          <PrimaryButton type="submit" disabled={loading}>
+          <PrimaryButton type="submit" loading={loading}>
             {loading ? 'Please wait…' : 'Sign up'}
           </PrimaryButton>
         </form>

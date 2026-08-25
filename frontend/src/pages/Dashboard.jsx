@@ -100,7 +100,13 @@ export default function Dashboard() {
         <div className="pointer-events-none fixed top-0 right-0 h-[420px] w-[420px] rounded-full bg-[#3f9fff]/10 blur-[130px]" />
         <div className="pointer-events-none fixed bottom-0 left-[22%] h-[360px] w-[360px] rounded-full bg-[#7b5cff]/10 blur-[130px]" />
 
-        <Topbar user={topbarUser} onMenuOpen={() => setMobileSidebarOpen(true)} />
+        {/* totalPosts comes from the same source the milestone banner counts
+            from, so the bell and the banner cannot disagree. */}
+        <Topbar
+          user={topbarUser}
+          onMenuOpen={() => setMobileSidebarOpen(true)}
+          totalPosts={quota?.total_streak_posts ?? totalPosts}
+        />
 
         {/* ── Welcome ── */}
         <div className="mb-7 flex items-end justify-between gap-4">

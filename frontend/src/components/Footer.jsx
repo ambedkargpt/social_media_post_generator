@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import logoSrc from "../assets/images/logo-animation.png";
 import LegalModal from "./LegalModal";
-import { FacebookIcon, LinkedinIcon, TwitterIcon, YoutubeIcon } from "./landing/SocialIcons";
+import { FacebookIcon, InstagramIcon, LinkedinIcon, TwitterIcon, YoutubeIcon } from "./landing/SocialIcons";
 
 // Section anchors resolve on the home page. MainLayout scrolls to the hash after
 // a route change, so these work from /pricing and /about too, which plain
@@ -23,13 +23,14 @@ const COMPANY_LINKS = [
   { label: "Contact us", to: "/contact" },
 ];
 
-// Fill these in and the row appears. Empty entries are skipped rather than
-// rendered as links that go nowhere.
+// Accounts with no URL are skipped rather than rendered as links that go
+// nowhere, so filling one in is all it takes to make it appear.
 const SOCIAL_LINKS = [
-  { label: "Facebook", href: "", icon: FacebookIcon },
-  { label: "LinkedIn", href: "", icon: LinkedinIcon },
-  { label: "X", href: "", icon: TwitterIcon },
-  { label: "YouTube", href: "", icon: YoutubeIcon },
+  { label: "Instagram", href: "https://www.instagram.com/ambedkargpt/", icon: InstagramIcon },
+  { label: "YouTube",   href: "https://www.youtube.com/@AmbedkarGPT",   icon: YoutubeIcon },
+  { label: "Facebook",  href: "", icon: FacebookIcon },
+  { label: "LinkedIn",  href: "", icon: LinkedinIcon },
+  { label: "X",         href: "", icon: TwitterIcon },
 ];
 
 const EMAIL = "smartbhaujan@gmail.com";

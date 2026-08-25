@@ -1,8 +1,9 @@
-import { Sparkles, Bell, Menu } from 'lucide-react';
+import { Sparkles, Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import LanguageSwitcher from '../LanguageSwitcher';
+import NotificationBell from './NotificationBell';
 
-export default function Topbar({ user, onMenuOpen }) {
+export default function Topbar({ user, onMenuOpen, totalPosts }) {
   const navigate = useNavigate();
   const name  = user?.name  ?? '—';
   const initial = (name?.[0] ?? 'A').toUpperCase();
@@ -34,14 +35,7 @@ export default function Topbar({ user, onMenuOpen }) {
       {/* language + notifications + user */}
       <div className="flex items-center gap-4">
         <LanguageSwitcher />
-        <button
-          type="button"
-          aria-label="Notifications"
-          className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[#1a254a]/70 bg-[#0d1531]/60 text-[#a3b0d4] transition hover:border-[#2a4375]/80 hover:text-white"
-        >
-          <Bell size={16} strokeWidth={1.9} />
-          <span className="absolute top-2 right-2.5 h-1.5 w-1.5 rounded-full bg-[#ff4b7d] shadow-[0_0_8px_rgba(255,75,125,0.7)]" />
-        </button>
+        <NotificationBell totalPosts={totalPosts} />
 
         <div className="flex items-center gap-3">
           <div className="text-right leading-tight">
