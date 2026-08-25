@@ -18,6 +18,10 @@ class UsersRepository:
         phone: Optional[str],
         political_party: Optional[str],
         auth_providers: list[str],
+        # Where the user sits in their party, chosen at signup or later on the
+        # profile screen. A key from backend.pipeline.party_roles, empty when
+        # they have not picked one.
+        party_position: str = "",
         is_email_verified: bool = False,
         is_phone_verified: bool = False,
     ) -> dict:
@@ -28,6 +32,7 @@ class UsersRepository:
             "email": email,
             "phone": phone,
             "political_party": political_party,
+            "party_position": party_position or "",
             "auth_providers": auth_providers,
             "is_email_verified": is_email_verified,
             "is_phone_verified": is_phone_verified,

@@ -95,6 +95,7 @@ class AuthService:
         purpose: str,
         username: str | None = None,
         political_party: str | None = None,
+        party_position: str | None = None,
     ) -> AuthResponse:
         """Create/find phone user, generate OTP in MongoDB, issue session tokens, attempt SMS."""
         if purpose == OTP_PURPOSE_SIGNUP_VERIFY:
@@ -113,6 +114,7 @@ class AuthService:
                 email=None,
                 phone=phone,
                 political_party=political_party,
+                party_position=(party_position or "").strip() if (party_position or "").strip() in _ROLE_KEYS() else "",
                 auth_providers=[AUTH_PROVIDER_PHONE],
             )
         else:

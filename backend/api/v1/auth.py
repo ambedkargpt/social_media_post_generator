@@ -95,6 +95,7 @@ def send_phone_otp(payload: SendPhoneOtpRequest, request: Request) -> AuthRespon
         purpose=payload.purpose,
         username=payload.username.strip() if payload.username else None,
         political_party=payload.political_party.strip() if payload.political_party else None,
+        party_position=payload.party_position,
     )
 
 

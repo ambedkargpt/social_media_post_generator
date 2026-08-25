@@ -40,6 +40,9 @@ class SendPhoneOtpRequest(BaseModel):
     purpose: Literal["signup_verify", "login_verify"]
     username: Optional[str] = Field(default=None, min_length=3, max_length=50)
     political_party: Optional[str] = Field(default=None, min_length=1, max_length=120)
+    # Signup by phone creates the account here rather than in signup(), so the
+    # position has to travel this path too or it is lost for phone users.
+    party_position: Optional[str] = Field(default=None, max_length=60)
 
 
 class SendPhoneOtpResponse(BaseModel):
