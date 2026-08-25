@@ -2,10 +2,12 @@ import { Sparkles, Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import LanguageSwitcher from '../LanguageSwitcher';
 import NotificationBell from './NotificationBell';
+import ProfileMenu from './ProfileMenu';
 
-export default function Topbar({ user, onMenuOpen, totalPosts }) {
+export default function Topbar({ user, onMenuOpen, totalPosts, onLogout }) {
   const navigate = useNavigate();
   const name  = user?.name  ?? '—';
+  const email = user?.email ?? '';
   const initial = (name?.[0] ?? 'A').toUpperCase();
 
   return (
@@ -37,17 +39,12 @@ export default function Topbar({ user, onMenuOpen, totalPosts }) {
         <LanguageSwitcher />
         <NotificationBell totalPosts={totalPosts} />
 
-        <div className="flex items-center gap-3">
-          <div className="text-right leading-tight">
-            <div className="text-[13.5px] font-semibold text-white">{name}</div>
-          </div>
-          <div className="relative">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#3f9fff]/50 bg-gradient-to-br from-[#2b3e7a] to-[#1a2654] text-[13px] font-semibold text-white shadow-[0_0_14px_rgba(63,159,255,0.25)]">
-              {initial}
-            </div>
-            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#070b1c] bg-[#22c55e]" />
-          </div>
-        </div>
+        <ProfileMenu
+          name={name}
+          email={email}
+          initial={initial}
+          onLogout={onLogout}
+        />
       </div>
     </div>
   );

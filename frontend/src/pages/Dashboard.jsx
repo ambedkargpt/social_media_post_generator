@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Send, SlidersHorizontal, LogOut, Bot, Sparkles, Music, ChevronRight } from 'lucide-react';
+import { FileText, Send, SlidersHorizontal, Bot, Sparkles, Music, ChevronRight } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
 import { getPosts, getDailyQuota } from '../api/posts';
@@ -106,6 +106,7 @@ export default function Dashboard() {
           user={topbarUser}
           onMenuOpen={() => setMobileSidebarOpen(true)}
           totalPosts={quota?.total_streak_posts ?? totalPosts}
+          onLogout={handleLogout}
         />
 
         {/* ── Welcome ── */}
@@ -120,13 +121,6 @@ export default function Dashboard() {
             </p>
           </div>
 
-          <button
-            onClick={handleLogout}
-            className="hidden md:inline-flex items-center gap-2 rounded-full border border-[#1e3260]/70 bg-[#0d1531]/50 px-4 py-2 text-[12.5px] font-medium text-[#8b94b8] transition hover:border-[#3a6bc4]/60 hover:text-white"
-          >
-            <LogOut size={13} strokeWidth={1.9} />
-            Log out
-          </button>
         </div>
 
         {/* ── Quick actions ──
