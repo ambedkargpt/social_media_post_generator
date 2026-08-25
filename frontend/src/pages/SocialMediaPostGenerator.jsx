@@ -635,6 +635,24 @@ export default function SocialMediaPostGenerator() {
             <ArrowLeft size={12} strokeWidth={2} />
             Services
           </button>
+
+          {/* Which tool you are in. This used to sit as a banner across the top
+              of the feed, where it repeated the logo already shown here and ate
+              a strip of vertical space above the stories. In the rail it still
+              names the page, and the feed starts at the search bar. */}
+          <div className="mt-4">
+            <p className="font-display text-[16px] font-bold leading-snug text-white">
+              Social Media Post Generator
+            </p>
+            <p className="mt-1 text-[11.5px] leading-relaxed text-[#6b78a0]">
+              Educate &middot; Agitate &middot; Organize
+              <span className="block text-[#5a6584]">&mdash; Dr. B.R. Ambedkar</span>
+            </p>
+            <span className="mt-2.5 inline-flex items-center gap-1.5 rounded-full border border-[#3f9fff]/20 bg-[#3f9fff]/8 px-2.5 py-1 text-[10.5px] font-semibold text-[#6aa8ff]">
+              <Sparkles size={9} strokeWidth={2} />
+              AI-Powered
+            </span>
+          </div>
         </div>
 
         {/* User profile card */}
@@ -767,23 +785,6 @@ export default function SocialMediaPostGenerator() {
         className="relative z-10 flex min-w-0 flex-1 flex-col overflow-hidden border-x border-[#1a2130]/50"
         style={{ background: 'linear-gradient(180deg,#0a0e18 0%,#080b12 100%)' }}
       >
-
-        {/* AmbedkarGPT identity banner — sits above the search bar */}
-        <div className="mx-6 mt-5 flex items-center gap-4 rounded-xl border border-[#1a2d55]/50 bg-[#070e22]/80 px-5 py-3.5 md:mx-8">
-          <img src={logoSrc} alt="AmbedkarGPT" className="h-10 w-10 shrink-0 object-contain opacity-90 drop-shadow-[0_0_8px_rgba(63,159,255,0.5)]" />
-          <div className="min-w-0">
-            <p className="font-display text-[20px] font-bold leading-tight text-white md:text-[23px]">
-              Social Media Post Generator
-            </p>
-            <p className="mt-0.5 text-[12.5px] text-[#6b78a0]">
-              Educate &middot; Agitate &middot; Organize &mdash; Dr. B.R. Ambedkar
-            </p>
-          </div>
-          <span className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#3f9fff]/20 bg-[#3f9fff]/8 px-2.5 py-1 text-[10.5px] font-semibold text-[#6aa8ff]">
-            <Sparkles size={9} strokeWidth={2} />
-            AI-Powered
-          </span>
-        </div>
 
         {/* Search + filter */}
         <header className="flex items-center gap-3 px-6 pb-3 pt-4 md:px-8">
@@ -978,7 +979,7 @@ export default function SocialMediaPostGenerator() {
 
             {/* Content type — pills rather than tabs, so the party tabs above
                 stay the primary level of navigation. */}
-            <div className="mb-5 flex flex-wrap items-center gap-2">
+            <div className="mb-6 flex flex-wrap items-center gap-2.5">
               {[
                 { id: 'all',              label: 'All',                         color: '#8a9ac0' },
                 { id: 'press_conference', label: CONTENT_TYPES.press_conference.label, color: CONTENT_TYPES.press_conference.color },
@@ -993,18 +994,18 @@ export default function SocialMediaPostGenerator() {
                     key={t.id}
                     type="button"
                     onClick={() => { setTypeFilter(t.id); setPage(1); setView('feed'); }}
-                    className="inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[12.5px] font-medium transition"
+                    className="inline-flex items-center gap-2.5 rounded-full border px-5 py-2.5 text-[16px] font-semibold transition"
                     style={{
                       borderColor: active ? t.color : 'rgba(30,38,54,0.9)',
                       backgroundColor: active ? `${t.color}1f` : 'transparent',
                       color: active ? t.color : '#7d8aa6',
                     }}
                   >
-                    {t.id === 'press_conference' && <Radio size={12} strokeWidth={2} />}
-                    {t.id === 'news' && <FileText size={12} strokeWidth={2} />}
+                    {t.id === 'press_conference' && <Radio size={16} strokeWidth={2} />}
+                    {t.id === 'news' && <FileText size={16} strokeWidth={2} />}
                     {t.label}
                     <span
-                      className="rounded-full px-1.5 py-0.5 font-count text-[10.5px] leading-none"
+                      className="rounded-full px-2 py-1 font-count text-[13px] leading-none"
                       style={{
                         backgroundColor: active ? `${t.color}26` : 'rgba(30,38,54,0.9)',
                         color: active ? t.color : '#5a6e9a',
@@ -1048,18 +1049,19 @@ export default function SocialMediaPostGenerator() {
             {!newsLoading && !newsError && filteredArticles.length > 0 && (
               <>
               {/* Section heading for the card grid */}
-              <div className="mb-5 mt-1">
-                <div className="flex items-center gap-3">
-                  {/* Accent bar ties the heading to the active section's colour */}
-                  <span
-                    className="h-7 w-[4px] shrink-0 rounded-full"
-                    style={{ backgroundColor: theme.accent, boxShadow: `0 0 12px ${theme.accent}88` }}
-                  />
-                  <h3 className="font-display text-[26px] font-bold leading-none tracking-tight text-white">
-                    Headlines
-                  </h3>
-                </div>
-                <p className="mt-2 pl-[19px] text-[13px] text-[#7d8aa6]">
+              <div className="mb-6 mt-1 text-center">
+                {/* Centred, so the heading reads as a divider between the
+                    filters and the grid rather than as a left-aligned label.
+                    The accent bar moves under the title for the same reason:
+                    a vertical bar only works against left-aligned text. */}
+                <h3 className="font-display text-[34px] font-bold leading-tight tracking-tight text-white md:text-[38px]">
+                  Headlines
+                </h3>
+                <span
+                  className="mx-auto mt-2 block h-[3px] w-16 rounded-full"
+                  style={{ backgroundColor: theme.accent, boxShadow: `0 0 12px ${theme.accent}88` }}
+                />
+                <p className="mt-3 text-[14.5px] text-[#7d8aa6]">
                   Pick a story below to generate a post from it.
                 </p>
               </div>

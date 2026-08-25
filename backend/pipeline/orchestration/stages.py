@@ -250,12 +250,28 @@ def run_news_generation(context: PipelineContext) -> StageResult:
         entries = context.runtime.get("newly_fetched_entries") or []
         if not entries:
             return StageResult("news_generation", "skipped", warnings=["no-new-transcripts"])
-        rows = build_story_rows(
-            context.settings,
-            entries,
-            max_stories=context.channel.stories_per_video,
-            show_progress=True,
-        )
+        # How many stories a video yields depends on which tab it came from,
+        # so group by tab and extract each group under its own cap rather than
+        # applying one channel-wide number to uploads and livestreams alike.
+        by_tab: dict[str, list[dict]] = {}
+        for entry in entries:
+            tab = str(entry.get("source_tab") or "videos").strip().lower()
+            by_tab.setdefault(tab, []).append(entry)
+
+        rows = []
+        per_tab: dict[str, int] = {}
+        for tab in sorted(by_tab):
+            group = by_tab[tab]
+            cap = context.channel.stories_for_tab(tab)
+            print(f"[news] {tab}: {len(group)} video(s), up to {cap} story/stories each")
+            tab_rows = build_story_rows(
+                context.settings,
+                group,
+                max_stories=cap,
+                show_progress=True,
+            )
+            per_tab[f"stories_from_{tab}"] = len(tab_rows)
+            rows.extend(tab_rows)
         if not rows:
             return StageResult("news_generation", "skipped", warnings=["no-stories-extracted"])
         stats = update_generated_news_rolling(
@@ -266,7 +282,7 @@ def run_news_generation(context: PipelineContext) -> StageResult:
             generated_news_legacy_path=context.channel.generated_news_legacy_path,
             pregenerated=True,
         )
-        stats = {**stats, "source_videos": len(entries), "stories_built": len(rows)}
+        stats = {**stats, "source_videos": len(entries), "stories_built": len(rows), **per_tab}
     else:
         rows = context.runtime.get("new_summary_rows") or []
         if not rows:

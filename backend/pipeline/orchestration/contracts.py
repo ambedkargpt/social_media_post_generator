@@ -31,7 +31,12 @@ class ChannelConfig:
     # "single" = one news item per video (default).
     # "multi"  = split each video into several stories (live/press conferences).
     news_mode: str = "single"
-    stories_per_video: int = 4
+    # How many stories to pull out of one video, by which tab it came from.
+    # An uploaded video is already an edited package on a single subject, so it
+    # yields one item; a livestream or press conference runs through many
+    # subjects in one sitting, so it yields several.
+    stories_per_video: int = 1
+    stories_per_stream: int = 4
     # Knowledge-graph and vector outputs. When unset the global settings paths
     # are used, which keeps the original single-channel behaviour. Setting them
     # gives a channel its own graph instead of merging into a shared one.
@@ -52,6 +57,20 @@ class ChannelConfig:
     @property
     def source_urls(self) -> tuple[str, ...]:
         return self.channel_urls or (self.channel_url,)
+
+
+    def stories_for_tab(self, source_tab: str | None) -> int:
+        """
+        Story cap for one video, chosen by the tab it was scraped from.
+
+        Unknown or missing tabs fall back to the video count: a missing tab is
+        far more often a plain upload than a stream, and capping low keeps a
+        metadata gap from flooding the feed with near-duplicate stories.
+        """
+        tab = (source_tab or "").strip().lower()
+        if tab in ("streams", "live"):
+            return max(1, int(self.stories_per_stream))
+        return max(1, int(self.stories_per_video))
 
 
 @dataclass

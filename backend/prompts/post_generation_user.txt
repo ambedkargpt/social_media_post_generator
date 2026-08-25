@@ -1,13 +1,16 @@
-Use the system instructions. Here are your inputs for this generation.
+Use the system instructions. Everything you need for this generation is in the JSON object below.
 
-### 1. USER PROFILE
-{user_profile}
+Field guide:
+- user_profile: the author you are writing as. Highest authority on tone, length and format.
+- news: the story being responded to.
+- video: the source video for this story. source_url is the link it came from.
+- source_video_chunks: passages from THIS story's own video. These are the speaker's words about this story, and they may be used for facts.
+- ideology_chunks: passages retrieved from OTHER videos. They are your ideological and philosophical grounding only. Take arguments, framing and Ambedkarite reasoning from them. NEVER take a fact, figure, date, place name or event from them: they describe a different story, and using their detail here attributes one event's facts to another.
+- research: verified findings from outside sources.
+    - research.use_these: build the post on these. Each carries a verdict, an instruction in how_to_treat, and the facts with their sources.
+    - research.do_not_contradict: verified findings that do not help our argument. Do not build on them, and never state anything that contradicts them.
+    - research.stance_mode "angle" means lead with what supports our case. It never means state something the evidence contradicts.
+- If research is null, no outside verification was available. Ground the post in the news and the chunks alone, and claim nothing beyond them.
 
-### 2. NEWS ARTICLE OR NEWS SUMMARY
-{news_article}
-
-### 3. RETRIEVED TRANSCRIPT CHUNKS
-{retrieved_chunks}
-
-### 4. VIDEO SUMMARIES (short summaries for the videos that supplied retrieved chunks; same grounding rules as chunks, do not invent beyond chunks + these summaries)
-{video_summaries}
+INPUT
+{payload_json}

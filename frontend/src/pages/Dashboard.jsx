@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Send, SlidersHorizontal, LogOut, Bot, Sparkles, Music, ChevronRight } from 'lucide-react';
+import { FileText, Send, SlidersHorizontal, Bot, Sparkles, Music, ChevronRight } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
 import { getPosts, getDailyQuota } from '../api/posts';
@@ -100,7 +100,14 @@ export default function Dashboard() {
         <div className="pointer-events-none fixed top-0 right-0 h-[420px] w-[420px] rounded-full bg-[#3f9fff]/10 blur-[130px]" />
         <div className="pointer-events-none fixed bottom-0 left-[22%] h-[360px] w-[360px] rounded-full bg-[#7b5cff]/10 blur-[130px]" />
 
-        <Topbar user={topbarUser} onMenuOpen={() => setMobileSidebarOpen(true)} />
+        {/* totalPosts comes from the same source the milestone banner counts
+            from, so the bell and the banner cannot disagree. */}
+        <Topbar
+          user={topbarUser}
+          onMenuOpen={() => setMobileSidebarOpen(true)}
+          totalPosts={quota?.total_streak_posts ?? totalPosts}
+          onLogout={handleLogout}
+        />
 
         {/* ── Welcome ── */}
         <div className="mb-7 flex items-end justify-between gap-4">
@@ -114,13 +121,6 @@ export default function Dashboard() {
             </p>
           </div>
 
-          <button
-            onClick={handleLogout}
-            className="hidden md:inline-flex items-center gap-2 rounded-full border border-[#1e3260]/70 bg-[#0d1531]/50 px-4 py-2 text-[12.5px] font-medium text-[#8b94b8] transition hover:border-[#3a6bc4]/60 hover:text-white"
-          >
-            <LogOut size={13} strokeWidth={1.9} />
-            Log out
-          </button>
         </div>
 
         {/* ── Quick actions ──

@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, AtSign, ArrowRight, ChevronDown } from 'lucide-react';
+import { User, AtSign, ArrowRight, ArrowLeft, ChevronDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCurtain } from '../context/CurtainContext';
 import { POLITICAL_PARTIES } from '../utils/politicalParties';
+import { ROLE_GROUPS, roleLabel, groupForId, rolesInGroup } from '../utils/partyRoles';
 import logoSrc     from '../assets/images/logo-animation.png';
 import ambedkarSrc from '../assets/images/qna-ambedkar.png';
 
@@ -58,6 +59,17 @@ export default function ProfileSetup() {
   const nextRoute = isOnboarding ? '/questionnaire' : '/dashboard';
   const [username, setUsername]   = useState(currentUser?.username || '');
   const [politicalParty, setPoliticalParty] = useState(currentUser?.political_party || '');
+  const [partyPosition, setPartyPosition] = useState(currentUser?.party_position || '');
+  // Derived from the saved position so reopening the form lands on the level
+  // already chosen, rather than asking someone to find it again.
+  const [partyLevel, setPartyLevel] = useState(() => groupForId(currentUser?.party_position || ''));
+
+  function handleLevelChange(level) {
+    setPartyLevel(level);
+    // The old position belongs to the old level, so keeping it would leave the
+    // two selects disagreeing about what was chosen.
+    setPartyPosition('');
+  }
   const [errors, setErrors]       = useState({});
   const [loading, setLoading]     = useState(false);
   const [authError, setAuthError] = useState('');
@@ -85,6 +97,9 @@ export default function ProfileSetup() {
         full_name: fullName.trim(),
         username: username.trim(),
         political_party: politicalParty || undefined,
+        // Sent even when blank, because clearing the position is a real choice
+        // and undefined would leave the previous one in place.
+        party_position: partyPosition,
       });
       curtainGo(nextRoute, { replace: true });
     } catch (err) {
@@ -114,30 +129,69 @@ export default function ProfileSetup() {
       <div className="pointer-events-none fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-[#7b5cff]/5 blur-[140px]" />
 
       {/* Top nav */}
-      <header className="relative z-10 flex items-center px-8 pt-7 md:px-14">
-        <div className="flex items-center gap-2.5">
-          <img src={logoSrc} alt="AmbedkarGPT" className="h-9 w-9 object-contain drop-shadow-[0_0_12px_rgba(63,159,255,0.5)]" />
-          <span className="font-display text-[20px] font-bold leading-none tracking-tight">
-            <span className="text-white">Ambedkar</span>
-            <span className="gradient-text-cyan">GPT</span>
-          </span>
-        </div>
+      {/* The only way out used to be a Cancel link under the form, below the
+          fold on a laptop, so the page read as a dead end. Editing offers a way
+          back at the top; onboarding does not, because a new account has no
+          dashboard to return to and an exit there would strand the sign-up. */}
+      <header className="relative z-10 flex items-center gap-4 px-8 pt-7 md:px-14">
+        {isOnboarding ? (
+          <div className="flex items-center gap-2.5">
+            <img src={logoSrc} alt="AmbedkarGPT" className="h-9 w-9 object-contain drop-shadow-[0_0_12px_rgba(63,159,255,0.5)]" />
+            <span className="font-display text-[20px] font-bold leading-none tracking-tight">
+              <span className="text-white">Ambedkar</span>
+              <span className="gradient-text-cyan">GPT</span>
+            </span>
+          </div>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={handleSkip}
+              aria-label="Back to dashboard"
+              className="inline-flex h-10 items-center gap-2 rounded-full border border-[#1e3260]/70 px-4 text-[13px] font-medium text-[#8b9dc4] transition hover:border-[#3a6bc4]/70 hover:text-white"
+            >
+              <ArrowLeft size={15} strokeWidth={2} />
+              <span className="hidden sm:inline">Back</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleSkip}
+              className="flex items-center gap-2.5 transition-opacity hover:opacity-85"
+              aria-label="Back to dashboard"
+            >
+              <img src={logoSrc} alt="" className="h-9 w-9 object-contain drop-shadow-[0_0_12px_rgba(63,159,255,0.5)]" />
+              <span className="font-display text-[20px] font-bold leading-none tracking-tight">
+                <span className="text-white">Ambedkar</span>
+                <span className="gradient-text-cyan">GPT</span>
+              </span>
+            </button>
+          </>
+        )}
       </header>
 
-      {/* Main */}
-      <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 pb-12 pt-6">
-        {/* Ambedkar image */}
-        <div className="relative flex items-center justify-center mb-8">
-          <div
-            className="absolute h-[220px] w-[220px] rounded-full blur-[60px]"
-            style={{ background: 'radial-gradient(circle, rgba(63,159,255,0.22) 0%, rgba(123,92,255,0.10) 55%, transparent 75%)' }}
-          />
-          <img
-            src={ambedkarSrc}
-            alt="Dr. B.R. Ambedkar"
-            className="relative z-10 w-[140px] object-contain drop-shadow-[0_12px_40px_rgba(0,0,0,0.55)] md:w-[160px]"
-          />
-        </div>
+      {/* Main
+          Two columns from lg up: portrait left, form right. Stacked, the
+          portrait was a small image floating above a card with a lot of empty
+          space either side of it, and giving it a column of its own is what
+          lets it be large enough to read as a portrait rather than a thumbnail. */}
+      <main className="relative z-10 flex flex-1 items-center justify-center px-6 pb-12 pt-6">
+        <div className="grid w-full max-w-[1140px] items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,480px)] lg:gap-16">
+
+          {/* Left: portrait */}
+          <div className="relative flex items-center justify-center">
+            <div
+              className="absolute h-[340px] w-[340px] rounded-full blur-[80px] lg:h-[540px] lg:w-[540px] lg:blur-[100px]"
+              style={{ background: 'radial-gradient(circle, rgba(63,159,255,0.22) 0%, rgba(123,92,255,0.10) 55%, transparent 75%)' }}
+            />
+            <img
+              src={ambedkarSrc}
+              alt="Dr. B.R. Ambedkar"
+              className="relative z-10 w-[230px] object-contain drop-shadow-[0_20px_56px_rgba(0,0,0,0.6)] sm:w-[300px] lg:w-[460px]"
+            />
+          </div>
+
+          {/* Right: form */}
+          <div className="flex w-full flex-col items-center">
 
         {/* Card */}
         <div
@@ -226,6 +280,86 @@ export default function ProfileSetup() {
                 : <p className="mt-1.5 text-[12px]" style={{ color: '#5a6e9a' }}>Your news feed is tailored to this choice.</p>}
             </div>
 
+            {/* Position in the party, asked in two steps. One list of 41 titles
+                was accurate and unreadable: someone new does not know whether a
+                Zila Mahamantri is above or below a Mandal Adhyaksh, but they do
+                know which level they work at. Titles differ between parties for
+                the same post, so the options are relabelled from the party
+                above. Optional throughout: a supporter with no office is a
+                legitimate answer. */}
+            <div>
+              <label className="mb-1.5 block text-[13px] font-medium text-white">
+                Your position in the party
+                <span className="ml-1.5 font-normal" style={{ color: '#5a6e9a' }}>(optional)</span>
+              </label>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="relative">
+                  <select
+                    value={partyLevel}
+                    onChange={(e) => handleLevelChange(e.target.value)}
+                    disabled={!politicalParty}
+                    aria-label="Level"
+                    className="w-full appearance-none rounded-xl px-4 py-3.5 pr-10 text-[14px] outline-none transition disabled:cursor-not-allowed disabled:opacity-50"
+                    style={{
+                      backgroundColor: '#0a1130',
+                      border: '1px solid #1e3260',
+                      color: partyLevel ? '#ffffff' : '#8b94b8',
+                    }}
+                  >
+                    <option value="" className="bg-[#0a1130]">
+                      {politicalParty ? 'Level' : 'Choose a party first'}
+                    </option>
+                    {ROLE_GROUPS.map((g) => (
+                      <option key={g.group} value={g.group} className="bg-[#0a1130] text-white">
+                        {g.group}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={16}
+                    strokeWidth={2}
+                    className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2"
+                    style={{ color: '#8b94b8' }}
+                  />
+                </div>
+
+                <div className="relative">
+                  <select
+                    value={partyPosition}
+                    onChange={(e) => setPartyPosition(e.target.value)}
+                    disabled={!partyLevel}
+                    aria-label="Position"
+                    className="w-full appearance-none rounded-xl px-4 py-3.5 pr-10 text-[14px] outline-none transition disabled:cursor-not-allowed disabled:opacity-50"
+                    style={{
+                      backgroundColor: '#0a1130',
+                      border: '1px solid #1e3260',
+                      color: partyPosition ? '#ffffff' : '#8b94b8',
+                    }}
+                  >
+                    <option value="" className="bg-[#0a1130]">
+                      {partyLevel ? 'Position' : 'Pick a level first'}
+                    </option>
+                    {rolesInGroup(partyLevel).map((r) => (
+                      <option key={r.id} value={r.id} className="bg-[#0a1130] text-white">
+                        {roleLabel(r, politicalParty)}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={16}
+                    strokeWidth={2}
+                    className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2"
+                    style={{ color: '#8b94b8' }}
+                  />
+                </div>
+              </div>
+
+              <p className="mt-1.5 text-[12px]" style={{ color: '#5a6e9a' }}>
+                Sets how your posts speak: what they claim, and whether they speak for the party.
+              </p>
+            </div>
+
             <button
               type="submit"
               disabled={loading}
@@ -274,6 +408,9 @@ export default function ProfileSetup() {
           ))}
         </div>
         <p className="mt-2 text-[11px]" style={{ color: '#3a4e72' }}>Step 1 of 3</p>
+
+          </div>
+        </div>
       </main>
     </div>
   );

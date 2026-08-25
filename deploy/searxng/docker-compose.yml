@@ -1,0 +1,36 @@
+# Self-hosted search for the post research step.
+#
+# SearXNG proxies queries out to Google, Bing, DuckDuckGo and others and returns
+# ranked results as JSON. We host it so the research step has no per-call meter
+# and no third-party account, which matters because claim volume grows with the
+# number of news items, not with paying users.
+#
+#   docker compose -f deploy/searxng/docker-compose.yml up -d
+#   curl "http://localhost:8080/search?q=test&format=json"
+services:
+  searxng:
+    image: docker.io/searxng/searxng:latest
+    container_name: ambedkar-searxng
+    # always, not unless-stopped: Docker Desktop gets closed and reopened,
+    # and research silently degrades to no-brief when the container does not
+    # come back with it.
+    restart: always
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./settings.yml:/etc/searxng/settings.yml:ro
+    environment:
+      # Must match the published port or SearXNG builds wrong absolute URLs.
+      - SEARXNG_BASE_URL=http://localhost:8080/
+      - SEARXNG_SECRET=${SEARXNG_SECRET:-ambedkar-local-dev-secret-change-me}
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+    logging:
+      driver: json-file
+      options:
+        max-size: "1m"
+        max-file: "1"

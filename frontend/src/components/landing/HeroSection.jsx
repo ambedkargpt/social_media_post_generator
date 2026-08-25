@@ -68,6 +68,19 @@ export default function HeroSection({ splashDone = true }) {
     return () => obs.disconnect();
   }, [splashDone]);
 
+  // Same destination and same signed-out path as the CTA further down the
+  // page, so both entry points land people in the generator rather than on
+  // the dashboard after logging in.
+  function handleBuildNarrative() {
+    const target = "/generate/social-media";
+    if (currentUser) {
+      navigate(target);
+    } else {
+      sessionStorage.setItem("auth_redirect", target);
+      navigate("/login");
+    }
+  }
+
   function handleBheemBot() {
     if (currentUser) {
       navigate("/bheembot");
@@ -176,10 +189,23 @@ export default function HeroSection({ splashDone = true }) {
             <button
               type="button"
               onClick={handleBheemBot}
-              className="btn-gradient inline-flex h-15 items-center gap-2 rounded-xl px-9 font-count text-[22px] font-semibold text-white"
+              className="btn-gradient inline-flex h-14 items-center gap-2 rounded-xl px-6 font-count text-[17px] font-semibold text-white sm:px-9 sm:text-[20px] md:h-15 md:text-[22px]"
             >
               BheemBot
-              <ArrowRight size={21} strokeWidth={2.2} />
+              <ArrowRight size={19} strokeWidth={2.2} className="shrink-0" />
+            </button>
+
+            <button
+              type="button"
+              onClick={handleBuildNarrative}
+              className="btn-glass-violet group inline-flex h-14 items-center gap-2 rounded-xl px-6 font-count text-[17px] font-semibold text-white sm:px-9 sm:text-[20px] md:h-15 md:text-[22px]"
+            >
+              Build your narrative
+              <ArrowRight
+                size={19}
+                strokeWidth={2.2}
+                className="shrink-0 transition-transform group-hover:translate-x-1"
+              />
             </button>
           </div>
         </div>

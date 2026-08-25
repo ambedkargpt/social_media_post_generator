@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check, Save, Home, ArrowUp } from 'lucide-react';
+import { ArrowLeft, Check, Save, Home, ArrowUp, Loader2 } from 'lucide-react';
 import logoSrc from '../assets/images/logo-animation.png';
 import { useAuth } from '../context/AuthContext';
 import { saveProfileAnswers, getProfileAnswers } from '../api/profile';
@@ -426,7 +426,11 @@ export default function Preferences() {
               disabled={saving}
               className="inline-flex items-center gap-2 rounded-xl btn-gradient px-8 py-3.5 text-[14px] font-semibold text-white shadow-[0_10px_32px_rgba(37,99,235,0.4)] transition hover:brightness-110 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {saved ? <Check size={15} strokeWidth={2.5} /> : <Save size={15} strokeWidth={2} />}
+              {saving
+                ? <Loader2 size={15} strokeWidth={2} className="animate-spin" />
+                : saved
+                  ? <Check size={15} strokeWidth={2.5} />
+                  : <Save size={15} strokeWidth={2} />}
               {saving ? 'Saving…' : saved ? 'Saved!' : 'Save Preferences'}
             </button>
           </div>

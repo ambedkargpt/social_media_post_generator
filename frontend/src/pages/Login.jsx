@@ -177,7 +177,7 @@ export default function Login() {
             </p>
           )}
 
-          <PrimaryButton type="submit" disabled={loading}>
+          <PrimaryButton type="submit" loading={loading}>
             {loading ? 'Please wait…' : mode === 'phone' ? 'Send OTP' : 'Login'}
           </PrimaryButton>
         </form>

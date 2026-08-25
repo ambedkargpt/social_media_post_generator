@@ -1,6 +1,7 @@
-﻿import { CheckCircle2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+﻿import { useState } from 'react';
+import { CheckCircle2 } from 'lucide-react';
 import SectionLabel from './SectionLabel';
+import CorpusContactModal from './CorpusContactModal';
 import libraryImg   from '../../assets/images/corpus-library.png';
 
 const CORPUS = {
@@ -29,15 +30,10 @@ function handleCardMove(e) {
 }
 
 export default function DalitCorpusSection() {
-  const navigate = useNavigate();
-
-  function handleContribute() {
-    document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-
-  function handleBuyDataset() {
-    navigate('/signup');
-  }
+  // Neither route is self-serve yet. Contribute used to scroll to the contact
+  // form and Buy sent people to signup, which promised a purchase flow that
+  // does not exist. Both now open the same prompt to email us.
+  const [contactType, setContactType] = useState(null);
 
   return (
     <section id="ambedkarverse" className="relative pb-8 pt-0 md:pb-10">
@@ -110,14 +106,14 @@ export default function DalitCorpusSection() {
               <div className="mt-7 flex items-center justify-between gap-4">
                 <button
                   type="button"
-                  onClick={handleContribute}
+                  onClick={() => setContactType('contribute')}
                   className="btn-gradient inline-flex h-14 flex-1 items-center justify-center gap-2 rounded-xl px-7 font-count text-[17px] font-semibold text-white"
                 >
                   Contribute to Corpus
                 </button>
                 <button
                   type="button"
-                  onClick={handleBuyDataset}
+                  onClick={() => setContactType('buy')}
                   className="btn-outline-blue inline-flex h-14 flex-1 items-center justify-center gap-2 rounded-xl px-7 font-count text-[17px] font-medium text-white"
                 >
                   Buy Pre-built Annotated Corpus
@@ -137,6 +133,13 @@ export default function DalitCorpusSection() {
           </div>
         </div>
       </div>
+
+      {contactType && (
+        <CorpusContactModal
+          type={contactType}
+          onClose={() => setContactType(null)}
+        />
+      )}
     </section>
   );
 }

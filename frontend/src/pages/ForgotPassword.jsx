@@ -108,7 +108,7 @@ export default function ForgotPassword() {
               label="Email"
               error={error}
             />
-            <PrimaryButton type="submit" disabled={loading}>
+            <PrimaryButton type="submit" loading={loading}>
               {loading ? 'Sending…' : 'Send Verification Code'}
             </PrimaryButton>
           </form>

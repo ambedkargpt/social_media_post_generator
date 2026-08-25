@@ -64,7 +64,14 @@ def load_channel_config(project_root: Path, channel: str) -> ChannelConfig:
         lookback_days=lookback_days,
         tenant_slug=str(payload.get("tenant_slug") or "general").strip().lower(),
         news_mode=("multi" if str(payload.get("news_mode") or "single").strip().lower() == "multi" else "single"),
-        stories_per_video=int(payload.get("stories_per_video") or 4),
+        stories_per_video=int(payload.get("stories_per_video") or 1),
+        stories_per_stream=int(
+            payload.get("stories_per_stream")
+            # Configs written before the split used one number for both
+            # tabs, and it was always tuned for streams.
+            or payload.get("stories_per_video")
+            or 4
+        ),
         transcripts_dir=(project_root / _required(payload, "transcripts_dir")).resolve(),
         consolidated_txt_path=(project_root / _required(payload, "consolidated_txt_path")).resolve(),
         processed_json_path=(project_root / _required(payload, "processed_json_path")).resolve(),

@@ -473,12 +473,27 @@ def retrieve_relevant_chunks(
         filtered.append(item)
 
     # Per-video cap to avoid one video dominating.
+    #
+    # The cap assumes a corpus with more videos than top_k. A per-channel corpus
+    # need not be: Samajwadi's 75 chunks come from a single video, where a cap
+    # of 2 returns 2 chunks against a top_k of 5 and no amount of relevance can
+    # lift it. Domination is not a risk when there is nothing to dominate, so
+    # the cap relaxes just enough to fill the request.
+    distinct_videos = len({item.get("video_title", "") for item in filtered})
+    effective_cap = per_video_cap
+    if distinct_videos and distinct_videos * per_video_cap < top_k:
+        effective_cap = -(-top_k // distinct_videos)  # ceil
+        logger.info(
+            "per-video cap raised %d -> %d: %d video(s) in the corpus cannot fill top_k=%d",
+            per_video_cap, effective_cap, distinct_videos, top_k,
+        )
+
     selected: List[Dict] = []
     per_video_count: Dict[str, int] = {}
     for item in filtered:
         title = item.get("video_title", "")
         count = per_video_count.get(title, 0)
-        if count >= per_video_cap:
+        if count >= effective_cap:
             continue
         selected.append(item)
         per_video_count[title] = count + 1

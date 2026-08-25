@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
@@ -31,8 +33,21 @@ from backend.schemas.posts import (
 from backend.pipeline_cli import _retrieval_cfg_from_settings, ensure_rag_stack
 from backend.pipeline.generator import generate_post
 from backend.pipeline.profiles import PROFILE_FIELDS, get_user_profiles
+from backend.pipeline.post_validation import ValidationReport, validate_post
 from backend.pipeline.retriever import retrieve_relevant_chunks
+from backend.pipeline.web_research import ClaimFinding, ResearchBrief, research
 from backend.semrag.runtime import semrag_candidates_for_query
+
+
+# Claims repeat heavily: several stories are cut from one video, and several
+# users generate posts from the same story. Keyed on normalised claim text, so
+# the same assertion is searched once per process rather than once per post.
+#
+# Partitioned by tenant. The key is the claim text alone, so a single flat dict
+# let a finding researched for one channel be served to another, which breaks
+# the isolation the channels are supposed to have and silently attributes one
+# party's sourcing to another's post.
+_RESEARCH_CACHE: dict[str, dict[str, ClaimFinding]] = {}
 
 
 # Published output is Hindi regardless of the UI language. The site language
@@ -150,11 +165,54 @@ class PostsService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="News not found.")
 
         article = self._news_doc_to_article(news_doc)
+
+        # Which story, and which video it was cut from. Without this the log
+        # jumps straight to search queries with no way to tell what was clicked,
+        # and no way to open the source and check the post against it.
+        #
+        # One record per line, rather than one record carrying newlines:
+        # retrieval drives a tqdm bar on the same stream, and a bar redrawing
+        # with a carriage return can land on top of the tail of a multi-line
+        # record. The video URL was the last line, so it was the line that
+        # went missing from the console.
+        import logging as _logging
+
+        _log = _logging.getLogger(__name__)
+        _log.info(
+            "[generate] news_id=%s tenant=%s type=%s",
+            news_id,
+            news_doc.get("tenant_slug") or "-",
+            news_doc.get("content_type") or "-",
+        )
+        _log.info("[generate] headline: %s", article.get("title") or "(untitled)")
+        _log.info(
+            "[generate] video   : %s",
+            article.get("source_url") or "(no source_url on this news item)",
+        )
+
         query_text = self._query_from_article(article)
         profile = self._profile_for_user(user_id, tone=tone, profile_overrides=profile_overrides)
-        embedder, store, context_by_title = ensure_rag_stack(settings)
-        retrieved_chunks = self._retrieve_chunks(query_text, embedder, store)
+        tenant = article.get("tenant_slug") or "general"
+        embedder, store, context_by_title = self._rag_stack(tenant)
+        retrieved_chunks = self._retrieve_chunks(query_text, embedder, store, tenant=tenant)
         full_contexts = self._full_contexts_for_chunks(retrieved_chunks, context_by_title)
+        brief = self._research_for_article(article, retrieved_chunks)
+        brief_payload = brief.as_payload() if brief else None
+        # Loaded once here and handed to the writer as well as the research
+        # step, so the post is written against what the speaker actually said
+        # rather than only the excerpts a retriever happened to rank.
+        transcript = self._transcript_for_article(article, retrieved_chunks)
+
+        # Chunks are optional now, but writing from nothing is not. A post with
+        # no chunks, no transcript and no research would be invention.
+        if not retrieved_chunks and not transcript and not brief_payload:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=(
+                    "No source material could be gathered for this story, so a "
+                    "grounded post cannot be written. Please try again."
+                ),
+            )
 
         post_text = self._generate_with_llm(
             article=article,
@@ -163,12 +221,27 @@ class PostsService:
             full_contexts=full_contexts,
             temperature=temperature,
             language=POST_OUTPUT_LANGUAGE,
+            research_payload=brief_payload,
+            transcript=transcript,
         )
         if not post_text or not post_text.strip():
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail="Post generation returned empty content. Please try again.",
             )
+        post_text, validation = self._validated_post(
+            post_text,
+            article=article,
+            profile=profile,
+            retrieved_chunks=retrieved_chunks,
+            full_contexts=full_contexts,
+            temperature=temperature,
+            brief_payload=brief_payload,
+            trace_dir=brief.trace_dir if brief else None,
+            transcript=transcript,
+        )
+        if brief and brief.trace_dir:
+            self._trace_write(brief.trace_dir, "14_post_final.txt", post_text)
         model_used = self._current_generation_model()
         snapshot_id = f"rs_{uuid4().hex}"
         references = self._references_from_chunks(retrieved_chunks)
@@ -180,6 +253,8 @@ class PostsService:
             retrieval_reused=False,
             parent_post_id=None,
             model_used=model_used,
+            research=brief.as_meta() if brief else None,
+            validation=validation.as_meta() if validation else None,
         )
         doc = self.repo.create(
             {
@@ -239,8 +314,15 @@ class PostsService:
                 if field in PROFILE_FIELDS and value:
                     profile[field] = value
 
-        _, _, context_by_title = ensure_rag_stack(settings)
+        # The tenant's own stack, so a title lookup cannot pull another
+        # channel's video summary into this post.
+        _, _, context_by_title = self._rag_stack(article.get("tenant_slug") or "general")
         full_contexts = self._full_contexts_for_chunks(chunks, context_by_title)
+        # Regeneration reuses the retrieval snapshot, so it reuses the research
+        # too. Searching again would spend two LLM calls and a round of requests
+        # to re-derive facts we already stored, and could quietly hand the user
+        # a differently-sourced post than the one they asked to refine.
+        prior_research = (meta.get("research") or {}) if isinstance(meta, dict) else {}
         post_text = self._generate_with_llm(
             article=article,
             profile=profile,
@@ -249,6 +331,8 @@ class PostsService:
             temperature=payload.temperature,
             language=POST_OUTPUT_LANGUAGE,
             refinement_note=payload.refinement_note,
+            research_payload=self._payload_from_meta(prior_research),
+            transcript=self._transcript_for_article(article, chunks),
         )
         if not post_text or not post_text.strip():
             raise HTTPException(
@@ -266,6 +350,7 @@ class PostsService:
             retrieval_reused=True,
             parent_post_id=str(source_doc["_id"]),
             model_used=model_used,
+            research=prior_research or None,
         )
         generation_meta["regenerated_from_post_id"] = str(source_doc["_id"])
         doc = self.repo.create(
@@ -324,8 +409,13 @@ class PostsService:
             raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Translation service not configured.")
 
         client = OpenAI(api_key=settings.deepseek_api_key, base_url=settings.deepseek_base_url)
+        # Translation is instruction-following, so it uses the writer's model
+        # rather than the reasoning model, and carries an explicit cap: a
+        # reasoning model spends the completion budget thinking and returns an
+        # empty string, which is how post generation failed twice.
         response = client.chat.completions.create(
-            model=settings.deepseek_model,
+            model=settings.post_generation_model,
+            max_tokens=4000,
             messages=[
                 {
                     "role": "system",
@@ -346,6 +436,16 @@ class PostsService:
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail="Translation returned empty content. Please try again.",
             )
+
+        # The stripper runs on generation, not here, so a post cleaned in Hindi
+        # came back full of em dashes the moment it was translated. Translation
+        # is a second generation and needs the same pass; the danda rule is not
+        # applied, since it belongs to Devanagari only.
+        from backend.pipeline.generator import _danda_normalise, _strip_ai_tells
+
+        translated = _strip_ai_tells(translated)
+        if target_language != "en":
+            translated = _danda_normalise(translated)
 
         # Persist for future requests
         self.repo.save_translation(post_id, target_language, translated)
@@ -400,10 +500,17 @@ class PostsService:
             )
 
     def _news_doc_to_article(self, doc: dict) -> dict[str, str]:
+        # source_url is the video this story came from. It was being dropped
+        # here, which left the post with no way to cite where it originated.
         return {
             "title": str(doc.get("headline") or "").strip(),
             "description": str(doc.get("description") or "").strip(),
             "content": str(doc.get("summary") or "").strip(),
+            "source_url": str(doc.get("source_url") or "").strip(),
+            "video_title": str(doc.get("video_title") or doc.get("headline") or "").strip(),
+            # Needed downstream to keep one channel's research off another's
+            # posts. Without it every tenant shared one cache.
+            "tenant_slug": str(doc.get("tenant_slug") or "general").strip().lower(),
             "source": "backend_news_collection",
         }
 
@@ -447,15 +554,59 @@ class PostsService:
                     default_profile[field] = value
         if tone and tone.strip():
             default_profile["tone"] = tone.strip()
+
+        # Party position lives on the user record rather than in the answers,
+        # because it is chosen on the profile screen alongside the party. What
+        # goes into the profile is the guidance, not the stored id: the profile
+        # is read by the model, and "district_president" tells it nothing.
+        from backend.pipeline.party_roles import guidance_for
+
+        user_doc = db["users"].find_one({"_id": ObjectId(user_id)}) or {}
+        guidance = guidance_for(
+            user_doc.get("party_position"), user_doc.get("political_party")
+        )
+        # Left empty when unset, so a user who never chose one gets exactly the
+        # prompt they got before.
+        default_profile["party_position"] = guidance
         return default_profile
 
-    def _retrieve_chunks(self, query_text: str, embedder: Any, store: Any) -> list[dict[str, Any]]:
+    def _rag_stack(self, tenant: str) -> tuple[Any, Any, Any]:
+        """
+        This tenant's retrieval stack, or the shared one when it has none yet.
+
+        Logged either way: falling back means the post is written from another
+        channel's material, which is invisible in the output and worth saying.
+        """
+        import logging as _logging
+        from backend.pipeline.multi_rag import rag_stack_for_tenant
+
+        stack, isolated = rag_stack_for_tenant(settings, tenant)
+        _log = _logging.getLogger(__name__)
+        if isolated:
+            _log.info("[retrieval] tenant=%s using its own corpus and namespace", tenant)
+        else:
+            _log.info(
+                "[retrieval] tenant=%s falling back to the shared corpus "
+                "(run backend.scripts.check_isolation to see why)", tenant,
+            )
+        return stack
+
+    def _retrieve_chunks(
+        self, query_text: str, embedder: Any, store: Any, *, tenant: str = "general"
+    ) -> list[dict[str, Any]]:
         retrieval_cfg = _retrieval_cfg_from_settings(settings)
         retrieval_cfg["semrag_enabled"] = True
         try:
+            # Tenant-scoped settings so the graph consulted is this channel's.
+            # The global semrag_enabled is off and the global graph path does
+            # not exist, so passing plain settings returned no candidates at all.
+            from backend.pipeline.multi_rag import artifacts_for_tenant, settings_for_tenant
+
+            _art = artifacts_for_tenant(tenant)
+            _cfg_settings = settings_for_tenant(settings, _art) if _art else settings
             semrag_candidates, _ = semrag_candidates_for_query(
                 query_text,
-                settings,
+                _cfg_settings,
                 mode=getattr(settings, "semrag_search_mode", "hybrid"),
             )
             retrieval_cfg["semrag_candidates"] = semrag_candidates
@@ -473,23 +624,18 @@ class PostsService:
                 retrieval_cfg=retrieval_cfg,
             )
         except Exception as exc:  # noqa: BLE001 - surface a usable error, not a traceback
-            # The retrieved chunks are the post's ideological grounding, not an
-            # optional extra: the generation prompt refuses to write without them.
-            # So a retrieval failure cannot be degraded past silently -- report it
-            # as an unavailable dependency rather than returning a post that just
-            # says it had no sources.
+            # Chunks used to be the post's only grounding, so failing here was
+            # right. They are not any more: the Ambedkarite lens moved into the
+            # prompt, and the transcript and research brief carry the substance.
+            # Refusing on the weakest dependency would take the whole feature
+            # down over material the post can now do without. The caller checks
+            # that SOMETHING survived before writing.
             import logging as _logging
 
-            _logging.getLogger(__name__).error("chunk retrieval failed: %s", exc)
-            detail = "Retrieval is unavailable, so a grounded post cannot be generated."
-            if "API key not valid" in str(exc) or "API_KEY_INVALID" in str(exc):
-                detail = (
-                    "The embedding API key is invalid, so source material could not be "
-                    "retrieved. Set a valid GEMINI_API_KEY and try again."
-                )
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=detail
-            ) from exc
+            _logging.getLogger(__name__).error(
+                "chunk retrieval failed, continuing without chunks: %s", exc
+            )
+            return []
 
     def _full_contexts_for_chunks(self, chunks: list[dict[str, Any]], context_by_title: dict[str, Any]) -> list[dict[str, Any]]:
         contexts: list[dict[str, Any]] = []
@@ -514,6 +660,8 @@ class PostsService:
         temperature: float | None,
         language: str | None = None,
         refinement_note: str | None = None,
+        research_payload: dict[str, Any] | None = None,
+        transcript: str | None = None,
     ) -> str:
         try:
             if not settings.deepseek_api_key:
@@ -532,6 +680,8 @@ class PostsService:
                 temperature=temperature if temperature is not None else settings.openai_temperature,
                 language=language,
                 refinement_note=refinement_note,
+                research_payload=research_payload,
+                transcript=transcript,
             )
         except OpenAIRateLimitError as exc:
             import logging as _logging
@@ -573,8 +723,10 @@ class PostsService:
         retrieval_reused: bool,
         parent_post_id: str | None,
         model_used: str,
+        research: dict[str, Any] | None = None,
+        validation: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        return {
+        meta: dict[str, Any] = {
             "pipeline_version": "post_generation_v1",
             "model": model_used,
             "prompt_version": "post_generation_system.txt|post_generation_user.txt",
@@ -588,10 +740,241 @@ class PostsService:
                 "chunks": [r.model_dump() for r in references],
             },
         }
+        # Stored so a published post can be audited against the evidence it was
+        # given: which claims were checked, what the sources said, which URLs.
+        if research:
+            meta["research"] = research
+        # Kept even when it passes: "we checked and found nothing" is the record
+        # that makes a published post defensible.
+        if validation is not None:
+            meta["validation"] = validation
+        return meta
+
+    def _validated_post(
+        self,
+        post_text: str,
+        *,
+        article: dict[str, Any],
+        profile: dict[str, Any],
+        retrieved_chunks: list[dict[str, Any]],
+        full_contexts: list[dict[str, Any]],
+        temperature: float | None,
+        brief_payload: dict[str, Any] | None,
+        trace_dir: "Path | None" = None,
+        transcript: str | None = None,
+    ) -> tuple[str, "ValidationReport | None"]:
+        """
+        Check the post's figures and dates against the material, and re-ask once
+        if any are unsupported.
+
+        A prompt rule about dates was shown to fail even when written to target
+        one specific error, so the check runs on the output rather than trusting
+        the instruction. One retry only: if the second attempt still carries an
+        unsupported figure, the post is returned with the flags recorded rather
+        than spending a third call or denying the user a post.
+        """
+        self._trace_write(trace_dir, "10_post_first_pass.txt", post_text)
+        if not settings.post_validation_enabled:
+            return post_text, None
+
+        # Only the story's own video counts as a factual source. Chunks from
+        # other videos are checked separately, so a figure lifted from a
+        # different briefing is reported as cross-video rather than invented.
+        from backend.pipeline.generator import _is_own
+
+        own_chunks = [c for c in retrieved_chunks if _is_own(c, article)]
+        other_chunks = [c for c in retrieved_chunks if not _is_own(c, article)]
+        sources = [
+            # The writer is now shown the transcript, so anything in it is
+            # sourced. Without this line every figure the speaker said aloud
+            # would come back flagged as invented.
+            transcript or "",
+            "\n".join(str(article.get(k) or "") for k in ("title", "description", "content")),
+            "\n".join(str(c.get("chunk_text") or "") for c in own_chunks),
+            json.dumps(brief_payload, ensure_ascii=False) if brief_payload else "",
+        ]
+        other_sources = ["\n".join(str(c.get("chunk_text") or "") for c in other_chunks)]
+        import logging as _logging
+        _log = _logging.getLogger(__name__)
+
+        report = validate_post(post_text, sources=sources, other_video_sources=other_sources)
+        self._trace_write(trace_dir, "11_validation_first_pass.json", json.dumps(report.as_meta(), ensure_ascii=False, indent=2))
+        if report.ok:
+            _log.info("[validation] passed: no unsupported figures or dates")
+            return post_text, report
+
+        _log.info(
+            "[validation] flagged numbers=%s dates=%s cross_video=%s; re-asking once",
+            report.unsupported_numbers, report.unsupported_dates, report.cross_video_numbers,
+        )
+        try:
+            retry = self._generate_with_llm(
+                article=article,
+                profile=profile,
+                retrieved_chunks=retrieved_chunks,
+                full_contexts=full_contexts,
+                temperature=temperature,
+                language=POST_OUTPUT_LANGUAGE,
+                transcript=transcript,
+                refinement_note=report.as_correction_note(),
+                research_payload=brief_payload,
+            )
+        except HTTPException:
+            return post_text, report
+        if not retry or not retry.strip():
+            return post_text, report
+
+        second = validate_post(retry, sources=sources, other_video_sources=other_sources)
+        self._trace_write(trace_dir, "12_post_retry.txt", retry)
+        self._trace_write(trace_dir, "13_validation_retry.json", json.dumps(second.as_meta(), ensure_ascii=False, indent=2))
+        # Keep the retry only when it is actually cleaner; a rewrite that trades
+        # one bad figure for two is not an improvement.
+        def _flags(r):
+            return len(r.unsupported_numbers) + len(r.unsupported_dates) + len(r.cross_video_numbers)
+
+        if _flags(second) <= _flags(report):
+            second.retried = True
+            _log.info("[validation] retry accepted; remaining flags: %s %s",
+                      second.unsupported_numbers, second.unsupported_dates)
+            return retry, second
+        report.retried = True
+        _log.info("[validation] retry was worse; keeping first pass")
+        return post_text, report
+
+    @staticmethod
+    def _trace_write(trace_dir: "Path | None", name: str, content: str) -> None:
+        """Mirror of the research tracer, so post artefacts land in the same folder."""
+        if not trace_dir:
+            return
+        try:
+            (trace_dir / name).write_text(content or "", encoding="utf-8")
+        except Exception:
+            pass
+
+    @staticmethod
+    def _payload_from_meta(research: dict[str, Any] | None) -> dict[str, Any] | None:
+        """
+        Rebuild the writer's research payload from what was stored on the parent
+        post, so a regeneration reuses the same evidence and the same stance
+        split rather than searching again and possibly landing elsewhere.
+        """
+        if not research:
+            return None
+        from backend.pipeline.web_research import _treatment
+
+        mode = str(research.get("stance_mode") or "angle")
+        use, avoid = [], []
+        for row in research.get("claims") or []:
+            verdict = str(row.get("verdict") or "")
+            entry_stance = str(row.get("stance") or "NEUTRAL").upper()
+            if mode != "strict" and entry_stance == "SUPPORTS_RULING":
+                avoid.append({"claim": row.get("claim", ""), "verdict": verdict})
+                continue
+            use.append(
+                {
+                    "claim": row.get("claim", ""),
+                    "verdict": verdict,
+                    "how_to_treat": _treatment(verdict),
+                    "stated_in_video": bool(row.get("in_transcript", True)),
+                    "facts": row.get("facts") or [],
+                    "sources": (row.get("sources") or [])[:4],
+                }
+            )
+        if not use and not avoid:
+            return None
+        return {"stance_mode": mode, "use_these": use, "do_not_contradict": avoid}
+
+    def _transcript_for_article(
+        self, article: dict[str, Any], retrieved_chunks: list[dict[str, Any]]
+    ) -> str:
+        """
+        The story's own transcript, from the scraper's output on disk.
+
+        Falling back to whichever chunks ranked highest was actively harmful:
+        with no chunks indexed for this video, claims were extracted from a
+        different video entirely, so a paper-leak story produced claims about
+        vote rolls. No transcript is the honest answer, another video's is not,
+        so the fallback is limited to chunks from this same video.
+
+        Shared by research and by writing, so both work from the same text.
+        """
+        from backend.pipeline.generator import _is_own
+        from backend.pipeline.transcripts import transcript_for_video
+
+        video_link = str(article.get("source_url") or "").strip()
+        transcript = transcript_for_video(video_link)[:12000]
+        if not transcript:
+            own = [c for c in retrieved_chunks if _is_own(c, article)]
+            transcript = "\n\n".join(str(c.get("chunk_text") or "") for c in own)[:12000]
+        return transcript
+
+    def _research_for_article(
+        self,
+        article: dict[str, Any],
+        retrieved_chunks: list[dict[str, Any]],
+    ) -> "ResearchBrief | None":
+        """
+        Verify the article's checkable claims against the open web.
+
+        Best-effort by design. Any failure here returns None and the post is
+        generated exactly as it was before, because a search outage must not
+        cost a user their post.
+        """
+        if not settings.web_research_enabled:
+            return None
+        if not settings.deepseek_api_key:
+            return None
+
+        news_item = "\n".join(
+            str(article.get(k) or "").strip()
+            for k in ("title", "description", "content")
+            if article.get(k)
+        ).strip()
+        if not news_item:
+            return None
+
+        video_link = str(article.get("source_url") or "").strip()
+        transcript = self._transcript_for_article(article, retrieved_chunks)
+        import logging as _logging
+        _log = _logging.getLogger(__name__)
+        if transcript:
+            _log.info("[research] source video: %s  (transcript %d chars)",
+                      video_link or "(no video link)", len(transcript))
+        else:
+            _log.info(
+                "[research] source video: %s  NO TRANSCRIPT FOUND, claims will come "
+                "from the news item alone", video_link or "(no video link)",
+            )
+
+        try:
+            client = OpenAI(api_key=settings.deepseek_api_key, base_url=settings.deepseek_base_url)
+            return research(
+                client,
+                settings.research_model,
+                news_item=news_item,
+                transcript_excerpt=transcript,
+                prompts_dir=settings.prompts_dir,
+                searxng_url=settings.searxng_url,
+                max_claims=settings.web_research_max_claims,
+                top_k=settings.web_research_top_k,
+                cache=_RESEARCH_CACHE.setdefault(
+                    str(article.get("tenant_slug") or "general"), {}
+                ),
+                debug_dir=settings.web_research_debug_dir,
+                transcript=transcript,
+                video_link=video_link,
+                stance_mode=settings.research_stance_mode,
+                purpose=settings.research_purpose,
+            )
+        except Exception as exc:
+            import logging as _logging
+            _logging.getLogger(__name__).warning("Web research skipped: %s", exc, exc_info=True)
+            return None
 
     @staticmethod
     def _current_generation_model() -> str:
-        return settings.deepseek_model  # deepseek-chat by default (~3-5s)
+        """Model that writes the post. Separate from the research model on purpose."""
+        return settings.post_generation_model
 
     def _to_response(self, doc: dict) -> PostResponse:
         return PostResponse(

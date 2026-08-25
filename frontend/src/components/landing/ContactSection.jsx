@@ -1,36 +1,68 @@
-﻿import { Mail, MapPin, Send, UserPlus } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
+﻿import { useState, useRef, useEffect, lazy, Suspense } from 'react';
+import { Mail, MapPin, Send, UserPlus, Loader2, CheckCircle2 } from 'lucide-react';
+import { sendContactMessage } from '../../api/contact';
 import SectionLabel from './SectionLabel';
 
-// Fix Leaflet default marker icons broken by Vite asset bundling
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl:       'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl:     'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-});
+// Leaflet is 43 kB gzipped plus a stylesheet, for a map at the very bottom of
+// the page. Loading it on render would only move the cost, not remove it, so
+// the chunk is not requested until the map is close to the viewport.
+const OfficeMap = lazy(() => import('./OfficeMap'));
 
-const OFFICE = [51.5145, -0.1227];
+function LazyOfficeMap() {
+  const ref = useRef(null);
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    if (typeof IntersectionObserver === 'undefined') {
+      // No observer, no deferral: showing the map beats hiding it forever.
+      setShow(true);
+      return undefined;
+    }
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShow(true);
+          obs.disconnect();
+        }
+      },
+      { rootMargin: '400px' },   // start fetching just before it is reached
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} className="h-full w-full">
+      {show && (
+        <Suspense fallback={<div className="h-full w-full bg-[#0a1428]" />}>
+          <OfficeMap />
+        </Suspense>
+      )}
+    </div>
+  );
+}
 
 // ─── Individual form field — label + input/textarea ───
-function Field({ label, type = 'text', placeholder, rows, colSpan = 1, grow = false }) {
+function Field({
+  label, name, value, onChange, type = 'text', placeholder,
+  rows, colSpan = 1, grow = false, required = false, disabled = false,
+}) {
   const span = colSpan === 2 ? 'md:col-span-2' : '';
   const base =
-    'w-full rounded-xl border border-[#1a2d55]/80 bg-[#0a1428] px-4 py-3 text-[14px] text-white placeholder:text-[#4a6080] outline-none transition focus:border-[#3f6bd4] focus:shadow-[0_0_0_3px_rgba(63,107,212,0.18)]';
+    'w-full rounded-xl border border-[#1a2d55]/80 bg-[#0a1428] px-4 py-3 text-[14px] text-white placeholder:text-[#4a6080] outline-none transition focus:border-[#3f6bd4] focus:shadow-[0_0_0_3px_rgba(63,107,212,0.18)] disabled:opacity-60';
+  const shared = { name, value, onChange, placeholder, required, disabled };
   return (
     <label className={`flex flex-col gap-2 ${span} ${grow ? 'flex-1' : ''}`}>
       <span className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[#7aa6e5]">
         {label}
+        {required && <span className="ml-1 text-[#ff8b8b]">*</span>}
       </span>
       {rows ? (
-        <textarea
-          rows={rows}
-          placeholder={placeholder}
-          className={`${base} resize-none ${grow ? 'flex-1' : ''}`}
-        />
+        <textarea {...shared} rows={rows} className={`${base} resize-none ${grow ? 'flex-1' : ''}`} />
       ) : (
-        <input type={type} placeholder={placeholder} className={base} />
+        <input {...shared} type={type} className={base} />
       )}
     </label>
   );
@@ -58,7 +90,38 @@ function ChannelRow({ icon: Icon, label, value, href }) {
   );
 }
 
+const EMPTY = { name: '', email: '', address: '', phone: '', message: '', website: '' };
+
 export default function ContactSection() {
+  const [form, setForm] = useState(EMPTY);
+  const [status, setStatus] = useState('idle'); // idle | sending | sent | error
+  const [error, setError] = useState('');
+
+  function update(e) {
+    const { name, value } = e.target;
+    setForm((f) => ({ ...f, [name]: value }));
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (status === 'sending') return;
+    setStatus('sending');
+    setError('');
+    try {
+      await sendContactMessage(form);
+      setForm(EMPTY);
+      setStatus('sent');
+    } catch (err) {
+      // The backend returns one plain sentence for every send failure, so show
+      // it rather than a generic message that hides which part broke.
+      setError(
+        err?.response?.data?.detail ||
+        'Could not send your message. Please try again, or email us directly.',
+      );
+      setStatus('error');
+    }
+  }
+
   return (
     <section id="contact" className="relative py-8 md:py-10">
       {/* Ambient glow — extends upward to blend with TeamSection above */}
@@ -125,28 +188,14 @@ export default function ContactSection() {
             </div>
 
             <div className="mt-7 overflow-hidden rounded-2xl border border-[#1e3260]/60" style={{ height: 220 }}>
-              <MapContainer
-                center={OFFICE}
-                zoom={15}
-                scrollWheelZoom={false}
-                zoomControl={false}
-                style={{ height: '100%', width: '100%' }}
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                <Marker position={OFFICE}>
-                  <Popup>AmbedkarGPT<br />71-75 Shelton Street, Covent Garden, London (WC2H 9JQ)</Popup>
-                </Marker>
-              </MapContainer>
+              <LazyOfficeMap />
             </div>
           </div>
 
           {/* Right column: Transmission form */}
           <form
             id="contact-form"
-            onSubmit={(e) => e.preventDefault()}
+            onSubmit={handleSubmit}
             className="relative flex h-full flex-col rounded-2xl border border-[#1e3260]/60 bg-[#070f24] p-6 md:p-8"
           >
             {/* Glows contained so they don't bleed outside the form card */}
@@ -156,20 +205,67 @@ export default function ContactSection() {
             </div>
 
             <div className="grid flex-1 gap-4 md:grid-cols-2">
-              <Field label="Name"    placeholder="Jane Doe" />
-              <Field label="Email"   type="email" placeholder="you@example.com" />
-              <Field label="Address" placeholder="123 Main St, City, Country" colSpan={2} />
-              <Field label="Phone"   type="tel"   placeholder="+91 90000 00000"        colSpan={2} />
-              <Field label="Message" rows={5}     placeholder="Tell us what you need…" colSpan={2} grow />
+              <Field label="Name" name="name" value={form.name} onChange={update}
+                     placeholder="Jane Doe" required disabled={status === 'sending'} />
+              <Field label="Email" name="email" value={form.email} onChange={update}
+                     type="email" placeholder="you@example.com" required disabled={status === 'sending'} />
+              <Field label="Address" name="address" value={form.address} onChange={update}
+                     placeholder="123 Main St, City, Country" colSpan={2} disabled={status === 'sending'} />
+              <Field label="Phone" name="phone" value={form.phone} onChange={update}
+                     type="tel" placeholder="+91 90000 00000" colSpan={2} disabled={status === 'sending'} />
+              <Field label="Message" name="message" value={form.message} onChange={update}
+                     rows={5} placeholder="Tell us what you need…" colSpan={2} grow
+                     required disabled={status === 'sending'} />
+
+              {/* Honeypot: off screen and skipped by keyboard, so only a bot fills it. */}
+              <input
+                type="text"
+                name="website"
+                value={form.website}
+                onChange={update}
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                className="absolute left-[-9999px] h-0 w-0 opacity-0"
+              />
             </div>
 
             <button
               type="submit"
-              className="btn-gradient mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl text-[14px] font-semibold text-white"
+              disabled={status === 'sending'}
+              className="btn-gradient mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl text-[14px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
             >
-              Send Message
-              <Send size={15} strokeWidth={2.2} />
+              {status === 'sending' ? (
+                <>
+                  Sending
+                  <Loader2 size={15} strokeWidth={2.2} className="animate-spin" />
+                </>
+              ) : (
+                <>
+                  Send Message
+                  <Send size={15} strokeWidth={2.2} />
+                </>
+              )}
             </button>
+
+            {status === 'sent' && (
+              <p
+                role="status"
+                className="mt-4 flex items-center justify-center gap-2 rounded-xl border border-[#1f5c3c] bg-[#0c2419] px-4 py-3 text-[13px] text-[#8fe0b4]"
+              >
+                <CheckCircle2 size={15} className="shrink-0" />
+                Thanks, your message is on its way. We will be in touch.
+              </p>
+            )}
+
+            {status === 'error' && (
+              <p
+                role="alert"
+                className="mt-4 rounded-xl border border-[#5c2323] bg-[#241010] px-4 py-3 text-center text-[13px] text-[#f0a6a6]"
+              >
+                {error}
+              </p>
+            )}
 
             <p className="mt-4 text-center text-[11.5px] text-[#7aa6e5]">
               By submitting, you agree to our{' '}

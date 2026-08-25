@@ -1,9 +1,13 @@
+import json
+import logging
 import os
 import re
 from pathlib import Path
 from typing import Dict, List, Optional
 
 from openai import OpenAI
+
+_log = logging.getLogger(__name__)
 
 from backend.pipeline.video_summarizer import load_summary_cache, summary_cache_key
 
@@ -31,6 +35,51 @@ def _load_post_prompts(prompts_dir: Path) -> tuple[str, str]:
         system_path.read_text(encoding="utf-8").strip(),
         user_path.read_text(encoding="utf-8").strip(),
     )
+
+
+def _norm_link(url: str) -> str:
+    """
+    Compare YouTube links by video id.
+
+    The same video appears as youtu.be/ID, /watch?v=ID and /live/ID depending on
+    which tab it was scraped from, so a string comparison would treat one video
+    as several.
+    """
+    u = (url or "").strip()
+    if not u:
+        return ""
+    m = re.search(r"(?:v=|youtu\.be/|/live/|/shorts/|/embed/)([A-Za-z0-9_-]{6,})", u)
+    return m.group(1) if m else u.rstrip("/").lower()
+
+
+def _is_own(chunk: Dict, news: Dict) -> bool:
+    """Did this chunk come from the video the story was written from?"""
+    story = _norm_link(str(news.get("source_url") or ""))
+    if not story:
+        return False
+    return _norm_link(str(chunk.get("video_link") or "")) == story
+
+
+def _chunk_json(chunk: Dict) -> Dict[str, str]:
+    return {
+        "chunk_id": chunk.get("chunk_id", ""),
+        "video_title": chunk.get("video_title", ""),
+        "video_link": chunk.get("video_link", ""),
+        "text": chunk.get("chunk_text", ""),
+    }
+
+
+def _load_style_reference(prompts_dir: Path) -> str:
+    """Shared with the news pipeline; a missing file is not fatal."""
+    from backend.pipeline.transcript_cleaner import load_style_reference
+
+    try:
+        from backend.config import get_settings
+
+        filename = getattr(get_settings(), "hindi_style_reference_file", "hindi_style_reference.txt")
+    except Exception:
+        filename = "hindi_style_reference.txt"
+    return load_style_reference(prompts_dir, filename)
 
 
 def _news_text(news: Dict) -> str:
@@ -82,7 +131,7 @@ def _video_summaries_str(
 
 
 _LANGUAGE_INSTRUCTIONS: dict[str, str] = {
-    "hi": "LANGUAGE REQUIREMENT: Write the entire Social Media Post (and hashtags if included) in Hindi (Devanagari script). Do NOT write in English or Hinglish — pure Hindi only. IMPORTANT: Keep the section labels (Headline:, Social Media Post:, Hashtags:) in English exactly as shown — do NOT translate them.",
+    "hi": "LANGUAGE REQUIREMENT: Write the entire Social Media Post (and hashtags if included) in Hindi (Devanagari script). Do NOT write in English or Hinglish — pure Hindi only. IMPORTANT: Keep the section labels (Headline:, Social Media Post:, Hashtags:) in English exactly as shown — do NOT translate them.\nPUNCTUATION: End every sentence in the post body with a danda (।), never a full stop. A full stop is correct only inside an abbreviation (डॉ., जे.पी.) or a decimal number. Headlines take no trailing danda. Keep कि/की and है/हैं agreement correct, and retain nuqta and chandrabindu where standard usage requires them.",
     "en": "LANGUAGE REQUIREMENT: Write the entire Social Media Post (headline, body, and hashtags) in English. The source material may be in Hindi — synthesise ideas from it but express everything in English. Do NOT write in Hindi, Devanagari script, or Hinglish.",
 }
 
@@ -92,7 +141,10 @@ _LANGUAGE_INSTRUCTIONS: dict[str, str] = {
 # consumed nearly the whole budget and posts were cut off mid-word regardless of
 # the requested length. Devanagari also costs more tokens per word than Latin,
 # so a Hindi post needs noticeably more headroom than the word count suggests.
-_MAX_COMPLETION_TOKENS = int(os.getenv("POST_MAX_COMPLETION_TOKENS", "16000"))
+_MAX_COMPLETION_TOKENS = int(os.getenv("POST_MAX_COMPLETION_TOKENS", "24000"))
+# Devanagari costs roughly a token per character or two, so an unbounded
+# transcript would dominate the prompt.
+_MAX_TRANSCRIPT_CHARS = int(os.getenv("POST_TRANSCRIPT_CHARS", "12000"))
 
 # Matches section headers in English OR Hindi (LLM sometimes translates labels when
 # generating Hindi content).
@@ -107,6 +159,90 @@ _KEY_NORM: dict[str, str] = {
     'सोशल मीडिया पोस्ट':  'social media post',
     'हैशटेग':              'hashtags',
 }
+
+
+# Appended to the system prompt only when a brief is present. The rules exist
+# because of what the manual trial showed: research made posts polite, the model
+# protected whoever it thought it was writing for, and it stamped today's date
+# onto past events even when the brief carried the right one.
+_RESEARCH_BRIEF_RULES = """RESEARCH BRIEF RULES (a verified brief was supplied in section 5):
+- Use specific facts from the brief: names, dates, figures, or the form an official act actually took. Use as many as the chosen length carries, and at least one. Never overrun content_length to fit more facts in; pick the strongest and drop the rest.
+- Where the brief contradicts the news article or the chunks, follow the brief and state the correction plainly in the post. Do not soften a correction because the speaker is on our side.
+- Never present an allegation as fact. Name who alleged it and who denied it.
+- If the brief marks the story's central claim unverified or misleading, say so in the post. Do not silently drop it.
+- A claim repeated by several outlets is NOT verified if the brief says they were reprinting one press release or party statement. Treat it as a claim.
+- Before writing any date, find the brief line that states that fact and use that date. Never attach today's date to a past event.
+- Being accurate does not mean being flat. Correct the record and still hit hard."""
+
+
+# Titles and honorifics that legitimately end in a full stop. A danda after any
+# of these is wrong, so they are matched before the sentence rule applies.
+_HINDI_ABBREVIATIONS = {
+    "डॉ", "डा", "श्री", "श्रीमती", "सुश्री", "कु", "प्रो", "पं", "स्व", "मु", "सं",
+}
+
+_DEVANAGARI = r"ऀ-ॿ"
+
+
+def _danda_normalise(text: str) -> str:
+    """
+    Convert sentence-ending full stops to the danda (।) in Hindi output.
+
+    The news pipeline enforces this through its style reference, and posts drift
+    to the Latin full stop because they never had one. As with the em dash, the
+    prompt asks and the model mostly complies; this makes the last few
+    deterministic.
+
+    Deliberately conservative. A full stop is left alone when it belongs to an
+    initialism (जे.पी.), an honorific (डॉ.), a decimal (4.68), or anything
+    written in Latin script, because a wrongly placed danda reads worse than a
+    stray full stop.
+    """
+    if not text:
+        return text
+
+    out = list(text)
+    n = len(out)
+    for i, ch in enumerate(out):
+        if ch != ".":
+            continue
+        prev_ch = out[i - 1] if i else ""
+        next_ch = out[i + 1] if i + 1 < n else ""
+
+        # Decimals and numbered lists.
+        if prev_ch.isdigit() or next_ch.isdigit():
+            continue
+        # The stop must close Devanagari text; Latin sentences keep their stop.
+        if not re.match(rf"[{_DEVANAGARI}]", prev_ch or ""):
+            continue
+        # Sentence stops are followed by a break. "जे.पी" is not one.
+        if next_ch and not next_ch.isspace():
+            continue
+
+        # The word this stop closes, and whether the one before it also ended in
+        # a stop — that pattern means an initialism such as एस.सी.
+        head = "".join(out[:i])
+        token = re.search(rf"([{_DEVANAGARI}]+)$", head)
+        word = token.group(1) if token else ""
+        if word in _HINDI_ABBREVIATIONS:
+            continue
+        before_word = head[: len(head) - len(word)]
+        if before_word.endswith(".") and len(word) <= 3:
+            continue
+
+        out[i] = "।"
+
+    # Collapse a run of sentence terminators into one danda. The model sometimes
+    # writes both marks, "सच।." belt and braces, and converting the full stop
+    # then leaves "सच।।". Only runs containing a danda are touched, so an
+    # ellipsis stays an ellipsis, "4.68" stays a decimal, and "जे.पी." stays an
+    # initialism, since none of those put two terminators side by side.
+    text = "".join(out)
+    return re.sub(
+        r"[।.](?:[ \t ]*[।.])+",
+        lambda m: "।" if "।" in m.group(0) else m.group(0),
+        text,
+    )
 
 
 def _strip_ai_tells(text: str) -> str:
@@ -127,8 +263,11 @@ def _strip_ai_tells(text: str) -> str:
     out = re.sub(r",\s*,", ",", out)
     out = re.sub(r"\s+,", ",", out)
     out = re.sub(r",(\s*)([.!?।])", r"\2", out)
-    # A comma directly before a closing quote or bracket reads wrong.
-    out = re.sub(r",(\s*)([\"'’”)\]])", r"\2", out)
+    # A comma directly before a closing quote or bracket reads wrong. Match only
+    # when the comma abuts the quote: with whitespace between them the quote is
+    # opening, not closing, and stripping there welds the words together
+    # (`कह दीजिए — "देश` became `कह दीजिए"देश`).
+    out = re.sub(r",([\"'’”)\]])", r"\1", out)
     return out
 
 
@@ -177,6 +316,9 @@ def generate_post(
     summaries_cache_path: Optional[Path] = None,
     language: Optional[str] = None,
     refinement_note: Optional[str] = None,
+    research_payload: Optional[Dict] = None,
+    transcript: Optional[str] = None,
+    on_prompt=None,
 ) -> str:
     """
     Generate a social media post for a news item, profile, and retrieved chunks.
@@ -202,6 +344,22 @@ def generate_post(
     if lang_instruction:
         system_msg = f"CRITICAL LANGUAGE OVERRIDE — This instruction supersedes any language field in the USER PROFILE:\n{lang_instruction}\n\n---\n\n{system_msg}"
 
+    # The news pipeline injects the full worked style reference here. Post
+    # generation deliberately does not: it is 7.7KB of examples, and every extra
+    # constraint in this prompt costs reasoning tokens, which is what emptied the
+    # completion budget and returned a blank post. The concise punctuation rules
+    # in _LANGUAGE_INSTRUCTIONS cover intent, and _danda_normalise() enforces the
+    # danda deterministically afterwards, so the examples earn nothing here.
+    # Set POST_STYLE_REFERENCE=1 to include them anyway.
+    if (language or "").lower().startswith("hi") and os.getenv("POST_STYLE_REFERENCE", "").strip() in {"1", "true", "yes", "on"}:
+        style_ref = _load_style_reference(prompts_dir)
+        if style_ref:
+            system_msg = (
+                f"{system_msg}\n\n---\n\n"
+                f"=== HINDI STYLE REFERENCE (ground truth, follow this punctuation and grammar) ===\n"
+                f"{style_ref}\n=== END STYLE REFERENCE ==="
+            )
+
     if refinement_note and refinement_note.strip():
         system_msg = f"{system_msg}\n\n---\n\nREFINEMENT INSTRUCTION: The user wants the following change in this post: {refinement_note.strip()}"
 
@@ -213,16 +371,50 @@ def generate_post(
 
     profile_desc = "\n".join(f"{k}: {v}" for k, v in profile.items())
 
+    if research_payload:
+        system_msg = f"{system_msg}\n\n---\n\n{_RESEARCH_BRIEF_RULES}"
+
+    # One JSON object carrying research, transcript, video link, preferences and
+    # chunks, which is the shape the workflow calls for. Built with json.dumps
+    # rather than string assembly so a quote or brace inside a transcript cannot
+    # break the structure.
+    payload = {
+        "user_profile": profile,
+        "news": {
+            "title": news.get("title", ""),
+            "description": news.get("description", ""),
+            "content": news.get("content", ""),
+        },
+        # What the speaker actually said, which the workflow puts in front of
+        # the writer alongside the research. Chunks are excerpts chosen by a
+        # retriever and can be empty for a video that was never indexed, so
+        # without this the writer could be asked to cover a video while holding
+        # nothing the speaker said.
+        "transcript": (transcript or "")[:_MAX_TRANSCRIPT_CHARS],
+        "video": {
+            "source_url": news.get("source_url", "") or "",
+            "title": news.get("video_title", "") or "",
+        },
+        # Chunks are split by which video they came from, because they play two
+        # different roles. Retrieval pulls the best passages regardless of
+        # source, so a story about one video can retrieve another video's
+        # transcript and the writer cannot tell them apart. That is how a post
+        # about the Lucknow-Agra claim ended up citing Kanpur-Lucknow figures
+        # from a different briefing. Only this story's own video may supply
+        # facts; the rest are the ideological lens and nothing more.
+        "source_video_chunks": [_chunk_json(c) for c in retrieved_chunks if _is_own(c, news)],
+        "ideology_chunks": [_chunk_json(c) for c in retrieved_chunks if not _is_own(c, news)],
+        "video_summaries": _video_summaries_str(full_video_contexts, cache_path),
+        "research": research_payload,
+    }
+
     user_content = _fill_template(
         user_tpl,
-        {
-            "user_profile": profile_desc,
-            "news_article": _news_text(news),
-            "retrieved_chunks": _chunks_str(retrieved_chunks),
-            "video_summaries": _video_summaries_str(full_video_contexts, cache_path),
-        },
+        {"payload_json": json.dumps(payload, ensure_ascii=False, indent=2)},
     ).strip()
 
+    if on_prompt:
+        on_prompt(system_msg, user_content)
     response = client.chat.completions.create(
         model=model,
         messages=[
@@ -233,7 +425,35 @@ def generate_post(
         max_tokens=_MAX_COMPLETION_TOKENS,
     )
 
-    text = (response.choices[0].message.content or "").strip()
+    choice = response.choices[0]
+    usage = getattr(response, "usage", None)
+    reasoning = getattr(getattr(usage, "completion_tokens_details", None), "reasoning_tokens", None)
+    text = (choice.message.content or "").strip()
+
+    # Logged every time, not just on failure: an empty body from a reasoning
+    # model looks identical to a refusal, and the only way to tell them apart is
+    # whether the token budget went to thinking. This has now caused two
+    # silent outages.
+    _log.info(
+        "post generation finish_reason=%s prompt_tokens=%s completion_tokens=%s "
+        "reasoning_tokens=%s visible_chars=%d",
+        choice.finish_reason,
+        getattr(usage, "prompt_tokens", "?"),
+        getattr(usage, "completion_tokens", "?"),
+        reasoning if reasoning is not None else "n/a",
+        len(text),
+    )
     if not text:
+        if choice.finish_reason == "length":
+            _log.error(
+                "Post generation produced no visible text: the %s token budget was "
+                "consumed by reasoning. Raise POST_MAX_COMPLETION_TOKENS (currently %s) "
+                "or shorten the prompt.",
+                getattr(usage, "completion_tokens", "?"),
+                _MAX_COMPLETION_TOKENS,
+            )
         return ""
-    return _strip_ai_tells(_extract_post_body(text))
+    body = _strip_ai_tells(_extract_post_body(text))
+    if (language or "").lower().startswith("hi"):
+        body = _danda_normalise(body)
+    return body

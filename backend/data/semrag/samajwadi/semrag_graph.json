@@ -1,0 +1,4249 @@
+{
+  "version": 1,
+  "updated_at": "2026-08-24T09:57:04.782892+00:00",
+  "entities": [
+    {
+      "entity_id": "e1",
+      "canonical_name": "जनेश्वर मिश्र",
+      "entity_type": "person",
+      "aliases": [
+        "आदरणीय जनेश्वर मिश्र जी",
+        "नेताजी जनेश्वर मिश्र",
+        "स्व. जनेश्वर मिश्र जी"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e2",
+      "canonical_name": "अखिलेश यादव",
+      "entity_type": "person",
+      "aliases": [
+        "अखिलेश जी",
+        "अखिलेश यादव जी",
+        "आदरणीय अखिलेश यादव",
+        "आदरणीय अखिलेश यादव जी",
+        "माननीय अखिलेश यादव",
+        "माननीय अखिलेश यादव जी",
+        "माननीय राष्ट्रीय अध्यक्ष जी"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e3",
+      "canonical_name": "समाजवादी पार्टी",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e4",
+      "canonical_name": "गुलाम सिंह",
+      "entity_type": "person",
+      "aliases": [
+        "माननीय स्वर्गीय गुलाम सिंह"
+      ],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e5",
+      "canonical_name": "नरेंद्र मोदी",
+      "entity_type": "person",
+      "aliases": [
+        "माननीय प्रधानमंत्री नरेंद्र मोदी जी"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e6",
+      "canonical_name": "विशाल पांडे",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e7",
+      "canonical_name": "किरण नंदा",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e8",
+      "canonical_name": "अभिषेक मिश्र",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e9",
+      "canonical_name": "पवन पांडे",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e10",
+      "canonical_name": "जनेश्वर मिश्रा",
+      "entity_type": "person",
+      "aliases": [
+        "जनेश्वर मिश्रा जी",
+        "मिश्रा जी"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e11",
+      "canonical_name": "मुलायम सिंह यादव",
+      "entity_type": "person",
+      "aliases": [
+        "श्रद्धेय मुलायम सिंह यादव जी"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e12",
+      "canonical_name": "घनश्याम तिवारी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e13",
+      "canonical_name": "भारतीय जनता पार्टी",
+      "entity_type": "organization",
+      "aliases": [
+        "बीजेपी",
+        "भाजपा"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e14",
+      "canonical_name": "योगी आदित्यनाथ",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e15",
+      "canonical_name": "भगवान परशुराम",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e16",
+      "canonical_name": "रविकांत त्रिपाठी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e17",
+      "canonical_name": "कबीर तिवारी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e18",
+      "canonical_name": "आदर्श उपाध्याय",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e19",
+      "canonical_name": "सियाराम उपाध्याय",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e20",
+      "canonical_name": "खुशी दुबे",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e21",
+      "canonical_name": "डिंपल यादव",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e22",
+      "canonical_name": "धर्मेंद्र यादव",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e23",
+      "canonical_name": "माता प्रसाद पांडे",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e24",
+      "canonical_name": "निपेंद्र मिश्रा",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e25",
+      "canonical_name": "भाजपा",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e26",
+      "canonical_name": "संघ",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e27",
+      "canonical_name": "भीम",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 0.7
+    },
+    {
+      "entity_id": "e28",
+      "canonical_name": "अयोध्या",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e29",
+      "canonical_name": "योगी जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e30",
+      "canonical_name": "भारत सरकार",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e31",
+      "canonical_name": "गोपाल दास नीरज",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e32",
+      "canonical_name": "ब्रह्मा शंकर त्रिपाठी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e33",
+      "canonical_name": "मंगल पांडे",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e34",
+      "canonical_name": "लखनऊ",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e35",
+      "canonical_name": "जनेश्वर मिश्र जी",
+      "entity_type": "person",
+      "aliases": [
+        "जनेश्वर जी"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e36",
+      "canonical_name": "समाजवाद",
+      "entity_type": "claim_topic",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e37",
+      "canonical_name": "राशिद",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e38",
+      "canonical_name": "समाजवादी सरकार",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e39",
+      "canonical_name": "अखिलेश यादव जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e40",
+      "canonical_name": "सनातन पांडे",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e41",
+      "canonical_name": "उदय प्रकाश",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e42",
+      "canonical_name": "उदय प्रताप सिंह",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.7
+    },
+    {
+      "entity_id": "e43",
+      "canonical_name": "जनेश्वर जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e44",
+      "canonical_name": "अखिलेश जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e45",
+      "canonical_name": "सुल्तानपुर",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e46",
+      "canonical_name": "संत कबीर नगर",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e47",
+      "canonical_name": "ब्राह्मण समाज",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e48",
+      "canonical_name": "गाँधी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e49",
+      "canonical_name": "शंकराचार्य जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e50",
+      "canonical_name": "नई पीढ़ी",
+      "entity_type": "claim_topic",
+      "aliases": [],
+      "confidence": 0.7
+    },
+    {
+      "entity_id": "e51",
+      "canonical_name": "मेन स्ट्रीम मीडिया",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e52",
+      "canonical_name": "मीना तिवारी",
+      "entity_type": "person",
+      "aliases": [
+        "मीना जी"
+      ],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e53",
+      "canonical_name": "कांग्रेस",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e54",
+      "canonical_name": "बी.पी. सिंह",
+      "entity_type": "person",
+      "aliases": [
+        "राजा बी.पी. सिंह"
+      ],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e55",
+      "canonical_name": "मुलायम सिंह",
+      "entity_type": "person",
+      "aliases": [
+        "मुलायम सिंह जी"
+      ],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e56",
+      "canonical_name": "बज तिवारी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.7
+    },
+    {
+      "entity_id": "e57",
+      "canonical_name": "राम सुंदर दास",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.7
+    },
+    {
+      "entity_id": "e58",
+      "canonical_name": "अभिलेश जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e59",
+      "canonical_name": "अवलेश सिंह जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e60",
+      "canonical_name": "बलिया",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e61",
+      "canonical_name": "बाटी चोखा",
+      "entity_type": "food",
+      "aliases": [],
+      "confidence": 0.6
+    },
+    {
+      "entity_id": "e62",
+      "canonical_name": "धुरंधर",
+      "entity_type": "event",
+      "aliases": [],
+      "confidence": 0.6
+    },
+    {
+      "entity_id": "e63",
+      "canonical_name": "पंडित जी",
+      "entity_type": "event",
+      "aliases": [],
+      "confidence": 0.5
+    },
+    {
+      "entity_id": "e64",
+      "canonical_name": "गोरखपुर",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 0.7
+    },
+    {
+      "entity_id": "e65",
+      "canonical_name": "शिक्षा सभा",
+      "entity_type": "institution",
+      "aliases": [],
+      "confidence": 0.6
+    },
+    {
+      "entity_id": "e66",
+      "canonical_name": "सरकार",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e67",
+      "canonical_name": "भगवान कृष्ण",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e68",
+      "canonical_name": "सुदामा",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e69",
+      "canonical_name": "अटल बिहारी वाजपेयी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e70",
+      "canonical_name": "मध्य प्रदेश",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e71",
+      "canonical_name": "राजस्थान",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e72",
+      "canonical_name": "उत्तर प्रदेश",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e73",
+      "canonical_name": "मुंबई",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e74",
+      "canonical_name": "बटेश्वर",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 0.7
+    },
+    {
+      "entity_id": "e75",
+      "canonical_name": "बीजेपी",
+      "entity_type": "organization",
+      "aliases": [
+        "भारतीय जनता पार्टी"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e76",
+      "canonical_name": "प्रभु श्री राम जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e77",
+      "canonical_name": "मुख्यमंत्री जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e78",
+      "canonical_name": "मुख्यमंत्री",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e79",
+      "canonical_name": "श्री माता प्रसाद पांडे जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e80",
+      "canonical_name": "श्री किरण महंगा जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e81",
+      "canonical_name": "उदय प्रताप जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e82",
+      "canonical_name": "श्री राजेंद्र चौधरी जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e83",
+      "canonical_name": "ब्रह्मा शंकर त्रिपाठी जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e84",
+      "canonical_name": "जयशंकर पांडे जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e85",
+      "canonical_name": "साकेश्वर मिश्रा",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e86",
+      "canonical_name": "मीना तिवारी जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e87",
+      "canonical_name": "पवन पांडे जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e88",
+      "canonical_name": "संतोष पांडे जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e89",
+      "canonical_name": "अभिषेक मिश्रा जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e90",
+      "canonical_name": "आशोष उपाध्याय जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e91",
+      "canonical_name": "मुनी शुक्ला जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e92",
+      "canonical_name": "अमरपाल शर्मा जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e93",
+      "canonical_name": "के. ओझा",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e94",
+      "canonical_name": "विवेक तिवारी जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e95",
+      "canonical_name": "रमेश दुबे जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e96",
+      "canonical_name": "बनाथ दुबे जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e97",
+      "canonical_name": "नता शुक्ला जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e98",
+      "canonical_name": "भगत राम मिश्रा जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e99",
+      "canonical_name": "जयश प्रसाद जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e100",
+      "canonical_name": "सी.के. त्रिपाठी जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e101",
+      "canonical_name": "राम राम जी शुक्ला जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e102",
+      "canonical_name": "डॉक्टर पी.के. राय जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e103",
+      "canonical_name": "सुभाष राय जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e104",
+      "canonical_name": "त्रंबक पाठक जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e105",
+      "canonical_name": "अरविंद रूप शुक्ला",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e106",
+      "canonical_name": "दीपक पांडे जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e107",
+      "canonical_name": "आलोक त्रिपाठी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e108",
+      "canonical_name": "हरीश मिश्रा",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e109",
+      "canonical_name": "हिमांशु त्रिपाठी जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e110",
+      "canonical_name": "महेंद्र मिश्रा जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e111",
+      "canonical_name": "महाराज श्री संजय मिश्रा जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e112",
+      "canonical_name": "राजा चतुर्वेदी जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e113",
+      "canonical_name": "शुक्ला जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e114",
+      "canonical_name": "मनोज पांडे",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e115",
+      "canonical_name": "राम भजन चौ जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e116",
+      "canonical_name": "संजय पांडे जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e117",
+      "canonical_name": "राहुल शुक्ला जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e118",
+      "canonical_name": "मोनू दुबे",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e119",
+      "canonical_name": "सिद्धार्थ नगर",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e120",
+      "canonical_name": "ओम प्रकाश मिश्रा",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e121",
+      "canonical_name": "किशन दीक्षित जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e122",
+      "canonical_name": "अंग मिश्रा",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e123",
+      "canonical_name": "फौजी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e124",
+      "canonical_name": "महाराज साहब जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e125",
+      "canonical_name": "भाई गिरी जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e126",
+      "canonical_name": "पूर्ण से पूजा शुक्ला जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e127",
+      "canonical_name": "राजेश शर्मा जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e128",
+      "canonical_name": "आशीष चौबे जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e129",
+      "canonical_name": "दीपू त्रिपाठी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e130",
+      "canonical_name": "रामेंद्र त्रिपाठी जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e131",
+      "canonical_name": "राजकुमार पांडे जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e132",
+      "canonical_name": "मुकेश शुक्ला",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e133",
+      "canonical_name": "मनीष पांडे",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e134",
+      "canonical_name": "रवि मिश्रा",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e135",
+      "canonical_name": "विनोद त्रिपाठी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e136",
+      "canonical_name": "सुजीत पांडे जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e137",
+      "canonical_name": "सागर पाठक जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e138",
+      "canonical_name": "आनंद राय",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e139",
+      "canonical_name": "राजेश मिश्रा",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e140",
+      "canonical_name": "पवन मिश्रा",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e141",
+      "canonical_name": "गोपाल अग्निहोत्री जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e142",
+      "canonical_name": "सुरेंद्र मिश्रा",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e143",
+      "canonical_name": "वाराणसी मंडल",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e144",
+      "canonical_name": "मिर्ज़ापुर मंडल",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e145",
+      "canonical_name": "प्रयागराज",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e146",
+      "canonical_name": "चित्रकूट",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e147",
+      "canonical_name": "फ़तेहपुर",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e148",
+      "canonical_name": "बाँदा",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e149",
+      "canonical_name": "कानपुर",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e150",
+      "canonical_name": "झाँसी",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e151",
+      "canonical_name": "आगरा",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e152",
+      "canonical_name": "अलीगढ़",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e153",
+      "canonical_name": "मेरठ",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e154",
+      "canonical_name": "मुज़फ़्फ़रनगर",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e155",
+      "canonical_name": "बरेली",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e156",
+      "canonical_name": "गोंडा",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e157",
+      "canonical_name": "अंबेडकर नगर",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e158",
+      "canonical_name": "पीडीए",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e159",
+      "canonical_name": "गंगा एक्सप्रेसवे",
+      "entity_type": "event",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e160",
+      "canonical_name": "बुंदेलखंड एक्सप्रेसवे",
+      "entity_type": "event",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e161",
+      "canonical_name": "किसान",
+      "entity_type": "claim_topic",
+      "aliases": [],
+      "confidence": 0.7
+    },
+    {
+      "entity_id": "e162",
+      "canonical_name": "पुलिस",
+      "entity_type": "institution",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e163",
+      "canonical_name": "दवाई",
+      "entity_type": "claim_topic",
+      "aliases": [],
+      "confidence": 0.7
+    },
+    {
+      "entity_id": "e164",
+      "canonical_name": "समाजवादी लोग",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e165",
+      "canonical_name": "जनरेशन अल्फा",
+      "entity_type": "claim_topic",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e166",
+      "canonical_name": "जैन जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.7
+    },
+    {
+      "entity_id": "e167",
+      "canonical_name": "समाजवादी सिद्धांत",
+      "entity_type": "policy",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e168",
+      "canonical_name": "सनातन पांडे जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.6
+    },
+    {
+      "entity_id": "e169",
+      "canonical_name": "मनोज मिश्रा",
+      "entity_type": "person",
+      "aliases": [
+        "मनोज मिश्रा जी"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e170",
+      "canonical_name": "काशी विश्वनाथ",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e171",
+      "canonical_name": "बाबा विश्वनाथ",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e172",
+      "canonical_name": "आशुतोष उपाध्याय",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e173",
+      "canonical_name": "श्री प्रभाकर पांडे",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e174",
+      "canonical_name": "श्री भानु दुबे",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e175",
+      "canonical_name": "श्री एस.के. चतुर्वेदी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e176",
+      "canonical_name": "पंडित शिव उपाध्याय",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e177",
+      "canonical_name": "सम मिश्रा",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e178",
+      "canonical_name": "हरि ओम उपाध्यक्ष",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e179",
+      "canonical_name": "अनिल भाई",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e180",
+      "canonical_name": "संजय उपाध्याय",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e181",
+      "canonical_name": "राजेश शर्मा",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e182",
+      "canonical_name": "माननीय राष्ट्रीय अध्यक्ष",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e183",
+      "canonical_name": "राहुल दुबे",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e184",
+      "canonical_name": "आशीष",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e185",
+      "canonical_name": "राम",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e186",
+      "canonical_name": "जयश",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e187",
+      "canonical_name": "अरविंद",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e188",
+      "canonical_name": "राजकुमार",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e189",
+      "canonical_name": "रमेश भाई",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e190",
+      "canonical_name": "सुजीत",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e191",
+      "canonical_name": "माननीय गणेश",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e192",
+      "canonical_name": "तिवारी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e193",
+      "canonical_name": "भगत रामिश्रा जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e194",
+      "canonical_name": "आदरणीय सनातन पांडे जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e195",
+      "canonical_name": "जय शंकर पांडे जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e196",
+      "canonical_name": "अरुण कुमार त्रिपाठी जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e197",
+      "canonical_name": "अमरीश मिश्रा जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e198",
+      "canonical_name": "नंदा जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.7
+    },
+    {
+      "entity_id": "e199",
+      "canonical_name": "उदय प्रताप सिंह जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e200",
+      "canonical_name": "राजेंद्र चौधरी जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e201",
+      "canonical_name": "तारकेश मिश्रा जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e202",
+      "canonical_name": "अमिताभ वाजपेयी जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e203",
+      "canonical_name": "प्रोफेसर अभिषेक मिश्रा जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e204",
+      "canonical_name": "आशुतोष उपाध्याय जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e205",
+      "canonical_name": "प्रोफेसर वी. पांडे जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e206",
+      "canonical_name": "राम पांडे जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e207",
+      "canonical_name": "राम जी शुक्ला जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e208",
+      "canonical_name": "अरुण शक्कर अन्ना महाराजी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e209",
+      "canonical_name": "टी.के. राय साहब",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e210",
+      "canonical_name": "पाठक जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.7
+    },
+    {
+      "entity_id": "e211",
+      "canonical_name": "अरविंद शुक्ला जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e212",
+      "canonical_name": "कार्तिक तिवारी जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e213",
+      "canonical_name": "करणेश जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.7
+    },
+    {
+      "entity_id": "e214",
+      "canonical_name": "के.डी. प्रदीप शर्मा जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e215",
+      "canonical_name": "हनुमान जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e216",
+      "canonical_name": "प्रभु श्री राम",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e217",
+      "canonical_name": "सीता",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    }
+  ],
+  "relations": [
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e1",
+      "relation": "about",
+      "tail_entity_id": "e3",
+      "evidence_chunk_id": "vid000_c013",
+      "evidence_text": "जनेश्वर मिश्रा का जो पार्क बना हुआ है, समाजवादी सरकार में बना है",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e2",
+      "relation": "supports",
+      "tail_entity_id": "e3",
+      "evidence_chunk_id": "vid000_c013",
+      "evidence_text": "समाजवादी सरकार बनाकर माननीय अखिलेश यादव जी को इस प्रदेश का मुख्यमंत्री बनाने का काम करिए",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e4",
+      "relation": "about",
+      "tail_entity_id": "e2",
+      "evidence_chunk_id": "vid000_c014",
+      "evidence_text": "आप लोगों ने माननीय अखिलेश यादव जी को दाह संस्कार में नंगे बदन हिंदू रीति से संस्कार करते देखा कि नहीं देखा?",
+      "confidence": 0.6
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e2",
+      "relation": "about",
+      "tail_entity_id": "e3",
+      "evidence_chunk_id": "vid000_c015",
+      "evidence_text": "माननीय अखिलेश यादव को 27 में मुख्यमंत्री बनाएंगे",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e5",
+      "relation": "about",
+      "tail_entity_id": "e3",
+      "evidence_chunk_id": "vid000_c015",
+      "evidence_text": "हमारे यहाँ प्रधानमंत्री नरेंद्र मोदी जी हैं",
+      "confidence": 0.6
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e1",
+      "relation": "about",
+      "tail_entity_id": "e3",
+      "evidence_chunk_id": "vid000_c016",
+      "evidence_text": "जनेश्वर मिश्र जी समाजवादियों के लिए इतने महत्वपूर्ण क्यों हैं?",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e2",
+      "relation": "about",
+      "tail_entity_id": "e3",
+      "evidence_chunk_id": "vid000_c016",
+      "evidence_text": "हमको अपना संस्कार, अपना विचार, अपना आचरण, अपनी मर्यादाएँ सब यहीं से सीखने को मिलती हैं",
+      "confidence": 0.6
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e10",
+      "relation": "about",
+      "tail_entity_id": "e6",
+      "evidence_chunk_id": "vid000_c001",
+      "evidence_text": "कार्यक्रम आज पार्टी कार्यालय पे हो रहा है, आदरणीय राष्ट्रीय अध्यक्ष जी ने जो पार्क जनेश्वर मिश्रा जी के नाम पे बनाया था",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e11",
+      "relation": "supports",
+      "tail_entity_id": "e2",
+      "evidence_chunk_id": "vid000_c001",
+      "evidence_text": "आदरणीय स्वर्गीय मुलायम सिंह यादव जी जब मुख्यमंत्री थे",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e12",
+      "relation": "about",
+      "tail_entity_id": "e2",
+      "evidence_chunk_id": "vid000_c002",
+      "evidence_text": "जब कानपुर में दीक्षित परिवार को माँ-बेटी को जला दिया गया, सबसे पहले किसी ने आवाज़ उठाई, तो आदरणीय अखिलेश यादव जी ने उठाई",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e12",
+      "relation": "investigates",
+      "tail_entity_id": "e13",
+      "evidence_chunk_id": "vid000_c002",
+      "evidence_text": "भारतीय जनता पार्टी के जिला अध्यक्ष के परिवार के लोगों ने दिल मशीन से आपके समाज के व्यक्ति को क्षमी कर दिया",
+      "confidence": 0.6
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e2",
+      "relation": "about",
+      "tail_entity_id": "e2",
+      "evidence_chunk_id": "vid000_c003",
+      "evidence_text": "आपको याद होगा, राष्ट्रीय अध्यक्ष जब मुख्यमंत्री थे",
+      "confidence": 0.5
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e14",
+      "relation": "opposes",
+      "tail_entity_id": "e2",
+      "evidence_chunk_id": "vid000_c004",
+      "evidence_text": "2017 से जब से योगी आदित्यनाथ जी की सरकार बनी, उन्होंने मुख्यमंत्री की कुर्सी संभाली है",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e10",
+      "relation": "about",
+      "tail_entity_id": "e2",
+      "evidence_chunk_id": "vid000_c004",
+      "evidence_text": "आपने जनेश्वर मिश्रा जी के नाम को अमर करने का काम किया",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e2",
+      "relation": "supports",
+      "tail_entity_id": "e10",
+      "evidence_chunk_id": "vid000_c005",
+      "evidence_text": "आपने जनेश्वर मिश्रा जी के नाम को अमर करने का काम किया।",
+      "confidence": 1.0
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e14",
+      "relation": "accuses",
+      "tail_entity_id": "e15",
+      "evidence_chunk_id": "vid000_c005",
+      "evidence_text": "योगी मुख्यमंत्री बने, इन्होंने हमारे भगवान परशुराम को महापुरुष घोषित किया",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e17",
+      "relation": "opposes",
+      "tail_entity_id": "e14",
+      "evidence_chunk_id": "vid000_c006",
+      "evidence_text": "योगी आदित्यनाथ की सरकार ने डालने का काम किया था।",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e20",
+      "relation": "criticizes",
+      "tail_entity_id": "e14",
+      "evidence_chunk_id": "vid000_c006",
+      "evidence_text": "उत्तर प्रदेश सरकार और किसी ने उसका ध्यान नहीं दिया।",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e13",
+      "relation": "criticizes",
+      "tail_entity_id": "e2",
+      "evidence_chunk_id": "vid000_c007",
+      "evidence_text": "ये भाजपा के लोग कहते हैं, समाजवादी पार्टी में ब्राह्मण कहाँ है?",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e2",
+      "relation": "supports",
+      "tail_entity_id": "e13",
+      "evidence_chunk_id": "vid000_c008",
+      "evidence_text": "हम कहना चाहते हैं और धन्यवाद दूँगा अपने नेता अखिलेश यादव जी को।",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e2",
+      "relation": "supports",
+      "tail_entity_id": "e21",
+      "evidence_chunk_id": "vid000_c009",
+      "evidence_text": "हमारी नेता डिंपल यादव जी दान पात लेकर बैठी हैं।",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e2",
+      "relation": "opposes",
+      "tail_entity_id": "e25",
+      "evidence_chunk_id": "vid000_c009",
+      "evidence_text": "हम सांकेतिक प्रदर्शन कर रहे हैं चढ़ावा चोरों के ख़िलाफ़।",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r3",
+      "head_entity_id": "e2",
+      "relation": "about",
+      "tail_entity_id": "e28",
+      "evidence_chunk_id": "vid000_c009",
+      "evidence_text": "आप सोचिए, इन ट्रस्ट के लोगों ने अयोध्या में एक करोड़ की ज़मीन को 2020 करोड़ में लिया।",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e29",
+      "relation": "announces",
+      "tail_entity_id": "e24",
+      "evidence_chunk_id": "vid000_c010",
+      "evidence_text": "योगी जी आए थे अयोध्या और बोले, \"15 दिन में दूध का दूध पानी पानी कर देंगे।\"",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e24",
+      "relation": "alleges",
+      "tail_entity_id": "e11",
+      "evidence_chunk_id": "vid000_c010",
+      "evidence_text": "निपेंद्र मिश्रा ने बयान दिया कि संधे मुलायम सिंह यादव जी ने अयोध्या में कोई गोली नहीं चलवाई थी।",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r3",
+      "head_entity_id": "e30",
+      "relation": "honors",
+      "tail_entity_id": "e11",
+      "evidence_chunk_id": "vid000_c010",
+      "evidence_text": "इसलिए भारत सरकार ने उनको पद्म विभूषण देकर सम्मानित किया है।",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r4",
+      "head_entity_id": "e5",
+      "relation": "about",
+      "tail_entity_id": "e25",
+      "evidence_chunk_id": "vid000_c010",
+      "evidence_text": "अभी दिल्ली में नरेंद्र मोदी को झुकाया है।",
+      "confidence": 0.6
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e2",
+      "relation": "about",
+      "tail_entity_id": "e31",
+      "evidence_chunk_id": "vid000_c011",
+      "evidence_text": "गोपाल दास जी ने लिखा है कि \"अब तो मज़हब कोई ऐसा भी चलाया जाए।\"",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e2",
+      "relation": "supports",
+      "tail_entity_id": "e25",
+      "evidence_chunk_id": "vid000_c011",
+      "evidence_text": "क्योंकि ये तो भाजपा के दरिंदे कह रहे हैं।",
+      "confidence": 0.6
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e32",
+      "relation": "announces",
+      "tail_entity_id": "e2",
+      "evidence_chunk_id": "vid000_c012",
+      "evidence_text": "मैं आमंत्रण कर रहा हूँ, जो आज टाइफाइड में बीमार होने के बावजूद पिछले 40 दिनों से आज चलकर आए हैं।",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e2",
+      "relation": "about",
+      "tail_entity_id": "e10",
+      "evidence_chunk_id": "vid000_c012",
+      "evidence_text": "जनेश्वर मिश्रा का जो पार्क बना हुआ है।",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r3",
+      "head_entity_id": "e2",
+      "relation": "supports",
+      "tail_entity_id": "e3",
+      "evidence_chunk_id": "vid000_c012",
+      "evidence_text": "माननीय अखिलेश यादव जी ने, आप जानते होंगे, पौने एकड़ 3000 बीघड़े में पूरे एशिया में नगरी क्षेत्र में सबसे बड़ा पार्क जनेश्वर मिश्रा पार्क है।",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e35",
+      "relation": "about",
+      "tail_entity_id": "e36",
+      "evidence_chunk_id": "vid000_c017",
+      "evidence_text": "जनेश्वर मिश्र जी समाजवादियों के लिए इतने महत्वपूर्ण क्यों हैं?",
+      "confidence": 1.0
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e13",
+      "relation": "criticizes",
+      "tail_entity_id": "e3",
+      "evidence_chunk_id": "vid000_c018",
+      "evidence_text": "जिस तरीके से भारतीय जनता पार्टी ने इनके साथ बर्ताव किया है",
+      "confidence": 1.0
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e3",
+      "relation": "supports",
+      "tail_entity_id": "e37",
+      "evidence_chunk_id": "vid000_c018",
+      "evidence_text": "आपसे उम्मीद लेकर के आए हैं कि आप इनके साथ खड़े हैं",
+      "confidence": 1.0
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e38",
+      "relation": "supports",
+      "tail_entity_id": "e35",
+      "evidence_chunk_id": "vid000_c019",
+      "evidence_text": "समाजवादी सरकार बनेगी तो संस्कृत विद्यालय भी और खोले जाएँगे",
+      "confidence": 1.0
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e3",
+      "relation": "supports",
+      "tail_entity_id": "e35",
+      "evidence_chunk_id": "vid000_c020",
+      "evidence_text": "माननीय जनेश्वर मिश्र जी को आज भी याद किया जाता है",
+      "confidence": 1.0
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e3",
+      "relation": "supports",
+      "tail_entity_id": "e39",
+      "evidence_chunk_id": "vid000_c020",
+      "evidence_text": "माननीय श्री अखिलेश यादव जी को मुख्यमंत्री बनाने का काम करेगा",
+      "confidence": 1.0
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e2",
+      "relation": "supports",
+      "tail_entity_id": "e3",
+      "evidence_chunk_id": "vid000_c025",
+      "evidence_text": "समाजवादी पार्टी की सरकार बनाने से नहीं रोक सकती",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e10",
+      "relation": "about",
+      "tail_entity_id": "e3",
+      "evidence_chunk_id": "vid000_c025",
+      "evidence_text": "जनेश्वर मिश्रा के नाम पर बरोबर चाहे समाजवादी पार्टी का जो भी फ़ैसला",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e2",
+      "relation": "supports",
+      "tail_entity_id": "e3",
+      "evidence_chunk_id": "vid000_c026",
+      "evidence_text": "समाजवादी पार्टी की सरकार बनाने के लिए आप सबको संकल्प लेना होगा",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e40",
+      "relation": "about",
+      "tail_entity_id": "e3",
+      "evidence_chunk_id": "vid000_c026",
+      "evidence_text": "समाजवादी पार्टी के विचारधारा के पुरोधा",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e2",
+      "relation": "about",
+      "tail_entity_id": "e10",
+      "evidence_chunk_id": "vid000_c027",
+      "evidence_text": "जनेश्वर मिश्रा जी का आज जन्मदिन है",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e2",
+      "relation": "about",
+      "tail_entity_id": "e3",
+      "evidence_chunk_id": "vid000_c027",
+      "evidence_text": "समाजवादी पार्टी का प्रतिष्ठाक",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e10",
+      "relation": "about",
+      "tail_entity_id": "e3",
+      "evidence_chunk_id": "vid000_c028",
+      "evidence_text": "जनेश्वर मिश्रा जी का आज जन्मदिन है",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e2",
+      "relation": "supports",
+      "tail_entity_id": "e43",
+      "evidence_chunk_id": "vid000_c033",
+      "evidence_text": "जनेश्वर जी ने, अखिलेश यादव को अध्यक्ष बनाइए",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e2",
+      "relation": "opposes",
+      "tail_entity_id": "e25",
+      "evidence_chunk_id": "vid000_c033",
+      "evidence_text": "आप भाजपा सरकार को उखाड़ के फेंक देंगे",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e2",
+      "relation": "supports",
+      "tail_entity_id": "e43",
+      "evidence_chunk_id": "vid000_c034",
+      "evidence_text": "जनेश्वर जी की जन्म जयंती पर यही मेरा आवेदन है",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e2",
+      "relation": "opposes",
+      "tail_entity_id": "e25",
+      "evidence_chunk_id": "vid000_c034",
+      "evidence_text": "भाजपा को हटाइए",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e35",
+      "relation": "about",
+      "tail_entity_id": "e2",
+      "evidence_chunk_id": "vid000_c035",
+      "evidence_text": "उनका सपना था कि अखिलेश जी की सरकार दोबारा आए",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e1",
+      "relation": "about",
+      "tail_entity_id": "e44",
+      "evidence_chunk_id": "vid000_c036",
+      "evidence_text": "जनेश्वर मिश्र का मतलब था अन्याय का निराकार",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e10",
+      "relation": "linked_to",
+      "tail_entity_id": "e3",
+      "evidence_chunk_id": "vid000_c029",
+      "evidence_text": "समाजवादी पार्टी का काम करके",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e10",
+      "relation": "about",
+      "tail_entity_id": "e52",
+      "evidence_chunk_id": "vid000_c029",
+      "evidence_text": "ये उनकी सबसे छोटी बेटी है",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r3",
+      "head_entity_id": "e10",
+      "relation": "opposes",
+      "tail_entity_id": "e53",
+      "evidence_chunk_id": "vid000_c029",
+      "evidence_text": "कांग्रेस से लड़ रहे थे",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e10",
+      "relation": "opposes",
+      "tail_entity_id": "e54",
+      "evidence_chunk_id": "vid000_c030",
+      "evidence_text": "राजा मांडा से लड़े",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e10",
+      "relation": "supports",
+      "tail_entity_id": "e3",
+      "evidence_chunk_id": "vid000_c030",
+      "evidence_text": "ये लोग सुन नहीं रहे।",
+      "confidence": 0.6
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e10",
+      "relation": "linked_to",
+      "tail_entity_id": "e3",
+      "evidence_chunk_id": "vid000_c031",
+      "evidence_text": "समाजवादी पार्टी का पहले उपाध्यक्ष था",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e3",
+      "relation": "supports",
+      "tail_entity_id": "e10",
+      "evidence_chunk_id": "vid000_c031",
+      "evidence_text": "समाजवादी पार्टी ने ब्राह्मण को जो सम्मान दिया",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e10",
+      "relation": "announces",
+      "tail_entity_id": "e2",
+      "evidence_chunk_id": "vid000_c032",
+      "evidence_text": "अखिलेश जी को उत्तर प्रदेश का अध्यक्ष बनाइए",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e10",
+      "relation": "linked_to",
+      "tail_entity_id": "e3",
+      "evidence_chunk_id": "vid000_c032",
+      "evidence_text": "समाजवादी पार्टी का अध्यक्ष बने नेताजी",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e35",
+      "relation": "about",
+      "tail_entity_id": "e3",
+      "evidence_chunk_id": "vid000_c038",
+      "evidence_text": "जनेश्वर मिश्र जी समाजवादी चिंतक के साथ-साथ समाजवादी नेता",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e39",
+      "relation": "announces",
+      "tail_entity_id": "e3",
+      "evidence_chunk_id": "vid000_c038",
+      "evidence_text": "हम सब आप लोग समाजवादी पार्टी के कार्यालय में उपस्थित हैं",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e35",
+      "relation": "about",
+      "tail_entity_id": "e60",
+      "evidence_chunk_id": "vid000_c045",
+      "evidence_text": "बलिया की पूरी और बलिया का खाना खाने को मिलता था",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e59",
+      "relation": "supports",
+      "tail_entity_id": "e35",
+      "evidence_chunk_id": "vid000_c045",
+      "evidence_text": "मैं अवलेश जी का विशेष धन्यवाद करूँगा",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e3",
+      "relation": "supports",
+      "tail_entity_id": "e62",
+      "evidence_chunk_id": "vid000_c046",
+      "evidence_text": "समाजवादियों ने तो बनवाई थी एक फिल्म",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e62",
+      "relation": "about",
+      "tail_entity_id": "e63",
+      "evidence_chunk_id": "vid000_c046",
+      "evidence_text": "उस फिल्म का नाम था पंडित जी",
+      "confidence": 0.6
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e66",
+      "relation": "criticizes",
+      "tail_entity_id": "e64",
+      "evidence_chunk_id": "vid000_c047",
+      "evidence_text": "गोरखपुर के प्रचारक और शिक्षक",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e65",
+      "relation": "about",
+      "tail_entity_id": "e66",
+      "evidence_chunk_id": "vid000_c047",
+      "evidence_text": "सरकार के मुखिया ने और किस भाषा से अपमानित किया था",
+      "confidence": 0.6
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e67",
+      "relation": "linked_to",
+      "tail_entity_id": "e68",
+      "evidence_chunk_id": "vid000_c048",
+      "evidence_text": "भगवान कृष्ण और सुदामा की दोस्ती",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e3",
+      "relation": "supports",
+      "tail_entity_id": "e67",
+      "evidence_chunk_id": "vid000_c048",
+      "evidence_text": "समाजवादी पार्टी को जब भी मौका मिला है, हम लोगों ने सम्मान देने का काम किया है",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e75",
+      "relation": "opposes",
+      "tail_entity_id": "e3",
+      "evidence_chunk_id": "vid000_c049",
+      "evidence_text": "भारतीय जनता पार्टी ने वो सड़क का प्रस्ताव भी खत्म कर दिया",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e75",
+      "relation": "accuses",
+      "tail_entity_id": "e76",
+      "evidence_chunk_id": "vid000_c050",
+      "evidence_text": "प्रभु श्री राम जी का चढ़ावा भी उन्होंने चोरी कर लिया है",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e75",
+      "relation": "criticizes",
+      "tail_entity_id": "e77",
+      "evidence_chunk_id": "vid000_c051",
+      "evidence_text": "बीजेपी के लोग क्या कह रहे हैं?",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e3",
+      "relation": "supports",
+      "tail_entity_id": "e78",
+      "evidence_chunk_id": "vid000_c052",
+      "evidence_text": "समाजवादी सरकार बनेगी, हम अपने बागी बलिया को उससे जोड़ने का काम करेंगे",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e13",
+      "relation": "criticizes",
+      "tail_entity_id": "e158",
+      "evidence_chunk_id": "vid000_c057",
+      "evidence_text": "इनको इस बार सज़ा मिलने जा रही है।",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e13",
+      "relation": "criticizes",
+      "tail_entity_id": "e158",
+      "evidence_chunk_id": "vid000_c058",
+      "evidence_text": "ये लोग भ्रष्ट जुल्मी पार्टी है।",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e13",
+      "relation": "criticizes",
+      "tail_entity_id": "e13",
+      "evidence_chunk_id": "vid000_c059",
+      "evidence_text": "बीजेपी वाले बीजेपी को लड्डू खिला रहे हैं।",
+      "confidence": 0.6
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e3",
+      "relation": "supports",
+      "tail_entity_id": "e159",
+      "evidence_chunk_id": "vid000_c053",
+      "evidence_text": "समाजवादी पार्टी की सरकार बनी थी",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e3",
+      "relation": "supports",
+      "tail_entity_id": "e160",
+      "evidence_chunk_id": "vid000_c053",
+      "evidence_text": "हम लोग मंडी बनाए थे वहां पर",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r3",
+      "head_entity_id": "e3",
+      "relation": "about",
+      "tail_entity_id": "e161",
+      "evidence_chunk_id": "vid000_c053",
+      "evidence_text": "किसानों को लाभ नहीं मिलेगा",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e3",
+      "relation": "criticizes",
+      "tail_entity_id": "e160",
+      "evidence_chunk_id": "vid000_c054",
+      "evidence_text": "बर्बाद बनाया है",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e3",
+      "relation": "criticizes",
+      "tail_entity_id": "e162",
+      "evidence_chunk_id": "vid000_c054",
+      "evidence_text": "पुलिस के बारे में सब जान गए",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e3",
+      "relation": "supports",
+      "tail_entity_id": "e162",
+      "evidence_chunk_id": "vid000_c055",
+      "evidence_text": "समाजवादियों ने दी थी",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e3",
+      "relation": "criticizes",
+      "tail_entity_id": "e163",
+      "evidence_chunk_id": "vid000_c056",
+      "evidence_text": "दवाइयों में इन्होंने हेराफेरी की है",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e164",
+      "relation": "supports",
+      "tail_entity_id": "e165",
+      "evidence_chunk_id": "vid000_c061",
+      "evidence_text": "जनरेशन अल्फा ने आंदोलन कर दिया",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e164",
+      "relation": "about",
+      "tail_entity_id": "e166",
+      "evidence_chunk_id": "vid000_c061",
+      "evidence_text": "जैन जी के बारे में",
+      "confidence": 0.6
+    },
+    {
+      "relation_id": "r3",
+      "head_entity_id": "e77",
+      "relation": "criticizes",
+      "tail_entity_id": "e164",
+      "evidence_chunk_id": "vid000_c061",
+      "evidence_text": "सरकार के लोग कितने वो हैं",
+      "confidence": 0.5
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e164",
+      "relation": "supports",
+      "tail_entity_id": "e77",
+      "evidence_chunk_id": "vid000_c062",
+      "evidence_text": "आपको स्थान और सम्मान देने का काम समाजवादी लोग करेंगे",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e164",
+      "relation": "supports",
+      "tail_entity_id": "e26",
+      "evidence_chunk_id": "vid000_c063",
+      "evidence_text": "संघ उसी दिन हमारा सनातन धर्म मज़बूत हो जाएगा",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e167",
+      "relation": "supports",
+      "tail_entity_id": "e60",
+      "evidence_chunk_id": "vid000_c064",
+      "evidence_text": "बलिया की जनता ने सनातन पांडे जी को जिता भी दिया",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e168",
+      "relation": "linked_to",
+      "tail_entity_id": "e60",
+      "evidence_chunk_id": "vid000_c064",
+      "evidence_text": "बलिया से पिछली बार सनातन पांडे जी रह गए थे पीछे",
+      "confidence": 0.6
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e2",
+      "relation": "supports",
+      "tail_entity_id": "e3",
+      "evidence_chunk_id": "vid000_c069",
+      "evidence_text": "समाजवादी पार्टी में हो रहे हैं",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e2",
+      "relation": "about",
+      "tail_entity_id": "e1",
+      "evidence_chunk_id": "vid000_c069",
+      "evidence_text": "जनेश्वर जी को याद करेंगे",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e2",
+      "relation": "supports",
+      "tail_entity_id": "e3",
+      "evidence_chunk_id": "vid001_c001",
+      "evidence_text": "समाजवादी पार्टी जिंदाबाद",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e2",
+      "relation": "about",
+      "tail_entity_id": "e170",
+      "evidence_chunk_id": "vid001_c002",
+      "evidence_text": "काशी विश्वनाथ की पवित्र भूमि से",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e2",
+      "relation": "about",
+      "tail_entity_id": "e171",
+      "evidence_chunk_id": "vid001_c003",
+      "evidence_text": "बाबा विश्वनाथ से प्रार्थना है",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e215",
+      "relation": "about",
+      "tail_entity_id": "e75",
+      "evidence_chunk_id": "vid000_c067",
+      "evidence_text": "बीजेपी ने कंजूसी की।",
+      "confidence": 0.8
+    }
+  ],
+  "entity_name_to_id": {
+    "जनेश्वर मिश्र::person": "e1",
+    "अखिलेश यादव::person": "e2",
+    "समाजवादी पार्टी::organization": "e3",
+    "गुलाम सिंह::person": "e4",
+    "नरेंद्र मोदी::person": "e5",
+    "विशाल पांडे::person": "e6",
+    "किरण नंदा::person": "e7",
+    "अभिषेक मिश्र::person": "e8",
+    "पवन पांडे::person": "e9",
+    "जनेश्वर मिश्रा::person": "e10",
+    "मुलायम सिंह यादव::person": "e11",
+    "घनश्याम तिवारी::person": "e12",
+    "भारतीय जनता पार्टी::organization": "e13",
+    "योगी आदित्यनाथ::person": "e14",
+    "भगवान परशुराम::person": "e15",
+    "रविकांत त्रिपाठी::person": "e16",
+    "कबीर तिवारी::person": "e17",
+    "आदर्श उपाध्याय::person": "e18",
+    "सियाराम उपाध्याय::person": "e19",
+    "खुशी दुबे::person": "e20",
+    "डिंपल यादव::person": "e21",
+    "धर्मेंद्र यादव::person": "e22",
+    "माता प्रसाद पांडे::person": "e23",
+    "निपेंद्र मिश्रा::person": "e24",
+    "भाजपा::organization": "e25",
+    "संघ::organization": "e26",
+    "भीम::organization": "e27",
+    "अयोध्या::location": "e28",
+    "योगी जी::person": "e29",
+    "भारत सरकार::organization": "e30",
+    "गोपाल दास नीरज::person": "e31",
+    "ब्रह्मा शंकर त्रिपाठी::person": "e32",
+    "मंगल पांडे::person": "e33",
+    "लखनऊ::location": "e34",
+    "जनेश्वर मिश्र जी::person": "e35",
+    "समाजवाद::claim_topic": "e36",
+    "राशिद::person": "e37",
+    "समाजवादी सरकार::organization": "e38",
+    "अखिलेश यादव जी::person": "e39",
+    "सनातन पांडे::person": "e40",
+    "उदय प्रकाश::person": "e41",
+    "उदय प्रताप सिंह::person": "e42",
+    "जनेश्वर जी::person": "e43",
+    "अखिलेश जी::person": "e44",
+    "सुल्तानपुर::location": "e45",
+    "संत कबीर नगर::location": "e46",
+    "ब्राह्मण समाज::organization": "e47",
+    "गाँधी::person": "e48",
+    "शंकराचार्य जी::person": "e49",
+    "नई पीढ़ी::claim_topic": "e50",
+    "मेन स्ट्रीम मीडिया::organization": "e51",
+    "मीना तिवारी::person": "e52",
+    "कांग्रेस::organization": "e53",
+    "बी.पी. सिंह::person": "e54",
+    "मुलायम सिंह::person": "e55",
+    "बज तिवारी::person": "e56",
+    "राम सुंदर दास::person": "e57",
+    "अभिलेश जी::person": "e58",
+    "अवलेश सिंह जी::person": "e59",
+    "बलिया::location": "e60",
+    "बाटी चोखा::food": "e61",
+    "धुरंधर::event": "e62",
+    "पंडित जी::event": "e63",
+    "गोरखपुर::location": "e64",
+    "शिक्षा सभा::institution": "e65",
+    "सरकार::organization": "e66",
+    "भगवान कृष्ण::person": "e67",
+    "सुदामा::person": "e68",
+    "अटल बिहारी वाजपेयी::person": "e69",
+    "मध्य प्रदेश::location": "e70",
+    "राजस्थान::location": "e71",
+    "उत्तर प्रदेश::location": "e72",
+    "मुंबई::location": "e73",
+    "बटेश्वर::location": "e74",
+    "बीजेपी::organization": "e75",
+    "प्रभु श्री राम जी::person": "e76",
+    "मुख्यमंत्री जी::person": "e77",
+    "मुख्यमंत्री::person": "e78",
+    "श्री माता प्रसाद पांडे जी::person": "e79",
+    "श्री किरण महंगा जी::person": "e80",
+    "उदय प्रताप जी::person": "e81",
+    "श्री राजेंद्र चौधरी जी::person": "e82",
+    "ब्रह्मा शंकर त्रिपाठी जी::person": "e83",
+    "जयशंकर पांडे जी::person": "e84",
+    "साकेश्वर मिश्रा::person": "e85",
+    "मीना तिवारी जी::person": "e86",
+    "पवन पांडे जी::person": "e87",
+    "संतोष पांडे जी::person": "e88",
+    "अभिषेक मिश्रा जी::person": "e89",
+    "आशोष उपाध्याय जी::person": "e90",
+    "मुनी शुक्ला जी::person": "e91",
+    "अमरपाल शर्मा जी::person": "e92",
+    "के. ओझा::person": "e93",
+    "विवेक तिवारी जी::person": "e94",
+    "रमेश दुबे जी::person": "e95",
+    "बनाथ दुबे जी::person": "e96",
+    "नता शुक्ला जी::person": "e97",
+    "भगत राम मिश्रा जी::person": "e98",
+    "जयश प्रसाद जी::person": "e99",
+    "सी.के. त्रिपाठी जी::person": "e100",
+    "राम राम जी शुक्ला जी::person": "e101",
+    "डॉक्टर पी.के. राय जी::person": "e102",
+    "सुभाष राय जी::person": "e103",
+    "त्रंबक पाठक जी::person": "e104",
+    "अरविंद रूप शुक्ला::person": "e105",
+    "दीपक पांडे जी::person": "e106",
+    "आलोक त्रिपाठी::person": "e107",
+    "हरीश मिश्रा::person": "e108",
+    "हिमांशु त्रिपाठी जी::person": "e109",
+    "महेंद्र मिश्रा जी::person": "e110",
+    "महाराज श्री संजय मिश्रा जी::person": "e111",
+    "राजा चतुर्वेदी जी::person": "e112",
+    "शुक्ला जी::person": "e113",
+    "मनोज पांडे::person": "e114",
+    "राम भजन चौ जी::person": "e115",
+    "संजय पांडे जी::person": "e116",
+    "राहुल शुक्ला जी::person": "e117",
+    "मोनू दुबे::person": "e118",
+    "सिद्धार्थ नगर::location": "e119",
+    "ओम प्रकाश मिश्रा::person": "e120",
+    "किशन दीक्षित जी::person": "e121",
+    "अंग मिश्रा::person": "e122",
+    "फौजी::person": "e123",
+    "महाराज साहब जी::person": "e124",
+    "भाई गिरी जी::person": "e125",
+    "पूर्ण से पूजा शुक्ला जी::person": "e126",
+    "राजेश शर्मा जी::person": "e127",
+    "आशीष चौबे जी::person": "e128",
+    "दीपू त्रिपाठी::person": "e129",
+    "रामेंद्र त्रिपाठी जी::person": "e130",
+    "राजकुमार पांडे जी::person": "e131",
+    "मुकेश शुक्ला::person": "e132",
+    "मनीष पांडे::person": "e133",
+    "रवि मिश्रा::person": "e134",
+    "विनोद त्रिपाठी::person": "e135",
+    "सुजीत पांडे जी::person": "e136",
+    "सागर पाठक जी::person": "e137",
+    "आनंद राय::person": "e138",
+    "राजेश मिश्रा::person": "e139",
+    "पवन मिश्रा::person": "e140",
+    "गोपाल अग्निहोत्री जी::person": "e141",
+    "सुरेंद्र मिश्रा::person": "e142",
+    "वाराणसी मंडल::location": "e143",
+    "मिर्ज़ापुर मंडल::location": "e144",
+    "प्रयागराज::location": "e145",
+    "चित्रकूट::location": "e146",
+    "फ़तेहपुर::location": "e147",
+    "बाँदा::location": "e148",
+    "कानपुर::location": "e149",
+    "झाँसी::location": "e150",
+    "आगरा::location": "e151",
+    "अलीगढ़::location": "e152",
+    "मेरठ::location": "e153",
+    "मुज़फ़्फ़रनगर::location": "e154",
+    "बरेली::location": "e155",
+    "गोंडा::location": "e156",
+    "अंबेडकर नगर::location": "e157",
+    "पीडीए::organization": "e158",
+    "गंगा एक्सप्रेसवे::event": "e159",
+    "बुंदेलखंड एक्सप्रेसवे::event": "e160",
+    "किसान::claim_topic": "e161",
+    "पुलिस::institution": "e162",
+    "दवाई::claim_topic": "e163",
+    "समाजवादी लोग::organization": "e164",
+    "जनरेशन अल्फा::claim_topic": "e165",
+    "जैन जी::person": "e166",
+    "समाजवादी सिद्धांत::policy": "e167",
+    "सनातन पांडे जी::person": "e168",
+    "मनोज मिश्रा::person": "e169",
+    "काशी विश्वनाथ::location": "e170",
+    "बाबा विश्वनाथ::location": "e171",
+    "आशुतोष उपाध्याय::person": "e172",
+    "श्री प्रभाकर पांडे::person": "e173",
+    "श्री भानु दुबे::person": "e174",
+    "श्री एस.के. चतुर्वेदी::person": "e175",
+    "पंडित शिव उपाध्याय::person": "e176",
+    "सम मिश्रा::person": "e177",
+    "हरि ओम उपाध्यक्ष::person": "e178",
+    "अनिल भाई::person": "e179",
+    "संजय उपाध्याय::person": "e180",
+    "राजेश शर्मा::person": "e181",
+    "माननीय राष्ट्रीय अध्यक्ष::person": "e182",
+    "राहुल दुबे::person": "e183",
+    "आशीष::person": "e184",
+    "राम::person": "e185",
+    "जयश::person": "e186",
+    "अरविंद::person": "e187",
+    "राजकुमार::person": "e188",
+    "रमेश भाई::person": "e189",
+    "सुजीत::person": "e190",
+    "माननीय गणेश::person": "e191",
+    "तिवारी::person": "e192",
+    "भगत रामिश्रा जी::person": "e193",
+    "आदरणीय सनातन पांडे जी::person": "e194",
+    "जय शंकर पांडे जी::person": "e195",
+    "अरुण कुमार त्रिपाठी जी::person": "e196",
+    "अमरीश मिश्रा जी::person": "e197",
+    "नंदा जी::person": "e198",
+    "उदय प्रताप सिंह जी::person": "e199",
+    "राजेंद्र चौधरी जी::person": "e200",
+    "तारकेश मिश्रा जी::person": "e201",
+    "अमिताभ वाजपेयी जी::person": "e202",
+    "प्रोफेसर अभिषेक मिश्रा जी::person": "e203",
+    "आशुतोष उपाध्याय जी::person": "e204",
+    "प्रोफेसर वी. पांडे जी::person": "e205",
+    "राम पांडे जी::person": "e206",
+    "राम जी शुक्ला जी::person": "e207",
+    "अरुण शक्कर अन्ना महाराजी::person": "e208",
+    "टी.के. राय साहब::person": "e209",
+    "पाठक जी::person": "e210",
+    "अरविंद शुक्ला जी::person": "e211",
+    "कार्तिक तिवारी जी::person": "e212",
+    "करणेश जी::person": "e213",
+    "के.डी. प्रदीप शर्मा जी::person": "e214",
+    "हनुमान जी::person": "e215",
+    "प्रभु श्री राम::person": "e216",
+    "सीता::person": "e217"
+  },
+  "chunk_entities": {
+    "vid000_c013": [
+      "e1",
+      "e2",
+      "e3"
+    ],
+    "vid000_c014": [
+      "e2",
+      "e3",
+      "e4"
+    ],
+    "vid000_c015": [
+      "e2",
+      "e3",
+      "e5"
+    ],
+    "vid000_c016": [
+      "e1",
+      "e2",
+      "e3"
+    ],
+    "vid000_c001": [
+      "e10",
+      "e11",
+      "e2",
+      "e6",
+      "e7",
+      "e8",
+      "e9"
+    ],
+    "vid000_c002": [
+      "e12",
+      "e13",
+      "e2"
+    ],
+    "vid000_c003": [
+      "e2"
+    ],
+    "vid000_c004": [
+      "e10",
+      "e14",
+      "e2"
+    ],
+    "vid000_c005": [
+      "e10",
+      "e11",
+      "e12",
+      "e14",
+      "e15",
+      "e16",
+      "e17",
+      "e18",
+      "e19",
+      "e2",
+      "e20"
+    ],
+    "vid000_c006": [
+      "e14",
+      "e17",
+      "e18",
+      "e19",
+      "e2",
+      "e20"
+    ],
+    "vid000_c007": [
+      "e13",
+      "e2"
+    ],
+    "vid000_c008": [
+      "e13",
+      "e2"
+    ],
+    "vid000_c009": [
+      "e2",
+      "e21",
+      "e22",
+      "e23",
+      "e24",
+      "e25",
+      "e26",
+      "e27",
+      "e28"
+    ],
+    "vid000_c010": [
+      "e11",
+      "e24",
+      "e25",
+      "e29",
+      "e30",
+      "e5"
+    ],
+    "vid000_c011": [
+      "e2",
+      "e25",
+      "e31"
+    ],
+    "vid000_c012": [
+      "e10",
+      "e2",
+      "e23",
+      "e3",
+      "e32",
+      "e33",
+      "e34"
+    ],
+    "vid000_c017": [
+      "e35",
+      "e36"
+    ],
+    "vid000_c018": [
+      "e13",
+      "e3",
+      "e37"
+    ],
+    "vid000_c019": [
+      "e35",
+      "e38"
+    ],
+    "vid000_c020": [
+      "e3",
+      "e35",
+      "e39"
+    ],
+    "vid000_c025": [
+      "e10",
+      "e2",
+      "e3",
+      "e9"
+    ],
+    "vid000_c026": [
+      "e2",
+      "e3",
+      "e40"
+    ],
+    "vid000_c027": [
+      "e10",
+      "e2",
+      "e3",
+      "e40",
+      "e41",
+      "e42"
+    ],
+    "vid000_c028": [
+      "e10",
+      "e2",
+      "e3"
+    ],
+    "vid000_c033": [
+      "e2",
+      "e25",
+      "e43"
+    ],
+    "vid000_c034": [
+      "e2",
+      "e25",
+      "e43"
+    ],
+    "vid000_c035": [
+      "e2",
+      "e35"
+    ],
+    "vid000_c036": [
+      "e1",
+      "e44"
+    ],
+    "vid000_c041": [
+      "e45",
+      "e46",
+      "e47"
+    ],
+    "vid000_c042": [
+      "e48",
+      "e49"
+    ],
+    "vid000_c043": [
+      "e47",
+      "e49"
+    ],
+    "vid000_c044": [
+      "e50",
+      "e51"
+    ],
+    "vid000_c029": [
+      "e10",
+      "e3",
+      "e52",
+      "e53",
+      "e54"
+    ],
+    "vid000_c030": [
+      "e10",
+      "e3",
+      "e54"
+    ],
+    "vid000_c031": [
+      "e10",
+      "e23",
+      "e3",
+      "e55",
+      "e56"
+    ],
+    "vid000_c032": [
+      "e10",
+      "e2",
+      "e3",
+      "e57"
+    ],
+    "vid000_c037": [
+      "e44"
+    ],
+    "vid000_c038": [
+      "e3",
+      "e35",
+      "e39"
+    ],
+    "vid000_c039": [
+      "e35"
+    ],
+    "vid000_c040": [
+      "e43"
+    ],
+    "vid000_c045": [
+      "e35",
+      "e58",
+      "e59",
+      "e60",
+      "e61"
+    ],
+    "vid000_c046": [
+      "e3",
+      "e62",
+      "e63"
+    ],
+    "vid000_c047": [
+      "e64",
+      "e65",
+      "e66"
+    ],
+    "vid000_c048": [
+      "e3",
+      "e67",
+      "e68"
+    ],
+    "vid000_c049": [
+      "e3",
+      "e69",
+      "e70",
+      "e71",
+      "e72",
+      "e73",
+      "e74",
+      "e75"
+    ],
+    "vid000_c050": [
+      "e75",
+      "e76"
+    ],
+    "vid000_c051": [
+      "e75",
+      "e77"
+    ],
+    "vid000_c052": [
+      "e3",
+      "e78"
+    ],
+    "vid000_c021": [
+      "e39",
+      "e79",
+      "e80",
+      "e81",
+      "e82",
+      "e83",
+      "e84",
+      "e85",
+      "e86",
+      "e87",
+      "e88",
+      "e89"
+    ],
+    "vid000_c022": [
+      "e100",
+      "e101",
+      "e102",
+      "e103",
+      "e104",
+      "e105",
+      "e106",
+      "e107",
+      "e108",
+      "e109",
+      "e110",
+      "e111",
+      "e112",
+      "e113",
+      "e114",
+      "e115",
+      "e116",
+      "e117",
+      "e118",
+      "e119",
+      "e120",
+      "e121",
+      "e122",
+      "e123",
+      "e60",
+      "e90",
+      "e91",
+      "e92",
+      "e93",
+      "e94",
+      "e95",
+      "e96",
+      "e97",
+      "e98",
+      "e99"
+    ],
+    "vid000_c023": [
+      "e110",
+      "e111",
+      "e112",
+      "e113",
+      "e114",
+      "e115",
+      "e116",
+      "e117",
+      "e118",
+      "e120",
+      "e121",
+      "e122",
+      "e123",
+      "e124",
+      "e125",
+      "e126",
+      "e127",
+      "e128",
+      "e129",
+      "e130",
+      "e131",
+      "e132",
+      "e133",
+      "e134",
+      "e135",
+      "e136",
+      "e137",
+      "e138",
+      "e139",
+      "e140",
+      "e141",
+      "e142"
+    ],
+    "vid000_c024": [
+      "e143",
+      "e144",
+      "e145",
+      "e146",
+      "e147",
+      "e148",
+      "e149",
+      "e150",
+      "e151",
+      "e152",
+      "e153",
+      "e154",
+      "e155",
+      "e156",
+      "e157"
+    ],
+    "vid000_c057": [
+      "e13",
+      "e158"
+    ],
+    "vid000_c058": [
+      "e13",
+      "e158"
+    ],
+    "vid000_c059": [
+      "e13"
+    ],
+    "vid000_c060": [],
+    "vid000_c053": [
+      "e159",
+      "e160",
+      "e161",
+      "e3"
+    ],
+    "vid000_c054": [
+      "e160",
+      "e162",
+      "e3"
+    ],
+    "vid000_c055": [
+      "e162",
+      "e3"
+    ],
+    "vid000_c056": [
+      "e163",
+      "e3"
+    ],
+    "vid000_c061": [
+      "e164",
+      "e165",
+      "e166",
+      "e77"
+    ],
+    "vid000_c062": [
+      "e164",
+      "e77"
+    ],
+    "vid000_c063": [
+      "e164",
+      "e26"
+    ],
+    "vid000_c064": [
+      "e167",
+      "e168",
+      "e60"
+    ],
+    "vid000_c069": [
+      "e1",
+      "e169",
+      "e2",
+      "e3"
+    ],
+    "vid001_c001": [
+      "e2",
+      "e3"
+    ],
+    "vid001_c002": [
+      "e170",
+      "e2"
+    ],
+    "vid001_c003": [
+      "e171",
+      "e2"
+    ],
+    "vid001_c004": [
+      "e172",
+      "e173",
+      "e174",
+      "e175",
+      "e176",
+      "e177",
+      "e178",
+      "e179",
+      "e180"
+    ],
+    "vid001_c005": [
+      "e179",
+      "e180",
+      "e181",
+      "e182",
+      "e183",
+      "e184",
+      "e185",
+      "e186",
+      "e187",
+      "e188"
+    ],
+    "vid001_c006": [
+      "e183",
+      "e184",
+      "e185",
+      "e187",
+      "e188",
+      "e189",
+      "e190",
+      "e191",
+      "e192",
+      "e37"
+    ],
+    "vid000_c065": [
+      "e193",
+      "e194",
+      "e195",
+      "e196",
+      "e197",
+      "e198",
+      "e199",
+      "e200",
+      "e201",
+      "e202",
+      "e83",
+      "e86",
+      "e87"
+    ],
+    "vid000_c066": [
+      "e100",
+      "e103",
+      "e198",
+      "e199",
+      "e200",
+      "e201",
+      "e202",
+      "e203",
+      "e204",
+      "e205",
+      "e206",
+      "e207",
+      "e208",
+      "e209",
+      "e210",
+      "e211",
+      "e212",
+      "e213",
+      "e214",
+      "e83",
+      "e86",
+      "e87",
+      "e88",
+      "e91",
+      "e92",
+      "e99"
+    ],
+    "vid000_c067": [
+      "e166",
+      "e215",
+      "e216",
+      "e217",
+      "e75"
+    ],
+    "vid000_c068": [
+      "e75"
+    ]
+  },
+  "entity_to_chunks": {
+    "e1": [
+      "vid000_c013",
+      "vid000_c016",
+      "vid000_c036",
+      "vid000_c069"
+    ],
+    "e2": [
+      "vid000_c001",
+      "vid000_c002",
+      "vid000_c003",
+      "vid000_c004",
+      "vid000_c005",
+      "vid000_c006",
+      "vid000_c007",
+      "vid000_c008",
+      "vid000_c009",
+      "vid000_c011",
+      "vid000_c012",
+      "vid000_c013",
+      "vid000_c014",
+      "vid000_c015",
+      "vid000_c016",
+      "vid000_c025",
+      "vid000_c026",
+      "vid000_c027",
+      "vid000_c028",
+      "vid000_c032",
+      "vid000_c033",
+      "vid000_c034",
+      "vid000_c035",
+      "vid000_c069",
+      "vid001_c001",
+      "vid001_c002",
+      "vid001_c003"
+    ],
+    "e3": [
+      "vid000_c012",
+      "vid000_c013",
+      "vid000_c014",
+      "vid000_c015",
+      "vid000_c016",
+      "vid000_c018",
+      "vid000_c020",
+      "vid000_c025",
+      "vid000_c026",
+      "vid000_c027",
+      "vid000_c028",
+      "vid000_c029",
+      "vid000_c030",
+      "vid000_c031",
+      "vid000_c032",
+      "vid000_c038",
+      "vid000_c046",
+      "vid000_c048",
+      "vid000_c049",
+      "vid000_c052",
+      "vid000_c053",
+      "vid000_c054",
+      "vid000_c055",
+      "vid000_c056",
+      "vid000_c069",
+      "vid001_c001"
+    ],
+    "e4": [
+      "vid000_c014"
+    ],
+    "e5": [
+      "vid000_c010",
+      "vid000_c015"
+    ],
+    "e10": [
+      "vid000_c001",
+      "vid000_c004",
+      "vid000_c005",
+      "vid000_c012",
+      "vid000_c025",
+      "vid000_c027",
+      "vid000_c028",
+      "vid000_c029",
+      "vid000_c030",
+      "vid000_c031",
+      "vid000_c032"
+    ],
+    "e11": [
+      "vid000_c001",
+      "vid000_c005",
+      "vid000_c010"
+    ],
+    "e6": [
+      "vid000_c001"
+    ],
+    "e7": [
+      "vid000_c001"
+    ],
+    "e8": [
+      "vid000_c001"
+    ],
+    "e9": [
+      "vid000_c001",
+      "vid000_c025"
+    ],
+    "e12": [
+      "vid000_c002",
+      "vid000_c005"
+    ],
+    "e13": [
+      "vid000_c002",
+      "vid000_c007",
+      "vid000_c008",
+      "vid000_c018",
+      "vid000_c057",
+      "vid000_c058",
+      "vid000_c059"
+    ],
+    "e14": [
+      "vid000_c004",
+      "vid000_c005",
+      "vid000_c006"
+    ],
+    "e15": [
+      "vid000_c005"
+    ],
+    "e16": [
+      "vid000_c005"
+    ],
+    "e17": [
+      "vid000_c005",
+      "vid000_c006"
+    ],
+    "e18": [
+      "vid000_c005",
+      "vid000_c006"
+    ],
+    "e19": [
+      "vid000_c005",
+      "vid000_c006"
+    ],
+    "e20": [
+      "vid000_c005",
+      "vid000_c006"
+    ],
+    "e21": [
+      "vid000_c009"
+    ],
+    "e22": [
+      "vid000_c009"
+    ],
+    "e23": [
+      "vid000_c009",
+      "vid000_c012",
+      "vid000_c031"
+    ],
+    "e24": [
+      "vid000_c009",
+      "vid000_c010"
+    ],
+    "e25": [
+      "vid000_c009",
+      "vid000_c010",
+      "vid000_c011",
+      "vid000_c033",
+      "vid000_c034"
+    ],
+    "e26": [
+      "vid000_c009",
+      "vid000_c063"
+    ],
+    "e27": [
+      "vid000_c009"
+    ],
+    "e28": [
+      "vid000_c009"
+    ],
+    "e29": [
+      "vid000_c010"
+    ],
+    "e30": [
+      "vid000_c010"
+    ],
+    "e31": [
+      "vid000_c011"
+    ],
+    "e32": [
+      "vid000_c012"
+    ],
+    "e33": [
+      "vid000_c012"
+    ],
+    "e34": [
+      "vid000_c012"
+    ],
+    "e35": [
+      "vid000_c017",
+      "vid000_c019",
+      "vid000_c020",
+      "vid000_c035",
+      "vid000_c038",
+      "vid000_c039",
+      "vid000_c045"
+    ],
+    "e36": [
+      "vid000_c017"
+    ],
+    "e37": [
+      "vid000_c018",
+      "vid001_c006"
+    ],
+    "e38": [
+      "vid000_c019"
+    ],
+    "e39": [
+      "vid000_c020",
+      "vid000_c021",
+      "vid000_c038"
+    ],
+    "e40": [
+      "vid000_c026",
+      "vid000_c027"
+    ],
+    "e41": [
+      "vid000_c027"
+    ],
+    "e42": [
+      "vid000_c027"
+    ],
+    "e43": [
+      "vid000_c033",
+      "vid000_c034",
+      "vid000_c040"
+    ],
+    "e44": [
+      "vid000_c036",
+      "vid000_c037"
+    ],
+    "e45": [
+      "vid000_c041"
+    ],
+    "e46": [
+      "vid000_c041"
+    ],
+    "e47": [
+      "vid000_c041",
+      "vid000_c043"
+    ],
+    "e48": [
+      "vid000_c042"
+    ],
+    "e49": [
+      "vid000_c042",
+      "vid000_c043"
+    ],
+    "e50": [
+      "vid000_c044"
+    ],
+    "e51": [
+      "vid000_c044"
+    ],
+    "e52": [
+      "vid000_c029"
+    ],
+    "e53": [
+      "vid000_c029"
+    ],
+    "e54": [
+      "vid000_c029",
+      "vid000_c030"
+    ],
+    "e55": [
+      "vid000_c031"
+    ],
+    "e56": [
+      "vid000_c031"
+    ],
+    "e57": [
+      "vid000_c032"
+    ],
+    "e58": [
+      "vid000_c045"
+    ],
+    "e59": [
+      "vid000_c045"
+    ],
+    "e60": [
+      "vid000_c022",
+      "vid000_c045",
+      "vid000_c064"
+    ],
+    "e61": [
+      "vid000_c045"
+    ],
+    "e62": [
+      "vid000_c046"
+    ],
+    "e63": [
+      "vid000_c046"
+    ],
+    "e64": [
+      "vid000_c047"
+    ],
+    "e65": [
+      "vid000_c047"
+    ],
+    "e66": [
+      "vid000_c047"
+    ],
+    "e67": [
+      "vid000_c048"
+    ],
+    "e68": [
+      "vid000_c048"
+    ],
+    "e69": [
+      "vid000_c049"
+    ],
+    "e70": [
+      "vid000_c049"
+    ],
+    "e71": [
+      "vid000_c049"
+    ],
+    "e72": [
+      "vid000_c049"
+    ],
+    "e73": [
+      "vid000_c049"
+    ],
+    "e74": [
+      "vid000_c049"
+    ],
+    "e75": [
+      "vid000_c049",
+      "vid000_c050",
+      "vid000_c051",
+      "vid000_c067",
+      "vid000_c068"
+    ],
+    "e76": [
+      "vid000_c050"
+    ],
+    "e77": [
+      "vid000_c051",
+      "vid000_c061",
+      "vid000_c062"
+    ],
+    "e78": [
+      "vid000_c052"
+    ],
+    "e79": [
+      "vid000_c021"
+    ],
+    "e80": [
+      "vid000_c021"
+    ],
+    "e81": [
+      "vid000_c021"
+    ],
+    "e82": [
+      "vid000_c021"
+    ],
+    "e83": [
+      "vid000_c021",
+      "vid000_c065",
+      "vid000_c066"
+    ],
+    "e84": [
+      "vid000_c021"
+    ],
+    "e85": [
+      "vid000_c021"
+    ],
+    "e86": [
+      "vid000_c021",
+      "vid000_c065",
+      "vid000_c066"
+    ],
+    "e87": [
+      "vid000_c021",
+      "vid000_c065",
+      "vid000_c066"
+    ],
+    "e88": [
+      "vid000_c021",
+      "vid000_c066"
+    ],
+    "e89": [
+      "vid000_c021"
+    ],
+    "e100": [
+      "vid000_c022",
+      "vid000_c066"
+    ],
+    "e101": [
+      "vid000_c022"
+    ],
+    "e102": [
+      "vid000_c022"
+    ],
+    "e103": [
+      "vid000_c022",
+      "vid000_c066"
+    ],
+    "e104": [
+      "vid000_c022"
+    ],
+    "e105": [
+      "vid000_c022"
+    ],
+    "e106": [
+      "vid000_c022"
+    ],
+    "e107": [
+      "vid000_c022"
+    ],
+    "e108": [
+      "vid000_c022"
+    ],
+    "e109": [
+      "vid000_c022"
+    ],
+    "e110": [
+      "vid000_c022",
+      "vid000_c023"
+    ],
+    "e111": [
+      "vid000_c022",
+      "vid000_c023"
+    ],
+    "e112": [
+      "vid000_c022",
+      "vid000_c023"
+    ],
+    "e113": [
+      "vid000_c022",
+      "vid000_c023"
+    ],
+    "e114": [
+      "vid000_c022",
+      "vid000_c023"
+    ],
+    "e115": [
+      "vid000_c022",
+      "vid000_c023"
+    ],
+    "e116": [
+      "vid000_c022",
+      "vid000_c023"
+    ],
+    "e117": [
+      "vid000_c022",
+      "vid000_c023"
+    ],
+    "e118": [
+      "vid000_c022",
+      "vid000_c023"
+    ],
+    "e119": [
+      "vid000_c022"
+    ],
+    "e120": [
+      "vid000_c022",
+      "vid000_c023"
+    ],
+    "e121": [
+      "vid000_c022",
+      "vid000_c023"
+    ],
+    "e122": [
+      "vid000_c022",
+      "vid000_c023"
+    ],
+    "e123": [
+      "vid000_c022",
+      "vid000_c023"
+    ],
+    "e90": [
+      "vid000_c022"
+    ],
+    "e91": [
+      "vid000_c022",
+      "vid000_c066"
+    ],
+    "e92": [
+      "vid000_c022",
+      "vid000_c066"
+    ],
+    "e93": [
+      "vid000_c022"
+    ],
+    "e94": [
+      "vid000_c022"
+    ],
+    "e95": [
+      "vid000_c022"
+    ],
+    "e96": [
+      "vid000_c022"
+    ],
+    "e97": [
+      "vid000_c022"
+    ],
+    "e98": [
+      "vid000_c022"
+    ],
+    "e99": [
+      "vid000_c022",
+      "vid000_c066"
+    ],
+    "e124": [
+      "vid000_c023"
+    ],
+    "e125": [
+      "vid000_c023"
+    ],
+    "e126": [
+      "vid000_c023"
+    ],
+    "e127": [
+      "vid000_c023"
+    ],
+    "e128": [
+      "vid000_c023"
+    ],
+    "e129": [
+      "vid000_c023"
+    ],
+    "e130": [
+      "vid000_c023"
+    ],
+    "e131": [
+      "vid000_c023"
+    ],
+    "e132": [
+      "vid000_c023"
+    ],
+    "e133": [
+      "vid000_c023"
+    ],
+    "e134": [
+      "vid000_c023"
+    ],
+    "e135": [
+      "vid000_c023"
+    ],
+    "e136": [
+      "vid000_c023"
+    ],
+    "e137": [
+      "vid000_c023"
+    ],
+    "e138": [
+      "vid000_c023"
+    ],
+    "e139": [
+      "vid000_c023"
+    ],
+    "e140": [
+      "vid000_c023"
+    ],
+    "e141": [
+      "vid000_c023"
+    ],
+    "e142": [
+      "vid000_c023"
+    ],
+    "e143": [
+      "vid000_c024"
+    ],
+    "e144": [
+      "vid000_c024"
+    ],
+    "e145": [
+      "vid000_c024"
+    ],
+    "e146": [
+      "vid000_c024"
+    ],
+    "e147": [
+      "vid000_c024"
+    ],
+    "e148": [
+      "vid000_c024"
+    ],
+    "e149": [
+      "vid000_c024"
+    ],
+    "e150": [
+      "vid000_c024"
+    ],
+    "e151": [
+      "vid000_c024"
+    ],
+    "e152": [
+      "vid000_c024"
+    ],
+    "e153": [
+      "vid000_c024"
+    ],
+    "e154": [
+      "vid000_c024"
+    ],
+    "e155": [
+      "vid000_c024"
+    ],
+    "e156": [
+      "vid000_c024"
+    ],
+    "e157": [
+      "vid000_c024"
+    ],
+    "e158": [
+      "vid000_c057",
+      "vid000_c058"
+    ],
+    "e159": [
+      "vid000_c053"
+    ],
+    "e160": [
+      "vid000_c053",
+      "vid000_c054"
+    ],
+    "e161": [
+      "vid000_c053"
+    ],
+    "e162": [
+      "vid000_c054",
+      "vid000_c055"
+    ],
+    "e163": [
+      "vid000_c056"
+    ],
+    "e164": [
+      "vid000_c061",
+      "vid000_c062",
+      "vid000_c063"
+    ],
+    "e165": [
+      "vid000_c061"
+    ],
+    "e166": [
+      "vid000_c061",
+      "vid000_c067"
+    ],
+    "e167": [
+      "vid000_c064"
+    ],
+    "e168": [
+      "vid000_c064"
+    ],
+    "e169": [
+      "vid000_c069"
+    ],
+    "e170": [
+      "vid001_c002"
+    ],
+    "e171": [
+      "vid001_c003"
+    ],
+    "e172": [
+      "vid001_c004"
+    ],
+    "e173": [
+      "vid001_c004"
+    ],
+    "e174": [
+      "vid001_c004"
+    ],
+    "e175": [
+      "vid001_c004"
+    ],
+    "e176": [
+      "vid001_c004"
+    ],
+    "e177": [
+      "vid001_c004"
+    ],
+    "e178": [
+      "vid001_c004"
+    ],
+    "e179": [
+      "vid001_c004",
+      "vid001_c005"
+    ],
+    "e180": [
+      "vid001_c004",
+      "vid001_c005"
+    ],
+    "e181": [
+      "vid001_c005"
+    ],
+    "e182": [
+      "vid001_c005"
+    ],
+    "e183": [
+      "vid001_c005",
+      "vid001_c006"
+    ],
+    "e184": [
+      "vid001_c005",
+      "vid001_c006"
+    ],
+    "e185": [
+      "vid001_c005",
+      "vid001_c006"
+    ],
+    "e186": [
+      "vid001_c005"
+    ],
+    "e187": [
+      "vid001_c005",
+      "vid001_c006"
+    ],
+    "e188": [
+      "vid001_c005",
+      "vid001_c006"
+    ],
+    "e189": [
+      "vid001_c006"
+    ],
+    "e190": [
+      "vid001_c006"
+    ],
+    "e191": [
+      "vid001_c006"
+    ],
+    "e192": [
+      "vid001_c006"
+    ],
+    "e193": [
+      "vid000_c065"
+    ],
+    "e194": [
+      "vid000_c065"
+    ],
+    "e195": [
+      "vid000_c065"
+    ],
+    "e196": [
+      "vid000_c065"
+    ],
+    "e197": [
+      "vid000_c065"
+    ],
+    "e198": [
+      "vid000_c065",
+      "vid000_c066"
+    ],
+    "e199": [
+      "vid000_c065",
+      "vid000_c066"
+    ],
+    "e200": [
+      "vid000_c065",
+      "vid000_c066"
+    ],
+    "e201": [
+      "vid000_c065",
+      "vid000_c066"
+    ],
+    "e202": [
+      "vid000_c065",
+      "vid000_c066"
+    ],
+    "e203": [
+      "vid000_c066"
+    ],
+    "e204": [
+      "vid000_c066"
+    ],
+    "e205": [
+      "vid000_c066"
+    ],
+    "e206": [
+      "vid000_c066"
+    ],
+    "e207": [
+      "vid000_c066"
+    ],
+    "e208": [
+      "vid000_c066"
+    ],
+    "e209": [
+      "vid000_c066"
+    ],
+    "e210": [
+      "vid000_c066"
+    ],
+    "e211": [
+      "vid000_c066"
+    ],
+    "e212": [
+      "vid000_c066"
+    ],
+    "e213": [
+      "vid000_c066"
+    ],
+    "e214": [
+      "vid000_c066"
+    ],
+    "e215": [
+      "vid000_c067"
+    ],
+    "e216": [
+      "vid000_c067"
+    ],
+    "e217": [
+      "vid000_c067"
+    ]
+  },
+  "relation_to_chunks": {
+    "e1|about|e3": [
+      "vid000_c013",
+      "vid000_c016"
+    ],
+    "e2|supports|e3": [
+      "vid000_c012",
+      "vid000_c013",
+      "vid000_c025",
+      "vid000_c026",
+      "vid000_c069",
+      "vid001_c001"
+    ],
+    "e4|about|e2": [
+      "vid000_c014"
+    ],
+    "e2|about|e3": [
+      "vid000_c015",
+      "vid000_c016",
+      "vid000_c027"
+    ],
+    "e5|about|e3": [
+      "vid000_c015"
+    ],
+    "e10|about|e6": [
+      "vid000_c001"
+    ],
+    "e11|supports|e2": [
+      "vid000_c001"
+    ],
+    "e12|about|e2": [
+      "vid000_c002"
+    ],
+    "e12|investigates|e13": [
+      "vid000_c002"
+    ],
+    "e2|about|e2": [
+      "vid000_c003"
+    ],
+    "e14|opposes|e2": [
+      "vid000_c004"
+    ],
+    "e10|about|e2": [
+      "vid000_c004"
+    ],
+    "e2|supports|e10": [
+      "vid000_c005"
+    ],
+    "e14|accuses|e15": [
+      "vid000_c005"
+    ],
+    "e17|opposes|e14": [
+      "vid000_c006"
+    ],
+    "e20|criticizes|e14": [
+      "vid000_c006"
+    ],
+    "e13|criticizes|e2": [
+      "vid000_c007"
+    ],
+    "e2|supports|e13": [
+      "vid000_c008"
+    ],
+    "e2|supports|e21": [
+      "vid000_c009"
+    ],
+    "e2|opposes|e25": [
+      "vid000_c009",
+      "vid000_c033",
+      "vid000_c034"
+    ],
+    "e2|about|e28": [
+      "vid000_c009"
+    ],
+    "e29|announces|e24": [
+      "vid000_c010"
+    ],
+    "e24|alleges|e11": [
+      "vid000_c010"
+    ],
+    "e30|honors|e11": [
+      "vid000_c010"
+    ],
+    "e5|about|e25": [
+      "vid000_c010"
+    ],
+    "e2|about|e31": [
+      "vid000_c011"
+    ],
+    "e2|supports|e25": [
+      "vid000_c011"
+    ],
+    "e32|announces|e2": [
+      "vid000_c012"
+    ],
+    "e2|about|e10": [
+      "vid000_c012",
+      "vid000_c027"
+    ],
+    "e35|about|e36": [
+      "vid000_c017"
+    ],
+    "e13|criticizes|e3": [
+      "vid000_c018"
+    ],
+    "e3|supports|e37": [
+      "vid000_c018"
+    ],
+    "e38|supports|e35": [
+      "vid000_c019"
+    ],
+    "e3|supports|e35": [
+      "vid000_c020"
+    ],
+    "e3|supports|e39": [
+      "vid000_c020"
+    ],
+    "e10|about|e3": [
+      "vid000_c025",
+      "vid000_c028"
+    ],
+    "e40|about|e3": [
+      "vid000_c026"
+    ],
+    "e2|supports|e43": [
+      "vid000_c033",
+      "vid000_c034"
+    ],
+    "e35|about|e2": [
+      "vid000_c035"
+    ],
+    "e1|about|e44": [
+      "vid000_c036"
+    ],
+    "e10|linked_to|e3": [
+      "vid000_c029",
+      "vid000_c031",
+      "vid000_c032"
+    ],
+    "e10|about|e52": [
+      "vid000_c029"
+    ],
+    "e10|opposes|e53": [
+      "vid000_c029"
+    ],
+    "e10|opposes|e54": [
+      "vid000_c030"
+    ],
+    "e10|supports|e3": [
+      "vid000_c030"
+    ],
+    "e3|supports|e10": [
+      "vid000_c031"
+    ],
+    "e10|announces|e2": [
+      "vid000_c032"
+    ],
+    "e35|about|e3": [
+      "vid000_c038"
+    ],
+    "e39|announces|e3": [
+      "vid000_c038"
+    ],
+    "e35|about|e60": [
+      "vid000_c045"
+    ],
+    "e59|supports|e35": [
+      "vid000_c045"
+    ],
+    "e3|supports|e62": [
+      "vid000_c046"
+    ],
+    "e62|about|e63": [
+      "vid000_c046"
+    ],
+    "e66|criticizes|e64": [
+      "vid000_c047"
+    ],
+    "e65|about|e66": [
+      "vid000_c047"
+    ],
+    "e67|linked_to|e68": [
+      "vid000_c048"
+    ],
+    "e3|supports|e67": [
+      "vid000_c048"
+    ],
+    "e75|opposes|e3": [
+      "vid000_c049"
+    ],
+    "e75|accuses|e76": [
+      "vid000_c050"
+    ],
+    "e75|criticizes|e77": [
+      "vid000_c051"
+    ],
+    "e3|supports|e78": [
+      "vid000_c052"
+    ],
+    "e13|criticizes|e158": [
+      "vid000_c057",
+      "vid000_c058"
+    ],
+    "e13|criticizes|e13": [
+      "vid000_c059"
+    ],
+    "e3|supports|e159": [
+      "vid000_c053"
+    ],
+    "e3|supports|e160": [
+      "vid000_c053"
+    ],
+    "e3|about|e161": [
+      "vid000_c053"
+    ],
+    "e3|criticizes|e160": [
+      "vid000_c054"
+    ],
+    "e3|criticizes|e162": [
+      "vid000_c054"
+    ],
+    "e3|supports|e162": [
+      "vid000_c055"
+    ],
+    "e3|criticizes|e163": [
+      "vid000_c056"
+    ],
+    "e164|supports|e165": [
+      "vid000_c061"
+    ],
+    "e164|about|e166": [
+      "vid000_c061"
+    ],
+    "e77|criticizes|e164": [
+      "vid000_c061"
+    ],
+    "e164|supports|e77": [
+      "vid000_c062"
+    ],
+    "e164|supports|e26": [
+      "vid000_c063"
+    ],
+    "e167|supports|e60": [
+      "vid000_c064"
+    ],
+    "e168|linked_to|e60": [
+      "vid000_c064"
+    ],
+    "e2|about|e1": [
+      "vid000_c069"
+    ],
+    "e2|about|e170": [
+      "vid001_c002"
+    ],
+    "e2|about|e171": [
+      "vid001_c003"
+    ],
+    "e215|about|e75": [
+      "vid000_c067"
+    ]
+  }
+}

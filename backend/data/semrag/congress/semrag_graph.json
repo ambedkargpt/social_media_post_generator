@@ -1,0 +1,2666 @@
+{
+  "version": 1,
+  "updated_at": "2026-08-24T09:51:23.938291+00:00",
+  "entities": [
+    {
+      "entity_id": "e1",
+      "canonical_name": "गौतम विशाल",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e2",
+      "canonical_name": "एनएचआई",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e3",
+      "canonical_name": "एक्सप्रेसवे",
+      "entity_type": "event",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e4",
+      "canonical_name": "पीएनसी इंफ्राटेक लिमिटेड",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e5",
+      "canonical_name": "नितिन गडकरी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e6",
+      "canonical_name": "मोदी जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e7",
+      "canonical_name": "राहुल गांधी",
+      "entity_type": "person",
+      "aliases": [
+        "Rahul Gandhi"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e8",
+      "canonical_name": "भाजपा",
+      "entity_type": "organization",
+      "aliases": [
+        "BJP"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e9",
+      "canonical_name": "प्रयागराज",
+      "entity_type": "location",
+      "aliases": [
+        "इलाहाबाद"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e10",
+      "canonical_name": "छात्रों की गूंज",
+      "entity_type": "event",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e11",
+      "canonical_name": "Modi ji",
+      "entity_type": "person",
+      "aliases": [
+        "Modi"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e12",
+      "canonical_name": "BJP",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e13",
+      "canonical_name": "Lucknow-Agra expressway",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e14",
+      "canonical_name": "Nashik",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e15",
+      "canonical_name": "Mumbai-Nashik Highway",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e16",
+      "canonical_name": "Dehradun-Ponta Sahib highway",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e17",
+      "canonical_name": "Chhattisgarh",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e18",
+      "canonical_name": "Pune",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e19",
+      "canonical_name": "Kanpur-Lucknow Expressway",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e20",
+      "canonical_name": "National Highway Authority of India",
+      "entity_type": "organization",
+      "aliases": [
+        "NHI"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e21",
+      "canonical_name": "Modi government",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e22",
+      "canonical_name": "Uttar Pradesh",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e23",
+      "canonical_name": "₹4200 करोड़",
+      "entity_type": "policy",
+      "aliases": [],
+      "confidence": 0.7
+    },
+    {
+      "entity_id": "e24",
+      "canonical_name": "छात्रों की गूंज",
+      "entity_type": "program",
+      "aliases": [],
+      "confidence": 0.7
+    },
+    {
+      "entity_id": "e25",
+      "canonical_name": "भारतीय परीक्षा प्रणाली",
+      "entity_type": "claim_topic",
+      "aliases": [],
+      "confidence": 0.6
+    },
+    {
+      "entity_id": "e26",
+      "canonical_name": "मुस्कान",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e27",
+      "canonical_name": "दिल्ली",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e28",
+      "canonical_name": "सरकार",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e29",
+      "canonical_name": "धर्मेंद्र प्रधान",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e30",
+      "canonical_name": "छात्र",
+      "entity_type": "claim_topic",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e31",
+      "canonical_name": "RSS",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 0.6
+    },
+    {
+      "entity_id": "e32",
+      "canonical_name": "Amit Shah",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e33",
+      "canonical_name": "कोटा",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e34",
+      "canonical_name": "देहरादून",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e35",
+      "canonical_name": "इलाहाबाद",
+      "entity_type": "location",
+      "aliases": [
+        "प्रयागराज"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e36",
+      "canonical_name": "उत्तर प्रदेश",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e37",
+      "canonical_name": "गृह मंत्री",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e38",
+      "canonical_name": "नोएडा पुलिस",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e39",
+      "canonical_name": "15 साल की बच्ची",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.7
+    },
+    {
+      "entity_id": "e40",
+      "canonical_name": "प्रशासन",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e41",
+      "canonical_name": "काले अंग्रेज़",
+      "entity_type": "claim_topic",
+      "aliases": [],
+      "confidence": 0.7
+    },
+    {
+      "entity_id": "e42",
+      "canonical_name": "राजपाल गौतम",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e43",
+      "canonical_name": "छात्रों",
+      "entity_type": "claim_topic",
+      "aliases": [],
+      "confidence": 0.7
+    },
+    {
+      "entity_id": "e44",
+      "canonical_name": "राजेंद्र पाल गौतम",
+      "entity_type": "person",
+      "aliases": [
+        "रजेंद्र गौतम"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e45",
+      "canonical_name": "भारतीय जनता पार्टी",
+      "entity_type": "organization",
+      "aliases": [
+        "BJP"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e46",
+      "canonical_name": "झारखंड",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e47",
+      "canonical_name": "कर्नाटक",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 0.6
+    },
+    {
+      "entity_id": "e48",
+      "canonical_name": "पंजाब",
+      "entity_type": "location",
+      "aliases": [],
+      "confidence": 0.6
+    },
+    {
+      "entity_id": "e49",
+      "canonical_name": "कांग्रेस",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e50",
+      "canonical_name": "राहुल जी",
+      "entity_type": "person",
+      "aliases": [
+        "राहुल गांधी"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e51",
+      "canonical_name": "राहुल गांधी जी",
+      "entity_type": "person",
+      "aliases": [
+        "राहुल जी"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e52",
+      "canonical_name": "युवा क्रांति",
+      "entity_type": "claim_topic",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e53",
+      "canonical_name": "संविधान",
+      "entity_type": "law",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e54",
+      "canonical_name": "कानून",
+      "entity_type": "law",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e55",
+      "canonical_name": "मोदी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e56",
+      "canonical_name": "एनएचएआई",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e57",
+      "canonical_name": "Lucknow–Kanpur Expressway",
+      "entity_type": "event",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e58",
+      "canonical_name": "प्राइम मिनिस्टर",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e59",
+      "canonical_name": "होम मिनिस्टर",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e60",
+      "canonical_name": "विद्यार्थियों",
+      "entity_type": "claim_topic",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e61",
+      "canonical_name": "पुलिस",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e62",
+      "canonical_name": "उपसभापति महोदय",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e63",
+      "canonical_name": "दिल्ली विधानसभा",
+      "entity_type": "institution",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e64",
+      "canonical_name": "लोकसभा",
+      "entity_type": "institution",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e65",
+      "canonical_name": "राज्यसभा",
+      "entity_type": "institution",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e66",
+      "canonical_name": "बेरोज़गारी",
+      "entity_type": "claim_topic",
+      "aliases": [],
+      "confidence": 0.7
+    },
+    {
+      "entity_id": "e67",
+      "canonical_name": "एमएसएमई",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 0.7
+    },
+    {
+      "entity_id": "e68",
+      "canonical_name": "कॉर्पोरेट हाउसेस",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 0.7
+    },
+    {
+      "entity_id": "e69",
+      "canonical_name": "राम मंदिर",
+      "entity_type": "claim_topic",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e70",
+      "canonical_name": "विश्व हिंदू परिषद",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e71",
+      "canonical_name": "महपाल सिंह",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e72",
+      "canonical_name": "अभिषेक उपाध्याय",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e73",
+      "canonical_name": "पप्पू यादव",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e74",
+      "canonical_name": "खरगे जी",
+      "entity_type": "person",
+      "aliases": [
+        "Kharge Ji"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e75",
+      "canonical_name": "विद्यार्थियों",
+      "entity_type": "person",
+      "aliases": [
+        "छात्र",
+        "स्टूडेंट्स"
+      ],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e76",
+      "canonical_name": "पार्लियामेंट",
+      "entity_type": "institution",
+      "aliases": [
+        "सदन"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e77",
+      "canonical_name": "बीजेपी",
+      "entity_type": "organization",
+      "aliases": [
+        "भाजपा"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e78",
+      "canonical_name": "सुप्रीम कोर्ट",
+      "entity_type": "institution",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e79",
+      "canonical_name": "संजय जसवाल",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e80",
+      "canonical_name": "नेहरू जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e81",
+      "canonical_name": "इंदिरा जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e82",
+      "canonical_name": "मुलायम सिंह जी",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e83",
+      "canonical_name": "KC Venugopal",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e84",
+      "canonical_name": "Parliament",
+      "entity_type": "institution",
+      "aliases": [],
+      "confidence": 0.9
+    },
+    {
+      "entity_id": "e85",
+      "canonical_name": "students",
+      "entity_type": "claim_topic",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e86",
+      "canonical_name": "parents",
+      "entity_type": "claim_topic",
+      "aliases": [],
+      "confidence": 0.8
+    },
+    {
+      "entity_id": "e87",
+      "canonical_name": "Pawan Khera",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e88",
+      "canonical_name": "Pramod Tiwari",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e89",
+      "canonical_name": "Rahul Gandhi",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e90",
+      "canonical_name": "Nirav Modi",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e91",
+      "canonical_name": "Young India Skills University",
+      "entity_type": "institution",
+      "aliases": [
+        "वाईआईएसयू"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e92",
+      "canonical_name": "Telangana Government",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e93",
+      "canonical_name": "Anand Mahindra",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e94",
+      "canonical_name": "GMR",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e95",
+      "canonical_name": "Flipkart",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e96",
+      "canonical_name": "Apollo Hospital",
+      "entity_type": "organization",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e97",
+      "canonical_name": "Supriya Srinate",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e98",
+      "canonical_name": "Narendra Modi",
+      "entity_type": "person",
+      "aliases": [],
+      "confidence": 1.0
+    },
+    {
+      "entity_id": "e99",
+      "canonical_name": "Ram Mandir",
+      "entity_type": "event",
+      "aliases": [],
+      "confidence": 1.0
+    }
+  ],
+  "relations": [
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e1",
+      "relation": "linked_to",
+      "tail_entity_id": "e2",
+      "evidence_chunk_id": "vid001_c005",
+      "evidence_text": "एनएचआई के रीजनल अफसर हैं",
+      "confidence": 1.0
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e2",
+      "relation": "supports",
+      "tail_entity_id": "e3",
+      "evidence_chunk_id": "vid001_c005",
+      "evidence_text": "एनएचआई के अफसर बड़ी बेशर्मी से एक्सप्रेसवे की खूबियाँ गिना रहे हैं",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e2",
+      "relation": "opposes",
+      "tail_entity_id": "e4",
+      "evidence_chunk_id": "vid001_c006",
+      "evidence_text": "एनएचआई के कर्मचारियों और एक्सप्रेसवे का निर्माण करने वाली कंपनी पीएनसी इंफ्राटेक लिमिटेड के गड़बड़झाले का है",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e5",
+      "relation": "announces",
+      "tail_entity_id": "e3",
+      "evidence_chunk_id": "vid001_c006",
+      "evidence_text": "गडकरी ने संसद में देश की जनता से वादा किया था",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e7",
+      "relation": "supports",
+      "tail_entity_id": "e10",
+      "evidence_chunk_id": "vid007_c001",
+      "evidence_text": "छात्रों के मुद्दों को राहुल गांधी जी लगातार उठा रहे हैं।",
+      "confidence": 1.0
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e8",
+      "relation": "opposes",
+      "tail_entity_id": "e10",
+      "evidence_chunk_id": "vid007_c001",
+      "evidence_text": "भाजपा की सरकार ने भी प्रयास किया",
+      "confidence": 1.0
+    },
+    {
+      "relation_id": "r3",
+      "head_entity_id": "e10",
+      "relation": "happens_in",
+      "tail_entity_id": "e9",
+      "evidence_chunk_id": "vid007_c001",
+      "evidence_text": "छात्रों की गूंज कार्यक्रम इलाहाबाद में, प्रयागराज में 8 तारीख को होना तय हुआ。",
+      "confidence": 1.0
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e7",
+      "relation": "supports",
+      "tail_entity_id": "e10",
+      "evidence_chunk_id": "vid007_c002",
+      "evidence_text": "राहुल जी आएंगे और छात्रों की गूंज प्रोग्राम वहां होगा।",
+      "confidence": 1.0
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e8",
+      "relation": "opposes",
+      "tail_entity_id": "e10",
+      "evidence_chunk_id": "vid007_c002",
+      "evidence_text": "प्रशासन जिस तरीके से दबाव बनाकर उस प्रोग्राम को रद्द करवाने की कोशिश कर रहा है",
+      "confidence": 1.0
+    },
+    {
+      "relation_id": "r3",
+      "head_entity_id": "e10",
+      "relation": "happens_in",
+      "tail_entity_id": "e9",
+      "evidence_chunk_id": "vid007_c002",
+      "evidence_text": "प्रयागराज के कार्यक्रम का इंतज़ार कर रहे हैं।",
+      "confidence": 1.0
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e8",
+      "relation": "opposes",
+      "tail_entity_id": "e10",
+      "evidence_chunk_id": "vid007_c003",
+      "evidence_text": "उत्तर प्रदेश की सरकार दबाव बनाकर इस कार्यक्रम को रद्द करने की कोशिश कर रही है",
+      "confidence": 1.0
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e10",
+      "relation": "about",
+      "tail_entity_id": "e7",
+      "evidence_chunk_id": "vid007_c003",
+      "evidence_text": "हम छात्रों की गूंज आयोजित कर रहे हैं",
+      "confidence": 1.0
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e7",
+      "relation": "supports",
+      "tail_entity_id": "e10",
+      "evidence_chunk_id": "vid007_c004",
+      "evidence_text": "कार्यक्रम होगा, राहुल जी जाएंगे।",
+      "confidence": 1.0
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e8",
+      "relation": "opposes",
+      "tail_entity_id": "e10",
+      "evidence_chunk_id": "vid007_c004",
+      "evidence_text": "आप कानून को भी अपने हाथ में ले रहे हैं",
+      "confidence": 1.0
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e11",
+      "relation": "announces",
+      "tail_entity_id": "e12",
+      "evidence_chunk_id": "vid000_c001",
+      "evidence_text": "BJP has now introduced bamboo bridge technology",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e13",
+      "relation": "linked_to",
+      "tail_entity_id": "e11",
+      "evidence_chunk_id": "vid000_c001",
+      "evidence_text": "first successful demonstration is already underway on the Lucknow-Agra expressway",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r3",
+      "head_entity_id": "e14",
+      "relation": "about",
+      "tail_entity_id": "e11",
+      "evidence_chunk_id": "vid000_c001",
+      "evidence_text": "bamboo bridge technology in Nashik",
+      "confidence": 0.6
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e19",
+      "relation": "about",
+      "tail_entity_id": "e23",
+      "evidence_chunk_id": "vid001_c001",
+      "evidence_text": "₹4200 करोड़ की लागत से नेशनल हाईवे अथॉरिटी ऑफ इंडिया",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e20",
+      "relation": "announces",
+      "tail_entity_id": "e19",
+      "evidence_chunk_id": "vid001_c001",
+      "evidence_text": "इस एक्सप्रेसवे का उद्घाटन हुआ",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r3",
+      "head_entity_id": "e21",
+      "relation": "supports",
+      "tail_entity_id": "e19",
+      "evidence_chunk_id": "vid001_c001",
+      "evidence_text": "सरकार ने बड़ी सौगात दे दी",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e19",
+      "relation": "about",
+      "tail_entity_id": "e20",
+      "evidence_chunk_id": "vid001_c002",
+      "evidence_text": "एनएचआई के अधिकारी मौके पर पहुँचे",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e19",
+      "relation": "affects",
+      "tail_entity_id": "e19",
+      "evidence_chunk_id": "vid001_c003",
+      "evidence_text": "लखनऊ-कानपुर एक्सप्रेसवे का सियासी सच यही है",
+      "confidence": 0.6
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e7",
+      "relation": "announces",
+      "tail_entity_id": "e24",
+      "evidence_chunk_id": "vid002_c001",
+      "evidence_text": "द थर्ड एडिशन ऑफ़ छात्रों की गूंज इज़ कमिंग टू प्रयागराज",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e24",
+      "relation": "about",
+      "tail_entity_id": "e25",
+      "evidence_chunk_id": "vid002_c001",
+      "evidence_text": "स्टूडेंट्स एंड यूथ रेज़ देयर वॉइस अगेंस्ट पेपर लीक्स, अ ब्रोकन एजुकेशन सिस्टम",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e26",
+      "relation": "criticizes",
+      "tail_entity_id": "e28",
+      "evidence_chunk_id": "vid004_c001",
+      "evidence_text": "सरकार कुछ भी नहीं कर रही",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e26",
+      "relation": "about",
+      "tail_entity_id": "e27",
+      "evidence_chunk_id": "vid004_c001",
+      "evidence_text": "मैं बस इतना बताऊँगी दैट आई वाज़ वन ऑफ़ द पीसफुल प्रोटेस्टर्स एट दिल्ली जंतरमंतर",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e7",
+      "relation": "supports",
+      "tail_entity_id": "e30",
+      "evidence_chunk_id": "vid005_c001",
+      "evidence_text": "I stood with the students then and we stand with them now",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e7",
+      "relation": "requests",
+      "tail_entity_id": "e29",
+      "evidence_chunk_id": "vid005_c001",
+      "evidence_text": "I called for Dharmendra Pradhan's resignation",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r3",
+      "head_entity_id": "e7",
+      "relation": "opposes",
+      "tail_entity_id": "e31",
+      "evidence_chunk_id": "vid005_c001",
+      "evidence_text": "an end to RSS control over our public institutions",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e7",
+      "relation": "requests",
+      "tail_entity_id": "e32",
+      "evidence_chunk_id": "vid005_c002",
+      "evidence_text": "I demanded Amit Shah's resignation",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e7",
+      "relation": "supports",
+      "tail_entity_id": "e30",
+      "evidence_chunk_id": "vid005_c002",
+      "evidence_text": "I have condemned the brutal assault on peaceful students",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e7",
+      "relation": "supports",
+      "tail_entity_id": "e10",
+      "evidence_chunk_id": "vid008_c001",
+      "evidence_text": "छात्रों के मुद्दों को राहुल गांधी जी लगातार उठा रहे हैं।",
+      "confidence": 1.0
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e8",
+      "relation": "opposes",
+      "tail_entity_id": "e10",
+      "evidence_chunk_id": "vid008_c001",
+      "evidence_text": "भाजपा की सरकार ने भी प्रयास किया",
+      "confidence": 1.0
+    },
+    {
+      "relation_id": "r3",
+      "head_entity_id": "e33",
+      "relation": "happens_in",
+      "tail_entity_id": "e10",
+      "evidence_chunk_id": "vid008_c001",
+      "evidence_text": "पहला छात्रों की गूंज का कार्यक्रम कोटा में हुआ",
+      "confidence": 1.0
+    },
+    {
+      "relation_id": "r4",
+      "head_entity_id": "e34",
+      "relation": "happens_in",
+      "tail_entity_id": "e10",
+      "evidence_chunk_id": "vid008_c001",
+      "evidence_text": "दूसरा छात्रों की गूंज का कार्यक्रम, आप सभी को पता है, देहरादून में हुआ",
+      "confidence": 1.0
+    },
+    {
+      "relation_id": "r5",
+      "head_entity_id": "e35",
+      "relation": "happens_in",
+      "tail_entity_id": "e10",
+      "evidence_chunk_id": "vid008_c001",
+      "evidence_text": "तीसरा छात्रों की गूंज कार्यक्रम इलाहाबाद में प्रयागराज में 8 तारीख को होना तय हुआ",
+      "confidence": 1.0
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e7",
+      "relation": "supports",
+      "tail_entity_id": "e10",
+      "evidence_chunk_id": "vid007_c005",
+      "evidence_text": "हम लोग स्टूडेंट्स के साथ खड़े हैं। राहुल जी खड़े हैं। छात्रों की गूंज उन्होंने एक कार्यक्रम लॉन्च किया।",
+      "confidence": 1.0
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e36",
+      "relation": "about",
+      "tail_entity_id": "e10",
+      "evidence_chunk_id": "vid007_c005",
+      "evidence_text": "तो वहां जो एट्रोसिटीज़ हो रही हैं स्टूडेंट्स के ऊपर, तो जो हो रहा है वो हो ही रहा है।",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e7",
+      "relation": "announces",
+      "tail_entity_id": "e10",
+      "evidence_chunk_id": "vid007_c006",
+      "evidence_text": "जो छात्रों की गूंज के नाम से पूरे देश के अंदर 28 जगहों पर पहले प्रेस कॉन्फ्रेंस कर और उसके बाद कोटा से उसकी स्टार्टिंग हुई थी, देहरादून और अब इलाहाबाद।",
+      "confidence": 1.0
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e10",
+      "relation": "happens_in",
+      "tail_entity_id": "e33",
+      "evidence_chunk_id": "vid007_c006",
+      "evidence_text": "कोटा से उसकी स्टार्टिंग हुई थी, देहरादून और अब इलाहाबाद।",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r3",
+      "head_entity_id": "e10",
+      "relation": "happens_in",
+      "tail_entity_id": "e34",
+      "evidence_chunk_id": "vid007_c006",
+      "evidence_text": "कोटा से उसकी स्टार्टिंग हुई थी, देहरादून और अब इलाहाबाद।",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r4",
+      "head_entity_id": "e10",
+      "relation": "happens_in",
+      "tail_entity_id": "e35",
+      "evidence_chunk_id": "vid007_c006",
+      "evidence_text": "कोटा से उसकी स्टार्टिंग हुई थी, देहरादून और अब इलाहाबाद।",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e7",
+      "relation": "requests",
+      "tail_entity_id": "e37",
+      "evidence_chunk_id": "vid007_c007",
+      "evidence_text": "हम लगातार पार्लियामेंट के अंदर डिमांड कर रहे हैं कि गृह मंत्री जी आएं।",
+      "confidence": 1.0
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e38",
+      "relation": "accuses",
+      "tail_entity_id": "e39",
+      "evidence_chunk_id": "vid007_c007",
+      "evidence_text": "नोएडा पुलिस मुकदमा लिख देती है। 15 साल की बच्ची है।",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e40",
+      "relation": "affects",
+      "tail_entity_id": "e41",
+      "evidence_chunk_id": "vid007_c008",
+      "evidence_text": "अगर वह सोचते हैं कि वह तानाशाह हैं और वह कानून से भी ऊपर हैं, संविधान से भी ऊपर हैं, तो फिर जैसे अंग्रेज़ों के ख़िलाफ़ लड़े थे, वैसे ही इन काले अंग्रेज़ों के ख़िलाफ़ भी लड़ेंगे।",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e42",
+      "relation": "requests",
+      "tail_entity_id": "e43",
+      "evidence_chunk_id": "vid007_c009",
+      "evidence_text": "छात्रों के लिए काम कर रहे हैं। सरकार को उसमें सहयोग करना चाहिए।",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e45",
+      "relation": "opposes",
+      "tail_entity_id": "e30",
+      "evidence_chunk_id": "vid007_c010",
+      "evidence_text": "भारतीय जनता पार्टी घबरा गई है। वो छात्रों का सामना नहीं कर सकती।",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e30",
+      "relation": "about",
+      "tail_entity_id": "e46",
+      "evidence_chunk_id": "vid007_c011",
+      "evidence_text": "झारखंड पर प्रतिक्रिया क्यों नहीं आ रही है?",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e49",
+      "relation": "supports",
+      "tail_entity_id": "e46",
+      "evidence_chunk_id": "vid007_c012",
+      "evidence_text": "यह है कांग्रेस की जो आप कह रहे हैं कि हम लोग नहीं कर रहे हैं।",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e44",
+      "relation": "supports",
+      "tail_entity_id": "e30",
+      "evidence_chunk_id": "vid008_c005",
+      "evidence_text": "हम लोग स्टूडेंट्स के साथ खड़े हैं।",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e50",
+      "relation": "supports",
+      "tail_entity_id": "e30",
+      "evidence_chunk_id": "vid008_c005",
+      "evidence_text": "राहुल जी खड़े हैं।",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r3",
+      "head_entity_id": "e36",
+      "relation": "about",
+      "tail_entity_id": "e30",
+      "evidence_chunk_id": "vid008_c005",
+      "evidence_text": "तो वहां जो एट्रोसिटीज हो रही हैं स्टूडेंट्स के ऊपर",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e50",
+      "relation": "supports",
+      "tail_entity_id": "e30",
+      "evidence_chunk_id": "vid008_c006",
+      "evidence_text": "जो छात्रों की गूंज के नाम से पूरे देश के अंदर 28 जगहों पर पहले प्रेस कॉन्फ्रेंस कर",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e34",
+      "relation": "happens_in",
+      "tail_entity_id": "e30",
+      "evidence_chunk_id": "vid008_c006",
+      "evidence_text": "कार्यक्रम देहरादून में शिफ्ट कराया",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r3",
+      "head_entity_id": "e35",
+      "relation": "happens_in",
+      "tail_entity_id": "e30",
+      "evidence_chunk_id": "vid008_c006",
+      "evidence_text": "इसी तरीके का प्रयास ये इलाहाबाद के अंदर, प्रयागराज के अंदर भी कर रहे हैं",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e50",
+      "relation": "supports",
+      "tail_entity_id": "e30",
+      "evidence_chunk_id": "vid008_c007",
+      "evidence_text": "हमारा कार्यक्रम जो प्रयागराज के अंदर है, राहुल जी का, वो यथावत रहेगा",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e38",
+      "relation": "accuses",
+      "tail_entity_id": "e30",
+      "evidence_chunk_id": "vid008_c007",
+      "evidence_text": "आपने बर्बरता पूर्वक कार्रवाई क्यों की?",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e51",
+      "relation": "supports",
+      "tail_entity_id": "e52",
+      "evidence_chunk_id": "vid008_c008",
+      "evidence_text": "जो युवा क्रांति इस देश में उठी है, उसके नेता राहुल गांधी जी बनते हुए नज़र आ रहे हैं",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e45",
+      "relation": "opposes",
+      "tail_entity_id": "e53",
+      "evidence_chunk_id": "vid008_c009",
+      "evidence_text": "संविधान के ख़िलाफ़",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e45",
+      "relation": "opposes",
+      "tail_entity_id": "e54",
+      "evidence_chunk_id": "vid008_c009",
+      "evidence_text": "कानून से चले",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e46",
+      "relation": "affects",
+      "tail_entity_id": "e49",
+      "evidence_chunk_id": "vid008_c011",
+      "evidence_text": "यह है कांग्रेस की जो आप कह रहे हैं",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e55",
+      "relation": "announces",
+      "tail_entity_id": "e57",
+      "evidence_chunk_id": "vid010_c001",
+      "evidence_text": "ये है मोदी की नई टेक्नोलॉजी Lucknow–Kanpur Expressway",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e56",
+      "relation": "investigates",
+      "tail_entity_id": "e57",
+      "evidence_chunk_id": "vid010_c001",
+      "evidence_text": "एनएचएआई ने प्लास्टिक शीट डाले हुए हैं",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e58",
+      "relation": "requests",
+      "tail_entity_id": "e60",
+      "evidence_chunk_id": "vid011_c005",
+      "evidence_text": "विद्यार्थियों से आप माफ़ी माँगो",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e61",
+      "relation": "affects",
+      "tail_entity_id": "e60",
+      "evidence_chunk_id": "vid011_c005",
+      "evidence_text": "पेट गन चलाए, गैस छोड़ दिया, लाठी चार्ज की",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e28",
+      "relation": "affects",
+      "tail_entity_id": "e66",
+      "evidence_chunk_id": "vid012_c001",
+      "evidence_text": "बेरोज़गारी का आलम यह है",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e68",
+      "relation": "affects",
+      "tail_entity_id": "e67",
+      "evidence_chunk_id": "vid012_c002",
+      "evidence_text": "हमारे एमएसएमई के लिए गला कट हो रहा है",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e8",
+      "relation": "criticizes",
+      "tail_entity_id": "e70",
+      "evidence_chunk_id": "vid013_c001",
+      "evidence_text": "ट्रस्ट में क्यों भाजपा के लोग, विश्व हिंदू परिषद के लोग हैं?",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e71",
+      "relation": "alleges",
+      "tail_entity_id": "e70",
+      "evidence_chunk_id": "vid013_c001",
+      "evidence_text": "महपाल सिंह के बयान से तो और खुलासा हो गया",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e74",
+      "relation": "requests",
+      "tail_entity_id": "e59",
+      "evidence_chunk_id": "vid011_c001",
+      "evidence_text": "हम चाहते थे कि होम मिनिस्टर खुद सदन में आए",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e74",
+      "relation": "requests",
+      "tail_entity_id": "e58",
+      "evidence_chunk_id": "vid011_c001",
+      "evidence_text": "प्राइम मिनिस्टर आ रहे नहीं",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r3",
+      "head_entity_id": "e75",
+      "relation": "affects",
+      "tail_entity_id": "e74",
+      "evidence_chunk_id": "vid011_c001",
+      "evidence_text": "जो दुख विद्यार्थियों को आपने पहुँचाया है",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e74",
+      "relation": "requests",
+      "tail_entity_id": "e59",
+      "evidence_chunk_id": "vid011_c002",
+      "evidence_text": "हम आपकी हाज़िरी लोकसभा में और राज्यसभा में चाहते हैं",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e74",
+      "relation": "requests",
+      "tail_entity_id": "e58",
+      "evidence_chunk_id": "vid011_c002",
+      "evidence_text": "आप और प्रधानमंत्री हाउस में आइए और बोलिए",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e74",
+      "relation": "requests",
+      "tail_entity_id": "e59",
+      "evidence_chunk_id": "vid011_c003",
+      "evidence_text": "आपको सदन में बुलाइए",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e74",
+      "relation": "requests",
+      "tail_entity_id": "e58",
+      "evidence_chunk_id": "vid011_c003",
+      "evidence_text": "प्राइम मिनिस्टर का माफ़ीनामा और होम मिनिस्टर का स्टेटमेंट",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e74",
+      "relation": "requests",
+      "tail_entity_id": "e59",
+      "evidence_chunk_id": "vid011_c004",
+      "evidence_text": "हम यह चाहते हैं कि होम मिनिस्टर सदन में आए",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e74",
+      "relation": "requests",
+      "tail_entity_id": "e58",
+      "evidence_chunk_id": "vid011_c004",
+      "evidence_text": "प्राइम मिनिस्टर अपोलिसी माँगे",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e77",
+      "relation": "criticizes",
+      "tail_entity_id": "e6",
+      "evidence_chunk_id": "vid013_c002",
+      "evidence_text": "मैं उस बात को दोहराए देता हूँ।",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e78",
+      "relation": "announces",
+      "tail_entity_id": "e6",
+      "evidence_chunk_id": "vid013_c002",
+      "evidence_text": "सुप्रीम कोर्ट ने आदेश दिया था मोदी जी को",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e78",
+      "relation": "announces",
+      "tail_entity_id": "e6",
+      "evidence_chunk_id": "vid013_c003",
+      "evidence_text": "सुप्रीम कोर्ट ने आदेश दिया था मोदी जी को",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e77",
+      "relation": "accuses",
+      "tail_entity_id": "e6",
+      "evidence_chunk_id": "vid013_c003",
+      "evidence_text": "भाजपा और मोदी जी बच नहीं सकते",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e77",
+      "relation": "criticizes",
+      "tail_entity_id": "e80",
+      "evidence_chunk_id": "vid013_c004",
+      "evidence_text": "आप नेहरू जी को गाली दीजिए",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e77",
+      "relation": "criticizes",
+      "tail_entity_id": "e81",
+      "evidence_chunk_id": "vid013_c004",
+      "evidence_text": "आप इंदिरा जी को गाली दीजिए",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r3",
+      "head_entity_id": "e77",
+      "relation": "criticizes",
+      "tail_entity_id": "e82",
+      "evidence_chunk_id": "vid013_c004",
+      "evidence_text": "आप मुलायम सिंह जी को गाली दीजिए",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e83",
+      "relation": "requests",
+      "tail_entity_id": "e32",
+      "evidence_chunk_id": "vid015_c001",
+      "evidence_text": "हमारी मांग बहुत स्पष्ट है।",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e85",
+      "relation": "about",
+      "tail_entity_id": "e32",
+      "evidence_chunk_id": "vid015_c001",
+      "evidence_text": "अत्याचार छात्रों के खिलाफ हो रहे हैं।",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r3",
+      "head_entity_id": "e86",
+      "relation": "about",
+      "tail_entity_id": "e32",
+      "evidence_chunk_id": "vid015_c001",
+      "evidence_text": "यह माता-पिता की मांग भी है।",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e87",
+      "relation": "criticizes",
+      "tail_entity_id": "e32",
+      "evidence_chunk_id": "vid016_c001",
+      "evidence_text": "अमित शाह से पूछिए कि भाई क्या हो रहा है?",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e87",
+      "relation": "criticizes",
+      "tail_entity_id": "e88",
+      "evidence_chunk_id": "vid016_c001",
+      "evidence_text": "प्रमोद तिवारी जी ने जैसे कहा है कि जो भी चंदा चोरी है",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r3",
+      "head_entity_id": "e89",
+      "relation": "criticizes",
+      "tail_entity_id": "e32",
+      "evidence_chunk_id": "vid016_c001",
+      "evidence_text": "राहुल गांधी जी ने जो बयान दिया है कि प्रधानमंत्री को बच्चों से माफी मांगनी चाहिए",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r4",
+      "head_entity_id": "e90",
+      "relation": "about",
+      "tail_entity_id": "e32",
+      "evidence_chunk_id": "vid016_c001",
+      "evidence_text": "कल को नीरव मोदी कहेगा कि मैंने बैंकों को माफ कर दिया",
+      "confidence": 0.7
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e92",
+      "relation": "announces",
+      "tail_entity_id": "e91",
+      "evidence_chunk_id": "vid021_c001",
+      "evidence_text": "कांग्रेस लेड तेलंगाना गवर्नमेंट हैज़ लॉन्च्ड द यंग इंडिया स्किल्स यूनिवर्सिटी",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e91",
+      "relation": "linked_to",
+      "tail_entity_id": "e93",
+      "evidence_chunk_id": "vid021_c001",
+      "evidence_text": "इट इज़ लेड बाय आनंद महिंद्रा",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r3",
+      "head_entity_id": "e91",
+      "relation": "linked_to",
+      "tail_entity_id": "e94",
+      "evidence_chunk_id": "vid021_c001",
+      "evidence_text": "पार्टनर्स लाइक जीएमआर",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r4",
+      "head_entity_id": "e91",
+      "relation": "linked_to",
+      "tail_entity_id": "e95",
+      "evidence_chunk_id": "vid021_c001",
+      "evidence_text": "पार्टनर्स लाइक फ्लिपकार्ट",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r5",
+      "head_entity_id": "e91",
+      "relation": "linked_to",
+      "tail_entity_id": "e96",
+      "evidence_chunk_id": "vid021_c001",
+      "evidence_text": "पार्टनर्स लाइक अपोलो हॉस्पिटल",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r1",
+      "head_entity_id": "e97",
+      "relation": "criticizes",
+      "tail_entity_id": "e98",
+      "evidence_chunk_id": "vid022_c001",
+      "evidence_text": "आपकी भावनाएँ तब आहत नहीं हुई थीं जब असल में श्री राम के मंदिर में चढ़ावा चोरी हुई",
+      "confidence": 0.9
+    },
+    {
+      "relation_id": "r2",
+      "head_entity_id": "e97",
+      "relation": "criticizes",
+      "tail_entity_id": "e12",
+      "evidence_chunk_id": "vid022_c001",
+      "evidence_text": "सारी की सारी बीजेपी और संघीय नेता शामिल थे",
+      "confidence": 0.8
+    },
+    {
+      "relation_id": "r3",
+      "head_entity_id": "e99",
+      "relation": "about",
+      "tail_entity_id": "e98",
+      "evidence_chunk_id": "vid022_c001",
+      "evidence_text": "आपकी भावनाएँ तब आहत नहीं हुई थीं जब प्रभु राम को छोटा सा बच्चा दिखाकर उनकी उंगली नरेंद्र मोदी के हाथ में थाम दी गई थी",
+      "confidence": 0.7
+    }
+  ],
+  "entity_name_to_id": {
+    "गौतम विशाल::person": "e1",
+    "एनएचआई::organization": "e2",
+    "एक्सप्रेसवे::event": "e3",
+    "पीएनसी इंफ्राटेक लिमिटेड::organization": "e4",
+    "नितिन गडकरी::person": "e5",
+    "मोदी जी::person": "e6",
+    "राहुल गांधी::person": "e7",
+    "भाजपा::organization": "e8",
+    "प्रयागराज::location": "e9",
+    "छात्रों की गूंज::event": "e10",
+    "modi ji::person": "e11",
+    "bjp::organization": "e12",
+    "lucknow-agra expressway::location": "e13",
+    "nashik::location": "e14",
+    "mumbai-nashik highway::location": "e15",
+    "dehradun-ponta sahib highway::location": "e16",
+    "chhattisgarh::location": "e17",
+    "pune::location": "e18",
+    "kanpur-lucknow expressway::location": "e19",
+    "national highway authority of india::organization": "e20",
+    "modi government::organization": "e21",
+    "uttar pradesh::location": "e22",
+    "₹4200 करोड़::policy": "e23",
+    "छात्रों की गूंज::program": "e24",
+    "भारतीय परीक्षा प्रणाली::claim_topic": "e25",
+    "मुस्कान::person": "e26",
+    "दिल्ली::location": "e27",
+    "सरकार::organization": "e28",
+    "धर्मेंद्र प्रधान::person": "e29",
+    "छात्र::claim_topic": "e30",
+    "rss::organization": "e31",
+    "amit shah::person": "e32",
+    "कोटा::location": "e33",
+    "देहरादून::location": "e34",
+    "इलाहाबाद::location": "e35",
+    "उत्तर प्रदेश::location": "e36",
+    "गृह मंत्री::person": "e37",
+    "नोएडा पुलिस::organization": "e38",
+    "15 साल की बच्ची::person": "e39",
+    "प्रशासन::organization": "e40",
+    "काले अंग्रेज़::claim_topic": "e41",
+    "राजपाल गौतम::person": "e42",
+    "छात्रों::claim_topic": "e43",
+    "राजेंद्र पाल गौतम::person": "e44",
+    "भारतीय जनता पार्टी::organization": "e45",
+    "झारखंड::location": "e46",
+    "कर्नाटक::location": "e47",
+    "पंजाब::location": "e48",
+    "कांग्रेस::organization": "e49",
+    "राहुल जी::person": "e50",
+    "राहुल गांधी जी::person": "e51",
+    "युवा क्रांति::claim_topic": "e52",
+    "संविधान::law": "e53",
+    "कानून::law": "e54",
+    "मोदी::person": "e55",
+    "एनएचएआई::organization": "e56",
+    "lucknow–kanpur expressway::event": "e57",
+    "प्राइम मिनिस्टर::person": "e58",
+    "होम मिनिस्टर::person": "e59",
+    "विद्यार्थियों::claim_topic": "e60",
+    "पुलिस::organization": "e61",
+    "उपसभापति महोदय::person": "e62",
+    "दिल्ली विधानसभा::institution": "e63",
+    "लोकसभा::institution": "e64",
+    "राज्यसभा::institution": "e65",
+    "बेरोज़गारी::claim_topic": "e66",
+    "एमएसएमई::organization": "e67",
+    "कॉर्पोरेट हाउसेस::organization": "e68",
+    "राम मंदिर::claim_topic": "e69",
+    "विश्व हिंदू परिषद::organization": "e70",
+    "महपाल सिंह::person": "e71",
+    "अभिषेक उपाध्याय::person": "e72",
+    "पप्पू यादव::person": "e73",
+    "खरगे जी::person": "e74",
+    "विद्यार्थियों::person": "e75",
+    "पार्लियामेंट::institution": "e76",
+    "बीजेपी::organization": "e77",
+    "सुप्रीम कोर्ट::institution": "e78",
+    "संजय जसवाल::person": "e79",
+    "नेहरू जी::person": "e80",
+    "इंदिरा जी::person": "e81",
+    "मुलायम सिंह जी::person": "e82",
+    "kc venugopal::person": "e83",
+    "parliament::institution": "e84",
+    "students::claim_topic": "e85",
+    "parents::claim_topic": "e86",
+    "pawan khera::person": "e87",
+    "pramod tiwari::person": "e88",
+    "rahul gandhi::person": "e89",
+    "nirav modi::person": "e90",
+    "young india skills university::institution": "e91",
+    "telangana government::organization": "e92",
+    "anand mahindra::person": "e93",
+    "gmr::organization": "e94",
+    "flipkart::organization": "e95",
+    "apollo hospital::organization": "e96",
+    "supriya srinate::person": "e97",
+    "narendra modi::person": "e98",
+    "ram mandir::event": "e99"
+  },
+  "chunk_entities": {
+    "vid001_c004": [],
+    "vid001_c005": [
+      "e1",
+      "e2",
+      "e3"
+    ],
+    "vid001_c006": [
+      "e2",
+      "e3",
+      "e4",
+      "e5"
+    ],
+    "vid001_c007": [
+      "e6"
+    ],
+    "vid007_c001": [
+      "e10",
+      "e7",
+      "e8",
+      "e9"
+    ],
+    "vid007_c002": [
+      "e10",
+      "e7",
+      "e8",
+      "e9"
+    ],
+    "vid007_c003": [
+      "e10",
+      "e7",
+      "e8",
+      "e9"
+    ],
+    "vid007_c004": [
+      "e10",
+      "e7",
+      "e8",
+      "e9"
+    ],
+    "vid000_c001": [
+      "e11",
+      "e12",
+      "e13",
+      "e14",
+      "e15",
+      "e16",
+      "e17",
+      "e18"
+    ],
+    "vid001_c001": [
+      "e19",
+      "e20",
+      "e21",
+      "e22",
+      "e23"
+    ],
+    "vid001_c002": [
+      "e19",
+      "e20"
+    ],
+    "vid001_c003": [
+      "e19"
+    ],
+    "vid002_c001": [
+      "e24",
+      "e25",
+      "e7",
+      "e9"
+    ],
+    "vid004_c001": [
+      "e26",
+      "e27",
+      "e28"
+    ],
+    "vid005_c001": [
+      "e27",
+      "e29",
+      "e30",
+      "e31",
+      "e7"
+    ],
+    "vid005_c002": [
+      "e27",
+      "e29",
+      "e30",
+      "e32",
+      "e7"
+    ],
+    "vid008_c001": [
+      "e10",
+      "e33",
+      "e34",
+      "e35",
+      "e7",
+      "e8"
+    ],
+    "vid008_c002": [],
+    "vid008_c003": [],
+    "vid008_c004": [],
+    "vid007_c005": [
+      "e10",
+      "e36",
+      "e7"
+    ],
+    "vid007_c006": [
+      "e10",
+      "e33",
+      "e34",
+      "e35",
+      "e7"
+    ],
+    "vid007_c007": [
+      "e37",
+      "e38",
+      "e39",
+      "e7"
+    ],
+    "vid007_c008": [
+      "e40",
+      "e41"
+    ],
+    "vid007_c009": [
+      "e42",
+      "e43",
+      "e9"
+    ],
+    "vid007_c010": [
+      "e30",
+      "e44",
+      "e45"
+    ],
+    "vid007_c011": [
+      "e30",
+      "e46",
+      "e47",
+      "e48"
+    ],
+    "vid007_c012": [
+      "e46",
+      "e49"
+    ],
+    "vid008_c005": [
+      "e30",
+      "e36",
+      "e44",
+      "e50"
+    ],
+    "vid008_c006": [
+      "e30",
+      "e34",
+      "e35",
+      "e50"
+    ],
+    "vid008_c007": [
+      "e30",
+      "e38",
+      "e50"
+    ],
+    "vid008_c008": [
+      "e51",
+      "e52"
+    ],
+    "vid008_c009": [
+      "e45",
+      "e53",
+      "e54"
+    ],
+    "vid008_c010": [],
+    "vid008_c011": [
+      "e46",
+      "e49"
+    ],
+    "vid010_c001": [
+      "e55",
+      "e56",
+      "e57"
+    ],
+    "vid011_c005": [
+      "e58",
+      "e59",
+      "e60",
+      "e61"
+    ],
+    "vid012_c001": [
+      "e28",
+      "e62",
+      "e63",
+      "e64",
+      "e65",
+      "e66"
+    ],
+    "vid012_c002": [
+      "e30",
+      "e62",
+      "e67",
+      "e68"
+    ],
+    "vid013_c001": [
+      "e69",
+      "e70",
+      "e71",
+      "e72",
+      "e73",
+      "e8"
+    ],
+    "vid011_c001": [
+      "e58",
+      "e59",
+      "e74",
+      "e75",
+      "e76"
+    ],
+    "vid011_c002": [
+      "e58",
+      "e59",
+      "e74",
+      "e75",
+      "e76"
+    ],
+    "vid011_c003": [
+      "e58",
+      "e59",
+      "e74",
+      "e75",
+      "e76"
+    ],
+    "vid011_c004": [
+      "e58",
+      "e59",
+      "e74",
+      "e75",
+      "e76"
+    ],
+    "vid013_c002": [
+      "e6",
+      "e69",
+      "e71",
+      "e72",
+      "e73",
+      "e77",
+      "e78"
+    ],
+    "vid013_c003": [
+      "e6",
+      "e77",
+      "e78"
+    ],
+    "vid013_c004": [
+      "e77",
+      "e79",
+      "e80",
+      "e81",
+      "e82"
+    ],
+    "vid015_c001": [
+      "e32",
+      "e83",
+      "e84",
+      "e85",
+      "e86"
+    ],
+    "vid016_c001": [
+      "e32",
+      "e87",
+      "e88",
+      "e89",
+      "e90"
+    ],
+    "vid021_c001": [
+      "e91",
+      "e92",
+      "e93",
+      "e94",
+      "e95",
+      "e96"
+    ],
+    "vid022_c001": [
+      "e12",
+      "e97",
+      "e98",
+      "e99"
+    ]
+  },
+  "entity_to_chunks": {
+    "e1": [
+      "vid001_c005"
+    ],
+    "e2": [
+      "vid001_c005",
+      "vid001_c006"
+    ],
+    "e3": [
+      "vid001_c005",
+      "vid001_c006"
+    ],
+    "e4": [
+      "vid001_c006"
+    ],
+    "e5": [
+      "vid001_c006"
+    ],
+    "e6": [
+      "vid001_c007",
+      "vid013_c002",
+      "vid013_c003"
+    ],
+    "e10": [
+      "vid007_c001",
+      "vid007_c002",
+      "vid007_c003",
+      "vid007_c004",
+      "vid007_c005",
+      "vid007_c006",
+      "vid008_c001"
+    ],
+    "e7": [
+      "vid002_c001",
+      "vid005_c001",
+      "vid005_c002",
+      "vid007_c001",
+      "vid007_c002",
+      "vid007_c003",
+      "vid007_c004",
+      "vid007_c005",
+      "vid007_c006",
+      "vid007_c007",
+      "vid008_c001"
+    ],
+    "e8": [
+      "vid007_c001",
+      "vid007_c002",
+      "vid007_c003",
+      "vid007_c004",
+      "vid008_c001",
+      "vid013_c001"
+    ],
+    "e9": [
+      "vid002_c001",
+      "vid007_c001",
+      "vid007_c002",
+      "vid007_c003",
+      "vid007_c004",
+      "vid007_c009"
+    ],
+    "e11": [
+      "vid000_c001"
+    ],
+    "e12": [
+      "vid000_c001",
+      "vid022_c001"
+    ],
+    "e13": [
+      "vid000_c001"
+    ],
+    "e14": [
+      "vid000_c001"
+    ],
+    "e15": [
+      "vid000_c001"
+    ],
+    "e16": [
+      "vid000_c001"
+    ],
+    "e17": [
+      "vid000_c001"
+    ],
+    "e18": [
+      "vid000_c001"
+    ],
+    "e19": [
+      "vid001_c001",
+      "vid001_c002",
+      "vid001_c003"
+    ],
+    "e20": [
+      "vid001_c001",
+      "vid001_c002"
+    ],
+    "e21": [
+      "vid001_c001"
+    ],
+    "e22": [
+      "vid001_c001"
+    ],
+    "e23": [
+      "vid001_c001"
+    ],
+    "e24": [
+      "vid002_c001"
+    ],
+    "e25": [
+      "vid002_c001"
+    ],
+    "e26": [
+      "vid004_c001"
+    ],
+    "e27": [
+      "vid004_c001",
+      "vid005_c001",
+      "vid005_c002"
+    ],
+    "e28": [
+      "vid004_c001",
+      "vid012_c001"
+    ],
+    "e29": [
+      "vid005_c001",
+      "vid005_c002"
+    ],
+    "e30": [
+      "vid005_c001",
+      "vid005_c002",
+      "vid007_c010",
+      "vid007_c011",
+      "vid008_c005",
+      "vid008_c006",
+      "vid008_c007",
+      "vid012_c002"
+    ],
+    "e31": [
+      "vid005_c001"
+    ],
+    "e32": [
+      "vid005_c002",
+      "vid015_c001",
+      "vid016_c001"
+    ],
+    "e33": [
+      "vid007_c006",
+      "vid008_c001"
+    ],
+    "e34": [
+      "vid007_c006",
+      "vid008_c001",
+      "vid008_c006"
+    ],
+    "e35": [
+      "vid007_c006",
+      "vid008_c001",
+      "vid008_c006"
+    ],
+    "e36": [
+      "vid007_c005",
+      "vid008_c005"
+    ],
+    "e37": [
+      "vid007_c007"
+    ],
+    "e38": [
+      "vid007_c007",
+      "vid008_c007"
+    ],
+    "e39": [
+      "vid007_c007"
+    ],
+    "e40": [
+      "vid007_c008"
+    ],
+    "e41": [
+      "vid007_c008"
+    ],
+    "e42": [
+      "vid007_c009"
+    ],
+    "e43": [
+      "vid007_c009"
+    ],
+    "e44": [
+      "vid007_c010",
+      "vid008_c005"
+    ],
+    "e45": [
+      "vid007_c010",
+      "vid008_c009"
+    ],
+    "e46": [
+      "vid007_c011",
+      "vid007_c012",
+      "vid008_c011"
+    ],
+    "e47": [
+      "vid007_c011"
+    ],
+    "e48": [
+      "vid007_c011"
+    ],
+    "e49": [
+      "vid007_c012",
+      "vid008_c011"
+    ],
+    "e50": [
+      "vid008_c005",
+      "vid008_c006",
+      "vid008_c007"
+    ],
+    "e51": [
+      "vid008_c008"
+    ],
+    "e52": [
+      "vid008_c008"
+    ],
+    "e53": [
+      "vid008_c009"
+    ],
+    "e54": [
+      "vid008_c009"
+    ],
+    "e55": [
+      "vid010_c001"
+    ],
+    "e56": [
+      "vid010_c001"
+    ],
+    "e57": [
+      "vid010_c001"
+    ],
+    "e58": [
+      "vid011_c001",
+      "vid011_c002",
+      "vid011_c003",
+      "vid011_c004",
+      "vid011_c005"
+    ],
+    "e59": [
+      "vid011_c001",
+      "vid011_c002",
+      "vid011_c003",
+      "vid011_c004",
+      "vid011_c005"
+    ],
+    "e60": [
+      "vid011_c005"
+    ],
+    "e61": [
+      "vid011_c005"
+    ],
+    "e62": [
+      "vid012_c001",
+      "vid012_c002"
+    ],
+    "e63": [
+      "vid012_c001"
+    ],
+    "e64": [
+      "vid012_c001"
+    ],
+    "e65": [
+      "vid012_c001"
+    ],
+    "e66": [
+      "vid012_c001"
+    ],
+    "e67": [
+      "vid012_c002"
+    ],
+    "e68": [
+      "vid012_c002"
+    ],
+    "e69": [
+      "vid013_c001",
+      "vid013_c002"
+    ],
+    "e70": [
+      "vid013_c001"
+    ],
+    "e71": [
+      "vid013_c001",
+      "vid013_c002"
+    ],
+    "e72": [
+      "vid013_c001",
+      "vid013_c002"
+    ],
+    "e73": [
+      "vid013_c001",
+      "vid013_c002"
+    ],
+    "e74": [
+      "vid011_c001",
+      "vid011_c002",
+      "vid011_c003",
+      "vid011_c004"
+    ],
+    "e75": [
+      "vid011_c001",
+      "vid011_c002",
+      "vid011_c003",
+      "vid011_c004"
+    ],
+    "e76": [
+      "vid011_c001",
+      "vid011_c002",
+      "vid011_c003",
+      "vid011_c004"
+    ],
+    "e77": [
+      "vid013_c002",
+      "vid013_c003",
+      "vid013_c004"
+    ],
+    "e78": [
+      "vid013_c002",
+      "vid013_c003"
+    ],
+    "e79": [
+      "vid013_c004"
+    ],
+    "e80": [
+      "vid013_c004"
+    ],
+    "e81": [
+      "vid013_c004"
+    ],
+    "e82": [
+      "vid013_c004"
+    ],
+    "e83": [
+      "vid015_c001"
+    ],
+    "e84": [
+      "vid015_c001"
+    ],
+    "e85": [
+      "vid015_c001"
+    ],
+    "e86": [
+      "vid015_c001"
+    ],
+    "e87": [
+      "vid016_c001"
+    ],
+    "e88": [
+      "vid016_c001"
+    ],
+    "e89": [
+      "vid016_c001"
+    ],
+    "e90": [
+      "vid016_c001"
+    ],
+    "e91": [
+      "vid021_c001"
+    ],
+    "e92": [
+      "vid021_c001"
+    ],
+    "e93": [
+      "vid021_c001"
+    ],
+    "e94": [
+      "vid021_c001"
+    ],
+    "e95": [
+      "vid021_c001"
+    ],
+    "e96": [
+      "vid021_c001"
+    ],
+    "e97": [
+      "vid022_c001"
+    ],
+    "e98": [
+      "vid022_c001"
+    ],
+    "e99": [
+      "vid022_c001"
+    ]
+  },
+  "relation_to_chunks": {
+    "e1|linked_to|e2": [
+      "vid001_c005"
+    ],
+    "e2|supports|e3": [
+      "vid001_c005"
+    ],
+    "e2|opposes|e4": [
+      "vid001_c006"
+    ],
+    "e5|announces|e3": [
+      "vid001_c006"
+    ],
+    "e7|supports|e10": [
+      "vid007_c001",
+      "vid007_c002",
+      "vid007_c004",
+      "vid007_c005",
+      "vid008_c001"
+    ],
+    "e8|opposes|e10": [
+      "vid007_c001",
+      "vid007_c002",
+      "vid007_c003",
+      "vid007_c004",
+      "vid008_c001"
+    ],
+    "e10|happens_in|e9": [
+      "vid007_c001",
+      "vid007_c002"
+    ],
+    "e10|about|e7": [
+      "vid007_c003"
+    ],
+    "e11|announces|e12": [
+      "vid000_c001"
+    ],
+    "e13|linked_to|e11": [
+      "vid000_c001"
+    ],
+    "e14|about|e11": [
+      "vid000_c001"
+    ],
+    "e19|about|e23": [
+      "vid001_c001"
+    ],
+    "e20|announces|e19": [
+      "vid001_c001"
+    ],
+    "e21|supports|e19": [
+      "vid001_c001"
+    ],
+    "e19|about|e20": [
+      "vid001_c002"
+    ],
+    "e19|affects|e19": [
+      "vid001_c003"
+    ],
+    "e7|announces|e24": [
+      "vid002_c001"
+    ],
+    "e24|about|e25": [
+      "vid002_c001"
+    ],
+    "e26|criticizes|e28": [
+      "vid004_c001"
+    ],
+    "e26|about|e27": [
+      "vid004_c001"
+    ],
+    "e7|supports|e30": [
+      "vid005_c001",
+      "vid005_c002"
+    ],
+    "e7|requests|e29": [
+      "vid005_c001"
+    ],
+    "e7|opposes|e31": [
+      "vid005_c001"
+    ],
+    "e7|requests|e32": [
+      "vid005_c002"
+    ],
+    "e33|happens_in|e10": [
+      "vid008_c001"
+    ],
+    "e34|happens_in|e10": [
+      "vid008_c001"
+    ],
+    "e35|happens_in|e10": [
+      "vid008_c001"
+    ],
+    "e36|about|e10": [
+      "vid007_c005"
+    ],
+    "e7|announces|e10": [
+      "vid007_c006"
+    ],
+    "e10|happens_in|e33": [
+      "vid007_c006"
+    ],
+    "e10|happens_in|e34": [
+      "vid007_c006"
+    ],
+    "e10|happens_in|e35": [
+      "vid007_c006"
+    ],
+    "e7|requests|e37": [
+      "vid007_c007"
+    ],
+    "e38|accuses|e39": [
+      "vid007_c007"
+    ],
+    "e40|affects|e41": [
+      "vid007_c008"
+    ],
+    "e42|requests|e43": [
+      "vid007_c009"
+    ],
+    "e45|opposes|e30": [
+      "vid007_c010"
+    ],
+    "e30|about|e46": [
+      "vid007_c011"
+    ],
+    "e49|supports|e46": [
+      "vid007_c012"
+    ],
+    "e44|supports|e30": [
+      "vid008_c005"
+    ],
+    "e50|supports|e30": [
+      "vid008_c005",
+      "vid008_c006",
+      "vid008_c007"
+    ],
+    "e36|about|e30": [
+      "vid008_c005"
+    ],
+    "e34|happens_in|e30": [
+      "vid008_c006"
+    ],
+    "e35|happens_in|e30": [
+      "vid008_c006"
+    ],
+    "e38|accuses|e30": [
+      "vid008_c007"
+    ],
+    "e51|supports|e52": [
+      "vid008_c008"
+    ],
+    "e45|opposes|e53": [
+      "vid008_c009"
+    ],
+    "e45|opposes|e54": [
+      "vid008_c009"
+    ],
+    "e46|affects|e49": [
+      "vid008_c011"
+    ],
+    "e55|announces|e57": [
+      "vid010_c001"
+    ],
+    "e56|investigates|e57": [
+      "vid010_c001"
+    ],
+    "e58|requests|e60": [
+      "vid011_c005"
+    ],
+    "e61|affects|e60": [
+      "vid011_c005"
+    ],
+    "e28|affects|e66": [
+      "vid012_c001"
+    ],
+    "e68|affects|e67": [
+      "vid012_c002"
+    ],
+    "e8|criticizes|e70": [
+      "vid013_c001"
+    ],
+    "e71|alleges|e70": [
+      "vid013_c001"
+    ],
+    "e74|requests|e59": [
+      "vid011_c001",
+      "vid011_c002",
+      "vid011_c003",
+      "vid011_c004"
+    ],
+    "e74|requests|e58": [
+      "vid011_c001",
+      "vid011_c002",
+      "vid011_c003",
+      "vid011_c004"
+    ],
+    "e75|affects|e74": [
+      "vid011_c001"
+    ],
+    "e77|criticizes|e6": [
+      "vid013_c002"
+    ],
+    "e78|announces|e6": [
+      "vid013_c002",
+      "vid013_c003"
+    ],
+    "e77|accuses|e6": [
+      "vid013_c003"
+    ],
+    "e77|criticizes|e80": [
+      "vid013_c004"
+    ],
+    "e77|criticizes|e81": [
+      "vid013_c004"
+    ],
+    "e77|criticizes|e82": [
+      "vid013_c004"
+    ],
+    "e83|requests|e32": [
+      "vid015_c001"
+    ],
+    "e85|about|e32": [
+      "vid015_c001"
+    ],
+    "e86|about|e32": [
+      "vid015_c001"
+    ],
+    "e87|criticizes|e32": [
+      "vid016_c001"
+    ],
+    "e87|criticizes|e88": [
+      "vid016_c001"
+    ],
+    "e89|criticizes|e32": [
+      "vid016_c001"
+    ],
+    "e90|about|e32": [
+      "vid016_c001"
+    ],
+    "e92|announces|e91": [
+      "vid021_c001"
+    ],
+    "e91|linked_to|e93": [
+      "vid021_c001"
+    ],
+    "e91|linked_to|e94": [
+      "vid021_c001"
+    ],
+    "e91|linked_to|e95": [
+      "vid021_c001"
+    ],
+    "e91|linked_to|e96": [
+      "vid021_c001"
+    ],
+    "e97|criticizes|e98": [
+      "vid022_c001"
+    ],
+    "e97|criticizes|e12": [
+      "vid022_c001"
+    ],
+    "e99|about|e98": [
+      "vid022_c001"
+    ]
+  }
+}

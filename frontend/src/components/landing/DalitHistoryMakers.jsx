@@ -1,6 +1,8 @@
 ﻿import { useState, useEffect, useRef, useCallback } from 'react';
 import { Play } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import SectionLabel from './SectionLabel';
+import { useAuth } from '../../context/AuthContext';
 import savitribai from '../../assets/images/makers/savitribai.png';
 import gurram     from '../../assets/images/makers/gurram.png';
 import jagjivan   from '../../assets/images/makers/jagjivan.png';
@@ -294,6 +296,22 @@ function MobileCarousel() {
 }
 
 export default function DalitHistoryMakers() {
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
+
+  // Straight to the post generator. ProtectedRoute would capture the intended
+  // path on its own, but setting it here means a signed-out visitor lands on
+  // the generator after logging in rather than on the dashboard.
+  function handleBuildNarrative() {
+    const target = '/generate/social-media';
+    if (currentUser) {
+      navigate(target);
+    } else {
+      sessionStorage.setItem('auth_redirect', target);
+      navigate('/login');
+    }
+  }
+
   return (
     <section className="relative py-10 md:py-14">
       <div className="pointer-events-none absolute inset-x-0 -top-28 -bottom-28">
@@ -327,6 +345,7 @@ export default function DalitHistoryMakers() {
       <div className="mt-10 flex justify-center md:mt-14">
         <button
           type="button"
+          onClick={handleBuildNarrative}
           className="btn-gradient group inline-flex h-14 items-center gap-3 rounded-xl px-9 font-count text-[17px] font-semibold text-white"
         >
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 transition group-hover:bg-white/20">

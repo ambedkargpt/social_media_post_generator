@@ -138,4 +138,7 @@ def update_profile(payload: UpdateProfileRequest, authorization: str = Header(de
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token.")
     token = authorization.replace("Bearer ", "", 1).strip()
-    return service.update_profile(token, payload.full_name, payload.username, payload.political_party)
+    return service.update_profile(
+        token, payload.full_name, payload.username,
+        payload.political_party, payload.party_position,
+    )

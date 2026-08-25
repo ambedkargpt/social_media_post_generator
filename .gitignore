@@ -163,6 +163,19 @@ legacy/
 **/legacy/
 
 # --- Per-channel SEMRAG / RAG build artifacts ---
-# Regenerate with: python -m backend.scripts.build_channel_graph --channel <name> --semrag
-**/data/semrag/*/
-**/data/*_all_transcripts.txt
+# Rebuild with: python -m backend.scripts.build_channel_graph --channel <name> --semrag
+#
+# The graph and its chunks are tracked, because that rebuild reads the channel
+# transcripts and pays for an extraction run, so a fresh clone could not
+# reproduce them. Caches, backups and checkpoints stay out.
+#
+# Note the pattern excludes the CONTENTS rather than the directory itself: git
+# will not descend into an excluded directory, so a "!" rule under one never
+# takes effect.
+**/data/semrag/*/*
+!**/data/semrag/*/semrag_graph.json
+!**/data/semrag/*/semrag_chunks.json
+
+# Channel transcripts are runtime data, not a build artifact: transcripts.py
+# reads them on every post generation to hand the writer what the speaker
+# actually said. Without them that silently falls back to retrieved chunks.

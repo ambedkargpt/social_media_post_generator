@@ -43,6 +43,8 @@ class TenantArtifacts:
     semrag_graph_path: Path | None
     semrag_chunks_path: Path | None
     pinecone_namespace: str | None
+    rag_chunks_path: Path | None = None
+    rag_video_context_path: Path | None = None
 
     @property
     def has_graph(self) -> bool:
@@ -51,6 +53,42 @@ class TenantArtifacts:
     @property
     def has_chunks(self) -> bool:
         return bool(self.semrag_chunks_path and self.semrag_chunks_path.is_file())
+
+    @property
+    def has_rag_chunks(self) -> bool:
+        return bool(self.rag_chunks_path and self.rag_chunks_path.is_file())
+
+    @property
+    def declares_isolation(self) -> bool:
+        """
+        The channel config asked for its own retrieval material.
+
+        Setting either a namespace or a corpus path is a statement that this
+        tenant's posts must be built from its own material and nothing else.
+        """
+        return bool(self.pinecone_namespace or self.rag_chunks_path)
+
+    @property
+    def isolation_gaps(self) -> tuple[str, ...]:
+        """
+        What is still missing before this tenant is actually isolated.
+
+        Empty means the declaration is backed by artifacts on disk. Anything
+        listed here is a place where retrieval falls back to shared material,
+        which is how one party's words end up behind another party's post.
+        """
+        if not self.declares_isolation:
+            return ()
+        gaps = []
+        if not self.pinecone_namespace:
+            gaps.append("no pinecone_namespace")
+        if not self.rag_chunks_path:
+            gaps.append("no rag_chunks_path configured")
+        elif not self.has_rag_chunks:
+            gaps.append(f"corpus not built: {self.rag_chunks_path}")
+        if not self.has_graph:
+            gaps.append("semrag graph missing")
+        return tuple(gaps)
 
 
 @lru_cache(maxsize=1)
@@ -93,6 +131,8 @@ def artifacts_for_tenant(tenant: str | int | None) -> TenantArtifacts | None:
         semrag_graph_path=channel.semrag_graph_path,
         semrag_chunks_path=channel.semrag_chunks_path,
         pinecone_namespace=channel.pinecone_namespace,
+        rag_chunks_path=channel.rag_chunks_path,
+        rag_video_context_path=channel.rag_video_context_path,
     )
 
 
@@ -124,6 +164,11 @@ def settings_for_tenant(settings: Any, art: TenantArtifacts) -> Any:
             "semrag_graph_path": art.semrag_graph_path,
             "semrag_chunks_path": art.semrag_chunks_path,
             "pinecone_namespace": art.pinecone_namespace,
+            # semrag_candidates_for_query returns empty on its first line unless
+            # this is set, and the global setting is off. Turning it on here
+            # rather than globally keeps it scoped to a tenant that actually has
+            # a graph on disk, so no other channel changes behaviour.
+            "semrag_enabled": True if art.has_graph else None,
         },
     )
 
@@ -289,3 +334,98 @@ def tenant_corpus_summary() -> list[dict[str, Any]]:
             }
         )
     return rows
+
+
+# --------------------------------------------------------------------------
+# Per-tenant retrieval stack
+# --------------------------------------------------------------------------
+
+# One stack per tenant, built once per process. ensure_rag_stack caches a single
+# global stack, which is why every channel has been searching the same corpus.
+_TENANT_STACKS: dict[str, Any] = {}
+# describe_index_stats is a network call, so the readiness answer is cached.
+# A namespace does not gain vectors while a process is running unless someone
+# runs the corpus build, and that is not a live path.
+_NAMESPACE_READY: dict[str, bool] = {}
+
+
+def _namespace_has_vectors(settings: Any, namespace: str) -> bool:
+    if namespace in _NAMESPACE_READY:
+        return _NAMESPACE_READY[namespace]
+    try:
+        from pinecone import Pinecone
+
+        idx = Pinecone(api_key=settings.pinecone_api_key).Index(settings.pinecone_index_name)
+        stats = idx.describe_index_stats()
+        count = int((stats.get("namespaces") or {}).get(namespace, {}).get("vector_count") or 0)
+        ready = count > 0
+    except Exception:
+        # Unreachable index is not evidence the namespace is empty, and guessing
+        # "ready" would point retrieval at a namespace that may hold nothing.
+        ready = False
+    _NAMESPACE_READY[namespace] = ready
+    return ready
+
+
+def rag_stack_for_tenant(settings: Any, tenant: str | int | None) -> tuple[Any, bool]:
+    """
+    Return ``(stack, isolated)`` for one tenant.
+
+    ``isolated`` is False when the tenant falls back to the shared stack, which
+    is the honest answer while its corpus is unbuilt or its namespace is empty.
+    Retrieval against an empty namespace returns nothing at all, so the fallback
+    is deliberate: a post from the wrong corpus beats no post, and the caller
+    logs which one it got.
+    """
+    from backend.pipeline_cli import ensure_rag_stack
+
+    shared = ensure_rag_stack(settings)
+    art = artifacts_for_tenant(tenant)
+    if art is None or not art.declares_isolation:
+        return shared, False
+
+    slug = art.tenant_slug
+    if slug in _TENANT_STACKS:
+        return _TENANT_STACKS[slug], True
+
+    if not art.has_rag_chunks or not art.pinecone_namespace:
+        return shared, False
+    if not _namespace_has_vectors(settings, art.pinecone_namespace):
+        return shared, False
+
+    from backend.pipeline.vector_store import VectorStore
+
+    embedder, _shared_store, shared_context = shared
+    chunks = json.loads(art.rag_chunks_path.read_text(encoding="utf-8"))
+    if isinstance(chunks, dict):
+        chunks = chunks.get("chunks") or []
+    if not chunks:
+        return shared, False
+
+    # Same Pinecone handle, different namespace, and this tenant's chunks for
+    # BM25 and metadata. Sharing the handle keeps one connection per process.
+    store = VectorStore(
+        index=_shared_store.index,
+        chunks=chunks,
+        namespace=art.pinecone_namespace,
+    )
+    # This channel's video context, not the shared one. Reusing the shared map
+    # meant a Congress post looked its video summaries up among Ravish titles:
+    # missing at best, and a title collision would put another channel's
+    # summary into the post, which is the leak this whole split exists to stop.
+    context_by_title = shared_context
+    ctx_path = art.rag_video_context_path
+    if ctx_path and ctx_path.is_file():
+        try:
+            rows = json.loads(ctx_path.read_text(encoding="utf-8"))
+            context_by_title = {v["video_title"]: v for v in rows}
+        except Exception:
+            context_by_title = {}
+    else:
+        # No context of its own is better than another channel's: an absent
+        # summary is dropped, a wrong one is asserted.
+        context_by_title = {}
+
+    stack = (embedder, store, context_by_title)
+    _TENANT_STACKS[slug] = stack
+    return stack, True

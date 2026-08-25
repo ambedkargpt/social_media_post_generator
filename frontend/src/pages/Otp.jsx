@@ -184,7 +184,7 @@ export default function Otp() {
 
         <form onSubmit={handleSubmit} className="space-y-6" noValidate>
           <OtpBoxes value={otp} onChange={(v) => { setOtp(v); setOtpError(''); }} error={otpError} />
-          <PrimaryButton type="submit" disabled={loading}>
+          <PrimaryButton type="submit" loading={loading}>
             {loading ? 'Verifying…' : 'Verify OTP'}
           </PrimaryButton>
         </form>
