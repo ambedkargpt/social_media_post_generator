@@ -58,6 +58,7 @@ def signup(payload: SignupRequest, request: Request) -> AuthResponse:
         email=payload.email.lower() if payload.email else None,
         phone=payload.phone.strip() if payload.phone else None,
         political_party=payload.political_party.strip() if payload.political_party else None,
+        party_position=payload.party_position,
     )
 
 

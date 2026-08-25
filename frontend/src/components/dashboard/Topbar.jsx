@@ -8,6 +8,7 @@ export default function Topbar({ user, onMenuOpen, totalPosts, onLogout }) {
   const navigate = useNavigate();
   const name  = user?.name  ?? '—';
   const email = user?.email ?? '';
+  const party = user?.party ?? '';
   const initial = (name?.[0] ?? 'A').toUpperCase();
 
   return (
@@ -43,6 +44,7 @@ export default function Topbar({ user, onMenuOpen, totalPosts, onLogout }) {
           name={name}
           email={email}
           initial={initial}
+          party={party}
           onLogout={onLogout}
         />
       </div>

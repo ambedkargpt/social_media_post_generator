@@ -10,6 +10,9 @@ class SignupRequest(BaseModel):
     email: Optional[EmailStr] = None
     phone: Optional[str] = Field(default=None, min_length=8, max_length=20)
     political_party: Optional[str] = Field(default=None, min_length=1, max_length=120)
+    # A key from backend.pipeline.party_roles. Optional: a signup should not be
+    # gated on someone knowing their exact title.
+    party_position: Optional[str] = Field(default=None, max_length=60)
 
     @model_validator(mode="after")
     def validate_contact(self) -> "SignupRequest":

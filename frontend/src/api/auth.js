@@ -27,12 +27,13 @@ export function getStoredUser() {
 }
 
 // ── Signup with email + password ─────────────────────────────────────────────
-export async function signupWithEmail({ username, email, password, political_party }) {
+export async function signupWithEmail({ username, email, password, political_party, party_position }) {
   const { data } = await axios.post(`${BASE_URL}/auth/signup`, {
     username,
     email,
     password,
     ...(political_party ? { political_party } : {}),
+    ...(party_position ? { party_position } : {}),
   });
   // Backend issues tokens on signup (user starts unverified); save them now.
   if (data.tokens) {
@@ -45,12 +46,13 @@ export async function signupWithEmail({ username, email, password, political_par
 // ── Send phone OTP (signup or login) ─────────────────────────────────────────
 // purpose: 'signup_verify' | 'login_verify'
 // Returns AuthResponse shape (tokens + user + otp_required=true + dev_otp?)
-export async function sendPhoneOtp({ phone, purpose, username, political_party }) {
+export async function sendPhoneOtp({ phone, purpose, username, political_party, party_position }) {
   const { data } = await axios.post(`${BASE_URL}/auth/send-phone-otp`, {
     phone,
     purpose,
     ...(username ? { username } : {}),
     ...(political_party ? { political_party } : {}),
+    ...(party_position ? { party_position } : {}),
   });
   if (data.tokens) {
     saveTokens(data.tokens);

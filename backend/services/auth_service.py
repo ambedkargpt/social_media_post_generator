@@ -17,6 +17,14 @@ from backend.schemas.auth import AuthResponse, AuthTokens, UserPublic
 from backend.services.google_auth import fetch_google_userinfo
 from backend.services.otp_service import build_hashed_otp, otp_expiry_time
 from backend.services.security import hash_password, verify_otp_hash, verify_password
+from backend.services.email_service import try_send_otp_email
+
+
+def _ROLE_KEYS() -> set:
+    from backend.pipeline.party_roles import ROLES
+
+    return set(ROLES)
+
 from backend.services.sms_service import try_send_otp_sms
 from backend.services.token_service import create_access_token, create_refresh_token, decode_token
 
@@ -34,6 +42,7 @@ class AuthService:
         email: str | None,
         phone: str | None,
         political_party: str | None,
+        party_position: str | None = None,
     ) -> AuthResponse:
         if self.users_repo.find_by_username(username):
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username already exists.")
@@ -49,6 +58,9 @@ class AuthService:
             email=email,
             phone=phone,
             political_party=political_party,
+            # Unknown keys are dropped rather than stored: a stale id resolves
+            # to no guidance later and looks like the setting doing nothing.
+            party_position=(party_position or "").strip() if (party_position or "").strip() in _ROLE_KEYS() else "",
             auth_providers=auth_providers,
         )
 
@@ -64,6 +76,13 @@ class AuthService:
             max_attempts=settings.otp_max_attempts,
             expires_at=otp_expiry_time(),
         )
+
+        # Deliver it. Without this the code existed only in the database, and
+        # only development ever saw it, via the debug field below.
+        if channel == "email" and target:
+            try_send_otp_email(target, otp_code, kind="signup")
+        else:
+            try_send_otp_sms(target or "", otp_code)
 
         auth_response = self._issue_session(user, otp_required=True, otp_target=target)
         if settings.auth_debug_return_otp and settings.app_env in {"development", "dev", "test", "testing"}:
@@ -143,6 +162,9 @@ class AuthService:
 
         if channel == "phone":
             try_send_otp_sms(target, otp_code)
+        else:
+            kind = "reset" if purpose == OTP_PURPOSE_RESET_PASSWORD else "signup"
+            try_send_otp_email(target, otp_code, kind=kind)
 
         result: dict = {"message": "A new verification code has been sent."}
         if settings.auth_debug_return_otp and settings.app_env in {"development", "dev", "test", "testing"}:
@@ -222,6 +244,8 @@ class AuthService:
             max_attempts=settings.otp_max_attempts,
             expires_at=otp_expiry_time(),
         )
+        try_send_otp_email(email, otp_code, kind="reset")
+
         result: dict = {"message": "Verification code sent to your email."}
         if settings.auth_debug_return_otp and settings.app_env in {"development", "dev", "test", "testing"}:
             result["dev_otp"] = otp_code

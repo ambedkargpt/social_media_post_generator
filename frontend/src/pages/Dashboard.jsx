@@ -76,7 +76,11 @@ export default function Dashboard() {
   const draftPosts     = posts.filter((p) => p.status === 'draft').length;
   const prefsAnswered  = profileAnswers.length;
 
-  const topbarUser  = { name: displayName };
+  const topbarUser  = {
+    name: displayName,
+    email: displayEmail,
+    party: currentUser?.political_party ?? '',
+  };
   const profileUser = { name: displayName, email: displayEmail, joined: joinedLabel, postCount: totalPosts };
 
   const first = displayName.split('_')[0];
