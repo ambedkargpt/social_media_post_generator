@@ -36,7 +36,7 @@ function BrandLogo() {
       <LogoMark />
       <span className="text-[26px] font-semibold leading-none tracking-tight md:text-[30px]">
         <span className="text-white">Ambedkar</span>
-        <span className="ml-1 gradient-text-cyan">GPT</span>
+        <span className="gradient-text-cyan">GPT</span>
       </span>
     </Link>
   );

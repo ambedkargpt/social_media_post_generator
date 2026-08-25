@@ -38,7 +38,7 @@ export default function AuthLayout({ children, brandSide = 'right', brandVariant
           />
           <span className="font-display text-[22px] font-bold leading-none tracking-tight">
             <span className="text-white">Ambedkar</span>
-            <span className="ml-1 gradient-text-cyan">GPT</span>
+            <span className="gradient-text-cyan">GPT</span>
           </span>
         </Link>
       </div>

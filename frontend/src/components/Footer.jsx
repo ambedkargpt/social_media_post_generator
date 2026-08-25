@@ -86,7 +86,7 @@ export default function Footer() {
               />
               <span className="text-[21px] font-semibold leading-none tracking-tight">
                 <span className="text-white">Ambedkar</span>
-                <span className="ml-0.5 gradient-text-cyan">GPT</span>
+                <span className="gradient-text-cyan">GPT</span>
               </span>
             </Link>
 
