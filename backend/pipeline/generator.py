@@ -144,7 +144,16 @@ _LANGUAGE_INSTRUCTIONS: dict[str, str] = {
 _MAX_COMPLETION_TOKENS = int(os.getenv("POST_MAX_COMPLETION_TOKENS", "24000"))
 # Devanagari costs roughly a token per character or two, so an unbounded
 # transcript would dominate the prompt.
-_MAX_TRANSCRIPT_CHARS = int(os.getenv("POST_TRANSCRIPT_CHARS", "12000"))
+#
+# 12,000 did dominate it: measured on a real story the transcript was 9,024 of
+# the 11,350 characters the model read, about eighty per cent, with the lens
+# arriving as a couple of thousand characters of instruction. Posts came back
+# reading like news, opening with a recap of the event, which is what a model
+# does when the bulk of what it is handed is a speech to summarise.
+#
+# 4,000 is still several minutes of speech, enough to be accurate about what was
+# said without the post becoming a retelling of it.
+_MAX_TRANSCRIPT_CHARS = int(os.getenv("POST_TRANSCRIPT_CHARS", "4000"))
 
 # Matches section headers in English OR Hindi (LLM sometimes translates labels when
 # generating Hindi content).
