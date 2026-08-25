@@ -77,6 +77,7 @@ class UserPublic(BaseModel):
     email: Optional[str] = None
     phone: Optional[str] = None
     political_party: Optional[str] = None
+    party_position: Optional[str] = None
     is_email_verified: bool
     is_phone_verified: bool
     auth_providers: list[str]
@@ -87,6 +88,9 @@ class UpdateProfileRequest(BaseModel):
     full_name: Optional[str] = Field(default=None, min_length=1, max_length=100)
     username: Optional[str] = Field(default=None, min_length=3, max_length=50)
     political_party: Optional[str] = Field(default=None, min_length=1, max_length=120)
+    # A key from backend.pipeline.party_roles, not a display title. Empty string
+    # is meaningful here: it is how someone clears the position they set.
+    party_position: Optional[str] = Field(default=None, max_length=60)
 
 
 class AuthTokens(BaseModel):

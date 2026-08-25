@@ -316,6 +316,7 @@ class AuthService:
         full_name: str | None,
         username: str | None,
         political_party: str | None = None,
+        party_position: str | None = None,
     ) -> UserPublic:
         payload = self._decode_or_401(bearer_token, "access")
         user = self.users_repo.find_by_id(payload["sub"])
@@ -333,6 +334,15 @@ class AuthService:
             fields["username"] = username
         if political_party is not None:
             fields["political_party"] = political_party.strip()
+        if party_position is not None:
+            # Unknown keys are dropped rather than stored: a stale id would sit
+            # on the user forever and resolve to no guidance at generation time,
+            # which looks like the setting silently doing nothing.
+            from backend.pipeline.party_roles import ROLES
+
+            pos = party_position.strip()
+            fields["party_position"] = pos if pos in ROLES else ""
+
 
         if fields:
             user = self.users_repo.update_profile(user["_id"], fields)
@@ -346,6 +356,7 @@ class AuthService:
             email=user.get("email"),
             phone=user.get("phone"),
             political_party=user.get("political_party"),
+            party_position=user.get("party_position"),
             is_email_verified=bool(user.get("is_email_verified")),
             is_phone_verified=bool(user.get("is_phone_verified")),
             auth_providers=user.get("auth_providers", []),

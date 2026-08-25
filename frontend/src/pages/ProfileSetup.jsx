@@ -4,6 +4,7 @@ import { User, AtSign, ArrowRight, ArrowLeft, ChevronDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCurtain } from '../context/CurtainContext';
 import { POLITICAL_PARTIES } from '../utils/politicalParties';
+import { ROLE_GROUPS, roleLabel } from '../utils/partyRoles';
 import logoSrc     from '../assets/images/logo-animation.png';
 import ambedkarSrc from '../assets/images/qna-ambedkar.png';
 
@@ -58,6 +59,7 @@ export default function ProfileSetup() {
   const nextRoute = isOnboarding ? '/questionnaire' : '/dashboard';
   const [username, setUsername]   = useState(currentUser?.username || '');
   const [politicalParty, setPoliticalParty] = useState(currentUser?.political_party || '');
+  const [partyPosition, setPartyPosition] = useState(currentUser?.party_position || '');
   const [errors, setErrors]       = useState({});
   const [loading, setLoading]     = useState(false);
   const [authError, setAuthError] = useState('');
@@ -85,6 +87,9 @@ export default function ProfileSetup() {
         full_name: fullName.trim(),
         username: username.trim(),
         political_party: politicalParty || undefined,
+        // Sent even when blank, because clearing the position is a real choice
+        // and undefined would leave the previous one in place.
+        party_position: partyPosition,
       });
       curtainGo(nextRoute, { replace: true });
     } catch (err) {
@@ -263,6 +268,52 @@ export default function ProfileSetup() {
               {errors.politicalParty
                 ? <p className="mt-1.5 text-[12px]" style={{ color: '#ef4444' }}>{errors.politicalParty}</p>
                 : <p className="mt-1.5 text-[12px]" style={{ color: '#5a6e9a' }}>Your news feed is tailored to this choice.</p>}
+            </div>
+
+            {/* Position in the party. Titles differ between parties for the same
+                post, so the options are relabelled from the party above rather
+                than listing one party's vocabulary to everyone. Optional: a
+                supporter with no office is a legitimate answer. */}
+            <div>
+              <label className="mb-1.5 block text-[13px] font-medium text-white">
+                Your position in the party
+                <span className="ml-1.5 font-normal" style={{ color: '#5a6e9a' }}>(optional)</span>
+              </label>
+              <div className="relative">
+                <select
+                  value={partyPosition}
+                  onChange={(e) => setPartyPosition(e.target.value)}
+                  disabled={!politicalParty}
+                  className="w-full appearance-none rounded-xl px-4 py-3.5 pr-10 text-[14px] outline-none transition disabled:cursor-not-allowed disabled:opacity-50"
+                  style={{
+                    backgroundColor: '#0a1130',
+                    border: '1px solid #1e3260',
+                    color: partyPosition ? '#ffffff' : '#8b94b8',
+                  }}
+                >
+                  <option value="" className="bg-[#0a1130]">
+                    {politicalParty ? 'Supporter, no position' : 'Choose a party first'}
+                  </option>
+                  {ROLE_GROUPS.map((g) => (
+                    <optgroup key={g.group} label={g.group} className="bg-[#0a1130]">
+                      {g.roles.map((r) => (
+                        <option key={r.id} value={r.id} className="bg-[#0a1130] text-white">
+                          {roleLabel(r, politicalParty)}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+                <ChevronDown
+                  size={16}
+                  strokeWidth={2}
+                  className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2"
+                  style={{ color: '#8b94b8' }}
+                />
+              </div>
+              <p className="mt-1.5 text-[12px]" style={{ color: '#5a6e9a' }}>
+                Sets how your posts speak: what they claim, and whether they speak for the party.
+              </p>
             </div>
 
             <button

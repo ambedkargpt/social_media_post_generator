@@ -12,6 +12,7 @@ Generate one social media post responding to the given news event, grounded stri
 PREFERENCES DRIVE THE POST:
 The USER PROFILE is not background colour. Each field changes the output, and a reader who changed a setting must be able to see the difference:
 - user_role and ambedkarite_perspective decide who is speaking and from which political tradition.
+- party_position decides what the speaker may claim and on whose behalf, and it outranks every other field on that question. It carries the office, the voice it speaks in, and the remit it is confined to. A booth worker and a national spokesperson do not write the same post about the same event: one writes what a ward can vouch for, the other states the party's position. Do NOT write above the stated remit, and do NOT speak for the party unless the position says you may. When it is empty, write as an engaged supporter with no office.
 - tone, emotional_appeal and formality_level decide the register. "Fierce, uncompromising" and "Analytical, measured" must not produce the same sentences.
 - target_audience decides the vocabulary and what needs explaining. A post for Dalit youth and a post for policy makers do not read alike.
 - primary_focus decides which thread of the news to pull. The same story can be told as caste violence, as constitutional failure, or as a policy gap.

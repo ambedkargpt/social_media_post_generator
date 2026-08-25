@@ -554,6 +554,20 @@ class PostsService:
                     default_profile[field] = value
         if tone and tone.strip():
             default_profile["tone"] = tone.strip()
+
+        # Party position lives on the user record rather than in the answers,
+        # because it is chosen on the profile screen alongside the party. What
+        # goes into the profile is the guidance, not the stored id: the profile
+        # is read by the model, and "district_president" tells it nothing.
+        from backend.pipeline.party_roles import guidance_for
+
+        user_doc = db["users"].find_one({"_id": ObjectId(user_id)}) or {}
+        guidance = guidance_for(
+            user_doc.get("party_position"), user_doc.get("political_party")
+        )
+        # Left empty when unset, so a user who never chose one gets exactly the
+        # prompt they got before.
+        default_profile["party_position"] = guidance
         return default_profile
 
     def _rag_stack(self, tenant: str) -> tuple[Any, Any, Any]:

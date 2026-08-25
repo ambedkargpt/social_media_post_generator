@@ -3,6 +3,9 @@ from typing import Dict, List
 
 PROFILE_FIELDS = [
     "user_role",
+    # Where the user sits in their party. Separate from user_role, which is
+    # who they are ideologically rather than what they may speak for.
+    "party_position",
     "tone",
     "target_audience",
     "primary_focus",
@@ -41,6 +44,7 @@ def _validate_profile_list(profiles: List[Dict[str, str]]) -> None:
 
 DEFAULT_USER_PROFILES: List[Dict[str, str]] = [
         {
+            "party_position": "",
             "user_role": "Radical Dalit Activist",
             "tone": "Fierce, uncompromising, urgent",
             "target_audience": "Dalit youth and broader oppressed communities",
@@ -68,6 +72,7 @@ DEFAULT_USER_PROFILES: List[Dict[str, str]] = [
             "visual_suggestion": "Bold poster-style graphic with slogans",
         },
         {
+            "party_position": "",
             "user_role": "Constitutionalist Academic",
             "tone": "Analytical, measured, authoritative",
             "target_audience": "Policy makers, scholars, informed citizens",
@@ -95,6 +100,7 @@ DEFAULT_USER_PROFILES: List[Dict[str, str]] = [
             "visual_suggestion": "Screenshot of article or clean text card",
         },
         {
+            "party_position": "",
             "user_role": "Dalit Youth Organizer",
             "tone": "Encouraging, mobilizing, relatable",
             "target_audience": "College students, young Dalit/Bahujan people",
@@ -122,6 +128,7 @@ DEFAULT_USER_PROFILES: List[Dict[str, str]] = [
             "visual_suggestion": "Photo of campus protest or study circle",
         },
         {
+            "party_position": "",
             "user_role": "Ambedkarite Buddhist Thinker",
             "tone": "Reflective, philosophical, firm",
             "target_audience": "Ambedkarite and Buddhist circles, thoughtful readers",
@@ -149,6 +156,7 @@ DEFAULT_USER_PROFILES: List[Dict[str, str]] = [
             "visual_suggestion": "Image of Ambedkar/Buddha or community gathering",
         },
         {
+            "party_position": "",
             "user_role": "Human Rights NGO Worker",
             "tone": "Professional, empathetic, rights-focused",
             "target_audience": "Donors, media, international observers, activists",
@@ -176,6 +184,7 @@ DEFAULT_USER_PROFILES: List[Dict[str, str]] = [
             "visual_suggestion": "Clean infographic or case summary card",
         },
         {
+            "party_position": "",
             "user_role": "Progressive Student Leader",
             "tone": "Energetic, political, campaign-driven",
             "target_audience": "Students and youth wings of movements",
@@ -203,6 +212,7 @@ DEFAULT_USER_PROFILES: List[Dict[str, str]] = [
             "visual_suggestion": "Protest photo or poster template",
         },
         {
+            "party_position": "",
             "user_role": "Journalist Covering Caste Issues",
             "tone": "Investigative, balanced, yet critical",
             "target_audience": "General news audience, media peers",
@@ -230,6 +240,7 @@ DEFAULT_USER_PROFILES: List[Dict[str, str]] = [
             "visual_suggestion": "Thumbnail from report or neutral illustrative image",
         },
         {
+            "party_position": "",
             "user_role": "Community Organizer",
             "tone": "Grounded, practical, caring",
             "target_audience": "Local community members, volunteers",
@@ -257,6 +268,7 @@ DEFAULT_USER_PROFILES: List[Dict[str, str]] = [
             "visual_suggestion": "Simple poster or meeting photo",
         },
         {
+            "party_position": "",
             "user_role": "Non-Dalit Ally Activist",
             "tone": "Humble, supportive, educational",
             "target_audience": "Non-Dalit allies, liberal circles",
@@ -284,6 +296,7 @@ DEFAULT_USER_PROFILES: List[Dict[str, str]] = [
             "visual_suggestion": "Quote card or resource list screenshot",
         },
         {
+            "party_position": "",
             "user_role": "Policy Analyst",
             "tone": "Data-informed, structured, pragmatic",
             "target_audience": "Policy community, think-tanks, bureaucrats, journalists",
