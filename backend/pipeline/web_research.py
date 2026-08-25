@@ -123,6 +123,12 @@ _SEARXNG_AUTH_TOKEN = (os.getenv("SEARXNG_AUTH_TOKEN") or "").strip()
 # container to talk to and must not depend on one.
 _SEARCH_PROVIDER = (os.getenv("SEARCH_PROVIDER") or "auto").strip().lower()
 
+# Google's Custom Search JSON API. The serverless way to get the results
+# SearXNG gets by scraping Google, without a host to run it on. Free tier is
+# 100 queries a day, and one post spends one query per claim.
+_GOOGLE_CSE_KEY = (os.getenv("GOOGLE_CSE_API_KEY") or "").strip()
+_GOOGLE_CSE_CX = (os.getenv("GOOGLE_CSE_CX") or "").strip()
+
 _REQUIRE_SOURCE_QUOTE = (os.getenv("RESEARCH_REQUIRE_SOURCE_QUOTE") or "1").strip().lower() in {"1", "true", "yes", "on"}
 
 
@@ -638,6 +644,64 @@ def _raw_searxng(query: str, base_url: str, timeout: float) -> List[Dict[str, st
     ]
 
 
+def _google_cse_configured() -> bool:
+    return bool(_GOOGLE_CSE_KEY and _GOOGLE_CSE_CX)
+
+
+def _raw_google_cse(query: str, top_k: int, timeout: float) -> List[Dict[str, str]]:
+    """
+    Rows from Google's Custom Search JSON API, in the shared shape.
+
+    Same results SearXNG reaches through its google engine, reached instead by
+    the documented API, so the Lambda needs nothing running beside it.
+
+    Quota is the thing to watch. The free tier allows 100 queries a day and a
+    post spends one per claim, so roughly thirty posts. Exceeding it returns
+    HTTP 429 and no results, which degrades to a post with no research rather
+    than an error, so the log line below is the only warning you get.
+    """
+    if not _google_cse_configured():
+        logger.error(
+            "SEARCH_PROVIDER wants Google CSE but GOOGLE_CSE_API_KEY or "
+            "GOOGLE_CSE_CX is unset. Posts will still generate, without any "
+            "web research."
+        )
+        return []
+    try:
+        resp = requests.get(
+            "https://www.googleapis.com/customsearch/v1",
+            params={
+                "key": _GOOGLE_CSE_KEY,
+                "cx": _GOOGLE_CSE_CX,
+                "q": query,
+                # 10 is the API's ceiling per call. The host cap and relevance
+                # gate discard some, so ask for all of them.
+                "num": 10,
+            },
+            timeout=timeout,
+        )
+        if resp.status_code == 429:
+            logger.error(
+                "Google CSE daily quota exhausted. Research is off until it "
+                "resets, and posts will generate without it."
+            )
+            return []
+        resp.raise_for_status()
+        payload = resp.json()
+    except Exception as exc:
+        logger.warning("Google CSE query failed for %r: %s", query, exc)
+        return []
+    return [
+        {
+            "url": (item.get("link") or "").strip(),
+            "title": (item.get("title") or "").strip(),
+            "content": (item.get("snippet") or "").strip(),
+            "engine": "google cse",
+        }
+        for item in payload.get("items", [])
+    ]
+
+
 def _raw_ddg(query: str, top_k: int, timeout: float) -> List[Dict[str, str]]:
     """
     Rows from DuckDuckGo, in the shared shape.
@@ -690,21 +754,38 @@ def search_urls(
     The only place a search provider is named. Everything downstream reads
     SearchResult, so adding a provider means adding a _raw_* function and a
     branch here, and nothing else changes.
+
+    SEARCH_PROVIDER picks the backend:
+      auto    SearXNG, falling back to Google CSE or DuckDuckGo (default)
+      searxng SearXNG only; no results when it is down
+      google  Google Custom Search JSON API; needs a key and a cx
+      ddg     DuckDuckGo; no host and no key
     """
+    def _fallback() -> List[Dict[str, str]]:
+        """Best backend that needs no host: Google if it has keys, else DDG."""
+        if _google_cse_configured():
+            return _raw_google_cse(query, top_k, timeout)
+        return _raw_ddg(query, top_k, timeout)
+
     rows: List[Dict[str, str]] = []
-    if _SEARCH_PROVIDER == "ddg" or not base_url:
+    if _SEARCH_PROVIDER == "google":
+        rows = _raw_google_cse(query, top_k, timeout)
+    elif _SEARCH_PROVIDER == "ddg":
         rows = _raw_ddg(query, top_k, timeout)
+    elif not base_url:
+        rows = _fallback()
     else:
         try:
             rows = _raw_searxng(query, base_url, timeout)
         except _SearxngUnreachable:
             if _SEARCH_PROVIDER == "auto":
                 logger.warning(
-                    "SearXNG unreachable at %s, falling back to DuckDuckGo. "
-                    "Set SEARCH_PROVIDER=ddg to make this the intended path.",
+                    "SearXNG unreachable at %s, falling back to %s. Set "
+                    "SEARCH_PROVIDER explicitly to make this the intended path.",
                     base_url,
+                    "Google CSE" if _google_cse_configured() else "DuckDuckGo",
                 )
-                rows = _raw_ddg(query, top_k, timeout)
+                rows = _fallback()
             else:
                 # A stack of connection errors, one per claim, buries the single
                 # thing worth knowing, so say it plainly and once.
