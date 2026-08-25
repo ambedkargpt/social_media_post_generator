@@ -135,13 +135,27 @@ export default function ProfileSetup() {
           dashboard to return to and an exit there would strand the sign-up. */}
       <header className="relative z-10 flex items-center gap-4 px-8 pt-7 md:px-14">
         {isOnboarding ? (
-          <div className="flex items-center gap-2.5">
-            <img src={logoSrc} alt="AmbedkarGPT" className="h-9 w-9 object-contain drop-shadow-[0_0_12px_rgba(63,159,255,0.5)]" />
-            <span className="font-display text-[20px] font-bold leading-none tracking-tight">
-              <span className="text-white">Ambedkar</span>
-              <span className="gradient-text-cyan">GPT</span>
-            </span>
-          </div>
+          <>
+            <div className="flex items-center gap-2.5">
+              <img src={logoSrc} alt="AmbedkarGPT" className="h-9 w-9 object-contain drop-shadow-[0_0_12px_rgba(63,159,255,0.5)]" />
+              <span className="font-display text-[20px] font-bold leading-none tracking-tight">
+                <span className="text-white">Ambedkar</span>
+                <span className="gradient-text-cyan">GPT</span>
+              </span>
+            </div>
+            {/* Onboarding gets a skip rather than a back: there is nothing
+                behind this screen, signup is already done. It sits up here
+                because the only other exit is under the form, and the level
+                and position selects pushed that below the fold. */}
+            <button
+              type="button"
+              onClick={handleSkip}
+              className="ml-auto inline-flex h-10 items-center gap-2 rounded-full border border-[#1e3260]/70 px-4 text-[13px] font-medium text-[#8b9dc4] transition hover:border-[#3a6bc4]/70 hover:text-white"
+            >
+              Skip for now
+              <ArrowRight size={15} strokeWidth={2} />
+            </button>
+          </>
         ) : (
           <>
             <button
