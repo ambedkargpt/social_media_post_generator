@@ -13,6 +13,7 @@ import { getNews, getTenants } from '../api/news';
 import { generatePostForNews, regeneratePostFromSnapshot, translatePost, updatePost, getDailyQuota } from '../api/posts';
 import { getQuestions } from '../api/questions';
 import { getProfileAnswers, saveProfileAnswers } from '../api/profile';
+import { CORE_QUESTION_IDS } from '../utils/preferenceQuestions';
 import { getSiteLanguage, SITE_LANGUAGES } from '../utils/siteLanguage';
 import { parsePost, hashtagsText } from '../utils/parsePost';
 
@@ -64,15 +65,7 @@ function getPageItems(current, total) {
 }
 
 // Preference questions shown in the right panel, in display order
-const PREF_QUESTION_IDS = [
-  'profile_user_role',
-  'profile_tone',
-  'profile_target_audience',
-  'profile_primary_focus',
-  'profile_ambedkarite_perspective',
-  'profile_content_length',
-  'profile_call_to_action',
-];
+const PREF_QUESTION_IDS = CORE_QUESTION_IDS;
 
 // Map backend NewsResponse → local article shape
 function adaptNews(item) {

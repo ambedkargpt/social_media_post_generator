@@ -12,6 +12,7 @@ import GoogleButton  from '../components/GoogleButton';
 import LegalModal    from '../components/LegalModal';
 
 import { POLITICAL_PARTIES } from '../utils/politicalParties';
+import { ROLE_GROUPS, roleLabel, rolesInGroup } from '../utils/partyRoles';
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -26,6 +27,8 @@ export default function Signup() {
   const [subscribed, setSubscribed]           = useState(false);
   const [termsAccepted, setTermsAccepted]     = useState(false);
   const [politicalParty, setPoliticalParty]   = useState('');
+  const [partyLevel, setPartyLevel]           = useState('');
+  const [partyPosition, setPartyPosition]     = useState('');
   const [partyDropdownOpen, setPartyDropdownOpen] = useState(false);
   const partyDropdownRef                      = useRef(null);
   const [modal, setModal]                     = useState(null);
@@ -79,10 +82,10 @@ export default function Signup() {
     setLoading(true);
     try {
       if (mode === 'phone') {
-        const data = await signupWithPhone(phone, politicalParty || undefined);
+        const data = await signupWithPhone(phone, politicalParty || undefined, partyPosition || undefined);
         navigate('/otp', { state: { identifier: data?.otp_target || phone, type: 'phone', mode: 'signup', password: '', devOtp: data?.dev_otp || '' } });
       } else {
-        const data = await signupWithEmail(email.trim(), password, politicalParty || undefined);
+        const data = await signupWithEmail(email.trim(), password, politicalParty || undefined, partyPosition || undefined);
         navigate('/otp', { state: { identifier: email.trim(), type: 'email', mode: 'signup', password, devOtp: data?.dev_otp || '' } });
       }
     } catch (err) {
@@ -235,7 +238,7 @@ export default function Signup() {
                   <button
                     key={party.name}
                     type="button"
-                    onClick={() => { setPoliticalParty(party.name); setPartyDropdownOpen(false); setErrors((p) => ({ ...p, politicalParty: '' })); }}
+                    onClick={() => { setPoliticalParty(party.name); setPartyDropdownOpen(false); setPartyLevel(''); setPartyPosition(''); setErrors((p) => ({ ...p, politicalParty: '' })); }}
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors duration-150"
                     style={{
                       color: politicalParty === party.name ? '#ffffff' : '#c5cde8',
@@ -265,6 +268,52 @@ export default function Signup() {
           {errors.politicalParty && (
             <p className="text-xs mt-0.5 px-1" style={{ color: '#ef4444' }}>{errors.politicalParty}</p>
           )}
+
+          {/* Position in the party, asked in two steps for the same reason as on
+              the profile screen: one list of 41 titles is unreadable, and a
+              level is something someone knows about themselves. Optional here,
+              since a signup should not be gated on it. */}
+          <div className="space-y-1.5">
+            <span className="text-xs px-1" style={{ color: '#8b94b8' }}>
+              Your position in the party (optional)
+            </span>
+            <div className="grid grid-cols-2 gap-2">
+              <select
+                value={partyLevel}
+                onChange={(e) => { setPartyLevel(e.target.value); setPartyPosition(''); }}
+                disabled={!politicalParty}
+                aria-label="Level"
+                className="w-full px-3 py-2.5 rounded-xl text-sm outline-none transition disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: '#0d1b3e',
+                  border: '1px solid #1e3260',
+                  color: partyLevel ? '#ffffff' : '#8b94b8',
+                }}
+              >
+                <option value="">{politicalParty ? 'Level' : 'Pick a party'}</option>
+                {ROLE_GROUPS.map((g) => (
+                  <option key={g.group} value={g.group}>{g.group}</option>
+                ))}
+              </select>
+              <select
+                value={partyPosition}
+                onChange={(e) => setPartyPosition(e.target.value)}
+                disabled={!partyLevel}
+                aria-label="Position"
+                className="w-full px-3 py-2.5 rounded-xl text-sm outline-none transition disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: '#0d1b3e',
+                  border: '1px solid #1e3260',
+                  color: partyPosition ? '#ffffff' : '#8b94b8',
+                }}
+              >
+                <option value="">{partyLevel ? 'Position' : 'Pick a level'}</option>
+                {rolesInGroup(partyLevel).map((r) => (
+                  <option key={r.id} value={r.id}>{roleLabel(r, politicalParty)}</option>
+                ))}
+              </select>
+            </div>
+          </div>
 
           <label className="flex items-start gap-3 cursor-pointer rounded-md px-1">
             <input type="checkbox" checked={subscribed} onChange={(e) => setSubscribed(e.target.checked)}

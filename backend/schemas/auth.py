@@ -10,6 +10,9 @@ class SignupRequest(BaseModel):
     email: Optional[EmailStr] = None
     phone: Optional[str] = Field(default=None, min_length=8, max_length=20)
     political_party: Optional[str] = Field(default=None, min_length=1, max_length=120)
+    # A key from backend.pipeline.party_roles. Optional: a signup should not be
+    # gated on someone knowing their exact title.
+    party_position: Optional[str] = Field(default=None, max_length=60)
 
     @model_validator(mode="after")
     def validate_contact(self) -> "SignupRequest":
@@ -37,6 +40,9 @@ class SendPhoneOtpRequest(BaseModel):
     purpose: Literal["signup_verify", "login_verify"]
     username: Optional[str] = Field(default=None, min_length=3, max_length=50)
     political_party: Optional[str] = Field(default=None, min_length=1, max_length=120)
+    # Signup by phone creates the account here rather than in signup(), so the
+    # position has to travel this path too or it is lost for phone users.
+    party_position: Optional[str] = Field(default=None, max_length=60)
 
 
 class SendPhoneOtpResponse(BaseModel):

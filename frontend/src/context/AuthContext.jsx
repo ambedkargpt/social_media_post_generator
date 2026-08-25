@@ -54,24 +54,26 @@ export function AuthProvider({ children }) {
   }, []);
 
   // ── Email signup → returns data including dev_otp in dev mode ─────────────
-  async function signupWithEmail(email, password, politicalParty) {
+  async function signupWithEmail(email, password, politicalParty, partyPosition) {
     const username = email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 50);
     return authApi.signupWithEmail({
       username,
       email,
       password,
       political_party: politicalParty || undefined,
+      party_position: partyPosition || undefined,
     });
   }
 
   // ── Phone signup (OTP-based, no password) ─────────────────────────────────
-  async function signupWithPhone(phone, politicalParty) {
+  async function signupWithPhone(phone, politicalParty, partyPosition) {
     const username = 'user_' + phone.replace(/\D/g, '').slice(-8);
     return authApi.sendPhoneOtp({
       phone,
       purpose: 'signup_verify',
       username,
       political_party: politicalParty || undefined,
+      party_position: partyPosition || undefined,
     });
   }
 

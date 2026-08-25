@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { UserCog, SlidersHorizontal, LogOut } from 'lucide-react';
+import { partyLogo } from '../../utils/politicalParties';
 
 /**
  * Account menu behind the topbar avatar.
@@ -11,7 +12,10 @@ import { UserCog, SlidersHorizontal, LogOut } from 'lucide-react';
  * that was hidden below md. Putting all three here means one place to look,
  * and it is where people expect to find them.
  */
-export default function ProfileMenu({ name, email, initial, onLogout }) {
+export default function ProfileMenu({ name, email, initial, party, onLogout }) {
+  // Resolved from the full list, not the offered one, so an account carrying a
+  // party we no longer offer still shows its own logo instead of nothing.
+  const logo = partyLogo(party);
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const btnRef = useRef(null);
@@ -70,7 +74,22 @@ export default function ProfileMenu({ name, email, initial, onLogout }) {
           <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#3f9fff]/50 bg-gradient-to-br from-[#2b3e7a] to-[#1a2654] text-[13px] font-semibold text-white shadow-[0_0_14px_rgba(63,159,255,0.25)]">
             {initial}
           </div>
-          <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#070b1c] bg-[#22c55e]" />
+          {logo ? (
+            // The party badge takes the corner the presence dot had: two marks
+            // on one 40px avatar is clutter, and which party someone represents
+            // says more here than whether they are online.
+            <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-[#070b1c] bg-white">
+              <img
+                src={logo}
+                alt={party}
+                title={party}
+                className="h-3.5 w-3.5 object-contain"
+                onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
+              />
+            </span>
+          ) : (
+            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#070b1c] bg-[#22c55e]" />
+          )}
         </div>
       </button>
 
@@ -87,6 +106,14 @@ export default function ProfileMenu({ name, email, initial, onLogout }) {
               <p className="truncate text-[13.5px] font-semibold text-white">{name}</p>
               {email && email !== '—' && (
                 <p className="mt-0.5 truncate text-[12px] text-[#8b94b8]">{email}</p>
+              )}
+              {party && (
+                <p className="mt-2 flex items-center gap-2 text-[12px] text-[#9dc3ff]">
+                  {logo && (
+                    <img src={logo} alt="" className="h-4 w-4 shrink-0 rounded-sm bg-white object-contain p-px" />
+                  )}
+                  <span className="truncate">{party}</span>
+                </p>
               )}
             </div>
 
