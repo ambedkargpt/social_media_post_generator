@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Sparkles, ChevronDown, RotateCcw } from 'lucide-react';
+import { shortLabel } from '../../utils/preferenceQuestions';
 
 // UI-only display metadata per question_id — labels and hints are not stored
 // in the DB, so we keep a local map here. Falls back gracefully for unknown ids.
@@ -33,8 +34,13 @@ function Dropdown({ value, options, onChange }) {
         className="w-full appearance-none rounded-lg border border-[#1e3260]/70 bg-[#0a1130]/80 py-2.5 pl-3 pr-9 text-[12.5px] font-medium text-white outline-none transition focus:border-[#3f9fff]/70 focus:shadow-[0_0_0_3px_rgba(63,159,255,0.15)] hover:border-[#3f9fff]/50"
       >
         {options.map((opt) => (
-          <option key={opt} value={opt} className="bg-[#0a1130] text-white">
-            {opt}
+          // The stored value is the whole "Label -> Description" string and has
+          // to stay that, but the panel is a narrow sidebar: showing it whole
+          // truncated mid-word to "Communicator -> Focus on explain...". The
+          // label alone is what the Preferences page shows, so the two screens
+          // now read the same, and the description is on hover.
+          <option key={opt} value={opt} title={opt} className="bg-[#0a1130] text-white">
+            {shortLabel(opt)}
           </option>
         ))}
       </select>
