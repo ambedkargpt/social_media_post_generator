@@ -5,6 +5,7 @@ import { resendOtp as resendOtpApi } from '../api/auth';
 import { useCurtain } from '../context/CurtainContext';
 import AuthLayout    from '../components/AuthLayout';
 import PrimaryButton from '../components/PrimaryButton';
+import { Info } from 'lucide-react';
 
 const OTP_LENGTH = 6;
 
@@ -175,6 +176,20 @@ export default function Otp() {
             </p>
           )}
         </div>
+
+        {/* Email only. A verification code from a new sender is a textbook
+            spam-filter catch, and someone who does not know to look there
+            concludes the code never arrived and gives up on the signup. */}
+        {type === 'email' && (
+          <div className="flex items-start gap-2.5 rounded-lg border border-[#3f9fff]/25 bg-[#3f9fff]/[0.07] px-4 py-3">
+            <Info size={16} strokeWidth={2} className="mt-px shrink-0 text-[#7fb5ff]" />
+            <p className="text-[13px] leading-relaxed text-[#a8bbdd]">
+              Not in your inbox? Check your <span className="font-medium text-[#c8d8ff]">spam</span> or{' '}
+              <span className="font-medium text-[#c8d8ff]">promotions</span> folder. It can take a minute
+              to arrive.
+            </p>
+          </div>
+        )}
 
         {resendMsg && (
           <div className="rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-400">

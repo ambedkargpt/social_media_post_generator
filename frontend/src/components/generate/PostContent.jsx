@@ -11,7 +11,7 @@ export default function PostContent({ content, className = '' }) {
   if (!hasStructure) {
     return (
       <div className={`space-y-3 ${className}`} style={{ fontFamily: "'Mangal', 'Noto Sans Devanagari', serif" }}>
-        <p className="whitespace-pre-wrap text-[18px] leading-[1.95] text-[#dbe6f7] md:text-[19px]">
+        <p className="whitespace-pre-wrap text-[21px] leading-[1.95] text-[#e6eefb] md:text-[23px]">
           {content.trim()}
         </p>
       </div>
@@ -26,8 +26,11 @@ export default function PostContent({ content, className = '' }) {
         </p>
       )}
 
+      {/* Devanagari carries less of its detail at a given pixel size than Latin
+          does, and this is the text the whole screen exists to show. Sized to be
+          read across a room in a demo, not squinted at. */}
       {paragraphs.map((para, i) => (
-        <p key={i} className="text-[18px] leading-[1.95] text-[#dbe6f7] md:text-[19px]">
+        <p key={i} className="text-[21px] leading-[1.95] text-[#e6eefb] md:text-[23px]">
           {para}
         </p>
       ))}
