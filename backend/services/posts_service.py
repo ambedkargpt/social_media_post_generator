@@ -603,13 +603,44 @@ class PostsService:
             from backend.pipeline.multi_rag import artifacts_for_tenant, settings_for_tenant
 
             _art = artifacts_for_tenant(tenant)
-            _cfg_settings = settings_for_tenant(settings, _art) if _art else settings
-            semrag_candidates, _ = semrag_candidates_for_query(
-                query_text,
-                _cfg_settings,
-                mode=getattr(settings, "semrag_search_mode", "hybrid"),
-            )
-            retrieval_cfg["semrag_candidates"] = semrag_candidates
+
+            # Only consult a tenant's graph when retrieval is actually running
+            # against that tenant's corpus.
+            #
+            # When the tenant's Pinecone namespace is empty, rag_stack_for_tenant
+            # hands back the shared stack instead. The graph still resolves, and
+            # still costs its full search, but every candidate it returns is a
+            # chunk id from the tenant's own corpus while the store holds the
+            # shared one — measured on a live Congress story, 0 of 19 candidates
+            # existed in the store, so retrieve_relevant_chunks dropped all of
+            # them. Four seconds per request for nothing, on a budget that had
+            # about five to spare.
+            #
+            # Skipping is also the safer behaviour: if an id ever did collide
+            # across corpora it would let one channel's graph reorder another
+            # channel's material, which is the leak the split exists to stop.
+            _store_ns = str(getattr(store, "namespace", "") or "")
+            _tenant_ns = str(getattr(_art, "pinecone_namespace", "") or "") if _art else ""
+            _isolated = bool(_tenant_ns) and _store_ns == _tenant_ns
+
+            if _art is not None and not _isolated:
+                import logging as _logging
+
+                _logging.getLogger(__name__).info(
+                    "[retrieval] tenant=%s on the shared corpus, skipping its knowledge "
+                    "graph: candidates would reference chunks this store does not hold",
+                    tenant,
+                )
+                retrieval_cfg["semrag_enabled"] = False
+                retrieval_cfg.pop("semrag_candidates", None)
+            else:
+                _cfg_settings = settings_for_tenant(settings, _art) if _art else settings
+                semrag_candidates, _ = semrag_candidates_for_query(
+                    query_text,
+                    _cfg_settings,
+                    mode=getattr(settings, "semrag_search_mode", "hybrid"),
+                )
+                retrieval_cfg["semrag_candidates"] = semrag_candidates
         except Exception as exc:
             import logging as _logging
             _logging.getLogger(__name__).warning("semrag retrieval failed, falling back to base retrieval: %s", exc)

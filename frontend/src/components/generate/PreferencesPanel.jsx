@@ -142,8 +142,14 @@ export default function PreferencesPanel({ questions = [], value, onChange, defa
       {/* Footer */}
       <footer className="border-t border-[#1a2130]/70 bg-[#080b13]/85 px-5 py-4 text-[10.5px] text-[#6b78a0] leading-snug">
         <span className="flex items-center gap-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e] shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
-          {isLoading ? 'Loading…' : `${questions.length} signals active`}
+          {/* While loading, the green "live" dot is a lie — it says the panel
+              is ready when it has nothing yet. Swap it for the spinner. */}
+          {isLoading ? (
+            <span className="spinner-ring" style={{ width: 11, height: 11, borderWidth: 1.5 }} />
+          ) : (
+            <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e] shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
+          )}
+          {isLoading ? 'Loading your preferences…' : `${questions.length} signals active`}
         </span>
       </footer>
     </aside>

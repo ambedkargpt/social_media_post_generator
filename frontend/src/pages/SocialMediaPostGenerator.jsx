@@ -16,6 +16,7 @@ import { getProfileAnswers, saveProfileAnswers } from '../api/profile';
 import { CORE_QUESTION_IDS } from '../utils/preferenceQuestions';
 import { getSiteLanguage, SITE_LANGUAGES } from '../utils/siteLanguage';
 import { parsePost, hashtagsText } from '../utils/parsePost';
+import Spinner from '../components/Spinner';
 
 const TONES = ['Professional', 'Inspirational', 'Creative', 'Casual', 'Motivational'];
 const ALSO_GENERATE = ['Audio', 'Shorts', 'Image'];
@@ -1027,14 +1028,35 @@ export default function SocialMediaPostGenerator() {
             </div>
 
             {newsLoading && (
-              <div className="grid gap-5 lg:grid-cols-2">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-[240px] w-full animate-pulse rounded-2xl border border-[#1e2636]/60 bg-[#0e1320]/70"
-                  />
-                ))}
-              </div>
+              <>
+                {/* A spinner above the grid, because six empty rectangles
+                    pulsing at low contrast read as a broken page rather than
+                    a loading one — especially on the first visit, when there
+                    is no remembered content to compare them against. */}
+                <div className="flex justify-center py-6">
+                  <Spinner size={30} label="Loading news…" showLabel />
+                </div>
+                <div className="grid gap-5 lg:grid-cols-2" aria-hidden="true">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="h-[240px] w-full animate-pulse rounded-2xl border border-[#1e2636]/60 bg-[#0e1320]/70 p-5"
+                    >
+                      {/* Card-shaped, so the wait previews what arrives
+                          instead of showing a blank box. */}
+                      <div className="h-3 w-24 rounded bg-[#1b2340]/70" />
+                      <div className="mt-4 h-4 w-4/5 rounded bg-[#1b2340]/80" />
+                      <div className="mt-2.5 h-4 w-3/5 rounded bg-[#1b2340]/60" />
+                      <div className="mt-6 space-y-2">
+                        <div className="h-2.5 w-full rounded bg-[#161d33]/80" />
+                        <div className="h-2.5 w-11/12 rounded bg-[#161d33]/70" />
+                        <div className="h-2.5 w-9/12 rounded bg-[#161d33]/60" />
+                      </div>
+                      <div className="mt-6 h-8 w-28 rounded-lg bg-[#1b2340]/70" />
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
             {!newsLoading && newsError && (
               <div className="flex flex-col items-center gap-3 rounded-2xl border border-red-500/20 bg-red-500/5 px-6 py-10 text-center">
