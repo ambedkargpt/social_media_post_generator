@@ -3,6 +3,7 @@ import { Mail, MapPin, Send, UserPlus, Loader2, CheckCircle2 } from 'lucide-reac
 import { sendContactMessage } from '../../api/contact';
 import SectionLabel from './SectionLabel';
 import Spinner from '../Spinner';
+import LegalModal from '../LegalModal';
 
 // Leaflet is 43 kB gzipped plus a stylesheet, for a map at the very bottom of
 // the page. Loading it on render would only move the cost, not remove it, so
@@ -77,9 +78,14 @@ function Field({
 
 // ─── Direct-channel row (email / location) ───
 function ChannelRow({ icon: Icon, label, value, href }) {
+  // mailto: and tel: must stay in place; a map belongs in a new tab, and one
+  // opened by a link needs noopener so the new page cannot reach back through
+  // window.opener.
+  const external = /^https?:/i.test(href || '');
   return (
     <a
       href={href}
+      {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
       className="group flex items-center gap-3 rounded-xl border border-[#1e3260]/60 bg-[#0a1330]/60 p-3 transition hover:border-[#3a6bc4]/80 hover:bg-[#0d1a3f]/80"
     >
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#2a4375]/70 bg-[#0c1735]/80 text-[#5fa5ff] shadow-[0_0_14px_rgba(63,159,255,0.22)]">
@@ -103,6 +109,7 @@ export default function ContactSection() {
   const [form, setForm] = useState(EMPTY);
   const [status, setStatus] = useState('idle'); // idle | sending | sent | error
   const [error, setError] = useState('');
+  const [legal, setLegal] = useState(null);
 
   function update(e) {
     const { name, value } = e.target;
@@ -186,11 +193,14 @@ export default function ContactSection() {
                 value="smartbhaujan@gmail.com"
                 href="mailto:smartbhaujan@gmail.com"
               />
+              {/* Opens the address on a map. It was href="#", so clicking the
+                  one row a visitor clicks to find you scrolled them to the top
+                  of the page instead. */}
               <ChannelRow
                 icon={MapPin}
                 label="Location"
                 value="71-75 Shelton Street in Covent Garden, London (WC2H 9JQ)"
-                href="#"
+                href="https://www.google.com/maps/search/?api=1&query=71-75+Shelton+Street+Covent+Garden+London+WC2H+9JQ"
               />
             </div>
 
@@ -274,14 +284,26 @@ export default function ContactSection() {
               </p>
             )}
 
+            {/* Opens the same modal the footer and signup use. This was an
+                href="#", which navigates to the top of the page: the reader
+                asks to see the terms and is silently moved away from the form
+                they were filling in. The trailing "here" pointed at nothing. */}
             <p className="mt-4 text-center text-[11.5px] text-[#7aa6e5]">
               By submitting, you agree to our{' '}
-              <a href="#" className="underline underline-offset-2 hover:text-white">Terms of Service</a>
-              {' '}here.
+              <button
+                type="button"
+                onClick={() => setLegal('terms')}
+                className="underline underline-offset-2 transition hover:text-white"
+              >
+                Terms of Service
+              </button>
+              .
             </p>
           </form>
         </div>
       </div>
+
+      {legal && <LegalModal type={legal} onClose={() => setLegal(null)} />}
     </section>
   );
 }
