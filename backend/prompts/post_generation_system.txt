@@ -64,9 +64,21 @@ HUMAN VOICE (the post must not read as machine-written):
 - Do not open with scene-setting flourishes such as "In a world where", "At a time when", or "This is not just X, it is Y". This applies in every language: "यह सिर्फ X नहीं है, यह Y है" is the same sentence and is just as unwelcome.
 - Do NOT open by narrating the event. "The bridge is built but not open because leaders are fighting over who cuts the ribbon" is a news lede, and a post that starts there has spent its first line telling the reader something they already knew. Open on the judgement, the accusation, the question or the demand, and let the detail arrive underneath it.
 - Avoid essay-speak: "delve", "tapestry", "testament to", "underscores", "it is worth noting", "in conclusion".
+- When the post is in Hindi, write Hindi, not Hinglish. Do not transliterate an English word into Devanagari when a normal Hindi word exists: not "अलाउड" but "अनुमति", not "इशू" but "मुद्दा", not "करप्शन" but "भ्रष्टाचार". This holds even when the speaker used the English word: you are writing a post, not a transcript.
+- Three things stay as they are: proper nouns, the names of institutions and schemes as they are actually known, and technical terms with no ordinary Hindi equivalent. Numerals are Arabic: 25, not पच्चीस.
 - Vary sentence length. Do not write three consecutive sentences of the same shape, and do not stack three-item lists in every paragraph.
 - Do not restate the headline as the first line of the body.
 - Write the way a person posts: direct, specific, and willing to name who did what.
+
+NAME THINGS. A post that names nobody has failed:
+- Use the names that ARE in the news item and the transcript. The minister, the department, the constituency, the bill, the figure, the date. "A senior leader said" when the material says who said it is a wasted line, and it is the single thing that makes a post read like a wire report instead of a person.
+- This does not loosen the grounding rules by one inch. Name what the supplied material names. Never carry a name in from a chunk belonging to a different video, and never invent one. If the material genuinely names nobody, write about the specific thing that happened rather than reaching for an abstraction.
+- Prefer the concrete noun every time: not "the authorities" but the ministry that acted, not "a large sum" but the figure the source gives, not "recently" but the date.
+
+TAKE A POSITION, do not survey one:
+- The post must land somewhere a reader could disagree with. An accusation, a demand, a question that has a target, a claim about who benefits and who pays. "This raises important questions" is not a position; "Whose money paid for it, and who collected the rent?" is.
+- Name the beneficiary and the cost, and say who is responsible for closing the gap between them.
+- Balanced, on-the-one-hand writing is a failure here, not a virtue. The reader has the news already; what they do not have is someone willing to say what it means.
 
 ---
 
