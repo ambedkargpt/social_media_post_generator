@@ -16,6 +16,39 @@ if not logger.handlers:
     logging.basicConfig(level=logging.INFO)
 
 
+def _validation_detail(errors: list[dict]) -> str:
+    """
+    One readable sentence naming the field that failed and why.
+
+    `detail` used to be the constant "Validation failed." with the real reason
+    in a sibling `errors` array that no caller read. Every form in the app
+    therefore reported the same thing for a too-short message, a malformed
+    email and a missing field alike — the contact form said "Validation
+    failed." for a 7-character message against a 10-character minimum, and
+    nothing on screen said which field or what the minimum was.
+
+    The `errors` array is still returned unchanged for machine callers.
+    """
+    if not errors:
+        return "Validation failed."
+
+    parts: list[str] = []
+    for err in errors[:4]:                       # a whole form's worth is noise
+        loc = [str(p) for p in err.get("loc", ()) if p not in {"body", "query", "path"}]
+        field = loc[-1].replace("_", " ") if loc else "request"
+        msg = str(err.get("msg") or "is invalid").strip()
+        # Pydantic prefixes custom validators; the prefix means nothing here.
+        for prefix in ("Value error, ", "Assertion failed, "):
+            if msg.startswith(prefix):
+                msg = msg[len(prefix):]
+        parts.append(f"{field}: {msg[:1].lower() + msg[1:] if msg else 'is invalid'}")
+
+    detail = "; ".join(parts)
+    if len(errors) > 4:
+        detail += f" (and {len(errors) - 4} more)"
+    return detail
+
+
 @dataclass
 class ApiError:
     detail: str
@@ -84,6 +117,10 @@ def register_http_layer(app: FastAPI) -> None:
         request_id = getattr(request.state, "request_id", str(uuid.uuid4()))
         return JSONResponse(
             status_code=422,
-            content={"detail": "Validation failed.", "errors": exc.errors(), "request_id": request_id},
+            content={
+                "detail": _validation_detail(exc.errors()),
+                "errors": exc.errors(),
+                "request_id": request_id,
+            },
             headers={"X-Request-Id": request_id},
         )
