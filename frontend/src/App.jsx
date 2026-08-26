@@ -35,6 +35,7 @@ import CustomCursor        from './components/CustomCursor';
 import ScrollProgress      from './components/ScrollProgress';
 import OpeningSplash       from './components/OpeningSplash';
 import LanguagePopup       from './components/LanguagePopup';
+import Spinner             from './components/Spinner';
 import TransitionCurtain   from './components/TransitionCurtain';
 import ErrorBoundary       from './components/ErrorBoundary';
 
@@ -100,8 +101,18 @@ export default function App() {
           <PageTransition>
           {/* Route chunks load on navigation. The fallback matches the page
               background so a chunk arriving late reads as a pause rather than
-              a flash of empty white. */}
-          <Suspense fallback={<div style={{ minHeight: '100vh', background: '#05081a' }} />}>
+              a flash of empty white — but a bare coloured div is
+              indistinguishable from a dead page, so it carries a spinner. */}
+          <Suspense
+            fallback={(
+              <div
+                className="flex items-center justify-center"
+                style={{ minHeight: '100vh', background: '#05081a' }}
+              >
+                <Spinner size={36} />
+              </div>
+            )}
+          >
           <Routes>
             {/* public */}
             <Route path="/"          element={<Home splashDone={splashDone} />} />

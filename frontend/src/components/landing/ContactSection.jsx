@@ -2,6 +2,7 @@
 import { Mail, MapPin, Send, UserPlus, Loader2, CheckCircle2 } from 'lucide-react';
 import { sendContactMessage } from '../../api/contact';
 import SectionLabel from './SectionLabel';
+import Spinner from '../Spinner';
 
 // Leaflet is 43 kB gzipped plus a stylesheet, for a map at the very bottom of
 // the page. Loading it on render would only move the cost, not remove it, so
@@ -35,8 +36,14 @@ function LazyOfficeMap() {
 
   return (
     <div ref={ref} className="h-full w-full">
+      {/* Leaflet is the largest lazy chunk in the app, so this fallback is on
+          screen the longest of any of them. */}
       {show && (
-        <Suspense fallback={<div className="h-full w-full bg-[#0a1428]" />}>
+        <Suspense fallback={(
+          <div className="flex h-full w-full items-center justify-center bg-[#0a1428]">
+            <Spinner size={28} label="Loading map…" showLabel />
+          </div>
+        )}>
           <OfficeMap />
         </Suspense>
       )}
