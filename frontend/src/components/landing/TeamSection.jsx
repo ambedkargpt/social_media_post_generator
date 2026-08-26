@@ -39,23 +39,37 @@ function NavButton({ onClick, direction, label }) {
   );
 }
 
-function SocialLinks() {
+// Renders only the profiles that exist.
+//
+// Both icons used to be href="#" on every card, so a visitor clicking a named
+// person's LinkedIn was scrolled to the top of the page. An icon that does
+// nothing is a worse answer than no icon.
+//
+// The wiring is left in place rather than deleted: add `linkedin` or `twitter`
+// to a TEAM entry and that person's icon appears, with no component to rebuild.
+// Nobody has one yet, so nothing renders today.
+function SocialLinks({ linkedin, twitter }) {
+  const links = [
+    { href: linkedin, label: 'LinkedIn', Icon: LinkedinIcon },
+    { href: twitter,  label: 'Twitter',  Icon: TwitterIcon  },
+  ].filter((l) => l.href);
+
+  if (!links.length) return null;
+
   return (
     <div className="flex shrink-0 gap-2">
-      <a
-        href="#"
-        aria-label="LinkedIn"
-        className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#2a4375]/70 bg-[#0a1430]/60 text-[#aec0de] backdrop-blur transition hover:border-[#4a78c8]/90 hover:text-white"
-      >
-        <LinkedinIcon width={13} height={13} />
-      </a>
-      <a
-        href="#"
-        aria-label="Twitter"
-        className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#2a4375]/70 bg-[#0a1430]/60 text-[#aec0de] backdrop-blur transition hover:border-[#4a78c8]/90 hover:text-white"
-      >
-        <TwitterIcon width={13} height={13} />
-      </a>
+      {links.map(({ href, label, Icon }) => (
+        <a
+          key={label}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={label}
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#2a4375]/70 bg-[#0a1430]/60 text-[#aec0de] backdrop-blur transition hover:border-[#4a78c8]/90 hover:text-white"
+        >
+          <Icon width={13} height={13} />
+        </a>
+      ))}
     </div>
   );
 }
@@ -84,7 +98,7 @@ function TeamCard({ member }) {
               {member.role}
             </p>
           </div>
-          <SocialLinks />
+          <SocialLinks linkedin={member.linkedin} twitter={member.twitter} />
         </div>
       </div>
     </div>
@@ -266,7 +280,7 @@ function MobileCarousel() {
                 <h3 className="text-[22px] font-semibold leading-tight text-white">{member.name}</h3>
                 <p className="mt-1 text-[13px] uppercase tracking-[0.15em] text-[#7aa6e5]">{member.role}</p>
               </div>
-              <SocialLinks />
+              <SocialLinks linkedin={member.linkedin} twitter={member.twitter} />
             </div>
           </div>
         </div>

@@ -83,7 +83,7 @@ export default function ProfileMenu({ name, email, initial, party, onLogout }) {
                 src={logo}
                 alt={party}
                 title={party}
-                className="h-3.5 w-3.5 object-contain"
+                className="h-[18px] w-[18px] object-contain"
                 onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
               />
             </span>

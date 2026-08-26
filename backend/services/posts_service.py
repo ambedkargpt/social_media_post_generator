@@ -203,6 +203,14 @@ class PostsService:
         # rather than only the excerpts a retriever happened to rank.
         transcript = self._transcript_for_article(article, retrieved_chunks)
 
+        # One trace folder per generation, whether or not research ran.
+        #
+        # The trace used to belong to the research brief, so with research off
+        # -- which is how production runs today -- a generation left no record
+        # at all: no news item, no transcript, no chunks, no prompt, no post.
+        # That is exactly the configuration someone needs to inspect.
+        trace_dir = self._ensure_trace_dir(brief, article, retrieved_chunks, transcript)
+
         # Chunks are optional now, but writing from nothing is not. A post with
         # no chunks, no transcript and no research would be invention.
         if not retrieved_chunks and not transcript and not brief_payload:
@@ -223,6 +231,7 @@ class PostsService:
             language=POST_OUTPUT_LANGUAGE,
             research_payload=brief_payload,
             transcript=transcript,
+            trace_dir=trace_dir,
         )
         if not post_text or not post_text.strip():
             raise HTTPException(
@@ -237,11 +246,10 @@ class PostsService:
             full_contexts=full_contexts,
             temperature=temperature,
             brief_payload=brief_payload,
-            trace_dir=brief.trace_dir if brief else None,
+            trace_dir=trace_dir,
             transcript=transcript,
         )
-        if brief and brief.trace_dir:
-            self._trace_write(brief.trace_dir, "14_post_final.txt", post_text)
+        self._trace_write(trace_dir, "14_post_final.txt", post_text)
         model_used = self._current_generation_model()
         snapshot_id = f"rs_{uuid4().hex}"
         references = self._references_from_chunks(retrieved_chunks)
@@ -568,6 +576,14 @@ class PostsService:
         # Left empty when unset, so a user who never chose one gets exactly the
         # prompt they got before.
         default_profile["party_position"] = guidance
+
+        # The party itself, stated plainly.
+        #
+        # It used to reach the prompt only inside the position label, so a user
+        # who had not chosen a position gave the model no idea whose side it was
+        # writing from. This is partisan communication: the writer needs to know
+        # which party's case it is making before it can make it.
+        default_profile["political_party"] = str(user_doc.get("political_party") or "").strip()
         return default_profile
 
     def _rag_stack(self, tenant: str) -> tuple[Any, Any, Any]:
@@ -681,6 +697,75 @@ class PostsService:
                 seen.add(title)
         return contexts
 
+    def _ensure_trace_dir(
+        self,
+        brief: "ResearchBrief | None",
+        article: dict[str, Any],
+        chunks: list[dict[str, Any]],
+        transcript: str,
+    ) -> "Path | None":
+        """
+        The folder this generation writes its record into.
+
+        Reuses the research brief's folder when research ran, so one story is
+        one folder rather than two. When research is off there is no brief, and
+        this makes the folder itself plus the inputs research would otherwise
+        have written: the news item, the transcript, and the retrieved chunks.
+
+        Returns None when WEB_RESEARCH_DEBUG_DIR is unset, which is how it stays
+        off in production. Never raises: a tracing failure must not cost a post.
+        """
+        if brief is not None and getattr(brief, "trace_dir", None):
+            return brief.trace_dir
+
+        base = getattr(settings, "web_research_debug_dir", None)
+        if not base:
+            return None
+
+        try:
+            from backend.pipeline.web_research import _Trace
+
+            label = str(article.get("title") or article.get("description") or "run")[:60]
+            trace = _Trace(Path(base), label)
+            if not trace.dir:
+                return None
+
+            # The same first two files research writes, so a trace reads the
+            # same way whether or not the research step ran.
+            # The same first two files research writes, so a trace reads the
+            # same way whether or not the research step ran.
+            trace.write("00_news_item.txt", "\n".join(
+                f"{k}: {article.get(k) or ''}"
+                for k in ("title", "description", "content", "source_url")
+            ))
+            trace.write("00b_transcript.txt", transcript or "(no transcript for this video)")
+
+            # What retrieval actually handed the writer. Nothing recorded this
+            # before, so a post grounded in the wrong chunks looked identical
+            # to one grounded in the right ones.
+            chunk_blocks = []
+            for i, c in enumerate(chunks, 1):
+                chunk_blocks.append(
+                    f"--- chunk {i} | similarity={c.get('similarity_score')} "
+                    f"relevance={c.get('relevance_score')} | {c.get('video_title')}" + "\n"
+                    + str(c.get("video_link") or "") + "\n"
+                    + str(c.get("chunk_text") or "")
+                )
+            trace.write(
+                "00c_retrieved_chunks.txt",
+                ("\n\n".join(chunk_blocks)) or "(retrieval returned no chunks)",
+            )
+
+            import logging as _logging
+
+            _logging.getLogger(__name__).info("[generate] tracing to %s", trace.dir)
+            return trace.dir
+        except Exception as exc:  # noqa: BLE001 - tracing is never worth a 500
+            import logging as _logging
+
+            _logging.getLogger(__name__).warning("could not open a trace dir: %s", exc)
+            return None
+
     def _generate_with_llm(
         self,
         *,
@@ -693,6 +778,7 @@ class PostsService:
         refinement_note: str | None = None,
         research_payload: dict[str, Any] | None = None,
         transcript: str | None = None,
+        trace_dir: "Path | None" = None,
     ) -> str:
         try:
             if not settings.deepseek_api_key:
@@ -713,6 +799,14 @@ class PostsService:
                 refinement_note=refinement_note,
                 research_payload=research_payload,
                 transcript=transcript,
+                # The exact bytes handed to the model. generate_post has always
+                # offered this hook and nothing used it, so the trace recorded
+                # what came back without recording what was asked - which is the
+                # half you need when a post comes out wrong.
+                on_prompt=lambda system_msg, user_content: (
+                    self._trace_write(trace_dir, "10x_post_prompt_system.txt", system_msg),
+                    self._trace_write(trace_dir, "10x_post_prompt_user.txt", user_content),
+                ),
             )
         except OpenAIRateLimitError as exc:
             import logging as _logging

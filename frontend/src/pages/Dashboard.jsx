@@ -21,6 +21,7 @@ import RecentSearchesTable  from '../components/dashboard/RecentSearchesTable';
 import SavedPromptsGrid     from '../components/dashboard/SavedPromptsGrid';
 import AchievementsGrid     from '../components/dashboard/AchievementsGrid';
 import DashboardFooter      from '../components/dashboard/DashboardFooter';
+import { partyLogo }        from '../utils/politicalParties';
 
 export default function Dashboard() {
   const { currentUser, logout } = useAuth();
@@ -62,6 +63,9 @@ export default function Dashboard() {
     }
   }
 
+  // Resolved from the full party list, not the offered one, so an account
+  // carrying a party we no longer offer still shows its own mark.
+  const welcomeLogo  = partyLogo(currentUser?.political_party);
   const displayName  = currentUser?.username ?? '—';
   const displayEmail = currentUser?.email ?? currentUser?.phone ?? '—';
   const joinedLabel  = (() => {
@@ -116,9 +120,30 @@ export default function Dashboard() {
         {/* ── Welcome ── */}
         <div className="mb-7 flex items-end justify-between gap-4">
           <div>
-            <h1 className="font-display text-[28px] md:text-[32px] font-bold leading-tight tracking-tight">
-              <span className="text-white">Welcome back, </span>
-              <span className="gradient-text-blue">{first}</span>
+            <h1 className="flex flex-wrap items-center gap-x-3 gap-y-2 font-display text-[28px] md:text-[32px] font-bold leading-tight tracking-tight">
+              <span>
+                <span className="text-white">Welcome back, </span>
+                <span className="gradient-text-blue">{first}</span>
+              </span>
+              {/* The party mark. The disc stays 52px; the logo fills it to
+                  48px, leaving a 2px white rim rather than the 6px of padding
+                  it had. These symbols are drawn on their own coloured circle,
+                  so a wide white ring around them just makes the mark smaller
+                  for no gain. Source files are 250px square, so this is well
+                  inside their resolution on a 2x screen. */}
+              {welcomeLogo && (
+                <span
+                  className="inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-white shadow-[0_0_0_1px_rgba(63,159,255,0.35),0_4px_16px_rgba(0,0,0,0.35)]"
+                  title={currentUser?.political_party || ''}
+                >
+                  <img
+                    src={welcomeLogo}
+                    alt={currentUser?.political_party || 'Party'}
+                    className="h-[48px] w-[48px] object-contain"
+                    onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
+                  />
+                </span>
+              )}
             </h1>
             <p className="mt-1.5 text-[13.5px] text-[#8b94b8]">
               Your AI journey continues. Let&apos;s make today productive and insightful!

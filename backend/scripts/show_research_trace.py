@@ -92,6 +92,28 @@ def show(d: Path, *, full: bool) -> None:
                 print(f"... [{len(brief) - 1500:,} more chars, use --full]")
             print(f"\n>>> {_verdict(brief)}")
 
+    # Retrieval and the writer's own prompt. Both exist whether or not research
+    # ran, and the prompt is the half that was missing: the trace recorded what
+    # came back without recording what was asked.
+    chunks = _read(d, "00c_retrieved_chunks.txt")
+    if chunks:
+        print(f"\n{RULE}\nRETRIEVED CHUNKS\n{RULE}")
+        print(chunks.strip() if full else chunks.strip()[:1200])
+        if not full and len(chunks) > 1200:
+            print(f"... [{len(chunks) - 1200:,} more chars, use --full]")
+
+    sys_p = _read(d, "10x_post_prompt_system.txt")
+    usr_p = _read(d, "10x_post_prompt_user.txt")
+    if sys_p or usr_p:
+        print(f"\n{RULE}\nPROMPT SENT TO THE MODEL\n{RULE}")
+        for label, body in (("SYSTEM", sys_p), ("USER", usr_p)):
+            if not body:
+                continue
+            print(f"\n{label} ({len(body):,} chars)\n{THIN}")
+            print(body.strip() if full else body.strip()[:1500])
+            if not full and len(body) > 1500:
+                print(f"... [{len(body) - 1500:,} more chars, use --full]")
+
     print(f"\n{RULE}\nPOST\n{RULE}")
     for label, name in (
         ("VALIDATION, first pass", "11_validation_first_pass.json"),

@@ -17,6 +17,7 @@ import { CORE_QUESTION_IDS } from '../utils/preferenceQuestions';
 import { getSiteLanguage, SITE_LANGUAGES } from '../utils/siteLanguage';
 import { parsePost, hashtagsText } from '../utils/parsePost';
 import Spinner from '../components/Spinner';
+import SpeakButton from '../components/generate/SpeakButton';
 
 const TONES = ['Professional', 'Inspirational', 'Creative', 'Casual', 'Motivational'];
 const ALSO_GENERATE = ['Audio', 'Shorts', 'Image'];
@@ -1411,6 +1412,15 @@ export default function SocialMediaPostGenerator() {
 
               {/* Action buttons */}
               <div className="ml-auto flex items-center gap-1 sm:gap-2">
+                {/* Read aloud. Sits first because in a demo it is the control
+                    being reached for, and it speaks whichever version is on
+                    screen rather than always the Hindi original. */}
+                {!generating && !translating && generatedPost && (
+                  <SpeakButton
+                    content={showTranslated && translatedPost ? translatedPost : generatedPost}
+                    lang={showTranslated && translatedPost ? 'en' : 'hi'}
+                  />
+                )}
                 {/* Translate — hidden on mobile to save space */}
                 {selectedPostId && !generating && siteLang !== 'hi' && (
                   <button

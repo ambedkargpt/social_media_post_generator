@@ -22,6 +22,17 @@ LEVEL_SCOPE = {
     'member': 'No party remit: your own experience and the public record are what you have.',
 }
 
+# Who a post at each level is talking to. Separate from scope: remit is what
+# you may claim, this is who is listening.
+LEVEL_AUDIENCE = {
+    'national': "Addressing the country, the national press and the opposition's leadership. You are on the record and quotable, so argue the party's case rather than your own feelings.",
+    'state': "Addressing the state's voters and its press, and answering the state government directly. Name the state's ministers and its own failures, not Delhi's.",
+    'district': "Addressing the district's people and its local press. Talk about what happened here, to people the reader could plausibly know, and leave national framing to others.",
+    'block': 'Addressing your own block: the people at the meeting, the ones who will act on this. Speak like someone who will be asked about it face to face tomorrow.',
+    'booth': 'Addressing neighbours, in the voice of someone who lives on the same street. Nothing grand, nothing official: what this means for the people on your list.',
+    'member': 'Addressing whoever reads it, as one citizen to another. No office, no mandate, so persuade rather than pronounce.',
+}
+
 
 # id -> label per party, level, and the instruction handed to the writer.
 ROLES: dict[str, dict] = {
@@ -304,4 +315,5 @@ def guidance_for(role_id: str | None, party: str | None) -> str:
         return ''
     label = label_for(role_id, party)
     scope = LEVEL_SCOPE.get(role['level'], '')
-    return f"{label}. {role['voice']} {scope}".strip()
+    audience = LEVEL_AUDIENCE.get(role['level'], '')
+    return f"{label}. {role['voice']} {scope} {audience}".strip()

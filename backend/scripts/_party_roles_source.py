@@ -25,6 +25,27 @@ LEVELS = {
     "member":   "No party remit: your own experience and the public record are what you have.",
 }
 
+# Who the post is talking to, which is a separate question from what it may
+# claim. Remit alone left a booth worker and a national spokesperson writing
+# the same post in different sizes: both addressed "the public" because that
+# is what target_audience said, and neither sounded like the person sending it.
+# A karyakarta is talking to people they will see again this week; a national
+# officer is talking past the room to the press and the other side.
+LEVEL_AUDIENCE = {
+    "national": "Addressing the country, the national press and the opposition's leadership. "
+                "You are on the record and quotable, so argue the party's case rather than your own feelings.",
+    "state":    "Addressing the state's voters and its press, and answering the state government directly. "
+                "Name the state's ministers and its own failures, not Delhi's.",
+    "district": "Addressing the district's people and its local press. Talk about what happened here, "
+                "to people the reader could plausibly know, and leave national framing to others.",
+    "block":    "Addressing your own block: the people at the meeting, the ones who will act on this. "
+                "Speak like someone who will be asked about it face to face tomorrow.",
+    "booth":    "Addressing neighbours, in the voice of someone who lives on the same street. "
+                "Nothing grand, nothing official: what this means for the people on your list.",
+    "member":   "Addressing whoever reads it, as one citizen to another. No office, no mandate, "
+                "so persuade rather than pronounce.",
+}
+
 ROWS = [
     # id, group, level, sp, inc, generic, voice
     ("national_president", "National", "national",

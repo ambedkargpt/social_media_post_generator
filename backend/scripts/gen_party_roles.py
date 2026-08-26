@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from _party_roles_source import ROWS, LEVELS  # noqa: E402
+from _party_roles_source import ROWS, LEVELS, LEVEL_AUDIENCE  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -36,6 +36,10 @@ lines = [
     "LEVEL_SCOPE = {",
 ]
 for k, v in LEVELS.items():
+    lines.append(f"    {k!r}: {v!r},")
+lines += ["}", "", "# Who a post at each level is talking to. Separate from scope: remit is what",
+          "# you may claim, this is who is listening.", "LEVEL_AUDIENCE = {"]
+for k, v in LEVEL_AUDIENCE.items():
     lines.append(f"    {k!r}: {v!r},")
 lines += ["}", "", "", "# id -> label per party, level, and the instruction handed to the writer.", "ROLES: dict[str, dict] = {"]
 for rid, group, level, sp, inc, generic, voice in ROWS:
@@ -79,7 +83,8 @@ lines += [
     "        return ''",
     "    label = label_for(role_id, party)",
     "    scope = LEVEL_SCOPE.get(role['level'], '')",
-    "    return f\"{label}. {role['voice']} {scope}\".strip()",
+    "    audience = LEVEL_AUDIENCE.get(role['level'], '')",
+    "    return f\"{label}. {role['voice']} {scope} {audience}\".strip()",
     "",
 ]
 be.write_text("\n".join(lines), encoding="utf-8")

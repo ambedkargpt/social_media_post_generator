@@ -23,10 +23,28 @@ Cold-start behaviour:
   hit the in-memory _RAG_CACHE with no overhead.
 """
 
+import logging
+import os
+
 from mangum import Mangum  # type: ignore[import-untyped]
 
 # Re-export the FastAPI app from the shared main module
 from backend.main import app  # noqa: F401  (lifespan hooks included)
+
+# Let our own INFO logs reach CloudWatch.
+#
+# The Lambda runtime leaves the root logger at WARNING, so every
+# logger.info() in this codebase was discarded before it was written —
+# the [generate], [retrieval] and [research] lines that exist precisely to
+# explain a request never appeared in production. A 503 was diagnosed from
+# the outside over two days that one of those lines would have named.
+#
+# Only the `backend` logger is raised, not the root: pymongo, httpx,
+# pinecone and botocore at INFO would bury the lines this is for. LOG_LEVEL
+# overrides when a run needs more or less.
+logging.getLogger("backend").setLevel(
+    getattr(logging, (os.getenv("LOG_LEVEL") or "INFO").upper(), logging.INFO)
+)
 
 # Lambda handler — the name "handler" is referenced in the Lambda config
 handler = Mangum(app, lifespan="on")

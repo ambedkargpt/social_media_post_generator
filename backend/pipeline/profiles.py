@@ -3,6 +3,10 @@ from typing import Dict, List
 
 PROFILE_FIELDS = [
     "user_role",
+    # Which party the writer belongs to. This is partisan communication, and
+    # it reached the prompt only inside the position label before, so a user
+    # with no position set gave the model no idea whose case it was making.
+    "political_party",
     # Where the user sits in their party. Separate from user_role, which is
     # who they are ideologically rather than what they may speak for.
     "party_position",
@@ -44,6 +48,7 @@ def _validate_profile_list(profiles: List[Dict[str, str]]) -> None:
 
 DEFAULT_USER_PROFILES: List[Dict[str, str]] = [
         {
+            "political_party": "",
             "party_position": "",
             "user_role": "Radical Dalit Activist",
             "tone": "Fierce, uncompromising, urgent",
@@ -72,6 +77,7 @@ DEFAULT_USER_PROFILES: List[Dict[str, str]] = [
             "visual_suggestion": "Bold poster-style graphic with slogans",
         },
         {
+            "political_party": "",
             "party_position": "",
             "user_role": "Constitutionalist Academic",
             "tone": "Analytical, measured, authoritative",
@@ -100,6 +106,7 @@ DEFAULT_USER_PROFILES: List[Dict[str, str]] = [
             "visual_suggestion": "Screenshot of article or clean text card",
         },
         {
+            "political_party": "",
             "party_position": "",
             "user_role": "Dalit Youth Organizer",
             "tone": "Encouraging, mobilizing, relatable",
@@ -128,6 +135,7 @@ DEFAULT_USER_PROFILES: List[Dict[str, str]] = [
             "visual_suggestion": "Photo of campus protest or study circle",
         },
         {
+            "political_party": "",
             "party_position": "",
             "user_role": "Ambedkarite Buddhist Thinker",
             "tone": "Reflective, philosophical, firm",
@@ -156,6 +164,7 @@ DEFAULT_USER_PROFILES: List[Dict[str, str]] = [
             "visual_suggestion": "Image of Ambedkar/Buddha or community gathering",
         },
         {
+            "political_party": "",
             "party_position": "",
             "user_role": "Human Rights NGO Worker",
             "tone": "Professional, empathetic, rights-focused",
@@ -184,6 +193,7 @@ DEFAULT_USER_PROFILES: List[Dict[str, str]] = [
             "visual_suggestion": "Clean infographic or case summary card",
         },
         {
+            "political_party": "",
             "party_position": "",
             "user_role": "Progressive Student Leader",
             "tone": "Energetic, political, campaign-driven",
@@ -212,6 +222,7 @@ DEFAULT_USER_PROFILES: List[Dict[str, str]] = [
             "visual_suggestion": "Protest photo or poster template",
         },
         {
+            "political_party": "",
             "party_position": "",
             "user_role": "Journalist Covering Caste Issues",
             "tone": "Investigative, balanced, yet critical",
@@ -240,6 +251,7 @@ DEFAULT_USER_PROFILES: List[Dict[str, str]] = [
             "visual_suggestion": "Thumbnail from report or neutral illustrative image",
         },
         {
+            "political_party": "",
             "party_position": "",
             "user_role": "Community Organizer",
             "tone": "Grounded, practical, caring",
@@ -268,6 +280,7 @@ DEFAULT_USER_PROFILES: List[Dict[str, str]] = [
             "visual_suggestion": "Simple poster or meeting photo",
         },
         {
+            "political_party": "",
             "party_position": "",
             "user_role": "Non-Dalit Ally Activist",
             "tone": "Humble, supportive, educational",
@@ -296,6 +309,7 @@ DEFAULT_USER_PROFILES: List[Dict[str, str]] = [
             "visual_suggestion": "Quote card or resource list screenshot",
         },
         {
+            "political_party": "",
             "party_position": "",
             "user_role": "Policy Analyst",
             "tone": "Data-informed, structured, pragmatic",
