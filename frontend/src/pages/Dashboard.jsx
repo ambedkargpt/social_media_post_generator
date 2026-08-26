@@ -125,19 +125,21 @@ export default function Dashboard() {
                 <span className="text-white">Welcome back, </span>
                 <span className="gradient-text-blue">{first}</span>
               </span>
-              {/* The party mark, at a size you can actually read it at. The
-                  badge on the avatar is 14px and reduces most party symbols to
-                  a coloured smudge; here it sits on a white disc at 40px,
-                  which is what these logos are designed to be seen at. */}
+              {/* The party mark, at a size you can actually read it at. It
+                  sits on a white disc at 54px, roughly the cap height of the
+                  heading beside it, so it reads as part of the line rather
+                  than a decoration hung off the end. The source files are
+                  250px square, so this is still well inside their resolution
+                  even on a 2x screen. */}
               {welcomeLogo && (
                 <span
-                  className="inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-white shadow-[0_0_0_1px_rgba(63,159,255,0.35),0_4px_16px_rgba(0,0,0,0.35)]"
+                  className="inline-flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full bg-white shadow-[0_0_0_1px_rgba(63,159,255,0.35),0_4px_16px_rgba(0,0,0,0.35)]"
                   title={currentUser?.political_party || ''}
                 >
                   <img
                     src={welcomeLogo}
                     alt={currentUser?.political_party || 'Party'}
-                    className="h-10 w-10 object-contain"
+                    className="h-[54px] w-[54px] object-contain"
                     onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
                   />
                 </span>

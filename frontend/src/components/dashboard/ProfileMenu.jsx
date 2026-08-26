@@ -78,12 +78,12 @@ export default function ProfileMenu({ name, email, initial, party, onLogout }) {
             // The party badge takes the corner the presence dot had: two marks
             // on one 40px avatar is clutter, and which party someone represents
             // says more here than whether they are online.
-            <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-[#070b1c] bg-white">
+            <span className="absolute -bottom-1.5 -right-1.5 flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#070b1c] bg-white">
               <img
                 src={logo}
                 alt={party}
                 title={party}
-                className="h-3.5 w-3.5 object-contain"
+                className="h-5 w-5 object-contain"
                 onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
               />
             </span>
