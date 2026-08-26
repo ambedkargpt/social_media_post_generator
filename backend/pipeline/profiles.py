@@ -3,6 +3,10 @@ from typing import Dict, List
 
 PROFILE_FIELDS = [
     "user_role",
+    # Which party the writer belongs to. This is partisan communication, and
+    # it reached the prompt only inside the position label before, so a user
+    # with no position set gave the model no idea whose case it was making.
+    "political_party",
     # Where the user sits in their party. Separate from user_role, which is
     # who they are ideologically rather than what they may speak for.
     "party_position",

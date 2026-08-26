@@ -568,6 +568,14 @@ class PostsService:
         # Left empty when unset, so a user who never chose one gets exactly the
         # prompt they got before.
         default_profile["party_position"] = guidance
+
+        # The party itself, stated plainly.
+        #
+        # It used to reach the prompt only inside the position label, so a user
+        # who had not chosen a position gave the model no idea whose side it was
+        # writing from. This is partisan communication: the writer needs to know
+        # which party's case it is making before it can make it.
+        default_profile["political_party"] = str(user_doc.get("political_party") or "").strip()
         return default_profile
 
     def _rag_stack(self, tenant: str) -> tuple[Any, Any, Any]:
