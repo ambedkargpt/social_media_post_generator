@@ -490,7 +490,22 @@ export default function SocialMediaPostGenerator() {
         // Refresh quota so the UI reflects the limit
         getDailyQuota().then(setQuota).catch(() => {});
       } else {
-        setGeneratedPost('Could not generate post right now. Please try again.');
+        // Show what the server actually said. It sends a reason on every
+        // refusal — "no source material could be gathered", an invalid key,
+        // an unavailable dependency — and replacing all of them with "try
+        // again" cost two evenings of guessing at a failure that was
+        // describing itself the whole time. Falls back to the generic line
+        // only when there is genuinely nothing to show (a gateway error, a
+        // dropped connection), where the status code is the only signal.
+        const detail = err?.response?.data?.detail;
+        const reason = typeof detail === 'string' ? detail : detail?.message;
+        setGeneratedPost(
+          reason
+            ? `⚠️ ${reason}`
+            : `Could not generate post right now. Please try again.${
+                err?.response?.status ? ` (error ${err.response.status})` : ''
+              }`,
+        );
       }
     } finally {
       clearInterval(timer);

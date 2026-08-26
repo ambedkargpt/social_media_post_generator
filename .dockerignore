@@ -35,6 +35,13 @@ htmlcov/
 backend/data/*.json
 backend/data/*.bin
 backend/data/*.txt
+# ...except the consolidated transcripts. The post pipeline reads these at
+# request time, per story, to write against what the speaker actually said.
+# Excluding them made transcript_for_video() return "" for every video in
+# production, which is invisible until something depends on it — and once the
+# generator did, posts were refused for want of source material. 380K total;
+# nothing here is downloaded from S3, so the exclusion had no fallback.
+!backend/data/*_all_transcripts.txt
 backend/outputs/
 outputs/
 
