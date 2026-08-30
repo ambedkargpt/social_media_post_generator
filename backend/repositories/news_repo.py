@@ -68,6 +68,16 @@ class NewsRepository:
                 tenant_clause = {"$or": [tenant_clause, {"tenant_id": {"$exists": False}}]}
             clauses.append(tenant_clause)
 
+        # Retired from the feed, kept in the database.
+        #
+        # Superseded stories still matter: the knowledge graph is built from
+        # them, and a later story that refers back to one has to be able to
+        # reach it. So they are flagged rather than deleted, and only this
+        # listing filters them out. Anything reading by id still finds them.
+        #
+        # Absent means visible, so nothing already stored changes meaning.
+        clauses.append({"hidden_from_ui": {"$ne": True}})
+
         query: dict = {"$and": clauses} if len(clauses) > 1 else (clauses[0] if clauses else {})
         # Newest news first. Order by when the story was published, not when the
         # row was written — a bulk import gives every row the same created_at,

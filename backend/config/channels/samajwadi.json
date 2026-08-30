@@ -5,7 +5,7 @@
     "https://www.youtube.com/@SamajwadiAkhilesh/videos",
     "https://www.youtube.com/@SamajwadiPartyOfficial/streams"
   ],
-  "lookback_days": 7,
+  "lookback_days": 3,
   "tenant_slug": "samajwadi",
   "channel_slug": "SamajwadiPartyOfficial",
   "transcripts_dir": "outputs/transcripts/SamajwadiPartyOfficial",
