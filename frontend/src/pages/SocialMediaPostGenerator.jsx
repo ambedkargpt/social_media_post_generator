@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Search, Filter, Sparkles,
-  Copy, Check, RefreshCw, ChevronDown, Eye, FileText, Star, Radio,
+  Copy, Check, RefreshCw, ChevronDown, FileText, Star, Radio,
 } from 'lucide-react';
 
 import PreferencesPanel from '../components/generate/PreferencesPanel';
@@ -217,7 +217,10 @@ export default function SocialMediaPostGenerator() {
   const [postStatus,      setPostStatus]      = useState('draft');
   const [publishing,      setPublishing]      = useState(false);
   const [platform,        setPlatform]        = useState('twitter');
-  const [postView,        setPostView]        = useState('post'); // 'post' | 'preview'
+  // Always the platform preview. The Post/Preview toggle is gone: a plain-text
+  // rendering of the same words told nobody anything the preview did not, and
+  // the preview is what someone is actually about to publish.
+  const postView = 'preview';
   const [refinementNote,  setRefinementNote]  = useState('');
   const [copiedHashtags,  setCopiedHashtags]  = useState(false);
   const [showMobilePrefs, setShowMobilePrefs] = useState(false);
@@ -479,7 +482,6 @@ export default function SocialMediaPostGenerator() {
       setGeneratedPost(content);
       setSelectedPostId(response?.post?.id || null);
       setPostStatus('draft');
-      setPostView('post');
       setRefinementNote('');
       setTranslatedPost(response?.post?.translations?.[siteLang] || '');
       setShowTranslated(false);
@@ -536,7 +538,6 @@ export default function SocialMediaPostGenerator() {
       setGeneratedPost(content);
       setSelectedPostId(response?.post?.id || selectedPostId);
       setPostStatus('draft');
-      setPostView('post');
       setRefinementNote('');
       setTranslatedPost(response?.post?.translations?.[siteLang] || '');
       setShowTranslated(false);
@@ -1503,23 +1504,6 @@ export default function SocialMediaPostGenerator() {
                   >
                     {activePlatform.short} · {activePlatform.label}
                   </span>
-                </div>
-                <div className="flex rounded-lg border border-[#1e3260]/60 overflow-hidden">
-                  {[{ id: 'post', Icon: FileText, label: 'Post' }, { id: 'preview', Icon: Eye, label: 'Preview' }].map(({ id, Icon, label }) => (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => setPostView(id)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11.5px] font-medium transition"
-                      style={{
-                        backgroundColor: postView === id ? 'rgba(63,159,255,0.15)' : 'transparent',
-                        color: postView === id ? '#6aa8ff' : '#4a5a80',
-                      }}
-                    >
-                      <Icon size={11} strokeWidth={2} />
-                      {label}
-                    </button>
-                  ))}
                 </div>
               </div>
             )}
