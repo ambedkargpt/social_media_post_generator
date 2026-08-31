@@ -922,10 +922,18 @@ class PostsService:
         import logging as _logging
         _log = _logging.getLogger(__name__)
 
-        report = validate_post(post_text, sources=sources, other_video_sources=other_sources)
+        report = validate_post(
+            post_text,
+            sources=sources,
+            other_video_sources=other_sources,
+            content_length=str(profile.get('content_length') or ''),
+        )
         self._trace_write(trace_dir, "11_validation_first_pass.json", json.dumps(report.as_meta(), ensure_ascii=False, indent=2))
         if report.ok:
-            _log.info("[validation] passed: no unsupported figures or dates")
+            _log.info(
+                "[validation] passed: no unsupported figures or dates; %d words within %s",
+                report.word_count, report.word_limit or "no stated ceiling",
+            )
             return post_text, report
 
         _log.info(
@@ -949,7 +957,12 @@ class PostsService:
         if not retry or not retry.strip():
             return post_text, report
 
-        second = validate_post(retry, sources=sources, other_video_sources=other_sources)
+        second = validate_post(
+            retry,
+            sources=sources,
+            other_video_sources=other_sources,
+            content_length=str(profile.get('content_length') or ''),
+        )
         self._trace_write(trace_dir, "12_post_retry.txt", retry)
         self._trace_write(trace_dir, "13_validation_retry.json", json.dumps(second.as_meta(), ensure_ascii=False, indent=2))
         # Keep the retry only when it is actually cleaner; a rewrite that trades

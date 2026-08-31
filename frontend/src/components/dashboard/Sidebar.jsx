@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LayoutGrid,
@@ -32,6 +33,25 @@ const NAV = [
 ];
 
 function SidebarContent({ active, onSelect, onClose, onLogout }) {
+  // Signing out calls the API to revoke the refresh token before it clears the
+  // session, so there is a round trip to show. Without a state the button just
+  // sat there looking unpressed, and on a slow connection people clicked it
+  // twice.
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    onClose?.();
+    try {
+      await onLogout();
+    } finally {
+      // The dashboard unmounts on success, so this only runs when logout
+      // failed and the button has to become usable again.
+      setLoggingOut(false);
+    }
+  }
+
   const navigate = useNavigate();
   return (
     <>
@@ -139,11 +159,21 @@ function SidebarContent({ active, onSelect, onClose, onLogout }) {
         {onLogout && (
           <button
             type="button"
-            onClick={() => { onClose?.(); onLogout(); }}
-            className="flex w-full items-center gap-3 rounded-xl border-t border-[#141d3a]/70 px-3.5 py-3 text-[13.5px] font-medium text-[#7b88ad] transition hover:bg-[#0f173a]/70 hover:text-red-400"
+            onClick={handleLogout}
+            disabled={loggingOut}
+            className="flex w-full items-center gap-3 rounded-xl border-t border-[#141d3a]/70 px-3.5 py-3 text-[13.5px] font-medium text-[#7b88ad] transition hover:bg-[#0f173a]/70 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:bg-transparent disabled:hover:text-[#7b88ad]"
           >
-            <LogOut size={17} strokeWidth={1.8} />
-            <span>Log Out</span>
+            {loggingOut ? (
+              <>
+                <span className="spinner-ring" style={{ width: 17, height: 17, borderWidth: 2 }} />
+                <span>Signing out…</span>
+              </>
+            ) : (
+              <>
+                <LogOut size={17} strokeWidth={1.8} />
+                <span>Log Out</span>
+              </>
+            )}
           </button>
         )}
         <div className="px-2 pt-2 text-[11px] font-count text-[#4e5a80] tracking-wide">

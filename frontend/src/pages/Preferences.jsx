@@ -5,7 +5,7 @@ import logoSrc from '../assets/images/logo-animation.png';
 import { useAuth } from '../context/AuthContext';
 import { saveProfileAnswers, getProfileAnswers } from '../api/profile';
 import { getQuestions } from '../api/questions';
-import { CORE_QUESTION_IDS, shortLabel } from '../utils/preferenceQuestions';
+import { CORE_QUESTION_IDS, labelWithSize } from '../utils/preferenceQuestions';
 
 // ─── Question data ────────────────────────────────────────────────────────────
 
@@ -25,7 +25,7 @@ function toUiQuestion(q) {
   return {
     id: q.question_id,
     label: q.question_text,
-    options: (q.options ?? []).map(shortLabel),
+    options: (q.options ?? []).map(labelWithSize),
   };
 }
 
