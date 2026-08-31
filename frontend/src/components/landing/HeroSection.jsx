@@ -140,7 +140,12 @@ export default function HeroSection({ splashDone = true }) {
       <div className="relative z-10 mx-auto grid max-w-[1440px] items-stretch gap-8 px-6 pb-6 pt-4 md:grid-cols-[1fr_auto] md:pb-10 md:pt-8">
 
         {/* LEFT: text */}
-        <div className="flex flex-col items-start pb-3">
+        {/* No bottom padding. The grid is items-stretch, so both columns are the
+            same height and mt-auto drops the buttons to the bottom of this
+            one - but pb-3 held them 12px short of it, leaving the buttons
+            floating just above the image's bottom edge instead of level with
+            it. */}
+        <div className="flex flex-col items-start">
 
           {/* Badge */}
           <div
@@ -220,7 +225,7 @@ export default function HeroSection({ splashDone = true }) {
             transform: ready ? "translateX(0)" : "translateX(36px)",
           }}
         >
-          <div className="relative w-full overflow-hidden rounded-2xl" style={{ height: "580px" }}>
+          <div className="relative w-full overflow-hidden rounded-2xl" style={{ height: "535px" }}>
             <img
               src={ambedkarPortrait}
               alt="Dr. B. R. Ambedkar holding the Constitution of India"
