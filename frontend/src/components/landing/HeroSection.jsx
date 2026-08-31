@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Sparkle from "./Sparkle";
 import { useAuth } from "../../context/AuthContext";
 import squiggleSrc from "../../assets/images/squiggle-lines.png";
-import ambedkarPortrait from "../../assets/images/purpose-ambedkar.png";
+import ambedkarPortrait from "../../assets/images/hero-ambedkar.webp";
 
 // Headline words — null = <br /> slot
 const RAW_WORDS = [
@@ -25,6 +25,17 @@ const WORDS = RAW_WORDS.map((w) =>
 );
 
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+
+// Two gradients intersected: one fading top and bottom, one fading the sides.
+// Percentages are uneven on purpose - the portrait's face sits high in the
+// frame, so the top fade has to clear it before it starts.
+const HERO_MASK = [
+  // Top gets the longest ramp of the four. The picture's sky is its brightest
+  // area and sits against the page's darkest, so a short fade there leaves a
+  // visible horizontal seam however soft the other edges are.
+  "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.10) 10%, rgba(0,0,0,0.45) 20%, #000 38%, #000 72%, rgba(0,0,0,0.45) 90%, transparent 100%)",
+  "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.18) 8%, rgba(0,0,0,0.7) 18%, #000 30%, #000 72%, rgba(0,0,0,0.6) 88%, transparent 100%)",
+].join(", ");
 
 export default function HeroSection({ splashDone = true }) {
   const [ready, setReady] = useState(false);
@@ -220,14 +231,30 @@ export default function HeroSection({ splashDone = true }) {
             transform: ready ? "translateX(0)" : "translateX(36px)",
           }}
         >
-          <div className="relative w-full overflow-hidden rounded-2xl" style={{ height: "480px" }}>
+          {/* No frame. The portrait dissolves into the page rather than sitting
+              in a rounded box on top of it: a hard edge against this background
+              reads as a pasted-in photo, and the image already carries its own
+              sky and architecture that can carry the blend.
+
+              Masked rather than overlaid. An overlay tints the picture toward
+              one colour and still leaves a visible boundary; a mask removes the
+              pixels, so whatever is behind shows through and the seam is gone.
+              Four edges, each fading at a different rate: hardest at the top
+              where the sky is bright, gentlest at the bottom where the suit is
+              already near the page's own darkness. */}
+          <div className="relative w-full" style={{ height: "480px" }}>
             <img
               src={ambedkarPortrait}
-              alt="Dr. BR Ambedkar"
+              alt="Dr. B. R. Ambedkar holding the Constitution of India"
               className="h-full w-full object-cover"
-              style={{ objectPosition: "center 35%" }}
+              style={{
+                objectPosition: "center 28%",
+                WebkitMaskImage: HERO_MASK,
+                maskImage: HERO_MASK,
+                WebkitMaskComposite: "source-in",
+                maskComposite: "intersect",
+              }}
             />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#030611]/60" />
           </div>
 
           <div className="mt-4 w-full py-3 text-center">

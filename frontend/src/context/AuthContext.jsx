@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { readSession } from '../api/sessionStore';
 import * as authApi from '../api/auth';
 
 const AuthContext = createContext(null);
@@ -39,7 +40,7 @@ export function AuthProvider({ children }) {
 
   // On mount verify the stored token is still valid
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
+    const token = readSession('access_token');
     if (token) {
       authApi.getMe()
         .then((user) => setCurrentUser(user))
