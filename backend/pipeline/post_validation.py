@@ -62,11 +62,29 @@ class ValidationReport:
     # but belonging to another story, which is worse in a way: they look
     # sourced.
     cross_video_numbers: List[str] = field(default_factory=list)
-    retried: bool = False
+    # Words written against the ceiling content_length asked for. Checked on the
+    # output for the same reason the figures are: the instruction is emphatic
+    # and still loses. Measured on a live post, "Short -> 3-4 sentences (max 80
+    # words)" produced 145 words in 3 paragraphs, because five other profile
+    # fields each asked for something to be included and the model resolved the
+    # conflict by dropping the only limit that was not content.
+    word_count: int = 0
+    word_limit: int = 0
+
+    @property
+    def over_length(self) -> bool:
+        # A tenth of slack. Hindi word counts wobble with compounding and the
+        # point is to catch a post at twice its budget, not one three words out.
+        return bool(self.word_limit) and self.word_count > self.word_limit * 1.1
 
     @property
     def ok(self) -> bool:
-        return not (self.unsupported_numbers or self.unsupported_dates or self.cross_video_numbers)
+        return not (
+            self.unsupported_numbers
+            or self.unsupported_dates
+            or self.cross_video_numbers
+            or self.over_length
+        )
 
     def as_meta(self) -> Dict[str, Any]:
         return {
@@ -75,6 +93,9 @@ class ValidationReport:
             "unsupported_numbers": self.unsupported_numbers,
             "unsupported_dates": self.unsupported_dates,
             "cross_video_numbers": self.cross_video_numbers,
+            "word_count": self.word_count,
+            "word_limit": self.word_limit,
+            "over_length": self.over_length,
         }
 
     def as_correction_note(self) -> str:
@@ -101,7 +122,18 @@ class ValidationReport:
                 + ". They belong to another event. Remove them entirely. Do not rework them into "
                 "the post, and do not replace them with similar figures."
             )
-        parts.append("Keep everything else, including the voice and the length. Change only what is listed.")
+        if self.over_length:
+            parts.append(
+                f"This post is {self.word_count} words against a ceiling of {self.word_limit}. "
+                "Cut it to the ceiling. The length in the USER PROFILE outranks every field that "
+                "asks for material to be included: drop the Ambedkar quote, the historical "
+                "reference, the statistic and the legal note in that order until it fits, and keep "
+                "the accusation and the demand, which are the post. Do not summarise it into "
+                "something blander, and do not truncate it mid-sentence."
+            )
+            parts.append("Keep the voice and the argument. Change only what is listed.")
+        else:
+            parts.append("Keep everything else, including the voice and the length. Change only what is listed.")
         return " ".join(parts)
 
 
@@ -191,11 +223,41 @@ def _strip_hashtags(text: str) -> str:
     return re.sub(r"#\S+", " ", text or "")
 
 
+
+_WORD_CEILING_RE = re.compile(r"(\d{2,4})\s*words", re.I)
+
+
+def _word_ceiling(content_length: str) -> int:
+    """
+    The word ceiling named in a content_length option, or 0 when it names none.
+
+    The stored options carry their own limits - "Short -> 3-4 sentences (max 80
+    words)", "Medium -> 4-6 sentences (80-150 words)" - so the ceiling is read
+    from the option rather than kept in a second table here that would drift
+    from it. A range takes its upper bound, which is what "80-150 words" means.
+    """
+    text = str(content_length or "")
+    numbers = [int(n) for n in _WORD_CEILING_RE.findall(text)]
+    if numbers:
+        return max(numbers)
+    # "150-250 words" puts the range before the word, so the regex above sees
+    # only the second number. Catch the pair explicitly.
+    pair = re.search(r"(\d{2,4})\s*[-–]\s*(\d{2,4})\s*words", text, re.I)
+    return int(pair.group(2)) if pair else 0
+
+
+def _body_word_count(body: str) -> int:
+    """Words in the post itself, excluding the labels the format requires."""
+    stripped = re.sub(r"^(Headline|Social Media Post|Hashtags)\s*:.*$", "", body, flags=re.M)
+    return len([w for w in stripped.split() if w.strip()])
+
+
 def validate_post(
     post: str,
     *,
     sources: Sequence[str],
     other_video_sources: Sequence[str] = (),
+    content_length: str = "",
 ) -> ValidationReport:
     """
     Compare the post's quantities and dates against everything it was given.
@@ -213,6 +275,11 @@ def validate_post(
         return report
 
     body = _strip_hashtags(post)
+
+    # Length, against whatever ceiling content_length names.
+    report.word_limit = _word_ceiling(content_length)
+    if report.word_limit:
+        report.word_count = _body_word_count(body)
     haystack = "\n".join(s for s in sources if s)
     foreign = "\n".join(s for s in other_video_sources if s)
 
