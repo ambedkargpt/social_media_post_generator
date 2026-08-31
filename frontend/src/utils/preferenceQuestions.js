@@ -21,3 +21,20 @@ export function shortLabel(option) {
   const text = String(option ?? '');
   return text.includes(' -> ') ? text.split(' -> ')[0].trim() : text.trim();
 }
+
+// The label, plus the size the option actually commits to.
+//
+// "Short" and "Medium" say nothing on their own, and the numbers that decide
+// the output were sitting in the description the dropdown threw away - so
+// people picked a length without knowing what they were choosing between, then
+// found the post was not the size they expected.
+//
+// Only a parenthetical about words is kept. Other questions have descriptions
+// too ("Analyst -> Focus on explaining..."), and appending those would put a
+// sentence in every row of a narrow dropdown.
+export function labelWithSize(option) {
+  const text = String(option ?? '');
+  const label = shortLabel(text);
+  const bracket = text.match(/\(([^)]*\bwords?\b[^)]*)\)/i);
+  return bracket ? `${label} (${bracket[1].trim()})` : label;
+}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Sparkles, ChevronDown, RotateCcw } from 'lucide-react';
-import { shortLabel } from '../../utils/preferenceQuestions';
+import { labelWithSize } from '../../utils/preferenceQuestions';
 
 // UI-only display metadata per question_id — labels and hints are not stored
 // in the DB, so we keep a local map here. Falls back gracefully for unknown ids.
@@ -36,11 +36,12 @@ function Dropdown({ value, options, onChange }) {
         {options.map((opt) => (
           // The stored value is the whole "Label -> Description" string and has
           // to stay that, but the panel is a narrow sidebar: showing it whole
-          // truncated mid-word to "Communicator -> Focus on explain...". The
-          // label alone is what the Preferences page shows, so the two screens
-          // now read the same, and the description is on hover.
+          // truncated mid-word to "Communicator -> Focus on explain...". So the
+          // label shows, plus the word count where the option names one, since
+          // "Short" and "Medium" say nothing about the size being chosen. The
+          // Preferences page renders the same way. Full text on hover.
           <option key={opt} value={opt} title={opt} className="bg-[#0a1130] text-white">
-            {shortLabel(opt)}
+            {labelWithSize(opt)}
           </option>
         ))}
       </select>
