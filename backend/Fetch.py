@@ -333,6 +333,58 @@ def collect_recent_videos(
     return ordered
 
 
+def _fetch_transcript_via_ytdlp(video_id: str) -> str | None:
+    """
+    Second attempt at a transcript, through yt-dlp's caption tracks.
+
+    youtube_transcript_api and yt-dlp reach captions by different routes and are
+    throttled independently: an IP refused by one is often still served by the
+    other. Measured on a blocked connection, the first returned a CAPTCHA
+    challenge for a video whose captions yt-dlp then fetched without complaint.
+
+    Only reached when the primary path has already returned nothing, so the
+    normal case is untouched. Returns None on any failure: this is a fallback,
+    and it must never be the reason a run dies.
+    """
+    try:
+        import json as _json
+        import urllib.request
+
+        opts = {
+            "quiet": True,
+            "skip_download": True,
+            "writeautomaticsub": True,
+            "subtitleslangs": ["hi", "en"],
+            **_ytdlp_auth_opts(),
+        }
+        with YoutubeDL(opts) as ydl:
+            info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
+
+        # Manual captions where a human wrote them, automatic otherwise, Hindi
+        # ahead of English to match the primary path's language preference.
+        subs = info.get("subtitles") or {}
+        auto = info.get("automatic_captions") or {}
+        track = subs.get("hi") or subs.get("en") or auto.get("hi") or auto.get("en") or []
+
+        # json3 carries the segments already split; the other formats would need
+        # a subtitle parser to strip their timing.
+        pick = next((t for t in track if t.get("ext") == "json3"), None)
+        if not pick or not pick.get("url"):
+            return None
+
+        raw = urllib.request.urlopen(pick["url"], timeout=30).read().decode("utf-8", "ignore")
+        events = _json.loads(raw).get("events", [])
+        text = " ".join(
+            seg.get("utf8", "")
+            for ev in events
+            for seg in (ev.get("segs") or [])
+        ).strip()
+        return text or None
+    except Exception as exc:
+        print(f" yt-dlp transcript fallback failed: {str(exc)[:120]}")
+        return None
+
+
 def fetch_transcript_text(video_id: str) -> str | None:
     try:
         transcript = (
@@ -342,10 +394,17 @@ def fetch_transcript_text(video_id: str) -> str | None:
         )
         return " ".join(t["text"] for t in transcript)
     except (TranscriptsDisabled, NoTranscriptFound):
+        # The video genuinely has no captions. Another route will not conjure
+        # them, so do not spend a request finding that out again.
         return None
     except Exception as e:
         print(f" Transcript error: {e}")
-        return None
+        # Everything else is a throttle, a network failure or an API change,
+        # and those are worth a second route before giving the video up.
+        text = _fetch_transcript_via_ytdlp(video_id)
+        if text:
+            print(f" recovered via yt-dlp ({len(text)} chars)")
+        return text
 
 
 

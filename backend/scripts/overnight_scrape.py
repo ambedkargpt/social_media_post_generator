@@ -26,7 +26,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 LOG = ROOT / "backend" / "outputs" / "overnight_scrape.log"
-CHANNELS = ("congress", "samajwadi")
+# Smallest channel first, and this is the whole reason the order is named here.
+#
+# Congress has 46 videos in a 3-day window against Samajwadi's 12, and it
+# exhausts YouTube's transcript budget every time. Run second, Samajwadi was
+# refused all 12 on two consecutive rounds and ended with no fresh news at all
+# while Congress banked 30 stories. Going first it needs a small share of a
+# fresh budget, and Congress picks up its remainder on later rounds, which it
+# can afford to do because it is already ahead.
+#
+# Ordering only. Nothing about how a channel is scraped changes.
+CHANNELS = ("samajwadi", "congress")
 
 # A video that is known to exist and to have captions. Probing one known id is
 # cheaper and more honest than trying a whole run to find out.
