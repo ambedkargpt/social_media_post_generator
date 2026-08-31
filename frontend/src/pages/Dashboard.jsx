@@ -145,7 +145,7 @@ export default function Dashboard() {
                 </span>
               )}
             </h1>
-            <p className="mt-1.5 text-[13.5px] text-[#8b94b8]">
+            <p className="mt-2 text-[16px] text-[#9aa5c4] md:text-[17px]">
               Your AI journey continues. Let&apos;s make today productive and insightful!
             </p>
           </div>
