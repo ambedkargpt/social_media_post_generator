@@ -21,6 +21,23 @@ export default function ProfileMenu({ name, email, initial, party, onLogout }) {
   const btnRef = useRef(null);
   const [anchor, setAnchor] = useState(null);
 
+  // Matches the sidebar's Log Out. Both revoke the refresh token server-side,
+  // so both have a round trip to show; one showing progress and the other not
+  // is more noticeable than neither showing it.
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await onLogout?.();
+      setOpen(false);
+    } finally {
+      // Only reached when logout failed; on success the dashboard unmounts.
+      setLoggingOut(false);
+    }
+  }
+
   // Positioned from the button rather than by CSS: the dashboard sits inside
   // ancestors that create a containing block for fixed elements, which would
   // otherwise place this relative to the wrong box.
@@ -138,11 +155,21 @@ export default function ProfileMenu({ name, email, initial, party, onLogout }) {
               <button
                 type="button"
                 role="menuitem"
-                onClick={() => { setOpen(false); onLogout?.(); }}
-                className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-[13.5px] text-[#c3d3ec] transition hover:bg-[#0f173a]/80 hover:text-red-400"
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-[13.5px] text-[#c3d3ec] transition hover:bg-[#0f173a]/80 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:bg-transparent disabled:hover:text-[#c3d3ec]"
               >
-                <LogOut size={16} strokeWidth={1.85} className="shrink-0 text-[#8b9dc4]" />
-                Log out
+                {loggingOut ? (
+                  <>
+                    <span className="spinner-ring shrink-0" style={{ width: 16, height: 16, borderWidth: 2 }} />
+                    Signing out…
+                  </>
+                ) : (
+                  <>
+                    <LogOut size={16} strokeWidth={1.85} className="shrink-0 text-[#8b9dc4]" />
+                    Log out
+                  </>
+                )}
               </button>
             </div>
           </div>
