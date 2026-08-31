@@ -220,7 +220,7 @@ export default function HeroSection({ splashDone = true }) {
             transform: ready ? "translateX(0)" : "translateX(36px)",
           }}
         >
-          <div className="relative w-full overflow-hidden rounded-2xl" style={{ height: "480px" }}>
+          <div className="relative w-full overflow-hidden rounded-2xl" style={{ height: "580px" }}>
             <img
               src={ambedkarPortrait}
               alt="Dr. B. R. Ambedkar holding the Constitution of India"
