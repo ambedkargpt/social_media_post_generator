@@ -27,6 +27,24 @@ def _parse_dt(value: Any) -> datetime | None:
         return None
 
 
+def _parse_day(value: Any) -> datetime | None:
+    """
+    yt-dlp's YYYYMMDD upload_date, as midnight UTC.
+
+    Only used when the precise timestamp is absent. Midnight is a real choice
+    rather than a guess: within a day the sort falls back to created_at, and
+    ordering stories from the same day by when we processed them beats giving
+    them no date at all.
+    """
+    text = str(value or "").strip()
+    if len(text) != 8 or not text.isdigit():
+        return None
+    try:
+        return datetime.strptime(text, "%Y%m%d").replace(tzinfo=timezone.utc)
+    except Exception:
+        return None
+
+
 def normalize_source_url(raw: Any) -> str:
     """
     Canonical form of a source URL, used both for display and for deduplication.
@@ -93,7 +111,14 @@ def _normalize_item(
     description = (item.get("subheadline") or "").strip() or summary
     if not source_url or not headline or not summary:
         return None
-    published_at = _parse_dt(item.get("upload_datetime_utc"))
+    # upload_datetime_utc is the precise field, but it is not always there.
+    # yt-dlp returns it for some videos and only the YYYYMMDD upload_date for
+    # others, and a Samajwadi run published 25 stories where every one had a
+    # correct upload_date and no upload_datetime_utc. Reading only the precise
+    # field left published_at null on all of them, which sends a story to the
+    # bottom of a feed sorted by that column and hides it from anything
+    # selecting by date. Falling back to the day is better than having no date.
+    published_at = _parse_dt(item.get("upload_datetime_utc")) or _parse_day(item.get("upload_date"))
     sort_ts = item.get("sort_timestamp")
     if sort_ts is None:
         sort_ts = item.get("upload_timestamp")

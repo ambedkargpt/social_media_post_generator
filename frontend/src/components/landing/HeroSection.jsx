@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Sparkle from "./Sparkle";
 import { useAuth } from "../../context/AuthContext";
 import squiggleSrc from "../../assets/images/squiggle-lines.png";
-import ambedkarPortrait from "../../assets/images/purpose-ambedkar.png";
+import ambedkarPortrait from "../../assets/images/hero-ambedkar.webp";
 
 // Headline words — null = <br /> slot
 const RAW_WORDS = [
@@ -140,7 +140,12 @@ export default function HeroSection({ splashDone = true }) {
       <div className="relative z-10 mx-auto grid max-w-[1440px] items-stretch gap-8 px-6 pb-6 pt-4 md:grid-cols-[1fr_auto] md:pb-10 md:pt-8">
 
         {/* LEFT: text */}
-        <div className="flex flex-col items-start pb-3">
+        {/* No bottom padding. The grid is items-stretch, so both columns are the
+            same height and mt-auto drops the buttons to the bottom of this
+            one - but pb-3 held them 12px short of it, leaving the buttons
+            floating just above the image's bottom edge instead of level with
+            it. */}
+        <div className="flex flex-col items-start">
 
           {/* Badge */}
           <div
@@ -220,26 +225,14 @@ export default function HeroSection({ splashDone = true }) {
             transform: ready ? "translateX(0)" : "translateX(36px)",
           }}
         >
-          <div className="relative w-full overflow-hidden rounded-2xl" style={{ height: "480px" }}>
+          <div className="relative w-full overflow-hidden rounded-2xl" style={{ height: "535px" }}>
             <img
               src={ambedkarPortrait}
-              alt="Dr. BR Ambedkar"
+              alt="Dr. B. R. Ambedkar holding the Constitution of India"
               className="h-full w-full object-cover"
-              style={{ objectPosition: "center 35%" }}
+              style={{ objectPosition: "center 28%" }}
             />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#030611]/60" />
-          </div>
-
-          <div className="mt-4 w-full py-3 text-center">
-            <span
-              className="font-display text-[17px] font-bold text-white md:text-[19px]"
-              style={{
-                textShadow: "0 0 24px rgba(63,159,255,0.8), 0 0 48px rgba(63,159,255,0.4)",
-                letterSpacing: "0.2em",
-              }}
-            >
-              UNBIASED . EQUAL . TRUTHFUL
-            </span>
           </div>
         </div>
 

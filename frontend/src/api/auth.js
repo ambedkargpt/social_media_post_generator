@@ -1,26 +1,27 @@
 import client from './client';
+import { readSession, writeSession, removeSession } from './sessionStore';
 import axios from 'axios';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 export function saveTokens(tokens) {
-  localStorage.setItem('access_token', tokens.access_token);
-  localStorage.setItem('refresh_token', tokens.refresh_token);
+  writeSession('access_token', tokens.access_token);
+  writeSession('refresh_token', tokens.refresh_token);
 }
 
 export function clearTokens() {
-  localStorage.removeItem('access_token');
-  localStorage.removeItem('refresh_token');
-  localStorage.removeItem('user');
+  removeSession('access_token');
+  removeSession('refresh_token');
+  removeSession('user');
 }
 
 function saveUser(user) {
-  localStorage.setItem('user', JSON.stringify(user));
+  writeSession('user', JSON.stringify(user));
 }
 
 export function getStoredUser() {
   try {
-    return JSON.parse(localStorage.getItem('user'));
+    return JSON.parse(readSession('user'));
   } catch {
     return null;
   }
@@ -129,7 +130,7 @@ export async function updateProfile({ full_name, username, political_party, part
 
 // ── Logout ────────────────────────────────────────────────────────────────────
 export async function logout() {
-  const refreshToken = localStorage.getItem('refresh_token');
+  const refreshToken = readSession('refresh_token');
   try {
     if (refreshToken) {
       await client.post('/auth/logout', { refresh_token: refreshToken });

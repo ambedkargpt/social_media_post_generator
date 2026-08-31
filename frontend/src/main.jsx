@@ -3,6 +3,13 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import { getSiteLanguage } from './utils/siteLanguage.js'
+import { purgeLegacySession } from './api/sessionStore.js'
+
+// Sessions moved from localStorage to sessionStorage so closing the tab
+// signs you out. Anyone signed in under the old build has tokens sitting in
+// localStorage that nothing reads and nothing clears, which would leave them
+// signed in across tab closes forever. Clear them once, here.
+purgeLegacySession()
 
 // Stamp lang attribute before first render so CSS font rules fire immediately
 const storedLang = getSiteLanguage();

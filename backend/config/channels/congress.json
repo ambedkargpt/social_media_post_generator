@@ -5,7 +5,7 @@
     "https://www.youtube.com/@IndianNationalCongress/videos",
     "https://www.youtube.com/@IndianNationalCongress/streams"
   ],
-  "lookback_days": 7,
+  "lookback_days": 3,
   "tenant_slug": "congress",
   "channel_slug": "IndianNationalCongress",
   "transcripts_dir": "outputs/transcripts/IndianNationalCongress",
