@@ -969,6 +969,44 @@ def search_urls(
 _TRAFILATURA_WARNED = False
 
 
+
+# Formats trafilatura cannot read. It is an HTML extractor, so a PDF is a
+# multi-megabyte download that yields nothing - and the slow ones are the worst
+# of both: an Adani annual report and an NSE letter of offer each spent the full
+# 30-second timeout and then a retry, a minute of the request gone on documents
+# that could never have produced a sentence.
+_UNREADABLE_SUFFIXES = (
+    ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
+    ".zip", ".rar", ".7z", ".mp3", ".mp4", ".avi", ".mov", ".jpg", ".jpeg",
+    ".png", ".gif", ".webp", ".svg", ".csv",
+)
+
+
+def _is_readable_page(url: str) -> bool:
+    """False for URLs whose extension says the body is not HTML."""
+    try:
+        path = urlparse(url).path.lower()
+    except Exception:
+        return True
+    return not path.endswith(_UNREADABLE_SUFFIXES)
+
+
+def _download_config(timeout: float):
+    """
+    trafilatura's config with our timeout, not its 30-second default.
+
+    The timeout argument to _extract_one was accepted and then never used, so
+    every fetch waited the library default and urllib3 retried on top of it.
+    """
+    from trafilatura.settings import use_config
+
+    cfg = use_config()
+    cfg.set("DEFAULT", "DOWNLOAD_TIMEOUT", str(int(max(3, timeout))))
+    # 20MB is a lot to pull for text. Anything that big is not an article.
+    cfg.set("DEFAULT", "MAX_FILE_SIZE", "3000000")
+    return cfg
+
+
 def _extract_one(result: SearchResult, timeout: float) -> Optional[str]:
     global _TRAFILATURA_WARNED
     try:
@@ -988,8 +1026,11 @@ def _extract_one(result: SearchResult, timeout: float) -> Optional[str]:
                 sys.executable,
             )
         return None
+    if not _is_readable_page(result.url):
+        logger.debug("skipping non-HTML result: %s", result.url)
+        return None
     try:
-        downloaded = trafilatura.fetch_url(result.url)
+        downloaded = trafilatura.fetch_url(result.url, config=_download_config(timeout))
         if not downloaded:
             return None
         text = trafilatura.extract(
