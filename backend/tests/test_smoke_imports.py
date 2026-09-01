@@ -31,3 +31,19 @@ def test_default_profiles_carry_every_profile_field():
     for profile in profiles:
         missing = [f for f in PROFILE_FIELDS if f not in profile]
         assert not missing, f"{profile.get('user_role')} missing {missing}"
+
+
+def test_validation_report_serialises():
+    """
+    as_meta() must not reference a field the dataclass lost.
+
+    Adding word_count and word_limit dropped `retried` out of the dataclass
+    while as_meta() still read it, so every generate request 500'd at the point
+    it wrote its trace — after the post had been written and paid for. Nothing
+    in CI called as_meta(), so the suite stayed green.
+    """
+    from backend.pipeline.post_validation import ValidationReport
+
+    meta = ValidationReport().as_meta()
+    for key in ("passed", "retried", "word_count", "word_limit", "over_length"):
+        assert key in meta, f"as_meta() lost {key}"

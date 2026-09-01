@@ -70,6 +70,7 @@ class ValidationReport:
     # conflict by dropping the only limit that was not content.
     word_count: int = 0
     word_limit: int = 0
+    retried: bool = False
 
     @property
     def over_length(self) -> bool:
