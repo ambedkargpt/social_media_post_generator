@@ -6,6 +6,7 @@ import { useCurtain } from '../context/CurtainContext';
 import AuthLayout    from '../components/AuthLayout';
 import PrimaryButton from '../components/PrimaryButton';
 import { Info } from 'lucide-react';
+import { useI18n } from '../i18n/index.jsx';
 
 const OTP_LENGTH = 6;
 
@@ -13,10 +14,10 @@ function describeIdentifier(identifier = '') {
   const trimmed = identifier.trim();
   if (trimmed.includes('@')) {
     const [local, domain] = trimmed.split('@');
-    return { label: 'email', masked: local.slice(0, 2) + '***@' + domain };
+    return { labelKey: 'auth.emailWord', masked: local.slice(0, 2) + '***@' + domain };
   }
   const digits = trimmed.replace(/\D/g, '');
-  return { label: 'phone number', masked: '******' + digits.slice(-4) };
+  return { labelKey: 'auth.phoneWord', masked: '******' + digits.slice(-4) };
 }
 
 function OtpBoxes({ value, onChange, error }) {
@@ -76,18 +77,19 @@ function OtpBoxes({ value, onChange, error }) {
 }
 
 function ResendTimer({ onResend, type }) {
+  const { t } = useI18n();
   const [seconds, setSeconds] = useState(30);
   useEffect(() => {
     if (seconds <= 0) return;
     const t = setTimeout(() => setSeconds((s) => s - 1), 1000);
     return () => clearTimeout(t);
   }, [seconds]);
-  const label = type === 'phone' ? 'call again' : 'Resend';
+  const label = t(type === 'phone' ? 'auth.callAgain' : 'auth.resend');
   return (
     <p className="text-center text-sm" style={{ color: '#8b94b8' }}>
-      {type === 'phone' ? "Didn't get the call?" : "Didn't receive it?"}{' '}
+      {t(type === 'phone' ? 'auth.didntGetCall' : 'auth.didntReceive')}{' '}
       {seconds > 0 ? (
-        <span style={{ color: '#6b7db3' }}>Try again in {seconds}s</span>
+        <span style={{ color: '#6b7db3' }}>{t('auth.tryAgainIn', { seconds })}</span>
       ) : (
         <button type="button" onClick={() => { setSeconds(30); onResend(); }}
           className="underline underline-offset-2 hover:opacity-80 transition-opacity font-medium"
@@ -100,6 +102,7 @@ function ResendTimer({ onResend, type }) {
 }
 
 export default function Otp() {
+  const { t } = useI18n();
   const { state }          = useLocation();
   const navigate           = useNavigate();
   const { go: curtainGo }  = useCurtain();
@@ -115,7 +118,7 @@ export default function Otp() {
     if (!identifier) navigate('/signup', { replace: true });
   }, [identifier, navigate]);
 
-  const { label, masked } = describeIdentifier(identifier);
+  const { labelKey, masked } = describeIdentifier(identifier);
   const [otp, setOtp]           = useState(devOtp);
   const [otpError, setOtpError] = useState('');
   const [loading, setLoading]   = useState(false);
@@ -123,7 +126,7 @@ export default function Otp() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (otp.length < OTP_LENGTH) { setOtpError('Please enter the complete 6-digit code.'); return; }
+    if (otp.length < OTP_LENGTH) { setOtpError(t('auth.otpIncomplete')); return; }
     setOtpError('');
     setLoading(true);
     try {
@@ -148,7 +151,7 @@ export default function Otp() {
     try {
       const purpose = mode === 'signup' ? 'signup_verify' : 'login_verify';
       const data = await resendOtpApi({ target: identifier, channel: type, purpose });
-      setResendMsg('A new code has been sent!');
+      setResendMsg(t('auth.otpResent'));
       if (data?.dev_otp) setOtp(data.dev_otp);
       setTimeout(() => setResendMsg(''), 4000);
     } catch (err) {
@@ -156,11 +159,11 @@ export default function Otp() {
     }
   }
 
-  const title  = type === 'email' ? 'Verify Your Email' : 'Verify Your Phone';
+  const title  = t(type === 'email' ? 'auth.verifyEmail' : 'auth.verifyPhone');
   const backTo = mode === 'login' ? '/login' : '/signup';
   const deliveryMsg = type === 'phone'
     ? <>You&apos;ll receive a <span className="font-medium" style={{ color: '#c8d8ff' }}>call</span> on <span className="font-medium" style={{ color: '#c8d8ff' }}>{masked}</span> with your 6-digit code.</>
-    : <>We&apos;ve sent a 6-digit code to your {label} <span className="font-medium" style={{ color: '#c8d8ff' }}>{masked}</span>.</>;
+    : <>We&apos;ve sent a 6-digit code to your {t(labelKey)} <span className="font-medium" style={{ color: '#c8d8ff' }}>{masked}</span>.</>;
 
   return (
     <AuthLayout brandSide="left" brandVariant="signup">
@@ -209,7 +212,7 @@ export default function Otp() {
         <p className="text-center text-sm" style={{ color: '#8b94b8' }}>
           Wrong {type === 'email' ? 'email' : 'number'}?{' '}
           <Link to={backTo} className="underline underline-offset-2 hover:opacity-80 font-medium" style={{ color: '#6b8aff' }}>
-            Go back
+            {t('auth.goBack')}
           </Link>
         </p>
       </div>

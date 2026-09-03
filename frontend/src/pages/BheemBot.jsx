@@ -9,6 +9,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { sendChatMessage } from '../api/chat';
 import logoSrc from '../assets/images/logo-animation.png';
+import { useI18n } from '../i18n/index.jsx';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -182,7 +183,7 @@ function ChatSidebar({ onCategoryClick, searchQuery, setSearchQuery, onClose, mo
           <Search size={12} strokeWidth={2} className="shrink-0 text-[#4a6080]" />
           <input
             type="text"
-            placeholder="Search categories..."
+            placeholder={t('bot.searchCategories')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-transparent text-[12px] text-white placeholder:text-[#4a6080] outline-none"
@@ -193,7 +194,7 @@ function ChatSidebar({ onCategoryClick, searchQuery, setSearchQuery, onClose, mo
       {/* Categories */}
       <div className="flex-1 overflow-y-auto px-3 pb-2">
         <p className="mb-2 px-1 text-[9.5px] font-semibold uppercase tracking-[0.18em] text-[#4a6080]">
-          Knowledge Categories
+          {t('bot.knowledgeCategories')}
         </p>
         <div className="space-y-1">
           {/* eslint-disable-next-line no-unused-vars */}
@@ -217,7 +218,7 @@ function ChatSidebar({ onCategoryClick, searchQuery, setSearchQuery, onClose, mo
             </button>
           ))}
           {filtered.length === 0 && (
-            <p className="px-2 py-3 text-[11.5px] text-[#4a6080]">No categories match your search.</p>
+            <p className="px-2 py-3 text-[11.5px] text-[#4a6080]">{t('bot.noCategories')}</p>
           )}
         </div>
       </div>
@@ -230,13 +231,13 @@ function ChatSidebar({ onCategoryClick, searchQuery, setSearchQuery, onClose, mo
           className="flex w-full items-center gap-2 rounded-xl border border-[#1e3260]/40 bg-[#0a1428]/60 px-3 py-2 text-[11.5px] text-[#5a7a9e] transition hover:border-[#3a6bc4]/60 hover:text-white"
         >
           <LayoutDashboard size={13} strokeWidth={1.8} />
-          Back to Dashboard
+          {t('bot.backToDashboard')}
         </button>
       </div>
 
       {/* Footer */}
       <p className="px-4 pb-4 text-[10px] text-[#2a3a5e]">
-        Powered by advanced RAG technology
+        {t('bot.poweredBy')}
       </p>
     </aside>
   );
@@ -249,7 +250,7 @@ function ResizeHandle({ onMouseDown, isDragging }) {
     <div
       onMouseDown={onMouseDown}
       className="group relative z-20 hidden w-[5px] shrink-0 cursor-col-resize select-none md:flex md:items-center md:justify-center"
-      title="Drag to resize"
+      title={t('bot.dragResize')}
       style={{ background: 'transparent' }}
     >
       {/* Visible line */}
@@ -286,6 +287,7 @@ function ResizeHandle({ onMouseDown, isDragging }) {
 // ── Main Page ──────────────────────────────────────────────────────────────────
 
 export default function BheemBot() {
+  const { t } = useI18n();
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -526,10 +528,10 @@ export default function BheemBot() {
               <Sparkles size={16} strokeWidth={2} className="text-white" />
             </div>
             <div>
-              <h1 className="font-display text-[15px] font-semibold text-white">AI Knowledge Assistant</h1>
+              <h1 className="font-display text-[15px] font-semibold text-white">{t('bot.assistant')}</h1>
               <div className="flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e] shadow-[0_0_6px_rgba(34,197,94,0.8)]" />
-                <span className="text-[11px] text-[#22c55e]">Online</span>
+                <span className="text-[11px] text-[#22c55e]">{t('bot.online')}</span>
               </div>
             </div>
           </div>
@@ -544,7 +546,7 @@ export default function BheemBot() {
               className="hidden items-center gap-1.5 rounded-xl border border-[#1e3260]/60 bg-[#0a1428]/60 px-3 py-1.5 text-[12px] text-[#5a7a9e] transition hover:border-[#3a6bc4]/60 hover:text-white sm:flex"
             >
               <LayoutDashboard size={12} strokeWidth={1.8} />
-              Dashboard
+              {t('nav.dashboard')}
             </button>
           </div>
         </header>
@@ -563,7 +565,7 @@ export default function BheemBot() {
             <button
               type="button"
               disabled
-              title="Attachment (coming soon)"
+              title={t('bot.attachSoon')}
               className="mb-0.5 shrink-0 text-[#2a3a5e]"
             >
               <Paperclip size={16} strokeWidth={1.8} />
@@ -575,7 +577,7 @@ export default function BheemBot() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask me anything..."
+              placeholder={t('bot.askAnything')}
               className="flex-1 resize-none bg-transparent text-[13.5px] text-white placeholder:text-[#3a4e6e] outline-none leading-[1.5]"
               style={{ maxHeight: '120px', overflowY: 'auto' }}
               onInput={(e) => {
@@ -587,7 +589,7 @@ export default function BheemBot() {
             <button
               type="button"
               disabled
-              title="Voice input (coming soon)"
+              title={t('bot.voiceSoon')}
               className="mb-0.5 shrink-0 text-[#2a3a5e]"
             >
               <Mic size={16} strokeWidth={1.8} />

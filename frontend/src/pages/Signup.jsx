@@ -13,8 +13,10 @@ import LegalModal    from '../components/LegalModal';
 
 import { POLITICAL_PARTIES } from '../utils/politicalParties';
 import { ROLE_GROUPS, roleLabel, rolesInGroup } from '../utils/partyRoles';
+import { useI18n } from '../i18n/index.jsx';
 
 export default function Signup() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const { go: curtainGo } = useCurtain();
   const { signupWithEmail, signupWithPhone, loginWithGoogle } = useAuth();
@@ -123,10 +125,10 @@ export default function Signup() {
       <div className="space-y-6">
         <div>
           <h1 className="font-display text-[40px] font-bold leading-tight tracking-tight text-white md:text-[48px]">
-            Create an Account
+            {t('auth.createAccount')}
           </h1>
           <p className="mt-3 text-[14px]" style={{ color: '#8b94b8' }}>
-            Begin your journey towards knowledge and enlightenment.
+            {t('auth.createAccountSub')}
           </p>
         </div>
 
@@ -192,7 +194,7 @@ export default function Signup() {
           {/* Political Party Dropdown */}
           <div ref={partyDropdownRef} className="relative">
             <label className="block mb-1.5 text-sm font-medium" style={{ color: '#c5cde8' }}>
-              Indian political party you support? <span style={{ color: '#ef4444' }}>*</span>
+              {t('auth.party')} <span style={{ color: '#ef4444' }}>*</span>
             </label>
             <button
               type="button"
@@ -218,7 +220,7 @@ export default function Signup() {
                   {politicalParty}
                 </span>
               ) : (
-                <span>Select a political party</span>
+                <span>{t('auth.selectParty')}</span>
               )}
               <svg
                 className="w-4 h-4 shrink-0 transition-transform duration-200"
@@ -275,7 +277,7 @@ export default function Signup() {
               since a signup should not be gated on it. */}
           <div className="space-y-1.5">
             <span className="text-xs px-1" style={{ color: '#8b94b8' }}>
-              Your position in the party (optional)
+              {t('auth.partyPosition')}
             </span>
             <div className="grid grid-cols-2 gap-2">
               <select
@@ -319,7 +321,7 @@ export default function Signup() {
             <input type="checkbox" checked={subscribed} onChange={(e) => setSubscribed(e.target.checked)}
               className="mt-0.5 w-4 h-4 rounded accent-blue-500 cursor-pointer" />
             <span className="text-xs leading-relaxed" style={{ color: '#8b94b8' }}>
-              Send me educational content, updates and resources
+              {t('auth.newsletter')}
             </span>
           </label>
 
@@ -333,11 +335,11 @@ export default function Signup() {
             <span className="text-xs leading-relaxed" style={{ color: '#8b94b8' }}>
               I have read and agree to AmbedkarGPT&apos;s{' '}
               <button type="button" onClick={() => setModal('privacy')} className="underline underline-offset-2 hover:opacity-80 transition-opacity" style={{ color: '#6b8aff' }}>
-                Privacy Policy
+                {t('landing.privacy')}
               </button>
               {' '}and{' '}
               <button type="button" onClick={() => setModal('terms')} className="underline underline-offset-2 hover:opacity-80 transition-opacity" style={{ color: '#6b8aff' }}>
-                Terms of Service
+                {t('landing.terms')}
               </button>
             </span>
           </label>
@@ -364,7 +366,7 @@ export default function Signup() {
         <p className="text-center text-sm" style={{ color: '#8b94b8' }}>
           Already have an account?{' '}
           <Link to="/login" className="underline underline-offset-2 hover:opacity-80 transition-opacity font-medium" style={{ color: '#6b8aff' }}>
-            Log In
+            {t('auth.login')}
           </Link>
         </p>
       </div>

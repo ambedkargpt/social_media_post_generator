@@ -9,8 +9,10 @@ import PasswordInput from '../components/PasswordInput';
 import PhoneField    from '../components/PhoneField';
 import PrimaryButton from '../components/PrimaryButton';
 import GoogleButton  from '../components/GoogleButton';
+import { useI18n } from '../i18n/index.jsx';
 
 export default function Login() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const { go: curtainGo } = useCurtain();
   const { loginWithEmail, loginWithPhone, loginWithGoogle } = useAuth();
@@ -107,10 +109,10 @@ export default function Login() {
       <div className="space-y-6">
         <div>
           <h1 className="font-display text-[44px] font-bold leading-tight tracking-tight text-white md:text-[52px]">
-            Welcome Back
+            {t('auth.welcomeBack')}
           </h1>
           <p className="mt-3 text-[14px]" style={{ color: '#8b94b8' }}>
-            Login to continue your journey of knowledge!
+            {t('auth.loginSub')}
           </p>
         </div>
 
@@ -165,7 +167,7 @@ export default function Login() {
               />
               <div className="flex justify-end">
                 <Link to="/forgot-password" className="text-xs underline underline-offset-2 hover:opacity-80 transition-opacity" style={{ color: '#6b8aff' }}>
-                  Forgot password?
+                  {t('auth.forgotPassword')}
                 </Link>
               </div>
             </div>
@@ -197,7 +199,7 @@ export default function Login() {
         <p className="text-center text-sm" style={{ color: '#8b94b8' }}>
           Don&apos;t have an account?{' '}
           <Link to="/signup" className="underline underline-offset-2 hover:opacity-80 transition-opacity font-medium" style={{ color: '#6b8aff' }}>
-            Sign Up
+            {t('auth.signUp')}
           </Link>
         </p>
       </div>
