@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Globe } from 'lucide-react';
-import { SITE_LANGUAGES, getSiteLanguage, setSiteLanguage } from '../utils/siteLanguage';
+import { SITE_LANGUAGES, getSiteLanguage } from '../utils/siteLanguage';
 import { markAppReady } from '../utils/appReady';
 import { useI18n } from '../i18n/index.jsx';
 
 export default function LanguagePopup({ onDone }) {
-  const { t } = useI18n();
+  const { t, changeLanguage } = useI18n();
   const [selected, setSelected] = useState(getSiteLanguage() || 'hi');
   const [visible, setVisible] = useState(false);
 
@@ -16,7 +16,10 @@ export default function LanguagePopup({ onDone }) {
   }, []);
 
   function handleContinue() {
-    setSiteLanguage(selected);
+    // Applies immediately: the picker sets the language the rest of the app
+    // renders in, so it has to move the provider rather than only write
+    // storage, which left the choice invisible until the next load.
+    changeLanguage(selected);
     markAppReady();
     onDone?.();
   }
