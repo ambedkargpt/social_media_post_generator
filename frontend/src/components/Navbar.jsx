@@ -8,10 +8,10 @@ import { useI18n } from '../i18n/index.jsx';
 
 // action: 'scroll' (default) | 'bheembot' | 'dashboard' | 'section:<id>'
 const navItems = [
-  { label: 'HOME',          sectionId: 'home' },
-  { label: 'ABOUT',         sectionId: 'about' },
-  { label: 'BHEEM CHATBOT', sectionId: 'bheem',        action: 'bheembot'   },
-  { label: 'CONTACT',       sectionId: 'contact' },
+  { key: 'nav.homeCaps',    sectionId: 'home' },
+  { key: 'nav.aboutCaps',   sectionId: 'about' },
+  { key: 'nav.bheemCaps',   sectionId: 'bheem',   action: 'bheembot' },
+  { key: 'nav.contactCaps', sectionId: 'contact' },
 ];
 
 export default function Navbar() {
@@ -149,7 +149,7 @@ export default function Navbar() {
                     : 'border border-transparent text-white/70 hover:text-[#3f9fff] hover:bg-[#3f9fff]/10 hover:border-[#3f9fff]/30 hover:shadow-[0_0_10px_rgba(63,159,255,0.2)]'
                 }`}
               >
-                {item.label}
+                {t(item.key)}
               </button>
             );
           })}
@@ -213,7 +213,7 @@ export default function Navbar() {
                   {isActive && (
                     <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#3f9fff] shadow-[0_0_7px_rgba(63,159,255,0.8)]" />
                   )}
-                  {item.label}
+                  {t(item.key)}
                 </button>
               );
             })}

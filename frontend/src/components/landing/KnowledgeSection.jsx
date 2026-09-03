@@ -7,58 +7,46 @@ import { useI18n } from '../../i18n/index.jsx';
 const SERVICES = [
   {
     icon: Edit3,
-    title: 'Social Media Post',
-    sub: 'Generate powerful Ambedkarite posts straight from current news and events.',
-    features: ['News-to-post in seconds', 'Multi-platform formats', 'Tone & style control'],
     color: '#ff4f8a',
     gradient: 'from-[#ff4f8a] to-[#d43a68]',
     live: true,
     route: '/generate/social-media',
+    id: 'social',
   },
   {
     icon: Headphones,
-    title: 'Podcast',
-    sub: 'Script, voice, and produce AI-powered podcast episodes on Ambedkarite themes.',
-    features: ['AI script & voiceover', 'Multi-host episode builder', 'Topic & language selection'],
     color: '#06b6d4',
     gradient: 'from-[#06b6d4] to-[#0891b2]',
     live: false,
+    id: 'podcast',
   },
   {
     icon: Mic2,
-    title: 'Political Speech',
-    sub: 'Compelling speeches grounded in constitutional values and real data.',
-    features: ['Constitutional framing', 'Audience-aware language', 'Data-backed arguments'],
     color: '#22c55e',
     gradient: 'from-[#22c55e] to-[#16a34a]',
     live: false,
+    id: 'speech',
   },
   {
     icon: Video,
-    title: 'Video Generation',
-    sub: 'High-quality AI videos from your ideas, scripts, and talking points.',
-    features: ['Text-to-video pipeline', 'Script-to-animation', 'HD quality output'],
     color: '#a855f7',
     gradient: 'from-[#a855f7] to-[#7b3fd4]',
     live: false,
+    id: 'video',
   },
   {
     icon: Newspaper,
-    title: 'Editorial',
-    sub: 'Opinion pieces and long-form articles rooted in Ambedkarite thought.',
-    features: ['Research-backed writing', 'Ambedkarite perspective', 'In-depth analysis'],
     color: '#f59e0b',
     gradient: 'from-[#f59e0b] to-[#d97706]',
     live: false,
+    id: 'editorial',
   },
   {
     icon: Scale,
-    title: 'Debate Analysis',
-    sub: 'Analyse political debates and arguments through an Ambedkarite lens.',
-    features: ['Real-time argument scoring', 'Counter-point generation', 'Fact-check integration'],
     color: '#3f9fff',
     gradient: 'from-[#3f9fff] to-[#5bc0ff]',
     live: false,
+    id: 'debate',
   },
 ];
 
@@ -89,7 +77,10 @@ function NavButton({ onClick, direction, label }) {
 
 function ServiceCard({ service }) {
   const { t } = useI18n();
-  const { icon: Icon, title, sub, features, color, gradient, live, route } = service;
+  const { icon: Icon, id, color, gradient, live, route } = service;
+  const title = t(`svc.${id}.title`);
+  const sub = t(`svc.${id}.sub`);
+  const features = [1, 2, 3].map((n) => t(`svc.${id}.f${n}`));
   return (
     <div
       onMouseMove={handleCardMove}

@@ -9,19 +9,19 @@ import { useI18n } from '../i18n/index.jsx';
 // a route change, so these work from /pricing and /about too, which plain
 // "#contact" links did not: they appended a hash to whatever page you were on.
 const PRODUCT_LINKS = [
-  { label: "Generate posts", to: "/generate/social-media" },
-  { label: "BheemBot", to: "/bheembot" },
-  { label: "Use cases", to: "/#bheem" },
-  { label: "Pricing", to: "/pricing" },
-  { label: "Solutions", to: "/solutions" },
+  { key: "foot.generatePosts", to: "/generate/social-media" },
+  { key: "foot.bheembot", to: "/bheembot" },
+  { key: "foot.useCases", to: "/#bheem" },
+  { key: "foot.pricing", to: "/pricing" },
+  { key: "foot.solutions", to: "/solutions" },
 ];
 
 const COMPANY_LINKS = [
-  { label: "About", to: "/about" },
-  { label: "Our team", to: "/#charity" },
-  { label: "Dalit Corpus", to: "/#ambedkarverse" },
-  { label: "Resources", to: "/resources" },
-  { label: "Contact us", to: "/contact" },
+  { key: "foot.about", to: "/about" },
+  { key: "foot.ourTeam", to: "/#charity" },
+  { key: "foot.dalitCorpus", to: "/#ambedkarverse" },
+  { key: "foot.resources", to: "/resources" },
+  { key: "foot.contactUs", to: "/contact" },
 ];
 
 // Accounts with no URL are skipped rather than rendered as links that go
@@ -46,17 +46,18 @@ function ColumnHeading({ children }) {
 }
 
 function LinkColumn({ heading, links }) {
+  const { t } = useI18n();
   return (
     <div>
       <ColumnHeading>{heading}</ColumnHeading>
       <ul className="mt-5 space-y-2.5">
         {links.map((l) => (
-          <li key={l.label}>
+          <li key={l.key}>
             <Link
               to={l.to}
               className="inline-block text-[13.5px] text-[#9fb2d1] transition hover:translate-x-0.5 hover:text-white"
             >
-              {l.label}
+              {t(l.key)}
             </Link>
           </li>
         ))}
@@ -124,8 +125,8 @@ export default function Footer() {
             )}
           </div>
 
-          <LinkColumn heading="Product" links={PRODUCT_LINKS} />
-          <LinkColumn heading="Company" links={COMPANY_LINKS} />
+          <LinkColumn heading={t('foot.product')} links={PRODUCT_LINKS} />
+          <LinkColumn heading={t('foot.company')} links={COMPANY_LINKS} />
         </div>
 
         <div className="relative mt-12 h-px w-full bg-[#1a2c55]/60">

@@ -1,31 +1,17 @@
 ﻿import { Cpu, Search, Zap, Target, ArrowRight } from "lucide-react";
 import SectionLabel from "./SectionLabel";
 import StaggerReveal from "../ui/StaggerReveal";
+import { useI18n } from "../../i18n/index.jsx";
 
 const USE_CASES = [
-  {
-    icon: Cpu,
-    title: "The Ambedkar Principle Engine",
-    body: "Use Ambedkar's speeches on current events to build confidence and win elections. Draw on decades of constitutional philosophy to craft arguments that resonate with voters and stand up to scrutiny.",
-  },
-  {
-    icon: Search,
-    title: "Understanding Public Problems",
-    body: "AI scans local news and ground realities to reveal voter issues so you always speak to real concerns. Stop guessing what matters. Know exactly what your constituency needs.",
-  },
-  {
-    icon: Zap,
-    title: "Real-Time Debate Assistant",
-    body: "During live debates, the AI feeds you quick facts, counter-arguments, and data points via a discreet device, ensuring you always have a logical edge. Never be caught off-guard again.",
-  },
-  {
-    icon: Target,
-    title: "Opponent Weakness Finder",
-    body: "AI scans opponents' past speeches, promises, and voting records to highlight inconsistencies and unfulfilled promises, all fact-based. Turn research into winning strategy.",
-  },
+  { icon: Cpu,    id: "principle" },
+  { icon: Search, id: "problems"  },
+  { icon: Zap,    id: "debate"    },
+  { icon: Target, id: "weakness"  },
 ];
 
-function UseCaseCard({ icon: Icon, title, body }) {
+function UseCaseCard({ icon: Icon, id }) {
+  const { t } = useI18n();
   return (
     <div className="group relative">
       <div
@@ -52,12 +38,12 @@ function UseCaseCard({ icon: Icon, title, body }) {
             <Icon size={24} strokeWidth={1.7} />
           </span>
           <h3 className="text-[28px] font-semibold text-white md:text-[30px]">
-            {title}
+            {t(`uc.${id}.title`)}
           </h3>
         </div>
         <div className="mt-3 h-px w-12 rounded-full bg-[#2a4375]/60" />
         <p className="mt-4 flex-1 text-[19px] leading-8 text-[#bfcfe8] md:text-[20px]">
-          {body}
+          {t(`uc.${id}.body`)}
         </p>
       </div>
     </div>
@@ -65,6 +51,7 @@ function UseCaseCard({ icon: Icon, title, body }) {
 }
 
 export default function UseCasesGrid() {
+  const { t } = useI18n();
   return (
     <section id="bheem" className="relative py-8 md:py-10">
       <div className="pointer-events-none absolute inset-x-0 -top-28 -bottom-28">
@@ -73,18 +60,18 @@ export default function UseCasesGrid() {
       </div>
 
       <div className="relative mx-auto max-w-[1440px] px-6">
-        <SectionLabel>Use Cases</SectionLabel>
+        <SectionLabel>{t('uc.label')}</SectionLabel>
 
         <h2 className="mx-auto mt-8 max-w-[900px] text-center font-display text-[38px] font-bold leading-[1.2] text-white md:text-[52px]">
-          AI-Powered Knowledge To Lead With{" "}
-          <span className="italic gradient-text-blue">Truth</span>
-          {" "}and Win Elections With{" "}
-          <span className="italic gradient-text-blue">Guarantee</span>
+          {t('uc.headA')}{" "}
+          <span className="italic gradient-text-blue">{t('uc.headEm1')}</span>
+          {" "}{t('uc.headMid')}{" "}
+          <span className="italic gradient-text-blue">{t('uc.headEm2')}</span>
         </h2>
 
         <StaggerReveal step={100} className="mt-14 grid gap-6 md:grid-cols-2">
           {USE_CASES.map((uc) => (
-            <UseCaseCard key={uc.title} {...uc} />
+            <UseCaseCard key={uc.id} {...uc} />
           ))}
         </StaggerReveal>
 
@@ -98,7 +85,7 @@ export default function UseCasesGrid() {
             }
             className="btn-gradient group inline-flex min-h-[3.5rem] max-w-full items-center justify-center gap-3 rounded-xl px-7 py-3.5 text-center font-count text-[16px] font-semibold leading-snug text-white md:px-9 md:text-[17px]"
           >
-            Contest election as an independent candidate
+            {t('uc.contest')}
             <ArrowRight
               size={18}
               className="shrink-0 transition-transform group-hover:translate-x-1"

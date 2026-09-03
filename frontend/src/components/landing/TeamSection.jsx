@@ -8,17 +8,18 @@ import team4 from "../../assets/images/team/team4.jpeg";
 import team5 from "../../assets/images/team/team5.jpeg";
 import team6 from "../../assets/images/team/team6.jpeg";
 import team7 from "../../assets/images/team/team7.jpeg";
+import { useI18n } from '../../i18n/index.jsx';
 
 // `position` sets each photo's focal point so faces are never cropped out, and
 // stays tied to its photo when the display order changes.
 const TEAM = [
-  { name: "Kinjalk Singh",         role: "Founder",                 photo: team4, position: "50% 20%" },
-  { name: "Kishore Jain",          role: "Advisor",                 photo: team5, position: "50% 55%" },
-  { name: "Chaudhary Arpit Singh", role: "Research Associate",      photo: team6, position: "50% 0%" },
-  { name: "Michale Randle",        role: "Advisor",                 photo: team7, position: "50% 40%" },
-  { name: "Kunal Lonhare",         role: "Influencer",              photo: team1, position: "50% 25%" },
-  { name: "Kalpik Singh",          role: "Knowledge Graph Analyst", photo: team2, position: "50% 20%" },
-  { name: "Sajjal Dixit",          role: "Operation Manager",       photo: team3, position: "50% 30%" },
+  { id: "kinjalk", role: "team.founder",    photo: team4, position: "50% 20%" },
+  { id: "kishore", role: "team.advisor",    photo: team5, position: "50% 55%" },
+  { id: "arpit",   role: "team.research",   photo: team6, position: "50% 0%"  },
+  { id: "michale", role: "team.advisor",    photo: team7, position: "50% 40%" },
+  { id: "kunal",   role: "team.influencer", photo: team1, position: "50% 25%" },
+  { id: "kalpik",  role: "team.kganalyst",  photo: team2, position: "50% 20%" },
+  { id: "sajjal",  role: "team.opsmanager", photo: team3, position: "50% 30%" },
 ];
 
 function NavButton({ onClick, direction, label }) {
@@ -75,6 +76,7 @@ function SocialLinks({ linkedin, twitter }) {
 }
 
 function TeamCard({ member }) {
+  const { t } = useI18n();
   return (
     <div className="group relative h-[400px] w-[300px] shrink-0 overflow-hidden rounded-2xl border border-[#2a4375]/60 bg-[#0a1430] shadow-[0_20px_50px_rgba(0,0,0,0.45)] transition hover:-translate-y-1 hover:border-[#4a78c8]/80">
       <div className="absolute inset-0 bg-gradient-to-b from-[#11204a] via-[#0b1633] to-[#070c1f]" />
@@ -82,7 +84,7 @@ function TeamCard({ member }) {
 
       <img
         src={member.photo}
-        alt={member.name}
+        alt={t(`team.${member.id}`)}
         loading="lazy"
         className="relative h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
         style={{ objectPosition: member.position || "50% 25%", filter: "saturate(1.05) contrast(1.02)" }}
@@ -92,10 +94,10 @@ function TeamCard({ member }) {
         <div className="flex items-end justify-between gap-3">
           <div className="min-w-0">
             <h3 className="text-[22px] font-semibold leading-tight text-white md:text-[24px]">
-              {member.name}
+              {t(`team.${member.id}`)}
             </h3>
             <p className="mt-1 text-[13px] uppercase tracking-[0.15em] text-[#7aa6e5]">
-              {member.role}
+              {t(member.role)}
             </p>
           </div>
           <SocialLinks linkedin={member.linkedin} twitter={member.twitter} />
@@ -246,6 +248,7 @@ function DesktopCarousel() {
 }
 
 function MobileCarousel() {
+  const { t } = useI18n();
   const [activeIdx, setActiveIdx] = useState(0);
 
   function goPrev() {
@@ -269,7 +272,7 @@ function MobileCarousel() {
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_25%,rgba(63,159,255,0.18),transparent_65%)]" />
           <img
             src={member.photo}
-            alt={member.name}
+            alt={t(`team.${member.id}`)}
             loading="lazy"
             className="relative h-full w-full object-cover"
             style={{ objectPosition: member.position || "50% 25%", filter: "saturate(1.05) contrast(1.02)" }}
@@ -277,8 +280,8 @@ function MobileCarousel() {
           <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-[#030611] via-[#030611]/70 to-transparent p-5">
             <div className="flex items-end justify-between gap-3">
               <div className="min-w-0">
-                <h3 className="text-[22px] font-semibold leading-tight text-white">{member.name}</h3>
-                <p className="mt-1 text-[13px] uppercase tracking-[0.15em] text-[#7aa6e5]">{member.role}</p>
+                <h3 className="text-[22px] font-semibold leading-tight text-white">{t(`team.${member.id}`)}</h3>
+                <p className="mt-1 text-[13px] uppercase tracking-[0.15em] text-[#7aa6e5]">{t(member.role)}</p>
               </div>
               <SocialLinks linkedin={member.linkedin} twitter={member.twitter} />
             </div>
@@ -314,6 +317,7 @@ function MobileCarousel() {
 
 // Team section — "A team like never seen before" as a looping carousel
 export default function TeamSection() {
+  const { t } = useI18n();
   return (
     <section id="charity" className="relative py-8 md:py-10">
       {/* Ambient glow — bottom glow bleeds into ContactSection */}
@@ -323,16 +327,15 @@ export default function TeamSection() {
       </div>
 
       <div className="mx-auto max-w-[1440px] px-6">
-        <SectionLabel>Our Team</SectionLabel>
+        <SectionLabel>{t('team.label')}</SectionLabel>
 
         <h2 className="mx-auto mt-8 max-w-[820px] text-center font-display text-[46px] font-bold leading-[1.05] text-white md:text-[62px]">
-          A Team like{" "}
-          <span className="italic gradient-text-blue">never seen</span> before
+          {t('team.headA')}{" "}
+          <span className="italic gradient-text-blue">{t('team.headEm')}</span> {t('team.headPost')}
         </h2>
 
         <p className="mx-auto mt-10 max-w-[720px] text-center text-[22px] leading-9 text-[#bfcfe8] md:text-[24px]">
-          Our team connects scholars, creators, engineers, and changemakers,
-          turning knowledge into meaningful action.
+          {t('team.sub')}
         </p>
       </div>
 
