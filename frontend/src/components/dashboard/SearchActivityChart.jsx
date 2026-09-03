@@ -1,4 +1,5 @@
 import Card, { CardTitle } from './Card';
+import { useI18n } from '../../i18n/index.jsx';
 
 // Build last-7-days post counts
 function buildData(posts) {
@@ -44,6 +45,7 @@ function catmullRomPath(pts) {
 }
 
 export default function SearchActivityChart({ posts = [] }) {
+  const { t } = useI18n();
   const data   = buildData(posts);
   const maxVal = Math.max(...data.map((p) => p.v), 1);
   const MAX    = Math.ceil(maxVal * 1.3) || 5;
@@ -55,7 +57,7 @@ export default function SearchActivityChart({ posts = [] }) {
 
   return (
     <Card>
-      <CardTitle>Posts — Last 7 Days</CardTitle>
+      <CardTitle>{t('chart.last7')}</CardTitle>
 
       {posts.length === 0 ? (
         <p className="mt-4 py-8 text-center text-[13px] text-[#6b78a0]">

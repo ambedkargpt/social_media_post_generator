@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import LanguageSwitcher from '../LanguageSwitcher';
 import NotificationBell from './NotificationBell';
 import ProfileMenu from './ProfileMenu';
+import { useI18n } from '../../i18n/index.jsx';
 
 export default function Topbar({ user, onMenuOpen, totalPosts, onLogout }) {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const name  = user?.name  ?? '—';
   const email = user?.email ?? '';
@@ -31,7 +33,7 @@ export default function Topbar({ user, onMenuOpen, totalPosts, onLogout }) {
           className="inline-flex items-center gap-2 rounded-full btn-gradient px-5 py-2.5 text-[13.5px] font-semibold text-white shadow-[0_8px_28px_rgba(17,122,255,0.4)]"
         >
           <Sparkles size={15} strokeWidth={2.1} />
-          Generate
+          {t('dash.generate')}
         </button>
       </div>
 

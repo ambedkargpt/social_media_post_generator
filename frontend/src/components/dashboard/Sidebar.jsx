@@ -73,7 +73,7 @@ function SidebarContent({ active, onSelect, onClose, onLogout }) {
             type="button"
             onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-[#5a7a9e] transition hover:text-white lg:hidden"
-            aria-label="Close menu"
+            aria-label={t('side.closeMenu')}
           >
             <X size={16} strokeWidth={1.8} />
           </button>
@@ -116,7 +116,7 @@ function SidebarContent({ active, onSelect, onClose, onLogout }) {
                 <IconComp size={17} strokeWidth={1.8} />
                 <span>{t(item.labelKey)}</span>
                 <span className="ml-auto rounded-full bg-[#141d3a] px-1.5 py-0.5 font-count text-[9.5px] uppercase tracking-wider text-[#5a6e9a]">
-                  Soon
+                  {t('nav.soonBadge')}
                 </span>
               </div>
             );

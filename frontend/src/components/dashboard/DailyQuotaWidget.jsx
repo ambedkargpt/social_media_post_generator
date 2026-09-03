@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Zap, Flame, AlertTriangle, Trophy } from 'lucide-react';
+import { useI18n } from '../../i18n/index.jsx';
 
 const DAILY_LIMIT = 5;
 const MILESTONE   = 200;
@@ -29,6 +30,7 @@ function useCountdown(resetAt) {
  *   streak_at_risk, streak_broken, milestone_target }
  */
 export default function DailyQuotaWidget({ quota, loading }) {
+  const { t } = useI18n();
   const countdown = useCountdown(quota?.daily_remaining === 0 ? quota?.reset_at : null);
 
   if (loading) {
@@ -66,7 +68,7 @@ export default function DailyQuotaWidget({ quota, loading }) {
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#3f9fff] to-[#7b5cff]">
             <Zap size={13} strokeWidth={2.2} className="text-white" />
           </span>
-          <h3 className="font-display text-[14px] font-semibold text-white">Daily Posts</h3>
+          <h3 className="font-display text-[14px] font-semibold text-white">{t('quota.dailyPosts')}</h3>
         </div>
         {/* Streak badge */}
         {streak_days > 0 && (
@@ -88,7 +90,7 @@ export default function DailyQuotaWidget({ quota, loading }) {
         <div className="flex items-start gap-2 rounded-xl border border-red-500/25 bg-red-500/8 px-3 py-2.5">
           <AlertTriangle size={14} className="mt-0.5 shrink-0 text-red-400" strokeWidth={2} />
           <p className="text-[12px] leading-snug text-red-400">
-            <span className="font-semibold">Streak lost.</span> Progress reset to 0. Start again today!
+            <span className="font-semibold">{t('quota.streakLost')}</span> {t('quota.resetToZero')}
           </p>
         </div>
       )}
@@ -98,7 +100,7 @@ export default function DailyQuotaWidget({ quota, loading }) {
         <div className="flex items-start gap-2 rounded-xl border border-amber-500/25 bg-amber-500/8 px-3 py-2.5">
           <Flame size={14} className="mt-0.5 shrink-0 text-amber-400" strokeWidth={2} />
           <p className="text-[12px] leading-snug text-amber-400">
-            <span className="font-semibold">Publish today</span> to protect your {streak_days}-day streak!
+            <span className="font-semibold">{t('quota.publishToday')}</span> {t('quota.protectStreak', { days: streak_days })}
           </p>
         </div>
       )}
@@ -107,10 +109,10 @@ export default function DailyQuotaWidget({ quota, loading }) {
       <div>
         <div className="mb-1.5 flex items-center justify-between text-[11.5px]">
           <span className="text-[#8b94b8]">
-            {atLimit ? 'Daily limit reached' : `${daily_used} of ${DAILY_LIMIT} published today`}
+            {atLimit ? t('quota.limitReached') : t('quota.publishedToday', { done: daily_used, total: DAILY_LIMIT })}
           </span>
           <span className={`font-semibold ${atLimit ? 'text-red-400' : 'text-[#6aa8ff]'}`}>
-            {atLimit ? '0 left' : `${daily_remaining} left`}
+            {atLimit ? t('quota.zeroLeft') : t('quota.left', { n: daily_remaining })}
           </span>
         </div>
 
@@ -136,7 +138,7 @@ export default function DailyQuotaWidget({ quota, loading }) {
       {/* Countdown at limit */}
       {atLimit && (
         <div className="flex items-center justify-between rounded-xl border border-red-500/20 bg-red-500/8 px-3.5 py-2.5">
-          <span className="text-[12px] text-red-400/80">You've used all 5 posts for today. Resets in</span>
+          <span className="text-[12px] text-red-400/80">{t('quota.allUsed')}</span>
           <span className="font-count text-[14px] font-bold tabular-nums text-red-400">{countdown}</span>
         </div>
       )}
@@ -146,7 +148,7 @@ export default function DailyQuotaWidget({ quota, loading }) {
         <div className="mb-1.5 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <Trophy size={12} strokeWidth={2} className="text-amber-400" />
-            <span className="text-[11.5px] text-[#8b94b8]">Streak milestone</span>
+            <span className="text-[11.5px] text-[#8b94b8]">{t('quota.milestone')}</span>
           </div>
           <span className="text-[11.5px] font-semibold text-amber-400">
             {total_streak_posts} / {MILESTONE} → ₹2,000
@@ -163,7 +165,7 @@ export default function DailyQuotaWidget({ quota, loading }) {
           />
         </div>
         <p className="mt-1.5 text-[10.5px] text-[#3a4e70]">
-          Only counts streak posts — breaking your streak resets this to 0
+          {t('quota.streakNote')}
         </p>
       </div>
     </div>

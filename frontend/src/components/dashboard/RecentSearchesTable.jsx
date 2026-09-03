@@ -29,7 +29,7 @@ export default function RecentSearchesTable({ posts = [], loading = false }) {
             onClick={() => navigate('/posts')}
             className="text-[12px] text-[#6aa8ff] underline underline-offset-2 hover:opacity-80 transition-opacity"
           >
-            View all →
+            {t('saved.viewAll')}
           </button>
           <button
             type="button"
@@ -91,7 +91,7 @@ export default function RecentSearchesTable({ posts = [], loading = false }) {
                   <td className="py-3.5 pr-4">
                     <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11.5px] font-medium capitalize ${STATUS_STYLE[p.status] ?? STATUS_STYLE.draft}`}>
                       <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                      {p.status}
+                      {t(`status.${p.status}`)}
                     </span>
                   </td>
                 </tr>

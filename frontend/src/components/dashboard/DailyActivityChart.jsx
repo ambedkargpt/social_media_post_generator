@@ -1,4 +1,5 @@
 import Card, { CardTitle } from './Card';
+import { useI18n } from '../../i18n/index.jsx';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -14,6 +15,7 @@ function buildData(posts) {
 const W = 520, H = 230, PAD_L = 36, PAD_R = 18, PAD_T = 18, PAD_B = 36;
 
 export default function DailyActivityChart({ posts = [] }) {
+  const { t } = useI18n();
   const data = buildData(posts);
   const maxVal = Math.max(...data.map((p) => p.v), 1);
   const MAX = Math.ceil(maxVal * 1.3) || 5;
@@ -30,7 +32,7 @@ export default function DailyActivityChart({ posts = [] }) {
 
   return (
     <Card>
-      <CardTitle>Posts by Day of Week</CardTitle>
+      <CardTitle>{t('chart.byDay')}</CardTitle>
 
       {posts.length === 0 ? (
         <p className="mt-4 py-8 text-center text-[13px] text-[#6b78a0]">

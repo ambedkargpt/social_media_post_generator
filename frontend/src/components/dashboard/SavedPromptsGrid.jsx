@@ -1,6 +1,7 @@
 import Card, { CardTitle } from './Card';
 import { Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useI18n } from '../../i18n/index.jsx';
 
 function PostCard({ post }) {
   const preview = post.content?.slice(0, 120) + (post.content?.length > 120 ? '…' : '');
@@ -32,12 +33,13 @@ function PostCard({ post }) {
 }
 
 export default function SavedPromptsGrid({ posts = [] }) {
+  const { t } = useI18n();
   const navigate = useNavigate();
 
   return (
     <Card>
       <div className="flex items-center justify-between">
-        <CardTitle>Published Posts</CardTitle>
+        <CardTitle>{t('saved.title')}</CardTitle>
         {posts.length > 0 && (
           <span className="text-[12px] text-[#6b78a0]">{posts.length} post{posts.length !== 1 ? 's' : ''}</span>
         )}
@@ -46,13 +48,13 @@ export default function SavedPromptsGrid({ posts = [] }) {
       {posts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-10 text-center">
           <Send size={32} strokeWidth={1.4} className="text-[#2a3566] mb-3" />
-          <p className="text-[13px] text-[#6b78a0]">No published posts yet.</p>
+          <p className="text-[13px] text-[#6b78a0]">{t('saved.none')}</p>
           <button
             type="button"
             onClick={() => navigate('/generate')}
             className="mt-4 rounded-xl btn-gradient px-6 py-2.5 text-[13px] font-semibold text-white"
           >
-            Create &amp; publish a post
+            {t('saved.create')}
           </button>
         </div>
       ) : (
