@@ -19,6 +19,7 @@ import { parsePost, hashtagsText } from '../utils/parsePost';
 import Spinner from '../components/Spinner';
 import { useI18n } from '../i18n/index.jsx';
 import SpeakButton from '../components/generate/SpeakButton';
+import { toneLabel } from '../utils/displayLabel';
 
 const TONES = ['Professional', 'Inspirational', 'Creative', 'Casual', 'Motivational'];
 const ALSO_GENERATE = ['Audio', 'Shorts', 'Image'];
@@ -98,7 +99,7 @@ const CONTENT_TYPES = {
 // A party's own uploads are its news, not a neutral article about it, and the
 // section decides which reading applies. General keeps "News Article".
 function newsTypeLabel(section) {
-  return section === 'party' ? 'Party News' : CONTENT_TYPES.news.label;
+  return section === 'party' ? 'gen.partyNews' : 'gen.newsArticle';
 }
 
 // Two standing ranges, plus a per-day jump built from the days that actually
@@ -236,7 +237,7 @@ export default function SocialMediaPostGenerator() {
   const [showMobilePrefs, setShowMobilePrefs] = useState(false);
   const filterRef = useRef(null);
 
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const siteLang = getSiteLanguage() ?? 'hi';
   const atDailyLimit = quota?.daily_remaining === 0;
   const quotaCountdown = useCountdown(atDailyLimit ? quota?.reset_at : null);
@@ -667,7 +668,7 @@ export default function SocialMediaPostGenerator() {
               {t('gen.title')}
             </p>
             <p className="mt-1 text-[11.5px] leading-relaxed text-[#6b78a0]">
-              Educate &middot; Agitate &middot; Organize
+              {t('gen.motto')}
               <span className="block text-[#5a6584]">&mdash; Dr. B.R. Ambedkar</span>
             </p>
             <span className="mt-2.5 inline-flex items-center gap-1.5 rounded-full border border-[#3f9fff]/20 bg-[#3f9fff]/8 px-2.5 py-1 text-[10.5px] font-semibold text-[#6aa8ff]">
@@ -694,7 +695,7 @@ export default function SocialMediaPostGenerator() {
                 onClick={() => navigate('/profile-setup')}
                 className="mt-1 text-[11px] font-medium text-[#ef6a6a] transition hover:text-[#ff8a8a]"
               >
-                Complete your profile →
+                {t('gen.completeProfile')}
               </button>
             </div>
 
@@ -736,8 +737,8 @@ export default function SocialMediaPostGenerator() {
               onClick={() => navigate('/profile-setup')}
               className="w-full rounded-xl border border-[#1e2636]/80 bg-[#0e1320] px-3.5 py-3 text-left text-[12.5px] text-[#8b93a5] transition hover:border-[#3f9fff]/45 hover:text-white"
             >
-              No party set — showing general news only.
-              <span className="mt-0.5 block text-[11.5px] text-[#6aa8ff]">Set your party →</span>
+              {t('gen.noPartyLine')}
+              <span className="mt-0.5 block text-[11.5px] text-[#6aa8ff]">{t('gen.setParty')}</span>
             </button>
           )}
         </div>
@@ -773,15 +774,15 @@ export default function SocialMediaPostGenerator() {
         {/* Select tone */}
         <div className="flex-1 px-4 pb-2 pt-5">
           <div className="rounded-2xl border border-[#1e2636]/80 bg-[#0e1320] p-4">
-            <p className="mb-3 text-[13px] font-semibold text-white">Select tone</p>
+            <p className="mb-3 text-[13px] font-semibold text-white">{t('gen.selectToneLabel')}</p>
             <div className="space-y-2">
-              {TONES.map((t) => {
-                const active = tone === t;
+              {TONES.map((tn) => {
+                const active = tone === tn;
                 return (
                   <button
-                    key={t}
+                    key={tn}
                     type="button"
-                    onClick={() => setTone(t)}
+                    onClick={() => setTone(tn)}
                     className="w-full rounded-lg border py-2.5 text-center text-[12.5px] font-medium transition"
                     style={{
                       borderColor: active ? '#3f9fff' : 'rgba(30,38,54,0.8)',
@@ -789,7 +790,7 @@ export default function SocialMediaPostGenerator() {
                       color: active ? '#6aa8ff' : '#8b93a5',
                     }}
                   >
-                    {t}
+                    {toneLabel(tn, lang)}
                   </button>
                 );
               })}
@@ -840,7 +841,7 @@ export default function SocialMediaPostGenerator() {
               }`}
             >
               <Filter size={13} strokeWidth={2} />
-              {selectedDayLabel ?? 'Filter News'}
+              {selectedDayLabel ?? t('gen.filterNewsBtn')}
               {filtersActive > 0 && (
                 <span className="rounded-full bg-[#3f9fff] px-1.5 py-0.5 font-count text-[10px] leading-none text-white">
                   {filtersActive}
@@ -916,18 +917,18 @@ export default function SocialMediaPostGenerator() {
         <div className="mx-6 mb-3 lg:hidden md:mx-8">
           <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
             <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#6aa8ff]">{t('gen.tone')}</span>
-            {TONES.map((t) => (
+            {TONES.map((tn) => (
               <button
-                key={t}
+                key={tn}
                 type="button"
-                onClick={() => setTone(t)}
+                onClick={() => setTone(tn)}
                 className={`shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10.5px] font-medium transition ${
-                  tone === t
+                  tone === tn
                     ? 'border-[#3f9fff]/60 bg-[#0d1a3a] text-[#3f9fff]'
                     : 'border-[#1e3260]/60 bg-[#0a1130]/60 text-[#6b78a0] hover:text-white'
                 }`}
               >
-                {t}
+                {toneLabel(tn, lang)}
               </button>
             ))}
           </div>
@@ -1016,35 +1017,35 @@ export default function SocialMediaPostGenerator() {
                 // Conference" selects nothing.
                 ? [{ id: 'all', label: newsTypeLabel(newsSection), color: '#6aa8ff' }]
                 : [
-                    { id: 'all',              label: 'All',                                  color: '#8a9ac0' },
-                    { id: 'press_conference', label: CONTENT_TYPES.press_conference.label,   color: CONTENT_TYPES.press_conference.color },
+                    { id: 'all',              label: 'gen.all',                              color: '#8a9ac0' },
+                    { id: 'press_conference', label: 'gen.pressConference',                  color: CONTENT_TYPES.press_conference.color },
                     { id: 'news',             label: newsTypeLabel(newsSection),             color: '#6aa8ff' },
                   ]
-              ).map((t) => {
-                const active = typeFilter === t.id;
-                const count = t.id === 'all'
+              ).map((chip) => {
+                const active = typeFilter === chip.id;
+                const count = chip.id === 'all'
                   ? sectionArticles.length
-                  : sectionArticles.filter((a) => a.contentType === t.id).length;
+                  : sectionArticles.filter((a) => a.contentType === chip.id).length;
                 return (
                   <button
-                    key={t.id}
+                    key={chip.id}
                     type="button"
-                    onClick={() => { setTypeFilter(t.id); setPage(1); setView('feed'); }}
+                    onClick={() => { setTypeFilter(chip.id); setPage(1); setView('feed'); }}
                     className="inline-flex items-center gap-2.5 rounded-full border px-5 py-2.5 text-[16px] font-semibold transition"
                     style={{
-                      borderColor: active ? t.color : 'rgba(30,38,54,0.9)',
-                      backgroundColor: active ? `${t.color}1f` : 'transparent',
-                      color: active ? t.color : '#7d8aa6',
+                      borderColor: active ? chip.color : 'rgba(30,38,54,0.9)',
+                      backgroundColor: active ? `${chip.color}1f` : 'transparent',
+                      color: active ? chip.color : '#7d8aa6',
                     }}
                   >
-                    {t.id === 'press_conference' && <Radio size={16} strokeWidth={2} />}
-                    {t.id === 'news' && <FileText size={16} strokeWidth={2} />}
-                    {t.label}
+                    {chip.id === 'press_conference' && <Radio size={16} strokeWidth={2} />}
+                    {chip.id === 'news' && <FileText size={16} strokeWidth={2} />}
+                    {t(chip.label)}
                     <span
                       className="rounded-full px-2 py-1 font-count text-[13px] leading-none"
                       style={{
-                        backgroundColor: active ? `${t.color}26` : 'rgba(30,38,54,0.9)',
-                        color: active ? t.color : '#5a6e9a',
+                        backgroundColor: active ? `${chip.color}26` : 'rgba(30,38,54,0.9)',
+                        color: active ? chip.color : '#5a6e9a',
                       }}
                     >
                       {count}
@@ -1167,8 +1168,8 @@ export default function SocialMediaPostGenerator() {
                             ? <Radio size={12} strokeWidth={2} />
                             : <FileText size={12} strokeWidth={2} />}
                           {article.contentType === 'press_conference'
-                            ? CONTENT_TYPES.press_conference.label
-                            : newsTypeLabel(newsSection)}
+                            ? t('gen.pressConference')
+                            : t(newsTypeLabel(newsSection))}
                         </span>
                         <span
                           className="shrink-0 rounded-full border px-3 py-1 font-count text-[11px] uppercase tracking-wider"

@@ -15,13 +15,14 @@ const STATUS_COLORS = {
 };
 
 function StatusBadge({ status }) {
+  const { t, lang } = useI18n();
   const s = STATUS_COLORS[status] ?? STATUS_COLORS.draft;
   return (
     <span
       className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize"
       style={{ backgroundColor: s.bg, border: `1px solid ${s.border}`, color: s.text }}
     >
-      {status}
+      {t(`status.${status}`)}
     </span>
   );
 }
@@ -60,7 +61,7 @@ function PostModal({ post, onClose, onCopy, copiedId }) {
   }
 
   const date = post.created_at
-    ? new Date(post.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+    ? new Date(post.created_at).toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
     : '';
 
   // Rendered into document.body. An ancestor with will-change/transform becomes
@@ -129,7 +130,7 @@ function PostModal({ post, onClose, onCopy, copiedId }) {
 }
 
 function PostCard({ post, onOpen, onCopy, onPublish, onArchive, copiedId }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [translating, setTranslating]     = useState(false);
   const [translated, setTranslated]       = useState('');
   const [showTranslated, setShowTranslated] = useState(false);
@@ -139,7 +140,7 @@ function PostCard({ post, onOpen, onCopy, onPublish, onArchive, copiedId }) {
   const preview    = content.slice(0, 200);
   const hasMore    = content.length > 200;
   const date = post.created_at
-    ? new Date(post.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+    ? new Date(post.created_at).toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
     : '';
 
   async function handleTranslate() {
@@ -271,7 +272,7 @@ function PostCard({ post, onOpen, onCopy, onPublish, onArchive, copiedId }) {
 }
 
 export default function PostHistory() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
 
@@ -375,7 +376,7 @@ export default function PostHistory() {
         {/* Title */}
         <div className="mb-7">
           <h1 className="font-display text-[28px] font-bold text-white">{t('history.title')}</h1>
-          <p className="mt-1 text-[13.5px] text-[#6b78a0]">All posts you've generated — read, copy, publish, or archive them.</p>
+          <p className="mt-1 text-[13.5px] text-[#6b78a0]">{t('history.sub')}</p>
         </div>
 
         {/* Search + filter bar */}
@@ -404,7 +405,7 @@ export default function PostHistory() {
                   boxShadow: filter === tab ? '0 1px 4px rgba(0,0,0,0.4)' : 'none',
                 }}
               >
-                {tab} <span className="ml-0.5 opacity-60">({counts[tab]})</span>
+                {t(`status.${tab}`)} <span className="ml-0.5 opacity-60">({counts[tab]})</span>
               </button>
             ))}
           </div>

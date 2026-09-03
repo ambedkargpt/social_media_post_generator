@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Sparkles, ChevronDown, RotateCcw } from 'lucide-react';
 import { labelWithSize } from '../../utils/preferenceQuestions';
+import { useI18n } from '../../i18n/index.jsx';
 
 // UI-only display metadata per question_id — labels and hints are not stored
 // in the DB, so we keep a local map here. Falls back gracefully for unknown ids.
@@ -59,6 +60,7 @@ function Dropdown({ value, options, onChange }) {
 // onChange   — controlled setter
 // defaultValues — what "reset" snaps back to (user's saved profile answers)
 export default function PreferencesPanel({ questions = [], value, onChange, defaultValues }) {
+  const { t } = useI18n();
   const fallbackDefaults = buildDefaults(questions);
   const resetTarget = defaultValues ?? fallbackDefaults;
 
@@ -86,11 +88,11 @@ export default function PreferencesPanel({ questions = [], value, onChange, defa
               <Sparkles size={11} strokeWidth={2.2} />
             </span>
             <h3 className="font-display text-[15px] font-semibold text-white tracking-tight">
-              Your Preferences
+              {t('prefcard.title')}
             </h3>
           </div>
           <p className="mt-1 text-[11px] text-[#8b94b8]">
-            Tune the voice behind every post
+            {t('gen.tuneVoice')}
           </p>
         </div>
 
@@ -150,7 +152,7 @@ export default function PreferencesPanel({ questions = [], value, onChange, defa
           ) : (
             <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e] shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
           )}
-          {isLoading ? 'Loading your preferences…' : `${questions.length} signals active`}
+          {isLoading ? t('prefs.loading') : t('gen.signalsActive', { count: questions.length })}
         </span>
       </footer>
     </aside>

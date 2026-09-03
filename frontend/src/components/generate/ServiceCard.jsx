@@ -1,4 +1,5 @@
 import { ChevronRight } from 'lucide-react';
+import { useI18n } from '../../i18n/index.jsx';
 
 /**
  * A selectable AI-service tile used on the /generate page.
@@ -18,6 +19,7 @@ export default function ServiceCard({
   icon, iconGradient, glow, title, description,
   badge, selected, disabled, onSelect,
 }) {
+  const { t } = useI18n();
   return (
     <button
       type="button"
@@ -50,7 +52,7 @@ export default function ServiceCard({
               : 'border-[#2a4375]/60 bg-[#0f1b3d]/80 text-[#8aa6e0]',
           ].join(' ')}
         >
-          {badge === 'new' ? 'New' : 'Coming Soon'}
+          {badge === 'new' ? t('sel.new') : t('sel.comingSoon')}
         </span>
       )}
 
@@ -81,7 +83,7 @@ export default function ServiceCard({
               : 'border-[#2a4375]/50 bg-[#0d1531]/60 text-[#6aa8ff]',
           ].join(' ')}
         >
-          AI Service
+          {t('sel.aiService')}
         </span>
         <span
           className={[

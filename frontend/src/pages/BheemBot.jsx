@@ -17,41 +17,35 @@ const CATEGORIES = [
   {
     id: 'constitution',
     icon: Scale,
-    title: 'Constitution & Law',
-    desc: 'Articles, rights, and constitutional history',
     prompt: 'Explain the fundamental rights in the Indian Constitution as drafted by Dr. Ambedkar and why they matter for marginalized communities.',
   },
   {
     id: 'writings',
     icon: BookOpen,
-    title: "Ambedkar's Writings",
-    desc: 'Books, speeches, and essays',
     prompt: "What are Dr. Ambedkar's most important books and what key ideas does each one explore?",
   },
   {
     id: 'justice',
     icon: Heart,
-    title: 'Social Justice',
-    desc: 'Caste, equality, and reform movements',
     prompt: 'How did Dr. Ambedkar define social justice and what concrete steps did he propose to achieve it?',
   },
   {
     id: 'faqs',
     icon: HelpCircle,
-    title: 'FAQs',
-    desc: "Common questions about Ambedkar's life and work",
     prompt: "What are some frequently asked questions about Dr. B.R. Ambedkar's life, education, and legacy?",
   },
 ];
 
-const WELCOME_MESSAGE = {
+// A factory, not a constant: the greeting has to be built in the language in
+// force when the chat opens, and a module-level object is frozen in whatever
+// language happened to be loaded first.
+const welcomeMessage = (t) => ({
   id: 'welcome',
   role: 'assistant',
-  content:
-    "Hello! I'm BheemBot, your AI knowledge assistant trained on Dr. BR Ambedkar's writings and speeches. Ask me about constitutional law, social justice, or his philosophy.",
+  content: t('bot.welcome'),
   sources: [],
   timestamp: Date.now(),
-};
+});
 
 const SIDEBAR_WIDTH_KEY  = 'bheembot_sidebar_width';
 const sessionKey = (userId) => `bheembot_history_${userId || 'anon'}`;
@@ -147,8 +141,8 @@ function ChatSidebar({ onCategoryClick, searchQuery, setSearchQuery, onClose, mo
   const filtered = searchQuery
     ? CATEGORIES.filter(
         (c) =>
-          c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          c.desc.toLowerCase().includes(searchQuery.toLowerCase()),
+          t(`bot.cat.${c.id}.title`).toLowerCase().includes(searchQuery.toLowerCase()) ||
+          t(`bot.cat.${c.id}.desc`).toLowerCase().includes(searchQuery.toLowerCase()),
       )
     : CATEGORIES;
 
@@ -199,7 +193,7 @@ function ChatSidebar({ onCategoryClick, searchQuery, setSearchQuery, onClose, mo
         </p>
         <div className="space-y-1">
           {/* eslint-disable-next-line no-unused-vars */}
-          {filtered.map(({ id, icon: CatIcon, title, desc, prompt }) => (
+          {filtered.map(({ id, icon: CatIcon, prompt }) => (
             <button
               key={id}
               type="button"
@@ -211,8 +205,8 @@ function ChatSidebar({ onCategoryClick, searchQuery, setSearchQuery, onClose, mo
                   <CatIcon size={12} strokeWidth={1.8} />
                 </span>
                 <div className="min-w-0">
-                  <p className="truncate text-[12px] font-semibold text-white">{title}</p>
-                  <p className="mt-0.5 text-[10.5px] leading-snug text-[#5a7a9e]">{desc}</p>
+                  <p className="truncate text-[12px] font-semibold text-white">{t(`bot.cat.${id}.title`)}</p>
+                  <p className="mt-0.5 text-[10.5px] leading-snug text-[#5a7a9e]">{t(`bot.cat.${id}.desc`)}</p>
                 </div>
                 <ChevronRight size={12} strokeWidth={1.8} className="mt-1 shrink-0 text-[#1e3260] transition group-hover:text-[#4d94ff]" />
               </div>
@@ -308,7 +302,7 @@ export default function BheemBot() {
       const stored = sessionStorage.getItem(sessionKey(currentUser?.id));
       if (stored) return JSON.parse(stored);
     } catch { /* ignore */ }
-    return [WELCOME_MESSAGE];
+    return [welcomeMessage(t)];
   });
   const [input,        setInput]        = useState('');
   const [sending,      setSending]      = useState(false);
@@ -343,9 +337,9 @@ export default function BheemBot() {
       prevUserIdRef.current = currentUser?.id;
       try {
         const stored = sessionStorage.getItem(sessionKey(currentUser?.id));
-        setMessages(stored ? JSON.parse(stored) : [WELCOME_MESSAGE]);
+        setMessages(stored ? JSON.parse(stored) : [welcomeMessage(t)]);
       } catch {
-        setMessages([WELCOME_MESSAGE]);
+        setMessages([welcomeMessage(t)]);
       }
     }
   }, [currentUser?.id]);

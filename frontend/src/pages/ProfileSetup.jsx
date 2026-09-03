@@ -8,6 +8,7 @@ import { ROLE_GROUPS, roleLabel, groupForId, rolesInGroup } from '../utils/party
 import logoSrc     from '../assets/images/logo-animation.png';
 import ambedkarSrc from '../assets/images/qna-ambedkar.png';
 import { useI18n } from '../i18n/index.jsx';
+import { partyLabel, levelLabel } from '../utils/displayLabel';
 
 function FieldInput({ icon: Icon, label, placeholder, value, onChange, error, hint, maxLength }) {
   const [focused, setFocused] = useState(false);
@@ -48,7 +49,7 @@ function FieldInput({ icon: Icon, label, placeholder, value, onChange, error, hi
 }
 
 export default function ProfileSetup() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
   const { go: curtainGo } = useCurtain();
   const { currentUser, updateProfile } = useAuth();
@@ -82,7 +83,7 @@ export default function ProfileSetup() {
     else if (fullName.trim().length < 2) e.fullName = 'Name must be at least 2 characters.';
     if (!username.trim())          e.username = 'Username is required.';
     else if (username.trim().length < 3) e.username = 'Username must be at least 3 characters.';
-    else if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) e.username = 'Only letters, numbers and underscores.';
+    else if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) e.username = t('profile.usernameRule');
     if (!politicalParty) e.politicalParty = 'Please select a political party.';
     return e;
   }
@@ -222,16 +223,14 @@ export default function ProfileSetup() {
           {/* Step badge */}
           <div className="mb-5 inline-flex items-center gap-2 rounded-full px-3 py-1" style={{ background: 'rgba(63,159,255,0.1)', border: '1px solid rgba(63,159,255,0.2)' }}>
             <span className="h-1.5 w-1.5 rounded-full bg-[#3f9fff]" />
-            <span className="text-[11px] font-medium tracking-wide" style={{ color: '#6baaff' }}>{isOnboarding ? 'PROFILE SETUP' : 'YOUR PROFILE'}</span>
+            <span className="text-[11px] font-medium tracking-wide" style={{ color: '#6baaff' }}>{isOnboarding ? t('profile.setupCaps') : t('profile.yourProfile')}</span>
           </div>
 
           <h1 className="font-display text-[28px] font-bold leading-tight text-white md:text-[32px]">
-            {isOnboarding ? 'Tell us your name' : 'Edit your profile'}
+            {isOnboarding ? t('profile.tellName') : t('profile.editProfile')}
           </h1>
           <p className="mt-2 text-[13.5px] leading-relaxed" style={{ color: '#7a8db5' }}>
-            {isOnboarding
-              ? 'This will be shown on your profile and posts. You can change it later.'
-              : 'Your name, handle and party. Your party decides which news feed you see.'}
+            {isOnboarding ? t('profile.onboardHint') : t('profile.editHint')}
           </p>
 
           {authError && (
@@ -257,7 +256,7 @@ export default function ProfileSetup() {
               value={username}
               onChange={(e) => { setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')); setErrors((p) => ({ ...p, username: '' })); }}
               error={errors.username}
-              hint="Only letters, numbers and underscores. Shown as @username."
+              hint={t('profile.usernameHint')}
               maxLength={50}
             />
 
@@ -280,7 +279,7 @@ export default function ProfileSetup() {
                   <option value="" className="bg-[#0a1130]">{t('profile.selectParty')}</option>
                   {POLITICAL_PARTIES.map((p) => (
                     <option key={p.name} value={p.name} className="bg-[#0a1130] text-white">
-                      {p.name}
+                      {partyLabel(p.name, lang)}
                     </option>
                   ))}
                 </select>
@@ -324,11 +323,11 @@ export default function ProfileSetup() {
                     }}
                   >
                     <option value="" className="bg-[#0a1130]">
-                      {politicalParty ? 'Level' : 'Choose a party first'}
+                      {politicalParty ? t('profile.levelLabel') : t('profile.chooseParty')}
                     </option>
                     {ROLE_GROUPS.map((g) => (
                       <option key={g.group} value={g.group} className="bg-[#0a1130] text-white">
-                        {g.group}
+                        {levelLabel(g.group, lang)}
                       </option>
                     ))}
                   </select>
@@ -354,7 +353,7 @@ export default function ProfileSetup() {
                     }}
                   >
                     <option value="" className="bg-[#0a1130]">
-                      {partyLevel ? 'Position' : 'Pick a level first'}
+                      {partyLevel ? t('profile.positionLabel') : t('profile.pickLevelFirst')}
                     </option>
                     {rolesInGroup(partyLevel).map((r) => (
                       <option key={r.id} value={r.id} className="bg-[#0a1130] text-white">
@@ -392,7 +391,7 @@ export default function ProfileSetup() {
                 </>
               ) : (
                 <>
-                  {isOnboarding ? 'Continue' : 'Save changes'}
+                  {isOnboarding ? t('common.next') : t('profile.saveChanges')}
                   <ArrowRight size={15} strokeWidth={2.2} />
                 </>
               )}
