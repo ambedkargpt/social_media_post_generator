@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { saveProfileAnswers, getProfileAnswers } from '../api/profile';
 import { getQuestions } from '../api/questions';
 import { CORE_QUESTION_IDS, labelWithSize } from '../utils/preferenceQuestions';
+import { useI18n } from '../i18n/index.jsx';
 
 // ─── Question data ────────────────────────────────────────────────────────────
 
@@ -115,6 +116,7 @@ function SectionHeader({ label, badge, description }) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function Preferences() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
 
@@ -250,7 +252,7 @@ export default function Preferences() {
               Preferences
             </h1>
             <p className="mt-2 text-[14px] text-[#7a90b8]">
-              Help us understand you better to personalise your AmbedkarGPT experience
+              {t('prefs.helpUs')}
             </p>
           </div>
         </div>
@@ -300,7 +302,7 @@ export default function Preferences() {
             onClick={handleReset}
             className="text-[12.5px] text-[#6b78a0] underline underline-offset-2 transition hover:text-white"
           >
-            Reset to defaults
+            {t('prefs.reset')}
           </button>
 
           <div className="flex flex-col items-end gap-2">
@@ -334,7 +336,7 @@ export default function Preferences() {
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#22c55e]/15">
               <Check size={12} strokeWidth={3} className="text-[#22c55e]" />
             </span>
-            <span className="text-[13px] font-medium text-white">Preferences saved!</span>
+            <span className="text-[13px] font-medium text-white">{t('prefs.savedBang')}</span>
             <div className="ml-1 flex items-center gap-2">
               <button
                 type="button"

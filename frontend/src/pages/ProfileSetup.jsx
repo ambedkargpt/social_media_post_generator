@@ -7,6 +7,7 @@ import { POLITICAL_PARTIES } from '../utils/politicalParties';
 import { ROLE_GROUPS, roleLabel, groupForId, rolesInGroup } from '../utils/partyRoles';
 import logoSrc     from '../assets/images/logo-animation.png';
 import ambedkarSrc from '../assets/images/qna-ambedkar.png';
+import { useI18n } from '../i18n/index.jsx';
 
 function FieldInput({ icon: Icon, label, placeholder, value, onChange, error, hint, maxLength }) {
   const [focused, setFocused] = useState(false);
@@ -47,6 +48,7 @@ function FieldInput({ icon: Icon, label, placeholder, value, onChange, error, hi
 }
 
 export default function ProfileSetup() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const { go: curtainGo } = useCurtain();
   const { currentUser, updateProfile } = useAuth();
@@ -152,7 +154,7 @@ export default function ProfileSetup() {
               onClick={handleSkip}
               className="ml-auto inline-flex h-10 items-center gap-2 rounded-full border border-[#1e3260]/70 px-4 text-[13px] font-medium text-[#8b9dc4] transition hover:border-[#3a6bc4]/70 hover:text-white"
             >
-              Skip for now
+              {t('profile.skip')}
               <ArrowRight size={15} strokeWidth={2} />
             </button>
           </>
@@ -161,11 +163,11 @@ export default function ProfileSetup() {
             <button
               type="button"
               onClick={handleSkip}
-              aria-label="Back to dashboard"
+              aria-label={t('profile.backToDash')}
               className="inline-flex h-10 items-center gap-2 rounded-full border border-[#1e3260]/70 px-4 text-[13px] font-medium text-[#8b9dc4] transition hover:border-[#3a6bc4]/70 hover:text-white"
             >
               <ArrowLeft size={15} strokeWidth={2} />
-              <span className="hidden sm:inline">Back</span>
+              <span className="hidden sm:inline">{t('common.back')}</span>
             </button>
             <button
               type="button"
@@ -241,7 +243,7 @@ export default function ProfileSetup() {
           <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
             <FieldInput
               icon={User}
-              label="Full Name"
+              label={t('profile.fullNameLabel')}
               placeholder="e.g. Rajesh Kumar"
               value={fullName}
               onChange={(e) => { setFullName(e.target.value); setErrors((p) => ({ ...p, fullName: '' })); }}
@@ -250,7 +252,7 @@ export default function ProfileSetup() {
             />
             <FieldInput
               icon={AtSign}
-              label="Username"
+              label={t('profile.usernameLabel')}
               placeholder="your_handle"
               value={username}
               onChange={(e) => { setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')); setErrors((p) => ({ ...p, username: '' })); }}
@@ -262,7 +264,7 @@ export default function ProfileSetup() {
             {/* Party affiliation — decides which news feed the user sees */}
             <div>
               <label className="mb-1.5 block text-[13px] font-medium text-white">
-                Political party you support
+                {t('profile.partySupport')}
               </label>
               <div className="relative">
                 <select
@@ -275,7 +277,7 @@ export default function ProfileSetup() {
                     color: politicalParty ? '#ffffff' : '#8b94b8',
                   }}
                 >
-                  <option value="" className="bg-[#0a1130]">Select a political party</option>
+                  <option value="" className="bg-[#0a1130]">{t('profile.selectParty')}</option>
                   {POLITICAL_PARTIES.map((p) => (
                     <option key={p.name} value={p.name} className="bg-[#0a1130] text-white">
                       {p.name}
@@ -291,7 +293,7 @@ export default function ProfileSetup() {
               </div>
               {errors.politicalParty
                 ? <p className="mt-1.5 text-[12px]" style={{ color: '#ef4444' }}>{errors.politicalParty}</p>
-                : <p className="mt-1.5 text-[12px]" style={{ color: '#5a6e9a' }}>Your news feed is tailored to this choice.</p>}
+                : <p className="mt-1.5 text-[12px]" style={{ color: '#5a6e9a' }}>{t('profile.feedTailored')}</p>}
             </div>
 
             {/* Position in the party, asked in two steps. One list of 41 titles
@@ -303,7 +305,7 @@ export default function ProfileSetup() {
                 legitimate answer. */}
             <div>
               <label className="mb-1.5 block text-[13px] font-medium text-white">
-                Your position in the party
+                {t('profile.positionInParty')}
                 <span className="ml-1.5 font-normal" style={{ color: '#5a6e9a' }}>(optional)</span>
               </label>
 
@@ -313,7 +315,7 @@ export default function ProfileSetup() {
                     value={partyLevel}
                     onChange={(e) => handleLevelChange(e.target.value)}
                     disabled={!politicalParty}
-                    aria-label="Level"
+                    aria-label={t('profile.levelLabel')}
                     className="w-full appearance-none rounded-xl px-4 py-3.5 pr-10 text-[14px] outline-none transition disabled:cursor-not-allowed disabled:opacity-50"
                     style={{
                       backgroundColor: '#0a1130',
@@ -343,7 +345,7 @@ export default function ProfileSetup() {
                     value={partyPosition}
                     onChange={(e) => setPartyPosition(e.target.value)}
                     disabled={!partyLevel}
-                    aria-label="Position"
+                    aria-label={t('profile.positionLabel')}
                     className="w-full appearance-none rounded-xl px-4 py-3.5 pr-10 text-[14px] outline-none transition disabled:cursor-not-allowed disabled:opacity-50"
                     style={{
                       backgroundColor: '#0a1130',
@@ -370,7 +372,7 @@ export default function ProfileSetup() {
               </div>
 
               <p className="mt-1.5 text-[12px]" style={{ color: '#5a6e9a' }}>
-                Sets how your posts speak: what they claim, and whether they speak for the party.
+                {t('profile.positionHint')}
               </p>
             </div>
 
@@ -403,7 +405,7 @@ export default function ProfileSetup() {
             className="mt-4 w-full py-2 text-center text-[13px] transition-opacity hover:opacity-100"
             style={{ color: '#4a5e8a', opacity: 0.7 }}
           >
-            {isOnboarding ? 'Skip for now' : 'Cancel'}
+            {isOnboarding ? t('profile.skip') : t('common.cancel')}
           </button>
         </div>
 
@@ -421,7 +423,7 @@ export default function ProfileSetup() {
             />
           ))}
         </div>
-        <p className="mt-2 text-[11px]" style={{ color: '#3a4e72' }}>Step 1 of 3</p>
+        <p className="mt-2 text-[11px]" style={{ color: '#3a4e72' }}>{t('profile.stepOf')}</p>
 
           </div>
         </div>
