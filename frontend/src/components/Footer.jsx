@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import logoSrc from "../assets/images/logo-animation.png";
 import LegalModal from "./LegalModal";
 import { FacebookIcon, InstagramIcon, LinkedinIcon, TwitterIcon, YoutubeIcon } from "./landing/SocialIcons";
+import { useI18n } from '../i18n/index.jsx';
 
 // Section anchors resolve on the home page. MainLayout scrolls to the hash after
 // a route change, so these work from /pricing and /about too, which plain
@@ -65,6 +66,7 @@ function LinkColumn({ heading, links }) {
 }
 
 export default function Footer() {
+  const { t } = useI18n();
   const [legal, setLegal] = useState(null);
   const socials = SOCIAL_LINKS.filter((s) => s.href);
 
@@ -91,7 +93,7 @@ export default function Footer() {
             </Link>
 
             <p className="mt-4 max-w-[46ch] text-[13.5px] leading-relaxed text-[#9fb2d1]">
-              Ambedkarite knowledge, in the hands of the people who need it most.
+              {t('landing.footerTagline')}
             </p>
 
             <div className="mt-5 space-y-1 text-[13px] leading-relaxed text-[#8296bd]">
@@ -142,17 +144,17 @@ export default function Footer() {
               onClick={() => setLegal("terms")}
               className="transition hover:text-white"
             >
-              Terms of Service
+              {t('landing.terms')}
             </button>
             <button
               type="button"
               onClick={() => setLegal("privacy")}
               className="transition hover:text-white"
             >
-              Privacy Policy
+              {t('landing.privacy')}
             </button>
             <Link to="/contact" className="transition hover:text-white">
-              Support
+              {t('landing.support')}
             </Link>
           </div>
         </div>

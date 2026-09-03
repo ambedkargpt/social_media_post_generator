@@ -129,6 +129,7 @@ function PostModal({ post, onClose, onCopy, copiedId }) {
 }
 
 function PostCard({ post, onOpen, onCopy, onPublish, onArchive, copiedId }) {
+  const { t } = useI18n();
   const [translating, setTranslating]     = useState(false);
   const [translated, setTranslated]       = useState('');
   const [showTranslated, setShowTranslated] = useState(false);

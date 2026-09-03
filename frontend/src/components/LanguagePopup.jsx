@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { Globe } from 'lucide-react';
 import { SITE_LANGUAGES, getSiteLanguage } from '../utils/siteLanguage';
 import { markAppReady } from '../utils/appReady';
-import { useI18n } from '../i18n/index.jsx';
+import { useI18n, translate } from '../i18n/index.jsx';
 
 export default function LanguagePopup({ onDone }) {
-  const { t, changeLanguage } = useI18n();
+  const { changeLanguage } = useI18n();
   const [selected, setSelected] = useState(getSiteLanguage() || 'hi');
   const [visible, setVisible] = useState(false);
 
@@ -28,7 +28,7 @@ export default function LanguagePopup({ onDone }) {
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Choose your language"
+      aria-label={translate(selected, 'lang.chooseTitle')}
       className={`fixed inset-0 z-[200] flex items-center justify-center px-4 transition-opacity duration-200 ease-out ${
         visible ? 'opacity-100' : 'opacity-0'
       }`}
@@ -47,9 +47,9 @@ export default function LanguagePopup({ onDone }) {
           <Globe size={20} strokeWidth={1.9} className="text-[#6aa8ff]" />
         </div>
 
-        <h2 className="font-display text-[20px] font-bold text-white">Choose your language</h2>
+        <h2 className="font-display text-[20px] font-bold text-white">{translate(selected, 'lang.chooseTitle')}</h2>
         <p className="mt-1.5 font-count text-[13px] text-[#7b90c0]">
-          You can change this anytime from settings
+          {translate(selected, 'lang.chooseSub')}
         </p>
 
         <div className="mt-6 flex flex-col gap-2.5">
@@ -83,7 +83,7 @@ export default function LanguagePopup({ onDone }) {
             boxShadow: '0 4px 20px rgba(63,159,255,0.35)',
           }}
         >
-          Continue
+          {translate(selected, 'lang.continue')}
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
             <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>

@@ -4,6 +4,7 @@ import { Menu, X } from 'lucide-react';
 import logoSrc from '../assets/images/logo-animation.png';
 import { useAuth } from '../context/AuthContext';
 import LanguageSwitcher from './LanguageSwitcher';
+import { useI18n } from '../i18n/index.jsx';
 
 // action: 'scroll' (default) | 'bheembot' | 'dashboard' | 'section:<id>'
 const navItems = [
@@ -14,6 +15,7 @@ const navItems = [
 ];
 
 export default function Navbar() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser } = useAuth();
@@ -176,13 +178,13 @@ export default function Navbar() {
             to="/login"
             className="inline-flex h-9 shrink-0 items-center justify-center whitespace-nowrap rounded-lg border border-[#3f9fff]/50 bg-[#3f9fff]/10 px-4 font-count text-[13px] font-semibold text-[#7fc8ff] shadow-[0_0_14px_rgba(63,159,255,0.15)] transition hover:border-[#3f9fff]/80 hover:bg-[#3f9fff]/20 hover:text-white hover:shadow-[0_0_20px_rgba(63,159,255,0.3)] md:h-10 md:px-5 md:text-[13.5px]"
           >
-            Log In
+            {t('nav.login')}
           </Link>
           <Link
             to="/signup"
             className="inline-flex h-8 shrink-0 items-center justify-center whitespace-nowrap rounded-lg bg-linear-to-r from-[#0a7dff] to-[#3a9fff] px-3.5 font-count text-[11.5px] font-semibold text-white shadow-[0_4px_14px_rgba(17,122,255,0.4)] transition hover:-translate-y-0.5 hover:brightness-110 md:h-10 md:px-5 md:text-[13px] md:shadow-[0_6px_24px_rgba(17,122,255,0.45)]"
           >
-            Get Started
+            {t('nav.getStarted')}
           </Link>
         </div>
       </div>

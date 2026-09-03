@@ -5,6 +5,7 @@ import Sparkle from "./Sparkle";
 import { useAuth } from "../../context/AuthContext";
 import squiggleSrc from "../../assets/images/squiggle-lines.png";
 import ambedkarPortrait from "../../assets/images/hero-ambedkar.webp";
+import { useI18n } from '../../i18n/index.jsx';
 
 // Headline words — null = <br /> slot
 const RAW_WORDS = [
@@ -27,6 +28,7 @@ const WORDS = RAW_WORDS.map((w) =>
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
 export default function HeroSection({ splashDone = true }) {
+  const { t } = useI18n();
   const [ready, setReady] = useState(false);
   const navigate = useNavigate();
   const { currentUser } = useAuth();
@@ -153,7 +155,7 @@ export default function HeroSection({ splashDone = true }) {
             style={fadeUp(0)}
           >
             <Sparkle size={16} color="#4fb4ff" />
-            An AI Tool For Political Dominance
+            {t('landing.badge')}
           </div>
 
           {/* Headline — slow word-by-word */}
@@ -205,7 +207,7 @@ export default function HeroSection({ splashDone = true }) {
               onClick={handleBuildNarrative}
               className="btn-glass-violet group inline-flex h-14 items-center gap-2 rounded-xl px-6 font-count text-[17px] font-semibold text-white sm:px-9 sm:text-[20px] md:h-15 md:text-[22px]"
             >
-              Build your narrative
+              {t('landing.buildNarrative')}
               <ArrowRight
                 size={19}
                 strokeWidth={2.2}
