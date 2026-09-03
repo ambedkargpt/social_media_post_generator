@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import { getSiteLanguage } from './utils/siteLanguage.js'
+import { DEFAULT_LANGUAGE } from './i18n/index.jsx'
 import { purgeLegacySession } from './api/sessionStore.js'
 
 // Sessions moved from localStorage to sessionStorage so closing the tab
@@ -11,9 +12,11 @@ import { purgeLegacySession } from './api/sessionStore.js'
 // signed in across tab closes forever. Clear them once, here.
 purgeLegacySession()
 
-// Stamp lang attribute before first render so CSS font rules fire immediately
-const storedLang = getSiteLanguage();
-if (storedLang) document.documentElement.lang = storedLang;
+// Stamp lang before first render so the Devanagari font rules fire immediately.
+// Falls back to the default rather than leaving it unset: the interface is
+// Hindi unless someone has chosen otherwise, and an unstamped <html> would
+// paint the first frame in the Latin stack and reflow.
+document.documentElement.lang = getSiteLanguage() ?? DEFAULT_LANGUAGE;
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

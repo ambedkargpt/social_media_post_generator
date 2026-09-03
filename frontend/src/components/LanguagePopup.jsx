@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { Globe } from 'lucide-react';
 import { SITE_LANGUAGES, getSiteLanguage, setSiteLanguage } from '../utils/siteLanguage';
 import { markAppReady } from '../utils/appReady';
+import { useI18n } from '../i18n/index.jsx';
 
 export default function LanguagePopup({ onDone }) {
-  const [selected, setSelected] = useState(getSiteLanguage() || 'en');
+  const { t } = useI18n();
+  const [selected, setSelected] = useState(getSiteLanguage() || 'hi');
   const [visible, setVisible] = useState(false);
 
   // Trigger the enter transition on the frame after mount.

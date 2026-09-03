@@ -22,9 +22,11 @@ import SavedPromptsGrid     from '../components/dashboard/SavedPromptsGrid';
 import AchievementsGrid     from '../components/dashboard/AchievementsGrid';
 import DashboardFooter      from '../components/dashboard/DashboardFooter';
 import { partyLogo }        from '../utils/politicalParties';
+import { useI18n }         from '../i18n/index.jsx';
 
 export default function Dashboard() {
   const { currentUser, logout } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [active, setActive] = useState('dashboard');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -69,9 +71,10 @@ export default function Dashboard() {
   const displayName  = currentUser?.username ?? '—';
   const displayEmail = currentUser?.email ?? currentUser?.phone ?? '—';
   const joinedLabel  = (() => {
-    const t = currentUser?.created_at;
-    if (!t) return '';
-    const d = new Date(t);
+    // Not `t`: that is the translate function in this scope now.
+    const created = currentUser?.created_at;
+    if (!created) return '';
+    const d = new Date(created);
     return `Joined ${d.toLocaleString('en-US', { month: 'long', year: 'numeric' })}`;
   })();
 
@@ -122,7 +125,7 @@ export default function Dashboard() {
           <div>
             <h1 className="flex flex-wrap items-center gap-x-3 gap-y-2 font-display text-[28px] md:text-[32px] font-bold leading-tight tracking-tight">
               <span>
-                <span className="text-white">Welcome back, </span>
+                <span className="text-white">{t('dash.welcomeBack')} </span>
                 <span className="gradient-text-blue">{first}</span>
               </span>
               {/* The party mark. The disc stays 52px; the logo fills it to
@@ -146,7 +149,7 @@ export default function Dashboard() {
               )}
             </h1>
             <p className="mt-2 text-[16px] text-[#9aa5c4] md:text-[17px]">
-              Your AI journey continues. Let&apos;s make today productive and insightful!
+              {t('dash.subtitle')}
             </p>
           </div>
 
@@ -158,15 +161,15 @@ export default function Dashboard() {
         <div className="mb-7 grid gap-4 grid-cols-1 sm:grid-cols-3">
           {[
             {
-              label: 'Social Post',
-              desc: 'Turn today’s news into a post',
+              label: t('dash.socialPost'),
+              desc: t('dash.socialPostDesc'),
               Icon: Sparkles,
               route: '/generate/social-media',
               accent: '#3f9fff',
             },
             {
-              label: 'Music Studio',
-              desc: 'Compose an Ambedkarite track',
+              label: t('dash.musicStudio'),
+              desc: t('dash.musicStudioDesc'),
               Icon: Music,
               route: '/generate/music',
               accent: '#7b5cff',

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 from bson import ObjectId
@@ -17,6 +17,12 @@ def _language_clause(language: str) -> dict:
             {"language": {"$exists": False}},
         ]
     }
+
+
+# How long a party story stays in the feed, and which tenants it applies to.
+# Kept together so widening the window or adding a tenant is one edit.
+FRESH_WINDOW = timedelta(days=3)
+FRESH_WINDOW_TENANTS = ("congress", "samajwadi")
 
 
 class NewsRepository:
@@ -77,6 +83,23 @@ class NewsRepository:
         #
         # Absent means visible, so nothing already stored changes meaning.
         clauses.append({"hidden_from_ui": {"$ne": True}})
+
+        # Party news goes stale fast.
+        #
+        # A karyakarta posting about a three-day-old story is posting about
+        # something the cycle has moved past, so the feed stops offering them.
+        # Nothing is deleted and nothing is flagged: this is a rolling window,
+        # so a story leaves on its own and comes back if the window is widened.
+        #
+        # Scoped to the party tenants deliberately. General news is still the
+        # June import, and a blanket rule would empty that tab entirely. Add
+        # "general" here once its pipeline is running fresh.
+        clauses.append({
+            "$or": [
+                {"tenant_slug": {"$nin": list(FRESH_WINDOW_TENANTS)}},
+                {"published_at": {"$gte": datetime.now(timezone.utc) - FRESH_WINDOW}},
+            ]
+        })
 
         query: dict = {"$and": clauses} if len(clauses) > 1 else (clauses[0] if clauses else {})
         # Newest news first. Order by when the story was published, not when the

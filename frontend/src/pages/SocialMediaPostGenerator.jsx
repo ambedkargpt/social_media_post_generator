@@ -94,12 +94,21 @@ const CONTENT_TYPES = {
   news:             { label: 'News Article',     color: '#5a6e9a' },
 };
 
+// A party's own uploads are its news, not a neutral article about it, and the
+// section decides which reading applies. General keeps "News Article".
+function newsTypeLabel(section) {
+  return section === 'party' ? 'Party News' : CONTENT_TYPES.news.label;
+}
+
 // Two standing ranges, plus a per-day jump built from the days that actually
 // carry articles. A free calendar would let the user land on a day with nothing
 // published; a list built from the data cannot be picked wrong.
+// "Last 7 days" is gone. It was a rolling window over a feed that only ever
+// holds a few days, so it selected either everything or nearly everything and
+// told nobody which days those were. The day list below does that job, and
+// does it from the days that actually carry articles.
 const DATE_RANGES = [
-  { id: 'all', label: 'All dates',   days: null },
-  { id: '7d',  label: 'Last 7 days', days: 7 },
+  { id: 'all', label: 'All dates', days: null },
 ];
 
 const DAY_PREFIX = 'day:';
@@ -124,10 +133,10 @@ function dayGroupLabel(dateValue) {
   if (!dateValue) return 'Undated';
   const t = new Date(dateValue);
   if (Number.isNaN(t.getTime())) return 'Undated';
-  const diffDays = Math.round((startOfDay(new Date()) - startOfDay(t)) / 86400000);
-  if (diffDays <= 0) return 'Today';
-  if (diffDays === 1) return 'Yesterday';
-  if (diffDays === 2) return 'Day before yesterday';
+  // The date, always. "Today" and "Day before yesterday" sat in a list beside
+  // "Sunday, Aug 30" and read as a different kind of thing, and they are the
+  // one label that stops being true while the page is open: a tab left
+  // overnight keeps calling yesterday's stories Today.
   return t.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' });
 }
 
@@ -940,7 +949,14 @@ export default function SocialMediaPostGenerator() {
                     <button
                       key={s.id}
                       type="button"
-                      onClick={() => { setNewsSection(s.id); setPage(1); }}
+                      onClick={() => {
+                        setNewsSection(s.id);
+                        setPage(1);
+                        // General has no press conferences, so carrying that
+                        // filter across from the party tab would show an empty
+                        // section and look broken.
+                        if (s.id === 'general') setTypeFilter('all');
+                      }}
                       title={s.label}
                       className="group relative -mb-px flex items-center gap-2.5 rounded-t-xl px-4 pb-3 pt-2.5 text-[13.5px] font-semibold transition-colors duration-150"
                       style={{
@@ -991,11 +1007,18 @@ export default function SocialMediaPostGenerator() {
             {/* Content type — pills rather than tabs, so the party tabs above
                 stay the primary level of navigation. */}
             <div className="mb-6 flex flex-wrap items-center gap-2.5">
-              {[
-                { id: 'all',              label: 'All',                         color: '#8a9ac0' },
-                { id: 'press_conference', label: CONTENT_TYPES.press_conference.label, color: CONTENT_TYPES.press_conference.color },
-                { id: 'news',             label: CONTENT_TYPES.news.label,      color: '#6aa8ff' },
-              ].map((t) => {
+              {(newsSection === 'general'
+                // General is scraped from the videos tab alone, so every item
+                // is the same type. Three filters over one type is furniture:
+                // "All" and "News Articles" select the same set and "Press
+                // Conference" selects nothing.
+                ? [{ id: 'all', label: newsTypeLabel(newsSection), color: '#6aa8ff' }]
+                : [
+                    { id: 'all',              label: 'All',                                  color: '#8a9ac0' },
+                    { id: 'press_conference', label: CONTENT_TYPES.press_conference.label,   color: CONTENT_TYPES.press_conference.color },
+                    { id: 'news',             label: newsTypeLabel(newsSection),             color: '#6aa8ff' },
+                  ]
+              ).map((t) => {
                 const active = typeFilter === t.id;
                 const count = t.id === 'all'
                   ? sectionArticles.length
@@ -1141,7 +1164,9 @@ export default function SocialMediaPostGenerator() {
                           {article.contentType === 'press_conference'
                             ? <Radio size={12} strokeWidth={2} />
                             : <FileText size={12} strokeWidth={2} />}
-                          {(CONTENT_TYPES[article.contentType] ?? CONTENT_TYPES.news).label}
+                          {article.contentType === 'press_conference'
+                            ? CONTENT_TYPES.press_conference.label
+                            : newsTypeLabel(newsSection)}
                         </span>
                         <span
                           className="shrink-0 rounded-full border px-3 py-1 font-count text-[11px] uppercase tracking-wider"
