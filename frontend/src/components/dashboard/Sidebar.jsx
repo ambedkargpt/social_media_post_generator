@@ -14,25 +14,27 @@ import {
   Sparkles,
   ChevronRight,
 } from 'lucide-react';
+import { useI18n } from '../../i18n/index.jsx';
 
 // Generating a post is the product's primary action, so it leads the nav and is
 // styled as a call to action rather than another list item.
-const PRIMARY = { id: 'generate', label: 'Generate', Icon: Sparkles, route: '/generate' };
+const PRIMARY = { id: 'generate', labelKey: 'nav.generate', Icon: Sparkles, route: '/generate' };
 
 // `soon: true` marks a destination that does not exist yet. Rendering these as
 // plain items made them look broken: clicking did nothing and gave no feedback.
 const NAV = [
-  { id: 'dashboard',  label: 'Dashboard',        Icon: LayoutGrid },
-  { id: 'bheembot',   label: 'BheemBot',         Icon: Bot, route: '/bheembot' },
-  { id: 'searches',   label: 'Post History',     Icon: Search, route: '/posts' },
-  { id: 'prefs',      label: 'Preferences',      Icon: SlidersHorizontal, route: '/preferences' },
-  { id: 'saved',      label: 'Saved Prompts',    Icon: Bookmark, soon: true },
-  { id: 'analytics',  label: 'Analytics',        Icon: BarChart3, soon: true },
-  { id: 'profile',    label: 'Profile',          Icon: User, route: '/profile-setup' },
-  { id: 'settings',   label: 'Settings',         Icon: Settings, soon: true },
+  { id: 'dashboard',  labelKey: 'nav.dashboard',        Icon: LayoutGrid },
+  { id: 'bheembot',   labelKey: 'dash.bheembot',         Icon: Bot, route: '/bheembot' },
+  { id: 'searches',   labelKey: 'nav.postHistory',     Icon: Search, route: '/posts' },
+  { id: 'prefs',      labelKey: 'nav.preferences',      Icon: SlidersHorizontal, route: '/preferences' },
+  { id: 'saved',      labelKey: 'nav.savedPrompts',    Icon: Bookmark, soon: true },
+  { id: 'analytics',  labelKey: 'nav.analytics',        Icon: BarChart3, soon: true },
+  { id: 'profile',    labelKey: 'nav.profile',          Icon: User, route: '/profile-setup' },
+  { id: 'settings',   labelKey: 'nav.settings',         Icon: Settings, soon: true },
 ];
 
 function SidebarContent({ active, onSelect, onClose, onLogout }) {
+  const { t } = useI18n();
   // Signing out calls the API to revoke the refresh token before it clears the
   // session, so there is a round trip to show. Without a state the button just
   // sat there looking unpressed, and on a slow connection people clicked it
@@ -63,7 +65,7 @@ function SidebarContent({ active, onSelect, onClose, onLogout }) {
           className="flex items-center gap-2.5 transition-opacity hover:opacity-85"
         >
           <span className="font-display text-[16px] font-semibold tracking-tight gradient-text-blue">
-            Dashboard
+            {t('nav.dashboard')}
           </span>
         </button>
         {onClose && (
@@ -91,7 +93,7 @@ function SidebarContent({ active, onSelect, onClose, onLogout }) {
           }}
         >
           <PRIMARY.Icon size={17} strokeWidth={2} />
-          <span>{PRIMARY.label}</span>
+          <span>{t(PRIMARY.labelKey)}</span>
           <ChevronRight
             size={15}
             strokeWidth={2}
@@ -107,12 +109,12 @@ function SidebarContent({ active, onSelect, onClose, onLogout }) {
             return (
               <div
                 key={item.id}
-                title={`${item.label} — coming soon`}
+                title={`${t(item.labelKey)} — coming soon`}
                 aria-disabled="true"
                 className="flex w-full cursor-not-allowed items-center gap-3 rounded-xl px-3.5 py-2.5 text-[13.5px] font-medium text-[#4d587a]"
               >
                 <IconComp size={17} strokeWidth={1.8} />
-                <span>{item.label}</span>
+                <span>{t(item.labelKey)}</span>
                 <span className="ml-auto rounded-full bg-[#141d3a] px-1.5 py-0.5 font-count text-[9.5px] uppercase tracking-wider text-[#5a6e9a]">
                   Soon
                 </span>
@@ -149,7 +151,7 @@ function SidebarContent({ active, onSelect, onClose, onLogout }) {
                 <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-gradient-to-b from-[#3f9fff] to-[#7b5cff]" />
               )}
               <IconComp size={17} strokeWidth={1.8} />
-              <span>{item.label}</span>
+              <span>{t(item.labelKey)}</span>
             </button>
           );
         })}
@@ -166,12 +168,12 @@ function SidebarContent({ active, onSelect, onClose, onLogout }) {
             {loggingOut ? (
               <>
                 <span className="spinner-ring" style={{ width: 17, height: 17, borderWidth: 2 }} />
-                <span>Signing out…</span>
+                <span>{t('auth.signingOut')}</span>
               </>
             ) : (
               <>
                 <LogOut size={17} strokeWidth={1.8} />
-                <span>Log Out</span>
+                <span>{t('auth.logout')}</span>
               </>
             )}
           </button>
