@@ -361,8 +361,7 @@ export default function KnowledgeSection() {
         </h2>
 
         <p className="mx-auto mt-6 max-w-[760px] text-center text-[22px] leading-9 text-[#bfcfe8] md:text-[24px]">
-          Powerful AI tools built for Bahujan creators, researchers, and
-          changemakers, from social media to podcasts, speeches to video.
+          {t('know.sub')}
         </p>
       </div>
 

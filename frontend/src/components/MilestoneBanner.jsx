@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { X, Trophy } from 'lucide-react';
+import { useI18n } from '../i18n/index.jsx';
 
 const MILESTONE = 200;
 
 export default function MilestoneBanner({ totalPosts, className = '', onHide }) {
+  const { t } = useI18n();
   const [visible, setVisible] = useState(true);
 
   function dismiss() {
@@ -31,7 +33,7 @@ export default function MilestoneBanner({ totalPosts, className = '', onHide }) 
         animation: 'banner-shimmer 4s linear infinite, banner-slide-down 0.4s cubic-bezier(0.16,1,0.3,1) both',
       }}
       role="banner"
-      aria-label="Milestone reward promotion"
+      aria-label={t('banner.aria')}
     >
       <div
         className="pointer-events-none absolute inset-0 opacity-10"
@@ -42,19 +44,19 @@ export default function MilestoneBanner({ totalPosts, className = '', onHide }) 
         <Trophy size={16} strokeWidth={2} className="shrink-0 text-amber-900/80" />
 
         <p className="flex-1 text-center text-[12px] font-semibold leading-snug text-amber-950 md:text-[13px]">
-          Create{' '}
-          <span className="font-black">{MILESTONE} posts</span>{' '}
-          and earn{' '}
+          {t('banner.createPre')}{' '}
+          <span className="font-black">{t('banner.postsCount', { n: MILESTONE })}</span>{' '}
+          {t('banner.andEarn')}{' '}
           <span className="font-black">₹2,000!</span>
           {'  ·  '}
-          You&rsquo;re limited to{' '}
-          <span className="font-bold">5 posts per day</span>{' '}
-          — start today and reach your goal!
+          {t('banner.limitPre')}{' '}
+          <span className="font-bold">{t('banner.perDay')}</span>{' '}
+          — {t('banner.startToday')}
           {showProgress && (
             <span className="ml-3 inline-flex items-center gap-1.5">
               <span className="hidden sm:inline font-normal opacity-70">|</span>
               <span className="hidden sm:inline font-bold text-amber-900">
-                {totalPosts} / {MILESTONE} posts
+                {t('banner.progress', { done: totalPosts, total: MILESTONE })}
               </span>
               <span className="inline-flex h-4 w-20 overflow-hidden rounded-full bg-amber-900/20 align-middle">
                 <span

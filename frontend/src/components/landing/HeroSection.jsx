@@ -9,15 +9,15 @@ import { useI18n } from '../../i18n/index.jsx';
 
 // Headline words — null = <br /> slot
 const RAW_WORDS = [
-  { text: "Artificial",   cyan: false },
-  { text: "Intelligence", cyan: false },
-  { text: "(AI)",         cyan: true  },
+  { key: "hero.w1", cyan: false },
+  { key: "hero.w2", cyan: false },
+  { key: "hero.w3", cyan: true  },
   null,
-  { text: "Meets",        cyan: true  },
+  { key: "hero.w4", cyan: true  },
   null,
-  { text: "Ambedkar's",  cyan: false },
-  { text: "Intelligence", cyan: false },
-  { text: "(AI)",         cyan: true  },
+  { key: "hero.w5", cyan: false },
+  { key: "hero.w6", cyan: false },
+  { key: "hero.w7", cyan: true  },
 ];
 
 let _wi = 0;
@@ -175,7 +175,7 @@ export default function HeroSection({ splashDone = true }) {
                     transform: ready ? "translateY(0)" : "translateY(18px)",
                   }}
                 >
-                  {item.text}
+                  {t(item.key)}
                 </span>
               );
             })}
@@ -186,9 +186,7 @@ export default function HeroSection({ splashDone = true }) {
             className="font-count mt-6 max-w-[700px] text-[22px] leading-8 text-[#b7c6e1] md:text-[24px] md:leading-9"
             style={fadeUp(1050)}
           >
-            Combine Ambedkar&apos;s vision with AI to write winning arguments,
-            turn viral posts into real-world votes, and lead the Bahujan leaders
-            to a historic victory.
+            {t('landing.heroSub')}
           </p>
 
           {/* CTA */}

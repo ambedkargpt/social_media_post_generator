@@ -189,7 +189,7 @@ export default function ContactSection() {
             <div className="mt-7 space-y-3">
               <ChannelRow
                 icon={Mail}
-                label="Email"
+                label={t('landing.emailWord')}
                 value="smartbhaujan@gmail.com"
                 href="mailto:smartbhaujan@gmail.com"
               />
@@ -198,7 +198,7 @@ export default function ContactSection() {
                   of the page instead. */}
               <ChannelRow
                 icon={MapPin}
-                label="Location"
+                label={t('landing.locationWord')}
                 value="71-75 Shelton Street in Covent Garden, London (WC2H 9JQ)"
                 href="https://www.google.com/maps/search/?api=1&query=71-75+Shelton+Street+Covent+Garden+London+WC2H+9JQ"
               />
@@ -224,7 +224,7 @@ export default function ContactSection() {
             <div className="grid flex-1 gap-4 md:grid-cols-2">
               <Field label={t('landing.contactName')} name="name" value={form.name} onChange={update}
                      placeholder={t('landing.namePlaceholder')} required disabled={status === 'sending'} />
-              <Field label="Email" name="email" value={form.email} onChange={update}
+              <Field label={t('landing.contactEmail')} name="email" value={form.email} onChange={update}
                      type="email" placeholder="you@example.com" required disabled={status === 'sending'} />
               <Field label={t('landing.contactAddress')} name="address" value={form.address} onChange={update}
                      placeholder={t('landing.addrPlaceholder')} colSpan={2} disabled={status === 'sending'} />

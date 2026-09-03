@@ -5,22 +5,13 @@ import CorpusContactModal from './CorpusContactModal';
 import libraryImg   from '../../assets/images/corpus-library.png';
 import { useI18n } from '../../i18n/index.jsx';
 
+// Keys, not prose: the section is rendered through the dictionary so both
+// languages read from the same structure.
 const CORPUS = {
-  question: 'What Is Dalit Corpus?',
-  intro: [
-    'For too long, our history was written by those who oppressed us. They erased our heroes, twisted our words, and buried our truth.',
-    'Dalit Corpus is our answer.',
-    'It is a growing library of Ambedkarite and Bahujan voices, including speeches, books, songs, slogans, and political writings. Everything is collected and verified by our own community.',
-    'Whether you are a student, a creator, or a researcher, Dalit Corpus gives you the real history the mainstream hid from you.',
-  ],
-  whyItMatters: [
-    'It saves our stories before they vanish.',
-    'It gives Bahujan creators true, unfiltered knowledge.',
-    'It powers AmbedkarGPT with our own words.',
-    'It teaches our next generation our history, not theirs.',
-  ],
-  whyWeNeedIt:
-    'The internet is ruled by data, and that data has a caste. Dalit Corpus is our own digital land, built by us, owned by us, and growing with us.',
+  question: 'corpus.question',
+  intro: ['corpus.intro1', 'corpus.intro2', 'corpus.intro3', 'corpus.intro4'],
+  whyItMatters: ['corpus.why1', 'corpus.why2', 'corpus.why3', 'corpus.why4'],
+  whyWeNeedIt: 'corpus.need',
 };
 
 function handleCardMove(e) {
@@ -55,8 +46,7 @@ export default function DalitCorpusSection() {
         </h2>
 
         <p className="mx-auto mt-6 max-w-[760px] text-center text-[22px] leading-9 text-[#bfcfe8] md:text-[24px]">
-          A caste bias-free knowledge base of Dalit history, texts, speeches, and political
-          thought for creators, researchers, and revolutionaries.
+          {t('corpus.tagline')}
         </p>
 
         <div
@@ -78,11 +68,11 @@ export default function DalitCorpusSection() {
             {/* ── Col 1: Dalit Corpus ── */}
             <div className="border-b border-[#1a2d55]/50 p-8 md:border-b-0 md:border-r md:p-10">
               <h3 className="font-display text-[26px] font-semibold text-white md:text-[31px]">
-                {CORPUS.question}
+                {t(CORPUS.question)}
               </h3>
               {CORPUS.intro.map((para) => (
                 <p key={para} className="mt-4 text-[18px] leading-[1.95] text-[#cddcf5] md:text-[19px]">
-                  {para}
+                  {t(para)}
                 </p>
               ))}
 
@@ -93,7 +83,7 @@ export default function DalitCorpusSection() {
                 {CORPUS.whyItMatters.map((point) => (
                   <li key={point} className="flex items-start gap-2.5 text-[17px] leading-relaxed text-[#cddcf5] md:text-[18px]">
                     <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-[#4d94ff]" />
-                    {point}
+                    {t(point)}
                   </li>
                 ))}
               </ul>
@@ -102,7 +92,7 @@ export default function DalitCorpusSection() {
                 {t('landing.whyWeNeedIt')}
               </h4>
               <p className="mt-3 text-[17px] leading-[1.95] text-[#cddcf5] md:text-[18px]">
-                {CORPUS.whyWeNeedIt}
+                {t(CORPUS.whyWeNeedIt)}
               </p>
 
               <div className="mt-7 flex items-center justify-between gap-4">
