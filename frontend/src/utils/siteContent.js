@@ -1,61 +1,17 @@
 export const solutionCards = [
-  {
-    title: 'Source-Backed Answers',
-    description:
-      'Every response is grounded in verified texts and references so learners can trace ideas to original context.',
-  },
-  {
-    title: 'Knowledge Simplification',
-    description:
-      'Complex social, legal, and political concepts are transformed into clear, structured explanations.',
-  },
-  {
-    title: 'Thematic Exploration',
-    description:
-      'Navigate topics by themes such as equality, education, law, and social justice with focused discovery paths.',
-  },
-  {
-    title: 'Research Support',
-    description:
-      'Build essays, presentations, and study notes faster with contextual summaries and citation-friendly outputs.',
-  },
-  {
-    title: 'Educational Workflows',
-    description:
-      'Designed for students, teachers, and institutions that need reliable, accessible Ambedkarite knowledge.',
-  },
-  {
-    title: 'Scalable Learning Access',
-    description:
-      'Makes high-quality intellectual resources available to broader audiences across devices and learning levels.',
-  },
+  { titleKey: 'sol.c1.title', descKey: 'sol.c1.desc' },
+  { titleKey: 'sol.c2.title', descKey: 'sol.c2.desc' },
+  { titleKey: 'sol.c3.title', descKey: 'sol.c3.desc' },
+  { titleKey: 'sol.c4.title', descKey: 'sol.c4.desc' },
+  { titleKey: 'sol.c5.title', descKey: 'sol.c5.desc' },
+  { titleKey: 'sol.c6.title', descKey: 'sol.c6.desc' },
 ];
 
 export const resourceCards = [
-  {
-    title: 'Reading Collections',
-    description: 'Curated topic-wise collections aligned with major themes from Ambedkar’s works.',
-    type: 'Collection',
-  },
-  {
-    title: 'Quick Study Notes',
-    description: 'Concise notes designed for revision and fast conceptual understanding.',
-    type: 'Notes',
-  },
-  {
-    title: 'Guided Learning Paths',
-    description: 'Structured learning journeys for beginners, intermediate learners, and advanced readers.',
-    type: 'Path',
-  },
-  {
-    title: 'Institution Kits',
-    description: 'Classroom and workshop-friendly content bundles for educators and organizations.',
-    type: 'Toolkit',
-  },
+  { titleKey: 'res.c1.title', descKey: 'res.c1.desc', typeKey: 'res.c1.type' },
+  { titleKey: 'res.c2.title', descKey: 'res.c2.desc', typeKey: 'res.c2.type' },
+  { titleKey: 'res.c3.title', descKey: 'res.c3.desc', typeKey: 'res.c3.type' },
+  { titleKey: 'res.c4.title', descKey: 'res.c4.desc', typeKey: 'res.c4.type' },
 ];
 
-export const teamHighlights = [
-  'Mission-driven product and research direction',
-  'AI + frontend engineering for accessible user experiences',
-  'Content curation focused on authenticity and integrity',
-];
+export const teamHighlights = ['about.h1', 'about.h2', 'about.h3'];

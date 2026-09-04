@@ -8,10 +8,12 @@ import PrimaryButton from '../components/PrimaryButton';
 import GoogleButton  from '../components/GoogleButton';
 import { useAuth }   from '../context/AuthContext';
 import { useCurtain } from '../context/CurtainContext';
+import { useI18n } from '../i18n/index.jsx';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 export default function ForgotPassword() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const { loginWithGoogle } = useAuth();
   const { go: curtainGo } = useCurtain();
@@ -70,16 +72,16 @@ export default function ForgotPassword() {
       <div className="space-y-6">
         <div>
           <h1 className="font-display text-[40px] font-bold leading-tight tracking-tight text-white md:text-[48px]">
-            Forgot Password?
+            {t('auth.forgotTitle')}
           </h1>
           <p className="mt-3 text-[14px]" style={{ color: '#8b94b8' }}>
-            Enter your email and we&apos;ll send you a verification code to confirm it&apos;s you.
+            {t('auth.forgotSub')}
           </p>
         </div>
 
         {isGoogleAccount && (
           <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-4 text-sm">
-            <p className="font-medium text-blue-300">This account uses Google Sign-In</p>
+            <p className="font-medium text-blue-300">{t('auth.googleAccount')}</p>
             <p className="mt-1 text-[#8b94b8]">
               You signed up with Google, so there&apos;s no password to reset. Please log in with Google instead.
             </p>
@@ -105,19 +107,19 @@ export default function ForgotPassword() {
               placeholders={['Enter your Email']}
               value={email}
               onChange={(e) => { setEmail(e.target.value); setError(''); }}
-              label="Email"
+              label={t('auth.email')}
               error={error}
             />
             <PrimaryButton type="submit" loading={loading}>
-              {loading ? 'Sending…' : 'Send Verification Code'}
+              {loading ? t('landing.sending') : t('auth.sendCode')}
             </PrimaryButton>
           </form>
         )}
 
         <p className="text-center text-sm" style={{ color: '#8b94b8' }}>
-          Remember your password?{' '}
+          {t('auth.rememberPwd')}{' '}
           <Link to="/login" className="underline underline-offset-2 hover:opacity-80 transition-opacity font-medium" style={{ color: '#6b8aff' }}>
-            Back to Login
+            {t('auth.backToLogin')}
           </Link>
         </p>
       </div>

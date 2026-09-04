@@ -12,6 +12,7 @@ import { useI18n } from '../../i18n/index.jsx';
 const OfficeMap = lazy(() => import('./OfficeMap'));
 
 function LazyOfficeMap() {
+  const { t } = useI18n();
   const ref = useRef(null);
   const [show, setShow] = useState(false);
 
@@ -43,7 +44,7 @@ function LazyOfficeMap() {
       {show && (
         <Suspense fallback={(
           <div className="flex h-full w-full items-center justify-center bg-[#0a1428]">
-            <Spinner size={28} label="Loading map…" showLabel />
+            <Spinner size={28} label={t('landing.loadingMap')} showLabel />
           </div>
         )}>
           <OfficeMap />

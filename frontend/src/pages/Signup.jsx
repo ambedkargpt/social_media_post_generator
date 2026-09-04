@@ -14,9 +14,10 @@ import LegalModal    from '../components/LegalModal';
 import { POLITICAL_PARTIES } from '../utils/politicalParties';
 import { ROLE_GROUPS, roleLabel, rolesInGroup } from '../utils/partyRoles';
 import { useI18n } from '../i18n/index.jsx';
+import { partyLabel, levelLabel } from '../utils/displayLabel';
 
 export default function Signup() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
   const { go: curtainGo } = useCurtain();
   const { signupWithEmail, signupWithPhone, loginWithGoogle } = useAuth();
@@ -51,24 +52,24 @@ export default function Signup() {
   function validate() {
     const e = {};
     if (mode === 'email') {
-      if (!email.trim())                              e.email = 'Email is required.';
+      if (!email.trim())                              e.email = t('auth.emailRequired');
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) e.email = 'Please enter a valid email address.';
-      if (!password)                 e.password = 'Password is required.';
-      else if (password.length < 8)  e.password = 'Password must be at least 8 characters.';
-      if (!confirmPassword)          e.confirmPassword = 'Please confirm your password.';
-      else if (confirmPassword !== password) e.confirmPassword = 'Passwords do not match.';
+      if (!password)                 e.password = t('auth.passwordRequired');
+      else if (password.length < 8)  e.password = t('auth.passwordMinLen');
+      if (!confirmPassword)          e.confirmPassword = t('auth.confirmPasswordRequired');
+      else if (confirmPassword !== password) e.confirmPassword = t('auth.passwordMismatch');
     } else {
       if (!phone)                          e.phone = 'Phone number is required.';
       else if (!isValidPhoneNumber(phone)) e.phone = 'Please enter a valid phone number.';
     }
-    if (!politicalParty) e.politicalParty = 'Please select a political party.';
+    if (!politicalParty) e.politicalParty = t('auth.pickPartyFirst');
     if (!termsAccepted)  e.terms = 'You must accept the Terms of Service and Privacy Policy.';
     return e;
   }
 
   function validateForGoogle() {
     const e = {};
-    if (!politicalParty) e.politicalParty = 'Please select a political party.';
+    if (!politicalParty) e.politicalParty = t('auth.pickPartyFirst');
     if (!termsAccepted)  e.terms = 'You must accept the Terms of Service and Privacy Policy.';
     if (Object.keys(e).length) { setErrors(e); return false; }
     setErrors({});
@@ -146,7 +147,7 @@ export default function Signup() {
                 boxShadow: mode === m ? '0 1px 4px rgba(0,0,0,0.4)' : 'none',
               }}
             >
-              {m === 'email' ? 'Email' : 'Phone Number'}
+              {m === 'email' ? t('auth.email') : t('auth.phone')}
             </button>
           ))}
         </div>
@@ -160,10 +161,10 @@ export default function Signup() {
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           {mode === 'email' ? (
             <AnimatedInput
-              placeholders={['Enter your Email']}
+              placeholders={[t('auth.enterEmail')]}
               value={email}
               onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: '' })); setAuthError(''); }}
-              label="Email"
+              label={t('auth.email')}
               error={errors.email}
             />
           ) : (
@@ -182,7 +183,7 @@ export default function Signup() {
                 error={errors.password}
               />
               <PasswordInput
-                label="Confirm Password"
+                label={t('auth.confirmPassword')}
                 placeholder="Re-enter your password"
                 value={confirmPassword}
                 onChange={(e) => { setConfirmPassword(e.target.value); setErrors((p) => ({ ...p, confirmPassword: '' })); }}
@@ -217,7 +218,7 @@ export default function Signup() {
                       onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
                     />
                   )}
-                  {politicalParty}
+                  {partyLabel(politicalParty, lang)}
                 </span>
               ) : (
                 <span>{t('auth.selectParty')}</span>
@@ -261,7 +262,7 @@ export default function Signup() {
                     ) : (
                       <span className="w-6 h-6 rounded-sm shrink-0 flex items-center justify-center text-xs" style={{ background: '#1e3260' }}>—</span>
                     )}
-                    {party.name}
+                    {partyLabel(party.name, lang)}
                   </button>
                 ))}
               </div>
@@ -284,7 +285,7 @@ export default function Signup() {
                 value={partyLevel}
                 onChange={(e) => { setPartyLevel(e.target.value); setPartyPosition(''); }}
                 disabled={!politicalParty}
-                aria-label="Level"
+                aria-label={t('profile.levelLabel')}
                 className="w-full px-3 py-2.5 rounded-xl text-sm outline-none transition disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
                   backgroundColor: '#0d1b3e',
@@ -292,16 +293,16 @@ export default function Signup() {
                   color: partyLevel ? '#ffffff' : '#8b94b8',
                 }}
               >
-                <option value="">{politicalParty ? 'Level' : 'Pick a party'}</option>
+                <option value="">{politicalParty ? t('profile.levelLabel') : t('auth.pickParty')}</option>
                 {ROLE_GROUPS.map((g) => (
-                  <option key={g.group} value={g.group}>{g.group}</option>
+                  <option key={g.group} value={g.group}>{levelLabel(g.group, lang)}</option>
                 ))}
               </select>
               <select
                 value={partyPosition}
                 onChange={(e) => setPartyPosition(e.target.value)}
                 disabled={!partyLevel}
-                aria-label="Position"
+                aria-label={t('profile.positionLabel')}
                 className="w-full px-3 py-2.5 rounded-xl text-sm outline-none transition disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
                   backgroundColor: '#0d1b3e',
@@ -309,7 +310,7 @@ export default function Signup() {
                   color: partyPosition ? '#ffffff' : '#8b94b8',
                 }}
               >
-                <option value="">{partyLevel ? 'Position' : 'Pick a level'}</option>
+                <option value="">{partyLevel ? t('profile.positionLabel') : t('auth.pickLevel')}</option>
                 {rolesInGroup(partyLevel).map((r) => (
                   <option key={r.id} value={r.id}>{roleLabel(r, politicalParty)}</option>
                 ))}
@@ -333,11 +334,11 @@ export default function Signup() {
               className="mt-0.5 w-4 h-4 rounded accent-blue-500 cursor-pointer shrink-0"
             />
             <span className="text-xs leading-relaxed" style={{ color: '#8b94b8' }}>
-              I have read and agree to AmbedkarGPT&apos;s{' '}
+              {t('auth.signupTerms')}{' '}
               <button type="button" onClick={() => setModal('privacy')} className="underline underline-offset-2 hover:opacity-80 transition-opacity" style={{ color: '#6b8aff' }}>
                 {t('landing.privacy')}
               </button>
-              {' '}and{' '}
+              {' '}{t('auth.andWord')}{' '}
               <button type="button" onClick={() => setModal('terms')} className="underline underline-offset-2 hover:opacity-80 transition-opacity" style={{ color: '#6b8aff' }}>
                 {t('landing.terms')}
               </button>
@@ -346,25 +347,25 @@ export default function Signup() {
           {errors.terms && <p className="text-xs mt-0.5 px-1" style={{ color: '#ef4444' }}>{errors.terms}</p>}
 
           <PrimaryButton type="submit" loading={loading}>
-            {loading ? 'Please wait…' : 'Sign up'}
+            {loading ? t('auth.pleaseWait') : t('auth.signup')}
           </PrimaryButton>
         </form>
 
         <div className="flex items-center gap-3">
           <div className="flex-1 h-px" style={{ backgroundColor: '#2a3566' }} />
-          <span className="text-xs" style={{ color: '#8b94b8' }}>or</span>
+          <span className="text-xs" style={{ color: '#8b94b8' }}>{t('auth.or')}</span>
           <div className="flex-1 h-px" style={{ backgroundColor: '#2a3566' }} />
         </div>
 
         <GoogleButton
           onSuccess={handleGoogle}
-          onError={() => setAuthError('Google sign-in failed. Please try again.')}
+          onError={() => setAuthError(t('auth.googleFailed'))}
           disabled={loading}
           beforeLogin={validateForGoogle}
         />
 
         <p className="text-center text-sm" style={{ color: '#8b94b8' }}>
-          Already have an account?{' '}
+          {t('auth.alreadyAccount')}{' '}
           <Link to="/login" className="underline underline-offset-2 hover:opacity-80 transition-opacity font-medium" style={{ color: '#6b8aff' }}>
             {t('auth.login')}
           </Link>

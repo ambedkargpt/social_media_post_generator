@@ -28,8 +28,8 @@ export default function Login() {
   function validate() {
     const e = {};
     if (mode === 'email') {
-      if (!email.trim()) e.email    = 'Email is required.';
-      if (!password)     e.password = 'Password is required.';
+      if (!email.trim()) e.email    = t('auth.emailRequired');
+      if (!password)     e.password = t('auth.passwordRequired');
     } else {
       if (!phone)                          e.phone = 'Phone number is required.';
       else if (!isValidPhoneNumber(phone)) e.phone = 'Please enter a valid phone number.';
@@ -130,7 +130,7 @@ export default function Login() {
                 boxShadow: mode === m ? '0 1px 4px rgba(0,0,0,0.4)' : 'none',
               }}
             >
-              {m === 'email' ? 'Email' : 'Phone Number'}
+              {m === 'email' ? t('auth.email') : t('auth.phone')}
             </button>
           ))}
         </div>
@@ -144,10 +144,10 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           {mode === 'email' ? (
             <AnimatedInput
-              placeholders={['Enter your Email']}
+              placeholders={[t('auth.enterEmail')]}
               value={email}
               onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: '' })); setAuthError(''); }}
-              label="Email"
+              label={t('auth.email')}
               error={errors.email}
             />
           ) : (
@@ -175,29 +175,29 @@ export default function Login() {
 
           {mode === 'phone' && (
             <p className="text-xs" style={{ color: '#8b94b8' }}>
-              We&apos;ll send a one-time code to your number to log you in.
+              {t('auth.otpToNumber')}
             </p>
           )}
 
           <PrimaryButton type="submit" loading={loading}>
-            {loading ? 'Please wait…' : mode === 'phone' ? 'Send OTP' : 'Login'}
+            {loading ? t('auth.pleaseWait') : mode === 'phone' ? t('auth.sendOtp') : t('auth.login')}
           </PrimaryButton>
         </form>
 
         <div className="flex items-center gap-3">
           <div className="flex-1 h-px" style={{ backgroundColor: '#2a3566' }} />
-          <span className="text-xs" style={{ color: '#8b94b8' }}>or</span>
+          <span className="text-xs" style={{ color: '#8b94b8' }}>{t('auth.or')}</span>
           <div className="flex-1 h-px" style={{ backgroundColor: '#2a3566' }} />
         </div>
 
         <GoogleButton
           onSuccess={handleGoogle}
-          onError={() => setAuthError('Google sign-in failed. Please try again.')}
+          onError={() => setAuthError(t('auth.googleFailed'))}
           disabled={loading}
         />
 
         <p className="text-center text-sm" style={{ color: '#8b94b8' }}>
-          Don&apos;t have an account?{' '}
+          {t('auth.noAccount')}{' '}
           <Link to="/signup" className="underline underline-offset-2 hover:opacity-80 transition-opacity font-medium" style={{ color: '#6b8aff' }}>
             {t('auth.signUp')}
           </Link>
