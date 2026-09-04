@@ -36,24 +36,36 @@ class NewsService:
         language: str | None = None,
         tenant: str | int | None = None,
         include_general: bool = True,
+        include_opposition: bool = True,
     ) -> list[NewsResponse]:
-        tenant_ids = self._resolve_tenant_ids(tenant, include_general)
+        tenant_ids = self._resolve_tenant_ids(tenant, include_general, include_opposition)
         docs = self.repo.list(limit=limit, skip=skip, language=language, tenant_ids=tenant_ids)
         return [self._to_response(doc, include_summary=include_summary) for doc in docs]
 
-    def count(self, language: str | None = None, tenant: str | int | None = None, include_general: bool = True) -> int:
-        return self.repo.count(language=language, tenant_ids=self._resolve_tenant_ids(tenant, include_general))
+    def count(
+        self,
+        language: str | None = None,
+        tenant: str | int | None = None,
+        include_general: bool = True,
+        include_opposition: bool = True,
+    ) -> int:
+        return self.repo.count(
+            language=language,
+            tenant_ids=self._resolve_tenant_ids(tenant, include_general, include_opposition),
+        )
 
-    def _resolve_tenant_ids(self, tenant: str | int | None, include_general: bool) -> list[int] | None:
+    def _resolve_tenant_ids(
+        self, tenant: str | int | None, include_general: bool, include_opposition: bool = True
+    ) -> list[int] | None:
         """
         Map a tenant selector to the ids to query.
 
         None            -> no tenant filter (everything)
-        party           -> that party, plus general news unless opted out
+        party           -> that party, plus general and opposition news unless opted out
         """
         if tenant is None or tenant == "":
             return None
-        from backend.tenants import general_tenant, get_tenant
+        from backend.tenants import general_tenant, get_tenant, opposition_tenant
 
         resolved = get_tenant(tenant)
         if resolved is None:
@@ -64,6 +76,11 @@ class NewsService:
         ids = {resolved.tenant_id}
         if include_general:
             ids.add(general_tenant().tenant_id)
+        if include_opposition:
+            # None until an opposition tenant (BJP) is registered.
+            opp = opposition_tenant()
+            if opp is not None:
+                ids.add(opp.tenant_id)
         return sorted(ids)
 
     def get(self, news_id: str) -> NewsResponse:

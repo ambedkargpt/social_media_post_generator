@@ -166,17 +166,24 @@ function matchesDate(dateValue, filterId) {
 function resolveTenantForUser(partyName, tenants) {
   const raw = (partyName ?? '').trim().toLowerCase();
   if (!raw) return null;
+  // The opposition tenant (BJP) is scraped to be countered, never to be
+  // someone's own party — excluded here the same way it is excluded from
+  // the signup party picker, so it can never become "your party" even if a
+  // stray political_party value happened to match its name or slug.
+  const selectable = tenants.filter((t) => !t.is_general && !t.is_opposition);
   return (
-    tenants.find((t) => !t.is_general && raw.includes(String(t.name).toLowerCase()))
-    ?? tenants.find((t) => !t.is_general && raw.includes(String(t.slug).toLowerCase()))
+    selectable.find((t) => raw.includes(String(t.name).toLowerCase()))
+    ?? selectable.find((t) => raw.includes(String(t.slug).toLowerCase()))
     ?? null
   );
 }
 
-// Accent per section so party news and general news are visually distinct.
+// Accent per section so party news, opposition news and general news are
+// visually distinct.
 const SECTION_THEME = {
-  party:   { accent: '#3f9fff', soft: 'rgba(63,159,255,0.12)', ring: 'rgba(63,159,255,0.45)' },
-  general: { accent: '#f0a63a', soft: 'rgba(240,166,58,0.12)', ring: 'rgba(240,166,58,0.45)' },
+  party:      { accent: '#3f9fff', soft: 'rgba(63,159,255,0.12)', ring: 'rgba(63,159,255,0.45)' },
+  opposition: { accent: '#e5484d', soft: 'rgba(229,72,77,0.12)',  ring: 'rgba(229,72,77,0.45)' },
+  general:    { accent: '#f0a63a', soft: 'rgba(240,166,58,0.12)', ring: 'rgba(240,166,58,0.45)' },
 };
 
 function formatNewsDate(d) {
@@ -207,7 +214,7 @@ export default function SocialMediaPostGenerator() {
   const [typeFilter,      setTypeFilter]      = useState('all'); // all | news | press_conference
   const [page,            setPage]            = useState(1);
   const [tenants,         setTenants]         = useState([]);
-  const [newsSection,     setNewsSection]     = useState('party'); // 'party' | 'general'
+  const [newsSection,     setNewsSection]     = useState('party'); // 'party' | 'opposition' | 'general'
   const [filterOpen,      setFilterOpen]      = useState(false);
   const [view,            setView]            = useState('feed'); // 'feed' | 'preview' | 'generated'
   const [generating,      setGenerating]      = useState(false);
@@ -259,10 +266,10 @@ export default function SocialMediaPostGenerator() {
   const loadNews = useCallback(() => {
     setNewsLoading(true);
     setNewsError(false);
-    // Ask for the chosen party plus general news in one call; the UI splits
-    // them into the two sections locally.
+    // Ask for the chosen party plus general and opposition news in one call;
+    // the UI splits them into the three sections locally.
     const query = { limit: 100, language: siteLang };
-    if (selectedParty) { query.tenant = selectedParty; query.includeGeneral = true; }
+    if (selectedParty) { query.tenant = selectedParty; query.includeGeneral = true; query.includeOpposition = true; }
     getNews(query)
       .then((data) => {
         if (data?.length) {
@@ -270,7 +277,7 @@ export default function SocialMediaPostGenerator() {
           setNewsLoading(false);
         } else {
           const fallback = { limit: 100 };
-          if (selectedParty) { fallback.tenant = selectedParty; fallback.includeGeneral = true; }
+          if (selectedParty) { fallback.tenant = selectedParty; fallback.includeGeneral = true; fallback.includeOpposition = true; }
           getNews(fallback).then((all) => {
             if (all?.length) setArticles(all.map(adaptNews));
           }).catch(() => setNewsError(true)).finally(() => setNewsLoading(false));
@@ -354,11 +361,19 @@ export default function SocialMediaPostGenerator() {
   }
 
 
-  // Split the feed into the two sections: the chosen party's news, and the
-  // neutral/general news (Ravish) that every user sees.
+  // Split the feed into three sections: the chosen party's news, the
+  // opposition's (BJP, not scraped yet), and the neutral/general news
+  // (Ravish) that every user sees.
   const partyArticles = useMemo(
     () => (activeParty ? articles.filter((a) => a.tenantSlug === activeParty.slug) : []),
     [articles, activeParty]
+  );
+  // No tenant scrapes BJP yet, so this is always empty for now — the tab
+  // exists so the section has a home once that scraping exists, rather than
+  // needing this whole area rewired later.
+  const oppositionArticles = useMemo(
+    () => articles.filter((a) => a.tenantSlug === 'bjp'),
+    [articles]
   );
   const generalArticles = useMemo(
     () => articles.filter((a) => a.tenantSlug === 'general'),
@@ -368,7 +383,9 @@ export default function SocialMediaPostGenerator() {
   // Without a party chosen there is only one list, so show everything.
   const sectionArticles = !activeParty
     ? articles
-    : (newsSection === 'party' ? partyArticles : generalArticles);
+    : newsSection === 'party' ? partyArticles
+    : newsSection === 'opposition' ? oppositionArticles
+    : generalArticles;
 
   // Accent for the section currently on screen; falls back to the party colour
   // when no party is set, so the heading is never unstyled.
@@ -937,14 +954,16 @@ export default function SocialMediaPostGenerator() {
         {/* ── Feed view ── */}
         {view === 'feed' && (
           <div className="flex-1 overflow-y-auto px-6 pb-10 md:px-8">
-            {/* Two news sections: chosen party vs general (neutral) news.
-                Underlined tabs rather than pills, and each section carries its
-                own accent so it is obvious which feed you are reading. */}
+            {/* Three news sections: chosen party, opposition (BJP, empty
+                until it is scraped), and general (neutral) news. Underlined
+                tabs rather than pills, and each section carries its own
+                accent so it is obvious which feed you are reading. */}
             {activeParty && (
               <div className="mb-5 flex items-end gap-1.5 border-b border-[#1e2636]/90">
                 {[
-                  { id: 'party',   label: activeParty.name, count: partyArticles.length },
-                  { id: 'general', label: 'General News',    count: generalArticles.length },
+                  { id: 'party',      label: activeParty.name,          count: partyArticles.length },
+                  { id: 'opposition', label: t('gen.oppositionNews'),   count: oppositionArticles.length },
+                  { id: 'general',    label: t('gen.generalNews'),      count: generalArticles.length },
                 ].map((s) => {
                   const active = newsSection === s.id;
                   const tint = SECTION_THEME[s.id].accent;
@@ -955,10 +974,10 @@ export default function SocialMediaPostGenerator() {
                       onClick={() => {
                         setNewsSection(s.id);
                         setPage(1);
-                        // General has no press conferences, so carrying that
-                        // filter across from the party tab would show an empty
-                        // section and look broken.
-                        if (s.id === 'general') setTypeFilter('all');
+                        // Neither general nor opposition has press conferences,
+                        // so carrying that filter across from the party tab
+                        // would show an empty section and look broken.
+                        if (s.id === 'general' || s.id === 'opposition') setTypeFilter('all');
                       }}
                       title={s.label}
                       className="group relative -mb-px flex items-center gap-2.5 rounded-t-xl px-4 pb-3 pt-2.5 text-[13.5px] font-semibold transition-colors duration-150"
@@ -1010,11 +1029,13 @@ export default function SocialMediaPostGenerator() {
             {/* Content type — pills rather than tabs, so the party tabs above
                 stay the primary level of navigation. */}
             <div className="mb-6 flex flex-wrap items-center gap-2.5">
-              {(newsSection === 'general'
+              {(newsSection === 'general' || newsSection === 'opposition'
                 // General is scraped from the videos tab alone, so every item
                 // is the same type. Three filters over one type is furniture:
                 // "All" and "News Articles" select the same set and "Press
-                // Conference" selects nothing.
+                // Conference" selects nothing. Opposition has no data yet, so
+                // it gets the same single-chip treatment until its own scrape
+                // defines what content types it actually carries.
                 ? [{ id: 'all', label: newsTypeLabel(newsSection), color: '#6aa8ff' }]
                 : [
                     { id: 'all',              label: 'gen.all',                              color: '#8a9ac0' },
@@ -1098,7 +1119,17 @@ export default function SocialMediaPostGenerator() {
                 </button>
               </div>
             )}
-            {!newsLoading && !newsError && filteredArticles.length === 0 && (
+            {!newsLoading && !newsError && filteredArticles.length === 0 && newsSection === 'opposition' && (
+              // Distinct from the generic empty state below: there is no
+              // filter to change here, the scrape just does not exist yet.
+              <div className="flex flex-col items-center gap-2 py-16 text-center">
+                <p className="text-[14px] font-medium" style={{ color: SECTION_THEME.opposition.accent }}>
+                  {t('gen.oppositionComingSoon')}
+                </p>
+                <p className="text-[12px] text-[#4a5a80]">{t('gen.oppositionComingSoonSub')}</p>
+              </div>
+            )}
+            {!newsLoading && !newsError && filteredArticles.length === 0 && newsSection !== 'opposition' && (
               <div className="flex flex-col items-center gap-2 py-16 text-center">
                 <p className="text-[14px] font-medium text-[#6aa8ff]">{t('gen.noArticlesFound')}</p>
                 <p className="text-[12px] text-[#4a5a80]">{t('gen.tryDifferent')}</p>

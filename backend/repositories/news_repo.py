@@ -22,7 +22,7 @@ def _language_clause(language: str) -> dict:
 # How long a party story stays in the feed, and which tenants it applies to.
 # Kept together so widening the window or adding a tenant is one edit.
 FRESH_WINDOW = timedelta(days=3)
-FRESH_WINDOW_TENANTS = ("congress", "samajwadi")
+FRESH_WINDOW_TENANTS = ("congress", "samajwadi", "bjp")
 
 
 class NewsRepository:
