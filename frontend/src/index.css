@@ -242,6 +242,20 @@ html { scroll-behavior: smooth; }
   animation: accentShimmer 8s linear infinite;
 }
 
+/* background-clip: text paints the gradient only over the glyph run's
+   upright advance-width box. Italicizing slants the ink to the right without
+   widening that box, so the trailing edge — a closing ")", the top-right
+   curl of a Devanagari matra like "है" — renders past where the gradient
+   is painted and comes out with no fill at all: invisible, i.e. "clipped".
+   The bleed is trailing-edge only, so this stays a no-op everywhere the
+   run doesn't wrap (badges, headline words) and, thanks to the default
+   box-decoration-break: slice, only touches the true end of runs that do. */
+.gradient-text-blue.italic,
+.gradient-text-cyan.italic,
+.gradient-text.italic {
+  padding-right: 0.16em;
+}
+
 @keyframes accentShimmer {
   0%   { background-position: 120% 0; }
   100% { background-position: -120% 0; }
