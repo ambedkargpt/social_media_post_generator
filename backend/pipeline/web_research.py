@@ -583,7 +583,11 @@ def _treatment(verdict: str) -> str:
             "period it belongs to, and do not write it as a current fact."
         )
     if "accurate" in v:
-        return "This claim is supported. You may state it, and you may cite the sourced detail."
+        return (
+            "This claim is supported. State it in the evidence-based register from WRITING A "
+            "CLAIM THE RESEARCH SUPPORTS: name the source with a precise noun, use an evidential "
+            "verb, and hedge if the source itself hedges. You may cite the sourced detail."
+        )
     return "Follow the verdict exactly. Do not overstate what the evidence supports."
 
 

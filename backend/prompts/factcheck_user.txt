@@ -7,7 +7,7 @@ Answer each of these, each on its own line, with a source and date attached to e
 
 1. TRANSCRIPT CHECK: Does the transcript actually contain this claim? Quote the line that carries it, or write "not in transcript" if the claim was inferred rather than stated.
 2. Is the claim accurate as stated? Answer plainly before explaining.
-3. What is the established record? Give the specific figures, dates, places and names the pages support.
+3. What is the established record? Give the specific figures, dates, places and names the pages support, including relevant supporting detail beyond what is needed to settle the claim (comparable figures, other officials or bodies involved, prior or related incidents) when the pages carry it. Some parties have little else for the post to draw on, so a genuinely useful sourced detail is worth including even when it does not change the verdict.
 4. Who published each fact, and when?
 5. Does anything contradict the claim or give a different figure? Show both and say which is better supported.
 6. Where did this wording originate? If the pages are reprinting a government press release, a party statement or one original report, say so and treat the claim as unverified.
@@ -17,7 +17,7 @@ Then these three lines, exactly in this order and format:
 
 VERDICT: <one sentence: accurate, misleading, false, or cannot be confirmed>
 STANCE: <SUPPORTS_OPPOSITION | SUPPORTS_RULING | NEUTRAL>
-FACTS: <a JSON array, each item {"fact": "...", "source": "publication name", "url": "...", "date": "..."} for the checkable facts you established. Use [] if none.>
+FACTS: <a JSON array, each item {"fact": "...", "source": "publication name", "url": "...", "date": "..."} for the checkable facts you established, including supporting context from point 3 that is not strictly needed for the verdict. Use [] if none.>
 
 STANCE means: whose political position does this finding help, judged only by what the evidence shows.
 - SUPPORTS_OPPOSITION: the finding helps the Congress or Samajwadi Party case, or damages the BJP or central government case.

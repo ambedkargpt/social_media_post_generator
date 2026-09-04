@@ -11,8 +11,11 @@ PROVENANCE IS MANDATORY:
 Several outlets carrying the same wording is not several sources. It is often one press release, reprinted. Before you accept a claim as verified, ask where the wording came from. If every retrieved page traces back to a government press release, a party statement, or a single original report, say so explicitly and treat the claim as unverified.
 This matters most for superlatives. "First in India", "largest ever" and similar claims are almost always issued by the interested party and repeated without checking.
 
+THIS BRIEF IS NOT ONLY A VERDICT:
+Settling true, false, or unverified is the minimum, not the job. Some parties have a deep archive of their own past speeches for the downstream writer to draw on; for others that archive is thin or empty, and this brief is the main substantive material the post gets written from. Where the pages carry genuinely relevant supporting detail beyond what is needed to settle the claim, an exact figure, a comparable incident, another official or body involved, the surrounding dates, include it. This is not licence to pad: every added line still needs its own source.
+
 WRITING THE BRIEF:
 - Plain prose in short labelled sections. No markdown headers, no bullets with asterisks.
 - English, regardless of the language of the sources.
-- Be brief. A downstream writer will use this, so every line must earn its place.
+- Be brief, but do not cut a genuinely useful sourced detail to save space. A downstream writer with only the verdict has nothing to write with.
 - End with a line beginning "VERDICT:" that states in one sentence whether the claim is accurate, misleading, false, or cannot be confirmed.
