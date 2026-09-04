@@ -4,16 +4,18 @@ import { Menu, X } from 'lucide-react';
 import logoSrc from '../assets/images/logo-animation.png';
 import { useAuth } from '../context/AuthContext';
 import LanguageSwitcher from './LanguageSwitcher';
+import { useI18n } from '../i18n/index.jsx';
 
 // action: 'scroll' (default) | 'bheembot' | 'dashboard' | 'section:<id>'
 const navItems = [
-  { label: 'HOME',          sectionId: 'home' },
-  { label: 'ABOUT',         sectionId: 'about' },
-  { label: 'BHEEM CHATBOT', sectionId: 'bheem',        action: 'bheembot'   },
-  { label: 'CONTACT',       sectionId: 'contact' },
+  { key: 'nav.homeCaps',    sectionId: 'home' },
+  { key: 'nav.aboutCaps',   sectionId: 'about' },
+  { key: 'nav.bheemCaps',   sectionId: 'bheem',   action: 'bheembot' },
+  { key: 'nav.contactCaps', sectionId: 'contact' },
 ];
 
 export default function Navbar() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser } = useAuth();
@@ -127,7 +129,7 @@ export default function Navbar() {
             className="h-10 w-10 object-contain drop-shadow-[0_0_16px_rgba(63,159,255,0.65)] md:h-12 md:w-12"
           />
           <span className="font-display text-[18px] font-bold leading-none tracking-tight md:text-[24px]">
-            <span className="hidden text-white sm:inline">Ambedkar</span>
+            <span className="hidden text-white sm:inline">{t('brand.ambedkar')}</span>
             <span className="gradient-text-cyan">GPT</span>
           </span>
         </Link>
@@ -147,7 +149,7 @@ export default function Navbar() {
                     : 'border border-transparent text-white/70 hover:text-[#3f9fff] hover:bg-[#3f9fff]/10 hover:border-[#3f9fff]/30 hover:shadow-[0_0_10px_rgba(63,159,255,0.2)]'
                 }`}
               >
-                {item.label}
+                {t(item.key)}
               </button>
             );
           })}
@@ -176,13 +178,13 @@ export default function Navbar() {
             to="/login"
             className="inline-flex h-9 shrink-0 items-center justify-center whitespace-nowrap rounded-lg border border-[#3f9fff]/50 bg-[#3f9fff]/10 px-4 font-count text-[13px] font-semibold text-[#7fc8ff] shadow-[0_0_14px_rgba(63,159,255,0.15)] transition hover:border-[#3f9fff]/80 hover:bg-[#3f9fff]/20 hover:text-white hover:shadow-[0_0_20px_rgba(63,159,255,0.3)] md:h-10 md:px-5 md:text-[13.5px]"
           >
-            Log In
+            {t('nav.login')}
           </Link>
           <Link
             to="/signup"
             className="inline-flex h-8 shrink-0 items-center justify-center whitespace-nowrap rounded-lg bg-linear-to-r from-[#0a7dff] to-[#3a9fff] px-3.5 font-count text-[11.5px] font-semibold text-white shadow-[0_4px_14px_rgba(17,122,255,0.4)] transition hover:-translate-y-0.5 hover:brightness-110 md:h-10 md:px-5 md:text-[13px] md:shadow-[0_6px_24px_rgba(17,122,255,0.45)]"
           >
-            Get Started
+            {t('nav.getStarted')}
           </Link>
         </div>
       </div>
@@ -211,7 +213,7 @@ export default function Navbar() {
                   {isActive && (
                     <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#3f9fff] shadow-[0_0_7px_rgba(63,159,255,0.8)]" />
                   )}
-                  {item.label}
+                  {t(item.key)}
                 </button>
               );
             })}

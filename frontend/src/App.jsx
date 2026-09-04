@@ -36,6 +36,7 @@ import ScrollProgress      from './components/ScrollProgress';
 import OpeningSplash       from './components/OpeningSplash';
 import LanguagePopup       from './components/LanguagePopup';
 import Spinner             from './components/Spinner';
+import { I18nProvider }    from './i18n/index.jsx';
 import TransitionCurtain   from './components/TransitionCurtain';
 import ErrorBoundary       from './components/ErrorBoundary';
 
@@ -85,6 +86,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
+    <I18nProvider>
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <BrowserRouter>
         <CurtainProvider>
@@ -166,6 +168,7 @@ export default function App() {
         </CurtainProvider>
       </BrowserRouter>
     </GoogleOAuthProvider>
+    </I18nProvider>
     </ErrorBoundary>
   );
 }

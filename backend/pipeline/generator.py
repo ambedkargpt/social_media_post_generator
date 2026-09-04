@@ -12,6 +12,12 @@ _log = logging.getLogger(__name__)
 from backend.pipeline.video_summarizer import load_summary_cache, summary_cache_key
 
 POST_GENERATION_SYSTEM_NAME = "post_generation_system.txt"
+# A separate file, not a conditional string appended in Python: the same
+# reason every other prompt in this codebase lives in prompts/*.txt rather
+# than inline. It reads on its own, diffs on its own, and cannot leak into a
+# Congress or general-news generation by a stray code path — only "bjp"
+# selects it, in _load_post_prompts below.
+POST_GENERATION_OPPOSITION_SYSTEM_NAME = "post_generation_opposition_system.txt"
 DEFAULT_SUMMARIES_PATH = Path(__file__).resolve().parents[1] / "data" / "video_summaries.json"
 POST_GENERATION_USER_NAME = "post_generation_user.txt"
 
@@ -24,8 +30,9 @@ def _fill_template(template: str, replacements: Dict[str, str]) -> str:
     return out
 
 
-def _load_post_prompts(prompts_dir: Path) -> tuple[str, str]:
-    system_path = prompts_dir / POST_GENERATION_SYSTEM_NAME
+def _load_post_prompts(prompts_dir: Path, *, opposition: bool = False) -> tuple[str, str]:
+    system_name = POST_GENERATION_OPPOSITION_SYSTEM_NAME if opposition else POST_GENERATION_SYSTEM_NAME
+    system_path = prompts_dir / system_name
     user_path = prompts_dir / POST_GENERATION_USER_NAME
     if not system_path.is_file():
         raise FileNotFoundError(f"Missing post generation system prompt: {system_path}")
@@ -342,7 +349,14 @@ def generate_post(
 
     cache_path = summaries_cache_path or DEFAULT_SUMMARIES_PATH
 
-    system_msg, user_tpl = _load_post_prompts(prompts_dir)
+    # tenant_slug travels on the news dict from _news_doc_to_article, so this
+    # needs no new parameter: the source video's own tenant already says
+    # whether it is the opposition's, regardless of which party the writer
+    # is speaking for. Selects the whole prompt file, not an appended
+    # fragment, so a Congress or general-news generation can never pick up
+    # opposition-mode instructions by a stray code path.
+    is_opposition_source = str(news.get("tenant_slug") or "").strip().lower() == "bjp"
+    system_msg, user_tpl = _load_post_prompts(prompts_dir, opposition=is_opposition_source)
 
     lang_instruction = _LANGUAGE_INSTRUCTIONS.get(language or "en", "")
 

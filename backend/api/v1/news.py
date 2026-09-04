@@ -26,6 +26,7 @@ def list_tenants() -> dict:
                 "slug": t.slug,
                 "name": t.name,
                 "is_general": t.is_general,
+                "is_opposition": t.is_opposition,
             }
             for t in load_tenants()
         ]
@@ -46,6 +47,10 @@ def list_news(
         default=True,
         description="When a tenant is given, also include general (neutral) news.",
     ),
+    include_opposition: bool = Query(
+        default=True,
+        description="When a tenant is given, also include the opposition's (BJP) own news.",
+    ),
 ) -> list[NewsResponse]:
     return service.list(
         limit=limit,
@@ -54,6 +59,7 @@ def list_news(
         language=language,
         tenant=tenant,
         include_general=include_general,
+        include_opposition=include_opposition,
     )
 
 

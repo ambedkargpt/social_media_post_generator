@@ -10,43 +10,16 @@ import udham      from '../../assets/images/makers/udham.png';
 import dakshayani from '../../assets/images/makers/dakshayani.png';
 import kanshi     from '../../assets/images/makers/kanshi.png';
 import janabai    from '../../assets/images/makers/janabai.png';
+import { useI18n } from '../../i18n/index.jsx';
 
 const MAKERS = [
-  {
-    name: 'Savitribai Phule',
-    image: savitribai,
-    blurb: "India's first woman teacher and a pioneer of education for every learner, regardless of birth.",
-  },
-  {
-    name: 'Gurram Jashuva',
-    image: gurram,
-    blurb: 'Poet of the oppressed who turned ignored verse into a clarion call for equality.',
-  },
-  {
-    name: 'Jagjivan Ram',
-    image: jagjivan,
-    blurb: 'Champion of social justice and a voice for the marginalized across generations.',
-  },
-  {
-    name: 'Udham Singh',
-    image: udham,
-    blurb: 'A revolutionary who gave voice to the silenced and inspired movements for dignity.',
-  },
-  {
-    name: 'Dakshayani Velayudhan',
-    image: dakshayani,
-    blurb: 'First and only Dalit woman elected to the Constituent Assembly and a quiet architect of equality.',
-  },
-  {
-    name: 'Kanshi Ram',
-    image: kanshi,
-    blurb: 'Organiser of the modern Bahujan movement and an unwavering advocate for social justice.',
-  },
-  {
-    name: 'Sant Janabai',
-    image: janabai,
-    blurb: 'Medieval Marathi saint-poet whose verses centred the lives of labouring Dalit women.',
-  },
+  { id: 'savitribai', image: savitribai },
+  { id: 'jashuva', image: gurram },
+  { id: 'jagjivan', image: jagjivan },
+  { id: 'udham', image: udham },
+  { id: 'dakshayani', image: dakshayani },
+  { id: 'kanshiram', image: kanshi },
+  { id: 'janabai', image: janabai },
 ];
 
 function NavButton({ onClick, direction, label }) {
@@ -68,6 +41,7 @@ function NavButton({ onClick, direction, label }) {
 }
 
 function MakerCard({ maker }) {
+  const { t } = useI18n();
   return (
     <div className="group relative h-[400px] w-[300px] shrink-0 overflow-hidden rounded-2xl border border-[#2a4375]/60 bg-[#0a1430] shadow-[0_20px_50px_rgba(0,0,0,0.45)] transition hover:-translate-y-1 hover:border-[#4a78c8]/80">
       <div className="absolute inset-0 bg-gradient-to-b from-[#11204a] via-[#0b1633] to-[#070c1f]" />
@@ -75,7 +49,7 @@ function MakerCard({ maker }) {
 
       <img
         src={maker.image}
-        alt={maker.name}
+        alt={t(`makers.${maker.id}.name`)}
         loading="lazy"
         className="relative h-full w-full object-cover object-top transition duration-700 group-hover:scale-[1.04]"
         style={{ filter: 'saturate(1.05) contrast(1.02)' }}
@@ -83,10 +57,10 @@ function MakerCard({ maker }) {
 
       <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-[#030611] via-[#030611]/70 to-transparent p-5">
         <h3 className="text-[24px] font-semibold leading-tight text-white md:text-[27px]">
-          {maker.name}
+          {t(`makers.${maker.id}.name`)}
         </h3>
         <p className="mt-2 line-clamp-3 text-[17px] leading-relaxed text-[#c2d2ee] md:text-[18px]">
-          {maker.blurb}
+          {t(`makers.${maker.id}.blurb`)}
         </p>
       </div>
     </div>
@@ -103,6 +77,7 @@ const AUTO_MS      = 3000;
 const SLIDE_EASE   = 'transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
 
 function DesktopCarousel() {
+  const { t } = useI18n();
   // Start in the middle copy so we can go left or right without hitting the edge
   const [trackIdx,  setTrackIdx]  = useState(MAKERS.length);
   const [animated,  setAnimated]  = useState(true);
@@ -225,7 +200,7 @@ function DesktopCarousel() {
                 ? 'h-2 w-6 bg-[#3f9fff]'
                 : 'h-2 w-2 bg-[#2a4375]/60 hover:bg-[#3f9fff]/50',
             ].join(' ')}
-            aria-label={`Go to ${MAKERS[i].name}`}
+            aria-label={t(`makers.${MAKERS[i].id}.name`)}
           />
         ))}
       </div>
@@ -234,6 +209,7 @@ function DesktopCarousel() {
 }
 
 function MobileCarousel() {
+  const { t } = useI18n();
   const [activeIdx, setActiveIdx] = useState(0);
 
   function goPrev() {
@@ -257,14 +233,14 @@ function MobileCarousel() {
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_25%,rgba(63,159,255,0.18),transparent_65%)]" />
           <img
             src={maker.image}
-            alt={maker.name}
+            alt={t(`makers.${maker.id}.name`)}
             loading="lazy"
             className="relative h-full w-full object-cover object-top"
             style={{ filter: 'saturate(1.05) contrast(1.02)' }}
           />
           <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-[#030611] via-[#030611]/70 to-transparent p-5">
-            <h3 className="text-[22px] font-semibold leading-tight text-white">{maker.name}</h3>
-            <p className="mt-2 line-clamp-3 text-[16px] leading-relaxed text-[#c2d2ee]">{maker.blurb}</p>
+            <h3 className="text-[22px] font-semibold leading-tight text-white">{t(`makers.${maker.id}.name`)}</h3>
+            <p className="mt-2 line-clamp-3 text-[16px] leading-relaxed text-[#c2d2ee]">{t(`makers.${maker.id}.blurb`)}</p>
           </div>
         </div>
       </div>
@@ -284,7 +260,7 @@ function MobileCarousel() {
                   ? 'h-2 w-6 bg-[#3f9fff]'
                   : 'h-2 w-2 bg-[#2a4375]/60 hover:bg-[#3f9fff]/50',
               ].join(' ')}
-              aria-label={`Go to ${MAKERS[i].name}`}
+              aria-label={t(`makers.${MAKERS[i].id}.name`)}
             />
           ))}
         </div>
@@ -296,6 +272,7 @@ function MobileCarousel() {
 }
 
 export default function DalitHistoryMakers() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
 
@@ -319,16 +296,15 @@ export default function DalitHistoryMakers() {
       </div>
 
       <div className="mx-auto max-w-[1440px] px-6">
-        <SectionLabel>Dalit History Makers</SectionLabel>
+        <SectionLabel>{t('makers.label')}</SectionLabel>
 
         <h2 className="mx-auto mt-8 max-w-[900px] text-center font-display text-[52px] font-bold leading-[1.05] text-white md:text-[72px]">
-          Voices That Shaped{' '}
-          <span className="italic gradient-text-blue">Justice</span>
+          {t('makers.headA')}{' '}
+          <span className="italic gradient-text-blue">{t('makers.headEm')}</span>
         </h2>
 
         <p className="mx-auto mt-6 max-w-[760px] text-center text-[22px] leading-9 text-[#bfcfe8] md:text-[24px]">
-          Meet the reformers, poets, and thinkers whose ideas built the foundations of
-          equality. Their stories live on in every line of the corpus.
+          {t('makers.sub')}
         </p>
       </div>
 
@@ -351,7 +327,7 @@ export default function DalitHistoryMakers() {
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 transition group-hover:bg-white/20">
             <Play size={13} fill="currentColor" strokeWidth={0} className="translate-x-[1px]" />
           </span>
-          Build your narrative
+          {t('landing.buildNarrative')}
         </button>
       </div>
     </section>

@@ -3,24 +3,25 @@ import { Link } from "react-router-dom";
 import logoSrc from "../assets/images/logo-animation.png";
 import LegalModal from "./LegalModal";
 import { FacebookIcon, InstagramIcon, LinkedinIcon, TwitterIcon, YoutubeIcon } from "./landing/SocialIcons";
+import { useI18n } from '../i18n/index.jsx';
 
 // Section anchors resolve on the home page. MainLayout scrolls to the hash after
 // a route change, so these work from /pricing and /about too, which plain
 // "#contact" links did not: they appended a hash to whatever page you were on.
 const PRODUCT_LINKS = [
-  { label: "Generate posts", to: "/generate/social-media" },
-  { label: "BheemBot", to: "/bheembot" },
-  { label: "Use cases", to: "/#bheem" },
-  { label: "Pricing", to: "/pricing" },
-  { label: "Solutions", to: "/solutions" },
+  { key: "foot.generatePosts", to: "/generate/social-media" },
+  { key: "foot.bheembot", to: "/bheembot" },
+  { key: "foot.useCases", to: "/#bheem" },
+  { key: "foot.pricing", to: "/pricing" },
+  { key: "foot.solutions", to: "/solutions" },
 ];
 
 const COMPANY_LINKS = [
-  { label: "About", to: "/about" },
-  { label: "Our team", to: "/#charity" },
-  { label: "Dalit Corpus", to: "/#ambedkarverse" },
-  { label: "Resources", to: "/resources" },
-  { label: "Contact us", to: "/contact" },
+  { key: "foot.about", to: "/about" },
+  { key: "foot.ourTeam", to: "/#charity" },
+  { key: "foot.dalitCorpus", to: "/#ambedkarverse" },
+  { key: "foot.resources", to: "/resources" },
+  { key: "foot.contactUs", to: "/contact" },
 ];
 
 // Accounts with no URL are skipped rather than rendered as links that go
@@ -45,17 +46,18 @@ function ColumnHeading({ children }) {
 }
 
 function LinkColumn({ heading, links }) {
+  const { t } = useI18n();
   return (
     <div>
       <ColumnHeading>{heading}</ColumnHeading>
       <ul className="mt-5 space-y-2.5">
         {links.map((l) => (
-          <li key={l.label}>
+          <li key={l.key}>
             <Link
               to={l.to}
               className="inline-block text-[13.5px] text-[#9fb2d1] transition hover:translate-x-0.5 hover:text-white"
             >
-              {l.label}
+              {t(l.key)}
             </Link>
           </li>
         ))}
@@ -65,6 +67,7 @@ function LinkColumn({ heading, links }) {
 }
 
 export default function Footer() {
+  const { t } = useI18n();
   const [legal, setLegal] = useState(null);
   const socials = SOCIAL_LINKS.filter((s) => s.href);
 
@@ -85,13 +88,13 @@ export default function Footer() {
                 className="h-9 w-9 object-contain drop-shadow-[0_0_12px_rgba(63,159,255,0.35)]"
               />
               <span className="text-[21px] font-semibold leading-none tracking-tight">
-                <span className="text-white">Ambedkar</span>
+                <span className="text-white">{t('brand.ambedkar')}</span>
                 <span className="gradient-text-cyan">GPT</span>
               </span>
             </Link>
 
             <p className="mt-4 max-w-[46ch] text-[13.5px] leading-relaxed text-[#9fb2d1]">
-              Ambedkarite knowledge, in the hands of the people who need it most.
+              {t('landing.footerTagline')}
             </p>
 
             <div className="mt-5 space-y-1 text-[13px] leading-relaxed text-[#8296bd]">
@@ -122,8 +125,8 @@ export default function Footer() {
             )}
           </div>
 
-          <LinkColumn heading="Product" links={PRODUCT_LINKS} />
-          <LinkColumn heading="Company" links={COMPANY_LINKS} />
+          <LinkColumn heading={t('foot.product')} links={PRODUCT_LINKS} />
+          <LinkColumn heading={t('foot.company')} links={COMPANY_LINKS} />
         </div>
 
         <div className="relative mt-12 h-px w-full bg-[#1a2c55]/60">
@@ -142,17 +145,17 @@ export default function Footer() {
               onClick={() => setLegal("terms")}
               className="transition hover:text-white"
             >
-              Terms of Service
+              {t('landing.terms')}
             </button>
             <button
               type="button"
               onClick={() => setLegal("privacy")}
               className="transition hover:text-white"
             >
-              Privacy Policy
+              {t('landing.privacy')}
             </button>
             <Link to="/contact" className="transition hover:text-white">
-              Support
+              {t('landing.support')}
             </Link>
           </div>
         </div>

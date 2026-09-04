@@ -43,6 +43,9 @@ class AuthService:
         phone: str | None,
         political_party: str | None,
         party_position: str | None = None,
+        state: str | None = None,
+        city: str | None = None,
+        date_of_birth: str | None = None,
     ) -> AuthResponse:
         if self.users_repo.find_by_username(username):
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username already exists.")
@@ -62,6 +65,9 @@ class AuthService:
             # to no guidance later and looks like the setting doing nothing.
             party_position=(party_position or "").strip() if (party_position or "").strip() in _ROLE_KEYS() else "",
             auth_providers=auth_providers,
+            state=state,
+            city=city,
+            date_of_birth=date_of_birth,
         )
 
         channel = "email" if email else "phone"
@@ -96,6 +102,9 @@ class AuthService:
         username: str | None = None,
         political_party: str | None = None,
         party_position: str | None = None,
+        state: str | None = None,
+        city: str | None = None,
+        date_of_birth: str | None = None,
     ) -> AuthResponse:
         """Create/find phone user, generate OTP in MongoDB, issue session tokens, attempt SMS."""
         if purpose == OTP_PURPOSE_SIGNUP_VERIFY:
@@ -116,6 +125,9 @@ class AuthService:
                 political_party=political_party,
                 party_position=(party_position or "").strip() if (party_position or "").strip() in _ROLE_KEYS() else "",
                 auth_providers=[AUTH_PROVIDER_PHONE],
+                state=state,
+                city=city,
+                date_of_birth=date_of_birth,
             )
         else:
             user = self.users_repo.find_by_phone(phone)
@@ -343,6 +355,11 @@ class AuthService:
         username: str | None,
         political_party: str | None = None,
         party_position: str | None = None,
+        email: str | None = None,
+        phone: str | None = None,
+        state: str | None = None,
+        city: str | None = None,
+        date_of_birth: str | None = None,
     ) -> UserPublic:
         payload = self._decode_or_401(bearer_token, "access")
         user = self.users_repo.find_by_id(payload["sub"])
@@ -368,7 +385,22 @@ class AuthService:
 
             pos = party_position.strip()
             fields["party_position"] = pos if pos in ROLES else ""
-
+        if email is not None:
+            email = email.strip().lower()
+            if email and (existing := self.users_repo.find_by_email(email)) and str(existing["_id"]) != str(user["_id"]):
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already exists.")
+            fields["email"] = email or None
+        if phone is not None:
+            phone = phone.strip()
+            if phone and (existing := self.users_repo.find_by_phone(phone)) and str(existing["_id"]) != str(user["_id"]):
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Phone already exists.")
+            fields["phone"] = phone or None
+        if state is not None:
+            fields["state"] = state.strip()
+        if city is not None:
+            fields["city"] = city.strip()
+        if date_of_birth is not None:
+            fields["date_of_birth"] = date_of_birth.strip()
 
         if fields:
             user = self.users_repo.update_profile(user["_id"], fields)
@@ -383,6 +415,9 @@ class AuthService:
             phone=user.get("phone"),
             political_party=user.get("political_party"),
             party_position=user.get("party_position"),
+            state=user.get("state"),
+            city=user.get("city"),
+            date_of_birth=user.get("date_of_birth"),
             is_email_verified=bool(user.get("is_email_verified")),
             is_phone_verified=bool(user.get("is_phone_verified")),
             auth_providers=user.get("auth_providers", []),

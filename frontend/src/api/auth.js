@@ -28,13 +28,17 @@ export function getStoredUser() {
 }
 
 // ── Signup with email + password ─────────────────────────────────────────────
-export async function signupWithEmail({ username, email, password, political_party, party_position }) {
+export async function signupWithEmail({ username, email, password, political_party, party_position, phone, state, city, date_of_birth }) {
   const { data } = await axios.post(`${BASE_URL}/auth/signup`, {
     username,
     email,
     password,
     ...(political_party ? { political_party } : {}),
     ...(party_position ? { party_position } : {}),
+    ...(phone ? { phone } : {}),
+    ...(state ? { state } : {}),
+    ...(city ? { city } : {}),
+    ...(date_of_birth ? { date_of_birth } : {}),
   });
   // Backend issues tokens on signup (user starts unverified); save them now.
   if (data.tokens) {
@@ -47,13 +51,16 @@ export async function signupWithEmail({ username, email, password, political_par
 // ── Send phone OTP (signup or login) ─────────────────────────────────────────
 // purpose: 'signup_verify' | 'login_verify'
 // Returns AuthResponse shape (tokens + user + otp_required=true + dev_otp?)
-export async function sendPhoneOtp({ phone, purpose, username, political_party, party_position }) {
+export async function sendPhoneOtp({ phone, purpose, username, political_party, party_position, state, city, date_of_birth }) {
   const { data } = await axios.post(`${BASE_URL}/auth/send-phone-otp`, {
     phone,
     purpose,
     ...(username ? { username } : {}),
     ...(political_party ? { political_party } : {}),
     ...(party_position ? { party_position } : {}),
+    ...(state ? { state } : {}),
+    ...(city ? { city } : {}),
+    ...(date_of_birth ? { date_of_birth } : {}),
   });
   if (data.tokens) {
     saveTokens(data.tokens);
@@ -115,14 +122,19 @@ export async function getMe() {
   return data;
 }
 
-// ── Update profile (full_name, username) ─────────────────────────────────────
-export async function updateProfile({ full_name, username, political_party, party_position }) {
+// ── Update profile (full_name, username, ...) ─────────────────────────────────
+export async function updateProfile({ full_name, username, political_party, party_position, email, phone, state, city, date_of_birth }) {
   const { data } = await client.patch('/auth/me', {
     ...(full_name  !== undefined ? { full_name }  : {}),
     ...(username   !== undefined ? { username }   : {}),
     ...(political_party !== undefined ? { political_party } : {}),
     // Sent even when empty: '' clears a position, undefined leaves it alone.
     ...(party_position !== undefined ? { party_position } : {}),
+    ...(email !== undefined ? { email } : {}),
+    ...(phone !== undefined ? { phone } : {}),
+    ...(state !== undefined ? { state } : {}),
+    ...(city !== undefined ? { city } : {}),
+    ...(date_of_birth !== undefined ? { date_of_birth } : {}),
   });
   saveUser(data);
   return data;

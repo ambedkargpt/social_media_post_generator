@@ -4,6 +4,7 @@ import { sendContactMessage } from '../../api/contact';
 import SectionLabel from './SectionLabel';
 import Spinner from '../Spinner';
 import LegalModal from '../LegalModal';
+import { useI18n } from '../../i18n/index.jsx';
 
 // Leaflet is 43 kB gzipped plus a stylesheet, for a map at the very bottom of
 // the page. Loading it on render would only move the cost, not remove it, so
@@ -11,6 +12,7 @@ import LegalModal from '../LegalModal';
 const OfficeMap = lazy(() => import('./OfficeMap'));
 
 function LazyOfficeMap() {
+  const { t } = useI18n();
   const ref = useRef(null);
   const [show, setShow] = useState(false);
 
@@ -42,7 +44,7 @@ function LazyOfficeMap() {
       {show && (
         <Suspense fallback={(
           <div className="flex h-full w-full items-center justify-center bg-[#0a1428]">
-            <Spinner size={28} label="Loading map…" showLabel />
+            <Spinner size={28} label={t('landing.loadingMap')} showLabel />
           </div>
         )}>
           <OfficeMap />
@@ -106,6 +108,7 @@ function ChannelRow({ icon: Icon, label, value, href }) {
 const EMPTY = { name: '', email: '', address: '', phone: '', message: '', website: '' };
 
 export default function ContactSection() {
+  const { t } = useI18n();
   const [form, setForm] = useState(EMPTY);
   const [status, setStatus] = useState('idle'); // idle | sending | sent | error
   const [error, setError] = useState('');
@@ -146,12 +149,12 @@ export default function ContactSection() {
 
       <div className="relative mx-auto max-w-[1440px] px-6">
         {/* ══════════ Top: Work With Us CTA strip ══════════ */}
-        <SectionLabel>Connect With Us</SectionLabel>
+        <SectionLabel>{t('landing.connectWithUs')}</SectionLabel>
 
         <h2 className="mx-auto mt-8 max-w-[820px] text-center font-display text-[44px] font-bold leading-[1.1] text-white md:text-[54px]">
-          Build AI for social change. Join us to create the first{' '}
-          <span className="italic gradient-text-blue">AI-powered Dalit Literature Corpus</span>{' '}
-          &amp; Search.
+          {t('landing.contactHeadPre')}{' '}
+          <span className="italic gradient-text-blue">{t('landing.contactHeadEm')}</span>{' '}
+          {t('landing.contactHeadPost')}
         </h2>
 
         <div className="mt-8 flex justify-center">
@@ -160,7 +163,7 @@ export default function ContactSection() {
             onClick={() => document.getElementById('contact-form').scrollIntoView({ behavior: 'smooth', block: 'start' })}
             className="btn-gradient inline-flex h-12 items-center gap-2 rounded-full px-7 text-[14px] font-semibold text-white"
           >
-            Join Our Team
+            {t('landing.joinTeam')}
             <UserPlus size={15} strokeWidth={2.2} />
           </button>
         </div>
@@ -175,21 +178,19 @@ export default function ContactSection() {
           {/* Left column: copy + channels + dotted map */}
           <div className="flex flex-col">
             <h3 className="font-display text-[42px] font-bold leading-[1.05] text-white md:text-[52px]">
-              Let&apos;s Connect <span className="italic gradient-text-blue">And</span>
+              {t('landing.letsConnectA')} <span className="italic gradient-text-blue">{t('landing.and')}</span>
               <br />
-              Build Together
+              {t('landing.buildTogether')}
             </h3>
 
             <p className="mt-5 text-[14px] leading-7 text-[#a6b9d6]">
-              Be part of the change. Contact us to collaborate, contribute, or
-              support our mission. Together, we can build impactful solutions
-              and drive meaningful progress through innovation and knowledge.
+              {t('landing.contactBody')}
             </p>
 
             <div className="mt-7 space-y-3">
               <ChannelRow
                 icon={Mail}
-                label="Email"
+                label={t('landing.emailWord')}
                 value="smartbhaujan@gmail.com"
                 href="mailto:smartbhaujan@gmail.com"
               />
@@ -198,7 +199,7 @@ export default function ContactSection() {
                   of the page instead. */}
               <ChannelRow
                 icon={MapPin}
-                label="Location"
+                label={t('landing.locationWord')}
                 value="71-75 Shelton Street in Covent Garden, London (WC2H 9JQ)"
                 href="https://www.google.com/maps/search/?api=1&query=71-75+Shelton+Street+Covent+Garden+London+WC2H+9JQ"
               />
@@ -222,16 +223,16 @@ export default function ContactSection() {
             </div>
 
             <div className="grid flex-1 gap-4 md:grid-cols-2">
-              <Field label="Name" name="name" value={form.name} onChange={update}
-                     placeholder="Jane Doe" required disabled={status === 'sending'} />
-              <Field label="Email" name="email" value={form.email} onChange={update}
+              <Field label={t('landing.contactName')} name="name" value={form.name} onChange={update}
+                     placeholder={t('landing.namePlaceholder')} required disabled={status === 'sending'} />
+              <Field label={t('landing.contactEmail')} name="email" value={form.email} onChange={update}
                      type="email" placeholder="you@example.com" required disabled={status === 'sending'} />
-              <Field label="Address" name="address" value={form.address} onChange={update}
-                     placeholder="123 Main St, City, Country" colSpan={2} disabled={status === 'sending'} />
-              <Field label="Phone" name="phone" value={form.phone} onChange={update}
+              <Field label={t('landing.contactAddress')} name="address" value={form.address} onChange={update}
+                     placeholder={t('landing.addrPlaceholder')} colSpan={2} disabled={status === 'sending'} />
+              <Field label={t('landing.contactPhone')} name="phone" value={form.phone} onChange={update}
                      type="tel" placeholder="+91 90000 00000" colSpan={2} disabled={status === 'sending'} />
-              <Field label="Message" name="message" value={form.message} onChange={update}
-                     rows={5} placeholder="Tell us what you need…" colSpan={2} grow
+              <Field label={t('landing.contactMessage')} name="message" value={form.message} onChange={update}
+                     rows={5} placeholder={t('landing.msgPlaceholder')} colSpan={2} grow
                      required disabled={status === 'sending'} />
 
               {/* Honeypot: off screen and skipped by keyboard, so only a bot fills it. */}
@@ -254,12 +255,12 @@ export default function ContactSection() {
             >
               {status === 'sending' ? (
                 <>
-                  Sending
+                  {t('landing.sending')}
                   <Loader2 size={15} strokeWidth={2.2} className="animate-spin" />
                 </>
               ) : (
                 <>
-                  Send Message
+                  {t('landing.sendMessage')}
                   <Send size={15} strokeWidth={2.2} />
                 </>
               )}
@@ -271,7 +272,7 @@ export default function ContactSection() {
                 className="mt-4 flex items-center justify-center gap-2 rounded-xl border border-[#1f5c3c] bg-[#0c2419] px-4 py-3 text-[13px] text-[#8fe0b4]"
               >
                 <CheckCircle2 size={15} className="shrink-0" />
-                Thanks, your message is on its way. We will be in touch.
+                {t('landing.contactThanks')}
               </p>
             )}
 
@@ -289,13 +290,13 @@ export default function ContactSection() {
                 asks to see the terms and is silently moved away from the form
                 they were filling in. The trailing "here" pointed at nothing. */}
             <p className="mt-4 text-center text-[11.5px] text-[#7aa6e5]">
-              By submitting, you agree to our{' '}
+              {t('landing.termsAgree')}{' '}
               <button
                 type="button"
                 onClick={() => setLegal('terms')}
                 className="underline underline-offset-2 transition hover:text-white"
               >
-                Terms of Service
+                {t('landing.terms')}
               </button>
               .
             </p>

@@ -55,7 +55,9 @@ export function AuthProvider({ children }) {
   }, []);
 
   // ── Email signup → returns data including dev_otp in dev mode ─────────────
-  async function signupWithEmail(email, password, politicalParty, partyPosition) {
+  // `extra` carries the fields collected regardless of which identifier is
+  // primary: a phone given alongside the email, state, city, date of birth.
+  async function signupWithEmail(email, password, politicalParty, partyPosition, extra = {}) {
     const username = email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 50);
     return authApi.signupWithEmail({
       username,
@@ -63,11 +65,15 @@ export function AuthProvider({ children }) {
       password,
       political_party: politicalParty || undefined,
       party_position: partyPosition || undefined,
+      phone: extra.phone || undefined,
+      state: extra.state || undefined,
+      city: extra.city || undefined,
+      date_of_birth: extra.dateOfBirth || undefined,
     });
   }
 
   // ── Phone signup (OTP-based, no password) ─────────────────────────────────
-  async function signupWithPhone(phone, politicalParty, partyPosition) {
+  async function signupWithPhone(phone, politicalParty, partyPosition, extra = {}) {
     const username = 'user_' + phone.replace(/\D/g, '').slice(-8);
     return authApi.sendPhoneOtp({
       phone,
@@ -75,6 +81,9 @@ export function AuthProvider({ children }) {
       username,
       political_party: politicalParty || undefined,
       party_position: partyPosition || undefined,
+      state: extra.state || undefined,
+      city: extra.city || undefined,
+      date_of_birth: extra.dateOfBirth || undefined,
     });
   }
 

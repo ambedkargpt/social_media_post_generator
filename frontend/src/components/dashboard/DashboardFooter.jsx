@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import LegalModal from '../LegalModal';
+import { useI18n } from '../../i18n/index.jsx';
 
 // Every one of these was an href="#", which scrolls to the top of the page and
 // does nothing else: four links that looked live and led nowhere. Privacy and
@@ -8,6 +9,7 @@ import LegalModal from '../LegalModal';
 // the section that already exists. Help Center is gone rather than faked — there
 // is no help centre to link to, and a dead link is worse than no link.
 export default function DashboardFooter() {
+  const { t } = useI18n();
   const [legal, setLegal] = useState(null);
 
   const linkClass = 'text-[12.5px] text-[#8b94b8] transition hover:text-white';
@@ -20,13 +22,13 @@ export default function DashboardFooter() {
 
       <nav className="flex flex-wrap items-center gap-6">
         <button type="button" onClick={() => setLegal('privacy')} className={linkClass}>
-          Privacy Policy
+          {t('landing.privacy')}
         </button>
         <button type="button" onClick={() => setLegal('terms')} className={linkClass}>
-          Terms
+          {t('landing.terms')}
         </button>
         <Link to="/#contact" className={linkClass}>
-          Contact
+          {t('nav.contact')}
         </Link>
       </nav>
 

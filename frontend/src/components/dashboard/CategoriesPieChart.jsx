@@ -1,4 +1,5 @@
 import Card, { CardTitle } from './Card';
+import { useI18n } from '../../i18n/index.jsx';
 
 const STATUS_COLORS = {
   draft:     '#6aa8ff',
@@ -27,21 +28,22 @@ function buildSlices(posts) {
   return Object.entries(counts)
     .filter(([, v]) => v > 0)
     .map(([label, v]) => ({
-      label: label.charAt(0).toUpperCase() + label.slice(1),
+      label: `status.${label}`,
       pct: Math.round((v / total) * 100),
       color: STATUS_COLORS[label],
     }));
 }
 
 export default function CategoriesPieChart({ posts = [] }) {
+  const { t } = useI18n();
   const slices = buildSlices(posts);
 
   if (!slices.length) {
     return (
       <Card className="h-full">
-        <CardTitle>Posts by Status</CardTitle>
+        <CardTitle>{t('chart.byStatus')}</CardTitle>
         <div className="flex h-[280px] items-center justify-center">
-          <p className="text-[13px] text-[#6b78a0]">No posts yet.</p>
+          <p className="text-[13px] text-[#6b78a0]">{t('chart.noPosts')}</p>
         </div>
       </Card>
     );
@@ -65,7 +67,7 @@ export default function CategoriesPieChart({ posts = [] }) {
 
   return (
     <Card className="h-full">
-      <CardTitle>Posts by Status</CardTitle>
+      <CardTitle>{t('chart.byStatus')}</CardTitle>
       <div className="mt-2 flex items-center justify-center">
         <svg viewBox="0 0 500 400" className="w-full max-w-[520px] h-[340px]">
           {arcs.map((a) => (
@@ -76,7 +78,7 @@ export default function CategoriesPieChart({ posts = [] }) {
             const anchor = x < CX - 10 ? 'end' : x > CX + 10 ? 'start' : 'middle';
             return (
               <text key={a.label + '-lbl'} x={x} y={y} fontSize="12" fontWeight="500" fill={a.color} textAnchor={anchor} style={{ fontFamily: 'Inter, sans-serif' }}>
-                {a.label} {a.pct}%
+                {t(a.label)} {a.pct}%
               </text>
             );
           })}

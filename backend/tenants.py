@@ -30,6 +30,10 @@ class Tenant:
     name: str
     source_name: str
     is_general: bool = False
+    # The opposition's own channel(s) — scraped so a post can be written
+    # against their material, never as a selectable "my party" option and
+    # never folded into the general/neutral feed.
+    is_opposition: bool = False
 
 
 @lru_cache(maxsize=1)
@@ -49,6 +53,7 @@ def load_tenants() -> tuple[Tenant, ...]:
             name=str(row["name"]).strip(),
             source_name=str(row.get("source_name") or row["name"]).strip(),
             is_general=bool(row.get("is_general", False)),
+            is_opposition=bool(row.get("is_opposition", False)),
         )
         if tenant.tenant_id in seen_ids:
             raise ValueError(f"Duplicate tenant_id in registry: {tenant.tenant_id}")
@@ -92,6 +97,14 @@ def general_tenant() -> Tenant:
     return load_tenants()[0]
 
 
+def opposition_tenant() -> Tenant | None:
+    """The opposition's own tenant (BJP), or None until one is registered."""
+    for tenant in load_tenants():
+        if tenant.is_opposition:
+            return tenant
+    return None
+
+
 def party_tenants() -> tuple[Tenant, ...]:
-    """All non-general tenants (the selectable political parties)."""
-    return tuple(t for t in load_tenants() if not t.is_general)
+    """All selectable political parties: not general, not the opposition."""
+    return tuple(t for t in load_tenants() if not t.is_general and not t.is_opposition)

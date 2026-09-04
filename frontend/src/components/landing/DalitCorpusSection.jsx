@@ -3,23 +3,15 @@ import { CheckCircle2 } from 'lucide-react';
 import SectionLabel from './SectionLabel';
 import CorpusContactModal from './CorpusContactModal';
 import libraryImg   from '../../assets/images/corpus-library.png';
+import { useI18n } from '../../i18n/index.jsx';
 
+// Keys, not prose: the section is rendered through the dictionary so both
+// languages read from the same structure.
 const CORPUS = {
-  question: 'What Is Dalit Corpus?',
-  intro: [
-    'For too long, our history was written by those who oppressed us. They erased our heroes, twisted our words, and buried our truth.',
-    'Dalit Corpus is our answer.',
-    'It is a growing library of Ambedkarite and Bahujan voices, including speeches, books, songs, slogans, and political writings. Everything is collected and verified by our own community.',
-    'Whether you are a student, a creator, or a researcher, Dalit Corpus gives you the real history the mainstream hid from you.',
-  ],
-  whyItMatters: [
-    'It saves our stories before they vanish.',
-    'It gives Bahujan creators true, unfiltered knowledge.',
-    'It powers AmbedkarGPT with our own words.',
-    'It teaches our next generation our history, not theirs.',
-  ],
-  whyWeNeedIt:
-    'The internet is ruled by data, and that data has a caste. Dalit Corpus is our own digital land, built by us, owned by us, and growing with us.',
+  question: 'corpus.question',
+  intro: ['corpus.intro1', 'corpus.intro2', 'corpus.intro3', 'corpus.intro4'],
+  whyItMatters: ['corpus.why1', 'corpus.why2', 'corpus.why3', 'corpus.why4'],
+  whyWeNeedIt: 'corpus.need',
 };
 
 function handleCardMove(e) {
@@ -30,6 +22,7 @@ function handleCardMove(e) {
 }
 
 export default function DalitCorpusSection() {
+  const { t } = useI18n();
   // Neither route is self-serve yet. Contribute used to scroll to the contact
   // form and Buy sent people to signup, which promised a purchase flow that
   // does not exist. Both now open the same prompt to email us.
@@ -44,17 +37,16 @@ export default function DalitCorpusSection() {
 
       <div className="relative mx-auto max-w-[1440px] px-6">
         <div className="flex justify-center">
-          <SectionLabel size="lg">Dalit Corpus</SectionLabel>
+          <SectionLabel size="lg">{t('landing.dalitCorpus')}</SectionLabel>
         </div>
 
         <h2 className="mx-auto mt-8 max-w-[900px] text-center font-display text-[52px] font-bold leading-[1.05] text-white md:text-[72px]">
-          Knowledge That Powers{' '}
-          <span className="italic gradient-text-blue">The Movement</span>
+          {t('corpus.headPre')}{' '}
+          <span className="italic gradient-text-blue">{t('landing.theMovement')}</span>
         </h2>
 
         <p className="mx-auto mt-6 max-w-[760px] text-center text-[22px] leading-9 text-[#bfcfe8] md:text-[24px]">
-          A caste bias-free knowledge base of Dalit history, texts, speeches, and political
-          thought for creators, researchers, and revolutionaries.
+          {t('corpus.tagline')}
         </p>
 
         <div
@@ -76,31 +68,31 @@ export default function DalitCorpusSection() {
             {/* ── Col 1: Dalit Corpus ── */}
             <div className="border-b border-[#1a2d55]/50 p-8 md:border-b-0 md:border-r md:p-10">
               <h3 className="font-display text-[26px] font-semibold text-white md:text-[31px]">
-                {CORPUS.question}
+                {t(CORPUS.question)}
               </h3>
               {CORPUS.intro.map((para) => (
                 <p key={para} className="mt-4 text-[18px] leading-[1.95] text-[#cddcf5] md:text-[19px]">
-                  {para}
+                  {t(para)}
                 </p>
               ))}
 
               <h4 className="mt-7 font-display text-[19px] font-semibold text-white md:text-[20px]">
-                Why It Matters:
+                {t('landing.whyItMatters')}
               </h4>
               <ul className="mt-3 space-y-3">
                 {CORPUS.whyItMatters.map((point) => (
                   <li key={point} className="flex items-start gap-2.5 text-[17px] leading-relaxed text-[#cddcf5] md:text-[18px]">
                     <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-[#4d94ff]" />
-                    {point}
+                    {t(point)}
                   </li>
                 ))}
               </ul>
 
               <h4 className="mt-7 font-display text-[19px] font-semibold text-white md:text-[20px]">
-                Why We Need It:
+                {t('landing.whyWeNeedIt')}
               </h4>
               <p className="mt-3 text-[17px] leading-[1.95] text-[#cddcf5] md:text-[18px]">
-                {CORPUS.whyWeNeedIt}
+                {t(CORPUS.whyWeNeedIt)}
               </p>
 
               <div className="mt-7 flex items-center justify-between gap-4">
@@ -109,14 +101,14 @@ export default function DalitCorpusSection() {
                   onClick={() => setContactType('contribute')}
                   className="btn-gradient inline-flex h-14 flex-1 items-center justify-center gap-2 rounded-xl px-7 font-count text-[17px] font-semibold text-white"
                 >
-                  Contribute to Corpus
+                  {t('landing.contributeCorpus')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setContactType('buy')}
                   className="btn-outline-blue inline-flex h-14 flex-1 items-center justify-center gap-2 rounded-xl px-7 font-count text-[17px] font-medium text-white"
                 >
-                  Buy Pre-built Annotated Corpus
+                  {t('landing.buyCorpus')}
                 </button>
               </div>
             </div>

@@ -2,62 +2,51 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Edit3, Headphones, Mic2, Video, Newspaper, Scale, ArrowRight, Check } from 'lucide-react';
 import SectionLabel from './SectionLabel';
+import { useI18n } from '../../i18n/index.jsx';
 
 const SERVICES = [
   {
     icon: Edit3,
-    title: 'Social Media Post',
-    sub: 'Generate powerful Ambedkarite posts straight from current news and events.',
-    features: ['News-to-post in seconds', 'Multi-platform formats', 'Tone & style control'],
     color: '#ff4f8a',
     gradient: 'from-[#ff4f8a] to-[#d43a68]',
     live: true,
     route: '/generate/social-media',
+    id: 'social',
   },
   {
     icon: Headphones,
-    title: 'Podcast',
-    sub: 'Script, voice, and produce AI-powered podcast episodes on Ambedkarite themes.',
-    features: ['AI script & voiceover', 'Multi-host episode builder', 'Topic & language selection'],
     color: '#06b6d4',
     gradient: 'from-[#06b6d4] to-[#0891b2]',
     live: false,
+    id: 'podcast',
   },
   {
     icon: Mic2,
-    title: 'Political Speech',
-    sub: 'Compelling speeches grounded in constitutional values and real data.',
-    features: ['Constitutional framing', 'Audience-aware language', 'Data-backed arguments'],
     color: '#22c55e',
     gradient: 'from-[#22c55e] to-[#16a34a]',
     live: false,
+    id: 'speech',
   },
   {
     icon: Video,
-    title: 'Video Generation',
-    sub: 'High-quality AI videos from your ideas, scripts, and talking points.',
-    features: ['Text-to-video pipeline', 'Script-to-animation', 'HD quality output'],
     color: '#a855f7',
     gradient: 'from-[#a855f7] to-[#7b3fd4]',
     live: false,
+    id: 'video',
   },
   {
     icon: Newspaper,
-    title: 'Editorial',
-    sub: 'Opinion pieces and long-form articles rooted in Ambedkarite thought.',
-    features: ['Research-backed writing', 'Ambedkarite perspective', 'In-depth analysis'],
     color: '#f59e0b',
     gradient: 'from-[#f59e0b] to-[#d97706]',
     live: false,
+    id: 'editorial',
   },
   {
     icon: Scale,
-    title: 'Debate Analysis',
-    sub: 'Analyse political debates and arguments through an Ambedkarite lens.',
-    features: ['Real-time argument scoring', 'Counter-point generation', 'Fact-check integration'],
     color: '#3f9fff',
     gradient: 'from-[#3f9fff] to-[#5bc0ff]',
     live: false,
+    id: 'debate',
   },
 ];
 
@@ -87,7 +76,11 @@ function NavButton({ onClick, direction, label }) {
 }
 
 function ServiceCard({ service }) {
-  const { icon: Icon, title, sub, features, color, gradient, live, route } = service;
+  const { t } = useI18n();
+  const { icon: Icon, id, color, gradient, live, route } = service;
+  const title = t(`svc.${id}.title`);
+  const sub = t(`svc.${id}.sub`);
+  const features = [1, 2, 3].map((n) => t(`svc.${id}.f${n}`));
   return (
     <div
       onMouseMove={handleCardMove}
@@ -112,11 +105,11 @@ function ServiceCard({ service }) {
         </span>
         {live ? (
           <span className="rounded-full border border-green-500/30 bg-green-500/10 px-2.5 py-1 font-count text-[11px] font-semibold uppercase tracking-widest text-green-400">
-            Live
+            {t('landing.live')}
           </span>
         ) : (
           <span className="rounded-full border border-[#2a4375]/50 bg-[#0c1735]/60 px-2.5 py-1 font-count text-[11px] font-semibold uppercase tracking-widest text-[#5a7aaa]">
-            Soon
+            {t('landing.soon')}
           </span>
         )}
       </div>
@@ -151,11 +144,11 @@ function ServiceCard({ service }) {
             className="inline-flex items-center gap-1.5 text-[18px] font-semibold transition-all duration-200 hover:gap-2.5"
             style={{ color }}
           >
-            Try it now
+            {t('landing.tryNow')}
             <ArrowRight size={14} strokeWidth={2.2} />
           </Link>
         ) : (
-          <p className="text-[17px] text-[#3d5a80]">Coming soon, stay tuned</p>
+          <p className="text-[17px] text-[#3d5a80]">{t('landing.comingSoon')}</p>
         )}
       </div>
     </div>
@@ -351,6 +344,7 @@ function MobileCarousel() {
 }
 
 export default function KnowledgeSection() {
+  const { t } = useI18n();
   return (
     <section id="about" className="relative py-8 md:py-10">
       <div className="pointer-events-none absolute inset-x-0 -top-28 -bottom-28">
@@ -359,16 +353,15 @@ export default function KnowledgeSection() {
       </div>
 
       <div className="relative mx-auto max-w-[1440px] px-6">
-        <SectionLabel>Our Services</SectionLabel>
+        <SectionLabel>{t('landing.ourServices')}</SectionLabel>
 
         <h2 className="mx-auto mt-8 max-w-[820px] text-center font-display text-[46px] font-bold leading-[1.05] text-white md:text-[62px]">
-          Grow Your Content{' '}
-          <span className="gradient-text-blue italic">Creator Journey</span>
+          {t('know.headPre')}{' '}
+          <span className="gradient-text-blue italic">{t('landing.creatorJourney')}</span>
         </h2>
 
         <p className="mx-auto mt-6 max-w-[760px] text-center text-[22px] leading-9 text-[#bfcfe8] md:text-[24px]">
-          Powerful AI tools built for Bahujan creators, researchers, and
-          changemakers, from social media to podcasts, speeches to video.
+          {t('know.sub')}
         </p>
       </div>
 
@@ -388,7 +381,7 @@ export default function KnowledgeSection() {
           to="/signup"
           className="inline-flex h-14 items-center gap-3 rounded-xl bg-[#2d6fff] px-9 text-[17px] font-semibold text-white shadow-[0_0_24px_rgba(45,111,255,0.4)] transition-all duration-300 hover:bg-[#3d7fff] hover:-translate-y-0.5 hover:shadow-[0_0_36px_rgba(45,111,255,0.6)]"
         >
-          Get Started Free
+          {t('landing.getStartedFree')}
           <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true">
             <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>

@@ -22,9 +22,11 @@ import SavedPromptsGrid     from '../components/dashboard/SavedPromptsGrid';
 import AchievementsGrid     from '../components/dashboard/AchievementsGrid';
 import DashboardFooter      from '../components/dashboard/DashboardFooter';
 import { partyLogo }        from '../utils/politicalParties';
+import { useI18n }         from '../i18n/index.jsx';
 
 export default function Dashboard() {
   const { currentUser, logout } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [active, setActive] = useState('dashboard');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -69,9 +71,10 @@ export default function Dashboard() {
   const displayName  = currentUser?.username ?? '—';
   const displayEmail = currentUser?.email ?? currentUser?.phone ?? '—';
   const joinedLabel  = (() => {
-    const t = currentUser?.created_at;
-    if (!t) return '';
-    const d = new Date(t);
+    // Not `t`: that is the translate function in this scope now.
+    const created = currentUser?.created_at;
+    if (!created) return '';
+    const d = new Date(created);
     return `Joined ${d.toLocaleString('en-US', { month: 'long', year: 'numeric' })}`;
   })();
 
@@ -122,7 +125,7 @@ export default function Dashboard() {
           <div>
             <h1 className="flex flex-wrap items-center gap-x-3 gap-y-2 font-display text-[28px] md:text-[32px] font-bold leading-tight tracking-tight">
               <span>
-                <span className="text-white">Welcome back, </span>
+                <span className="text-white">{t('dash.welcomeBack')} </span>
                 <span className="gradient-text-blue">{first}</span>
               </span>
               {/* The party mark. The disc stays 52px; the logo fills it to
@@ -146,7 +149,7 @@ export default function Dashboard() {
               )}
             </h1>
             <p className="mt-2 text-[16px] text-[#9aa5c4] md:text-[17px]">
-              Your AI journey continues. Let&apos;s make today productive and insightful!
+              {t('dash.subtitle')}
             </p>
           </div>
 
@@ -158,22 +161,22 @@ export default function Dashboard() {
         <div className="mb-7 grid gap-4 grid-cols-1 sm:grid-cols-3">
           {[
             {
-              label: 'Social Post',
-              desc: 'Turn today’s news into a post',
+              label: t('dash.socialPost'),
+              desc: t('dash.socialPostDesc'),
               Icon: Sparkles,
               route: '/generate/social-media',
               accent: '#3f9fff',
             },
             {
-              label: 'Music Studio',
-              desc: 'Compose an Ambedkarite track',
+              label: t('dash.musicStudio'),
+              desc: t('dash.musicStudioDesc'),
               Icon: Music,
               route: '/generate/music',
               accent: '#7b5cff',
             },
             {
-              label: 'BheemBot',
-              desc: 'Ask the corpus a question',
+              label: t('dash.bheembot'),
+              desc: t('dash.bheembotDesc'),
               Icon: Bot,
               route: '/bheembot',
               accent: '#22c55e',
@@ -220,28 +223,28 @@ export default function Dashboard() {
         {/* ── Stat cards ── */}
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
-            label="Posts Generated"
+            label={t('dash.postsGenerated')}
             value={dataLoading ? '…' : String(totalPosts)}
             delta={null}
             icon={<FileText size={15} strokeWidth={2} />}
             iconGradient="bg-gradient-to-br from-[#3f9fff] to-[#2664d6]"
           />
           <StatCard
-            label="Published Posts"
+            label={t('dash.publishedPosts')}
             value={dataLoading ? '…' : String(publishedPosts)}
             delta={null}
             icon={<Send size={15} strokeWidth={2} />}
             iconGradient="bg-gradient-to-br from-[#a855f7] to-[#7b3fd4]"
           />
           <StatCard
-            label="Draft Posts"
+            label={t('dash.draftPosts')}
             value={dataLoading ? '…' : String(draftPosts)}
             delta={null}
             icon={<FileText size={15} strokeWidth={2} />}
             iconGradient="bg-gradient-to-br from-[#22c55e] to-[#16a34a]"
           />
           <StatCard
-            label="Preferences Set"
+            label={t('dash.preferencesSet')}
             value={dataLoading ? '…' : String(prefsAnswered)}
             delta={null}
             icon={<SlidersHorizontal size={15} strokeWidth={2} />}
@@ -304,7 +307,7 @@ export default function Dashboard() {
                   <h3 className="font-display text-[15px] font-semibold text-white">BheemBot</h3>
                   <div className="flex items-center gap-1.5">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e] shadow-[0_0_5px_rgba(34,197,94,0.7)]" />
-                    <span className="text-[11px] text-[#22c55e]">Online</span>
+                    <span className="text-[11px] text-[#22c55e]">{t('dash.online')}</span>
                   </div>
                 </div>
               </div>
@@ -314,12 +317,12 @@ export default function Dashboard() {
               </p>
 
               <div className="flex flex-wrap gap-1.5 mb-4">
-                {['Constitution', 'Social Justice', 'Writings'].map((tag) => (
+                {['bot.tagConstitution', 'bot.tagJustice', 'bot.tagWritings'].map((tag) => (
                   <span
                     key={tag}
                     className="rounded-full border border-[#1e3260]/60 bg-[#0a1428] px-2.5 py-0.5 text-[10.5px] text-[#5a7a9e]"
                   >
-                    {tag}
+                    {t(tag)}
                   </span>
                 ))}
               </div>
@@ -330,7 +333,7 @@ export default function Dashboard() {
                 className="inline-flex items-center gap-2 rounded-xl bg-[#2d6fff] px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_0_18px_rgba(45,111,255,0.35)] transition hover:bg-[#3d7fff] hover:-translate-y-0.5"
               >
                 <Sparkles size={13} strokeWidth={2} />
-                Open Chat →
+                {t('dash.openChat')}
               </button>
             </div>
           </div>

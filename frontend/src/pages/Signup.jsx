@@ -13,8 +13,12 @@ import LegalModal    from '../components/LegalModal';
 
 import { POLITICAL_PARTIES } from '../utils/politicalParties';
 import { ROLE_GROUPS, roleLabel, rolesInGroup } from '../utils/partyRoles';
+import { INDIAN_STATES, CITIES_BY_STATE } from '../utils/indianStatesCities';
+import { useI18n } from '../i18n/index.jsx';
+import { partyLabel, levelLabel } from '../utils/displayLabel';
 
 export default function Signup() {
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
   const { go: curtainGo } = useCurtain();
   const { signupWithEmail, signupWithPhone, loginWithGoogle } = useAuth();
@@ -22,6 +26,16 @@ export default function Signup() {
   const [mode, setMode]                       = useState('email');
   const [email, setEmail]                     = useState('');
   const [phone, setPhone]                     = useState('');
+  // Secondary phone, collected only in email mode — phone mode already has
+  // `phone` above as the primary identifier.
+  const [secondaryPhone, setSecondaryPhone]   = useState('');
+  const [state, setState]                     = useState('');
+  // Holds a known city name or the literal 'Other'; `customCity` is the free
+  // text typed when the list doesn't have theirs, so a mandatory field never
+  // blocks someone whose town isn't in the list.
+  const [city, setCity]                       = useState('');
+  const [customCity, setCustomCity]           = useState('');
+  const [dob, setDob]                         = useState('');
   const [password, setPassword]               = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [subscribed, setSubscribed]           = useState(false);
@@ -46,27 +60,41 @@ export default function Signup() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // The city list depends on the state, so switching states leaves a
+  // selection from the old list dangling if it isn't cleared here.
+  function handleStateChange(newState) {
+    setState(newState);
+    setCity('');
+    setCustomCity('');
+    setErrors((p) => ({ ...p, state: '', city: '' }));
+  }
+
   function validate() {
     const e = {};
     if (mode === 'email') {
-      if (!email.trim())                              e.email = 'Email is required.';
+      if (!email.trim())                              e.email = t('auth.emailRequired');
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) e.email = 'Please enter a valid email address.';
-      if (!password)                 e.password = 'Password is required.';
-      else if (password.length < 8)  e.password = 'Password must be at least 8 characters.';
-      if (!confirmPassword)          e.confirmPassword = 'Please confirm your password.';
-      else if (confirmPassword !== password) e.confirmPassword = 'Passwords do not match.';
+      if (!password)                 e.password = t('auth.passwordRequired');
+      else if (password.length < 8)  e.password = t('auth.passwordMinLen');
+      if (!confirmPassword)          e.confirmPassword = t('auth.confirmPasswordRequired');
+      else if (confirmPassword !== password) e.confirmPassword = t('auth.passwordMismatch');
+      // Optional, but if given it has to actually be a phone number.
+      if (secondaryPhone && !isValidPhoneNumber(secondaryPhone)) e.secondaryPhone = 'Please enter a valid phone number.';
     } else {
       if (!phone)                          e.phone = 'Phone number is required.';
       else if (!isValidPhoneNumber(phone)) e.phone = 'Please enter a valid phone number.';
     }
-    if (!politicalParty) e.politicalParty = 'Please select a political party.';
+    if (!state) e.state = t('auth.stateRequired');
+    if (!city)  e.city = t('auth.cityRequired');
+    else if (city === 'Other' && !customCity.trim()) e.city = t('auth.cityRequired');
+    if (!politicalParty) e.politicalParty = t('auth.pickPartyFirst');
     if (!termsAccepted)  e.terms = 'You must accept the Terms of Service and Privacy Policy.';
     return e;
   }
 
   function validateForGoogle() {
     const e = {};
-    if (!politicalParty) e.politicalParty = 'Please select a political party.';
+    if (!politicalParty) e.politicalParty = t('auth.pickPartyFirst');
     if (!termsAccepted)  e.terms = 'You must accept the Terms of Service and Privacy Policy.';
     if (Object.keys(e).length) { setErrors(e); return false; }
     setErrors({});
@@ -81,11 +109,13 @@ export default function Signup() {
     setAuthError('');
     setLoading(true);
     try {
+      const resolvedCity = city === 'Other' ? customCity.trim() : city;
+      const extra = { state, city: resolvedCity, dateOfBirth: dob || undefined };
       if (mode === 'phone') {
-        const data = await signupWithPhone(phone, politicalParty || undefined, partyPosition || undefined);
+        const data = await signupWithPhone(phone, politicalParty || undefined, partyPosition || undefined, extra);
         navigate('/otp', { state: { identifier: data?.otp_target || phone, type: 'phone', mode: 'signup', password: '', devOtp: data?.dev_otp || '' } });
       } else {
-        const data = await signupWithEmail(email.trim(), password, politicalParty || undefined, partyPosition || undefined);
+        const data = await signupWithEmail(email.trim(), password, politicalParty || undefined, partyPosition || undefined, { ...extra, phone: secondaryPhone || undefined });
         navigate('/otp', { state: { identifier: email.trim(), type: 'email', mode: 'signup', password, devOtp: data?.dev_otp || '' } });
       }
     } catch (err) {
@@ -123,10 +153,10 @@ export default function Signup() {
       <div className="space-y-6">
         <div>
           <h1 className="font-display text-[40px] font-bold leading-tight tracking-tight text-white md:text-[48px]">
-            Create an Account
+            {t('auth.createAccount')}
           </h1>
           <p className="mt-3 text-[14px]" style={{ color: '#8b94b8' }}>
-            Begin your journey towards knowledge and enlightenment.
+            {t('auth.createAccountSub')}
           </p>
         </div>
 
@@ -144,7 +174,7 @@ export default function Signup() {
                 boxShadow: mode === m ? '0 1px 4px rgba(0,0,0,0.4)' : 'none',
               }}
             >
-              {m === 'email' ? 'Email' : 'Phone Number'}
+              {m === 'email' ? t('auth.email') : t('auth.phone')}
             </button>
           ))}
         </div>
@@ -158,10 +188,10 @@ export default function Signup() {
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           {mode === 'email' ? (
             <AnimatedInput
-              placeholders={['Enter your Email']}
+              placeholders={[t('auth.enterEmail')]}
               value={email}
               onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: '' })); setAuthError(''); }}
-              label="Email"
+              label={t('auth.email')}
               error={errors.email}
             />
           ) : (
@@ -180,19 +210,92 @@ export default function Signup() {
                 error={errors.password}
               />
               <PasswordInput
-                label="Confirm Password"
+                label={t('auth.confirmPassword')}
                 placeholder="Re-enter your password"
                 value={confirmPassword}
                 onChange={(e) => { setConfirmPassword(e.target.value); setErrors((p) => ({ ...p, confirmPassword: '' })); }}
                 error={errors.confirmPassword}
               />
+              {/* Phone mode already collects `phone` as the primary identifier
+                  above; email mode has no phone on file at all unless asked
+                  here. */}
+              <PhoneField
+                value={secondaryPhone}
+                onChange={(v) => { setSecondaryPhone(v ?? ''); setErrors((p) => ({ ...p, secondaryPhone: '' })); }}
+                error={errors.secondaryPhone}
+                optional
+              />
             </>
           )}
+
+          {/* State → City cascade. City's option list depends on state, so it
+              stays disabled (and its own selection cleared) until a state is
+              chosen — matching the pattern most address forms use. */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium" style={{ color: '#e5e7eb' }}>
+                {t('auth.stateLabel')}
+              </label>
+              <select
+                value={state}
+                onChange={(e) => handleStateChange(e.target.value)}
+                className={`input-field w-full px-4 py-3 rounded-xl text-sm${errors.state ? ' error' : ''}`}
+              >
+                <option value="">{t('auth.selectState')}</option>
+                {INDIAN_STATES.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+              {errors.state && <p className="text-xs" style={{ color: '#ef4444' }}>{errors.state}</p>}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium" style={{ color: '#e5e7eb' }}>
+                {t('auth.cityLabel')}
+              </label>
+              <select
+                value={city}
+                onChange={(e) => { setCity(e.target.value); setCustomCity(''); setErrors((p) => ({ ...p, city: '' })); }}
+                disabled={!state}
+                className={`input-field w-full px-4 py-3 rounded-xl text-sm disabled:cursor-not-allowed disabled:opacity-50${errors.city ? ' error' : ''}`}
+              >
+                <option value="">{state ? t('auth.selectCity') : t('auth.chooseStateFirst')}</option>
+                {(CITIES_BY_STATE[state] || []).map((c) => (
+                  <option key={c} value={c}>{c === 'Other' ? t('auth.otherCity') : c}</option>
+                ))}
+              </select>
+              {errors.city && <p className="text-xs" style={{ color: '#ef4444' }}>{errors.city}</p>}
+            </div>
+          </div>
+
+          {city === 'Other' && (
+            <input
+              type="text"
+              value={customCity}
+              onChange={(e) => setCustomCity(e.target.value)}
+              placeholder={t('auth.customCityPlaceholder')}
+              maxLength={100}
+              className="input-field w-full px-4 py-3 rounded-xl text-sm"
+            />
+          )}
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium" style={{ color: '#e5e7eb' }}>
+              {t('auth.dobLabel')}
+              <span className="ml-1.5 font-normal" style={{ color: '#5a6e9a' }}>{t('common.optional')}</span>
+            </label>
+            <input
+              type="date"
+              value={dob}
+              onChange={(e) => setDob(e.target.value)}
+              max={new Date().toISOString().slice(0, 10)}
+              className="input-field w-full px-4 py-3 rounded-xl text-sm"
+            />
+          </div>
 
           {/* Political Party Dropdown */}
           <div ref={partyDropdownRef} className="relative">
             <label className="block mb-1.5 text-sm font-medium" style={{ color: '#c5cde8' }}>
-              Indian political party you support? <span style={{ color: '#ef4444' }}>*</span>
+              {t('auth.party')} <span style={{ color: '#ef4444' }}>*</span>
             </label>
             <button
               type="button"
@@ -215,10 +318,10 @@ export default function Signup() {
                       onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
                     />
                   )}
-                  {politicalParty}
+                  {partyLabel(politicalParty, lang)}
                 </span>
               ) : (
-                <span>Select a political party</span>
+                <span>{t('auth.selectParty')}</span>
               )}
               <svg
                 className="w-4 h-4 shrink-0 transition-transform duration-200"
@@ -259,7 +362,7 @@ export default function Signup() {
                     ) : (
                       <span className="w-6 h-6 rounded-sm shrink-0 flex items-center justify-center text-xs" style={{ background: '#1e3260' }}>—</span>
                     )}
-                    {party.name}
+                    {partyLabel(party.name, lang)}
                   </button>
                 ))}
               </div>
@@ -275,14 +378,14 @@ export default function Signup() {
               since a signup should not be gated on it. */}
           <div className="space-y-1.5">
             <span className="text-xs px-1" style={{ color: '#8b94b8' }}>
-              Your position in the party (optional)
+              {t('auth.partyPosition')}
             </span>
             <div className="grid grid-cols-2 gap-2">
               <select
                 value={partyLevel}
                 onChange={(e) => { setPartyLevel(e.target.value); setPartyPosition(''); }}
                 disabled={!politicalParty}
-                aria-label="Level"
+                aria-label={t('profile.levelLabel')}
                 className="w-full px-3 py-2.5 rounded-xl text-sm outline-none transition disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
                   backgroundColor: '#0d1b3e',
@@ -290,16 +393,16 @@ export default function Signup() {
                   color: partyLevel ? '#ffffff' : '#8b94b8',
                 }}
               >
-                <option value="">{politicalParty ? 'Level' : 'Pick a party'}</option>
+                <option value="">{politicalParty ? t('profile.levelLabel') : t('auth.pickParty')}</option>
                 {ROLE_GROUPS.map((g) => (
-                  <option key={g.group} value={g.group}>{g.group}</option>
+                  <option key={g.group} value={g.group}>{levelLabel(g.group, lang)}</option>
                 ))}
               </select>
               <select
                 value={partyPosition}
                 onChange={(e) => setPartyPosition(e.target.value)}
                 disabled={!partyLevel}
-                aria-label="Position"
+                aria-label={t('profile.positionLabel')}
                 className="w-full px-3 py-2.5 rounded-xl text-sm outline-none transition disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
                   backgroundColor: '#0d1b3e',
@@ -307,7 +410,7 @@ export default function Signup() {
                   color: partyPosition ? '#ffffff' : '#8b94b8',
                 }}
               >
-                <option value="">{partyLevel ? 'Position' : 'Pick a level'}</option>
+                <option value="">{partyLevel ? t('profile.positionLabel') : t('auth.pickLevel')}</option>
                 {rolesInGroup(partyLevel).map((r) => (
                   <option key={r.id} value={r.id}>{roleLabel(r, politicalParty)}</option>
                 ))}
@@ -319,7 +422,7 @@ export default function Signup() {
             <input type="checkbox" checked={subscribed} onChange={(e) => setSubscribed(e.target.checked)}
               className="mt-0.5 w-4 h-4 rounded accent-blue-500 cursor-pointer" />
             <span className="text-xs leading-relaxed" style={{ color: '#8b94b8' }}>
-              Send me educational content, updates and resources
+              {t('auth.newsletter')}
             </span>
           </label>
 
@@ -331,40 +434,40 @@ export default function Signup() {
               className="mt-0.5 w-4 h-4 rounded accent-blue-500 cursor-pointer shrink-0"
             />
             <span className="text-xs leading-relaxed" style={{ color: '#8b94b8' }}>
-              I have read and agree to AmbedkarGPT&apos;s{' '}
+              {t('auth.signupTerms')}{' '}
               <button type="button" onClick={() => setModal('privacy')} className="underline underline-offset-2 hover:opacity-80 transition-opacity" style={{ color: '#6b8aff' }}>
-                Privacy Policy
+                {t('landing.privacy')}
               </button>
-              {' '}and{' '}
+              {' '}{t('auth.andWord')}{' '}
               <button type="button" onClick={() => setModal('terms')} className="underline underline-offset-2 hover:opacity-80 transition-opacity" style={{ color: '#6b8aff' }}>
-                Terms of Service
+                {t('landing.terms')}
               </button>
             </span>
           </label>
           {errors.terms && <p className="text-xs mt-0.5 px-1" style={{ color: '#ef4444' }}>{errors.terms}</p>}
 
           <PrimaryButton type="submit" loading={loading}>
-            {loading ? 'Please wait…' : 'Sign up'}
+            {loading ? t('auth.pleaseWait') : t('auth.signup')}
           </PrimaryButton>
         </form>
 
         <div className="flex items-center gap-3">
           <div className="flex-1 h-px" style={{ backgroundColor: '#2a3566' }} />
-          <span className="text-xs" style={{ color: '#8b94b8' }}>or</span>
+          <span className="text-xs" style={{ color: '#8b94b8' }}>{t('auth.or')}</span>
           <div className="flex-1 h-px" style={{ backgroundColor: '#2a3566' }} />
         </div>
 
         <GoogleButton
           onSuccess={handleGoogle}
-          onError={() => setAuthError('Google sign-in failed. Please try again.')}
+          onError={() => setAuthError(t('auth.googleFailed'))}
           disabled={loading}
           beforeLogin={validateForGoogle}
         />
 
         <p className="text-center text-sm" style={{ color: '#8b94b8' }}>
-          Already have an account?{' '}
+          {t('auth.alreadyAccount')}{' '}
           <Link to="/login" className="underline underline-offset-2 hover:opacity-80 transition-opacity font-medium" style={{ color: '#6b8aff' }}>
-            Log In
+            {t('auth.login')}
           </Link>
         </p>
       </div>

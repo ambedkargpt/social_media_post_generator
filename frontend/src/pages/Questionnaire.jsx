@@ -7,6 +7,7 @@ import { saveProfileAnswers } from '../api/profile';
 import { getQuestions } from '../api/questions';
 import logoSrc     from '../assets/images/logo-animation.png';
 import ambedkarSrc from '../assets/images/qna-ambedkar.png';
+import { useI18n } from '../i18n/index.jsx';
 
 const STORAGE_KEY = 'ambedkargpt_questionnaire';
 
@@ -38,6 +39,7 @@ const ANIM_STYLES = {
 };
 
 export default function Questionnaire() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const { go: curtainGo } = useCurtain();
   const { currentUser } = useAuth();
@@ -126,7 +128,7 @@ export default function Questionnaire() {
         ) : (
           <div className="flex flex-col items-center gap-4">
             <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#1e3260] border-t-[#3f9fff]" />
-            <p className="font-count text-[13px] text-[#5a6e9a]">Loading questions…</p>
+            <p className="font-count text-[13px] text-[#5a6e9a]">{t('quest.loading')}</p>
           </div>
         )}
       </div>
@@ -147,7 +149,7 @@ export default function Questionnaire() {
         <div className="flex items-center gap-2.5">
           <img src={logoSrc} alt="AmbedkarGPT" className="h-9 w-9 object-contain drop-shadow-[0_0_12px_rgba(63,159,255,0.5)]" />
           <span className="font-display text-[20px] font-bold leading-none tracking-tight">
-            <span className="text-white">Ambedkar</span>
+            <span className="text-white">{t('brand.ambedkar')}</span>
             <span className="gradient-text-cyan">GPT</span>
           </span>
         </div>

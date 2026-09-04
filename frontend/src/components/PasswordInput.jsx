@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
+import { useI18n } from '../i18n/index.jsx';
 
-export default function PasswordInput({ value, onChange, error, label = 'Password', placeholder = '••••••••••' }) {
+export default function PasswordInput({ value, onChange, error, label, placeholder = '••••••••••' }) {
+  const { t } = useI18n();
   const [visible, setVisible] = useState(false);
 
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-sm font-medium" style={{ color: '#e5e7eb' }}>
-        {label}
+        {label ?? t('auth.password')}
       </label>
       <div className="relative">
         <input

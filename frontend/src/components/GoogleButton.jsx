@@ -1,4 +1,5 @@
 import { useGoogleLogin } from '@react-oauth/google';
+import { useI18n } from '../i18n/index.jsx';
 
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -10,6 +11,7 @@ const GoogleIcon = () => (
 );
 
 export default function GoogleButton({ onSuccess, onError, disabled, beforeLogin }) {
+  const { t } = useI18n();
   const login = useGoogleLogin({
     onSuccess,
     onError: onError ?? (() => {}),
@@ -29,7 +31,7 @@ export default function GoogleButton({ onSuccess, onError, disabled, beforeLogin
       style={{ backgroundColor: '#0d1b3e', borderColor: '#1e3260', color: '#c5cde8' }}
     >
       <GoogleIcon />
-      Continue with Google
+      {t('auth.continueWithGoogleBtn')}
     </button>
   );
 }

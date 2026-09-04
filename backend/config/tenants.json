@@ -20,6 +20,14 @@
       "name": "Samajwadi Party",
       "source_name": "Samajwadi Party",
       "is_general": false
+    },
+    {
+      "tenant_id": 3,
+      "slug": "bjp",
+      "name": "Bharatiya Janata Party",
+      "source_name": "Bharatiya Janata Party",
+      "is_general": false,
+      "is_opposition": true
     }
   ]
 }

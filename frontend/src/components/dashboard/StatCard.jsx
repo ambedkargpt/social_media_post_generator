@@ -1,4 +1,5 @@
 import { TrendingUp } from 'lucide-react';
+import { useI18n } from '../../i18n/index.jsx';
 
 /**
  * Top-of-dashboard metric tile.
@@ -11,7 +12,8 @@ import { TrendingUp } from 'lucide-react';
  * @param {JSX.Element} p.icon    – lucide icon element
  * @param {string} p.iconGradient – tailwind gradient classes for the icon pill
  */
-export default function StatCard({ label, value, delta, deltaLabel = 'vs last month', icon, iconGradient }) {
+export default function StatCard({ label, value, delta, deltaLabel, icon, iconGradient }) {
+  const { t } = useI18n();
   const positive = !delta?.startsWith('-');
 
   return (
@@ -51,7 +53,7 @@ export default function StatCard({ label, value, delta, deltaLabel = 'vs last mo
         >
           <TrendingUp size={11} strokeWidth={2.4} className={positive ? '' : 'rotate-180'} />
           {delta}
-          <span className="font-medium text-[#6b78a0]"> {deltaLabel}</span>
+          <span className="font-medium text-[#6b78a0]"> {deltaLabel ?? t('stat.vsLastMonth')}</span>
         </div>
       )}
     </div>

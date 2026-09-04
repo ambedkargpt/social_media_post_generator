@@ -1,10 +1,12 @@
-import { Sparkles, Menu } from 'lucide-react';
+import { Sparkles, Menu, Landmark } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import LanguageSwitcher from '../LanguageSwitcher';
 import NotificationBell from './NotificationBell';
 import ProfileMenu from './ProfileMenu';
+import { useI18n } from '../../i18n/index.jsx';
 
 export default function Topbar({ user, onMenuOpen, totalPosts, onLogout }) {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const name  = user?.name  ?? '—';
   const email = user?.email ?? '';
@@ -23,16 +25,30 @@ export default function Topbar({ user, onMenuOpen, totalPosts, onLogout }) {
         <Menu size={17} strokeWidth={1.8} />
       </button>
 
-      {/* Generate CTA (centered visually) */}
-      <div className="flex-1 flex items-center">
+      {/* Generate CTA + MP/MLA lookup (centered visually) */}
+      <div className="flex-1 flex items-center gap-3">
         <button
           type="button"
           onClick={() => navigate('/generate')}
-          className="inline-flex items-center gap-2 rounded-full btn-gradient px-5 py-2.5 text-[13.5px] font-semibold text-white shadow-[0_8px_28px_rgba(17,122,255,0.4)]"
+          className="inline-flex items-center gap-2.5 rounded-full btn-gradient px-6 py-3 text-[15px] font-semibold text-white shadow-[0_8px_28px_rgba(17,122,255,0.4)]"
         >
-          <Sparkles size={15} strokeWidth={2.1} />
-          Generate
+          <Sparkles size={17} strokeWidth={2.1} />
+          {t('dash.generate')}
         </button>
+
+        {/* Not built yet — a dimmed outline pill with a Soon badge, same
+            not-navigable treatment the sidebar already uses for this. */}
+        <div
+          title={`${t('dash.reviewMpMla')} — ${t('nav.comingSoonSuffix')}`}
+          aria-disabled="true"
+          className="hidden sm:inline-flex cursor-not-allowed items-center gap-2.5 rounded-full border border-[#1e3260]/70 px-6 py-3 text-[15px] font-semibold text-[#4d587a]"
+        >
+          <Landmark size={17} strokeWidth={2.1} />
+          {t('dash.reviewMpMla')}
+          <span className="rounded-full bg-[#141d3a] px-2 py-0.5 font-count text-[10px] uppercase tracking-wider text-[#5a6e9a]">
+            {t('nav.soonBadge')}
+          </span>
+        </div>
       </div>
 
       {/* language + notifications + user */}

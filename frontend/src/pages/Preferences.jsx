@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { saveProfileAnswers, getProfileAnswers } from '../api/profile';
 import { getQuestions } from '../api/questions';
 import { CORE_QUESTION_IDS, labelWithSize } from '../utils/preferenceQuestions';
+import { useI18n } from '../i18n/index.jsx';
 
 // ─── Question data ────────────────────────────────────────────────────────────
 
@@ -115,6 +116,7 @@ function SectionHeader({ label, badge, description }) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function Preferences() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
 
@@ -221,14 +223,14 @@ export default function Preferences() {
             className="inline-flex items-center gap-2 rounded-full border border-[#1e3260]/70 px-4 py-2 text-[13px] font-medium text-[#6b78a0] transition hover:border-[#3a6bc4]/60 hover:text-white"
           >
             <ArrowLeft size={14} strokeWidth={2} />
-            Dashboard
+            {t('nav.dashboard')}
           </button>
 
           {/* Right: progress tracker */}
           <div className="ml-auto flex items-center gap-4">
             <span className="hidden text-[13px] text-[#6b78a0] sm:block">
               <span className="font-count font-bold text-white">{answeredCount}</span>
-              <span> / {totalCount} answered</span>
+              <span> / {totalCount} {t('prefs.answeredWord')}</span>
             </span>
             <div className="hidden h-1.5 w-28 overflow-hidden rounded-full bg-[#0f1a3a] sm:block">
               <div
@@ -247,19 +249,19 @@ export default function Preferences() {
           <img src={logoSrc} alt="AmbedkarGPT" className="mt-1 h-12 w-12 shrink-0 object-contain drop-shadow-[0_0_16px_rgba(63,159,255,0.5)]" />
           <div>
             <h1 className="font-display text-[36px] font-bold leading-none text-white md:text-[44px]">
-              Preferences
+              {t('prefs.pageTitle')}
             </h1>
             <p className="mt-2 text-[14px] text-[#7a90b8]">
-              Help us understand you better to personalise your AmbedkarGPT experience
+              {t('prefs.helpUs')}
             </p>
           </div>
         </div>
 
         {/* ── Compulsory questions ── */}
         <SectionHeader
-          label="Core Profile"
-          badge="Required"
-          description="These signals directly shape every piece of content AmbedkarGPT generates for you."
+          label={t('prefs.coreProfile')}
+          badge={t('prefs.required')}
+          description={t('prefs.coreDesc')}
         />
         <div className="space-y-4">
           {compulsory.map((q, i) => (
@@ -276,9 +278,9 @@ export default function Preferences() {
         {/* ── Optional questions ── */}
         <div className="mt-12">
           <SectionHeader
-            label="Fine-tuning"
-            badge="Optional"
-            description="Add more granularity. Skip anything that doesn't apply to you."
+            label={t('prefs.fineTuning')}
+            badge={t('prefs.optionalBadge')}
+            description={t('prefs.optionalDesc')}
           />
           <div className="space-y-4">
             {optional.map((q, i) => (
@@ -300,7 +302,7 @@ export default function Preferences() {
             onClick={handleReset}
             className="text-[12.5px] text-[#6b78a0] underline underline-offset-2 transition hover:text-white"
           >
-            Reset to defaults
+            {t('prefs.reset')}
           </button>
 
           <div className="flex flex-col items-end gap-2">
@@ -318,7 +320,7 @@ export default function Preferences() {
                 : saved
                   ? <Check size={15} strokeWidth={2.5} />
                   : <Save size={15} strokeWidth={2} />}
-              {saving ? 'Saving…' : saved ? 'Saved!' : 'Save Preferences'}
+              {saving ? t('common.saving') : saved ? t('prefs.savedShort') : t('prefs.savePrefs')}
             </button>
           </div>
         </div>
@@ -334,7 +336,7 @@ export default function Preferences() {
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#22c55e]/15">
               <Check size={12} strokeWidth={3} className="text-[#22c55e]" />
             </span>
-            <span className="text-[13px] font-medium text-white">Preferences saved!</span>
+            <span className="text-[13px] font-medium text-white">{t('prefs.savedBang')}</span>
             <div className="ml-1 flex items-center gap-2">
               <button
                 type="button"

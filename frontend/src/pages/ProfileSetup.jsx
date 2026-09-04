@@ -1,12 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, AtSign, ArrowRight, ArrowLeft, ChevronDown } from 'lucide-react';
+import { User, AtSign, Mail, ArrowRight, ArrowLeft, ChevronDown } from 'lucide-react';
+import { isValidPhoneNumber } from 'react-phone-number-input';
 import { useAuth } from '../context/AuthContext';
 import { useCurtain } from '../context/CurtainContext';
 import { POLITICAL_PARTIES } from '../utils/politicalParties';
 import { ROLE_GROUPS, roleLabel, groupForId, rolesInGroup } from '../utils/partyRoles';
+import { INDIAN_STATES, CITIES_BY_STATE } from '../utils/indianStatesCities';
+import PhoneField  from '../components/PhoneField';
 import logoSrc     from '../assets/images/logo-animation.png';
 import ambedkarSrc from '../assets/images/qna-ambedkar.png';
+import { useI18n } from '../i18n/index.jsx';
+import { partyLabel, levelLabel } from '../utils/displayLabel';
 
 function FieldInput({ icon: Icon, label, placeholder, value, onChange, error, hint, maxLength }) {
   const [focused, setFocused] = useState(false);
@@ -47,6 +52,7 @@ function FieldInput({ icon: Icon, label, placeholder, value, onChange, error, hi
 }
 
 export default function ProfileSetup() {
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
   const { go: curtainGo } = useCurtain();
   const { currentUser, updateProfile } = useAuth();
@@ -58,8 +64,34 @@ export default function ProfileSetup() {
   const isOnboarding = !currentUser?.full_name;
   const nextRoute = isOnboarding ? '/questionnaire' : '/dashboard';
   const [username, setUsername]   = useState(currentUser?.username || '');
+  // Whichever of the two a signup didn't collect — phone signup has no email
+  // on file and vice versa. Filled in here, both stay optional: nothing
+  // forces someone to add the identifier they deliberately skipped.
+  const needsEmail = !currentUser?.email;
+  const needsPhone = !currentUser?.phone;
+  const [fillEmail, setFillEmail] = useState('');
+  const [fillPhone, setFillPhone] = useState('');
+  // Where they are. Accounts created before signup asked for these have them
+  // empty, which is the whole reason they are editable here.
+  const [state, setState] = useState(currentUser?.state || '');
+  // A saved city that is not in its state's list came from the "Other" box,
+  // so it has to resolve back to Other with the text restored. Selecting the
+  // city itself would silently drop what they typed.
+  const savedCity = currentUser?.city || '';
+  const savedCityKnown =
+    !!savedCity && (CITIES_BY_STATE[currentUser?.state] || []).includes(savedCity);
+  const [city, setCity] = useState(savedCity ? (savedCityKnown ? savedCity : 'Other') : '');
+  const [customCity, setCustomCity] = useState(savedCity && !savedCityKnown ? savedCity : '');
+  const [dob, setDob] = useState(currentUser?.date_of_birth || '');
   const [politicalParty, setPoliticalParty] = useState(currentUser?.political_party || '');
   const [partyPosition, setPartyPosition] = useState(currentUser?.party_position || '');
+
+  function handleStateChange(newState) {
+    setState(newState);
+    setCity('');
+    setCustomCity('');
+    setErrors((p) => ({ ...p, city: '' }));
+  }
   // Derived from the saved position so reopening the form lands on the level
   // already chosen, rather than asking someone to find it again.
   const [partyLevel, setPartyLevel] = useState(() => groupForId(currentUser?.party_position || ''));
@@ -80,8 +112,17 @@ export default function ProfileSetup() {
     else if (fullName.trim().length < 2) e.fullName = 'Name must be at least 2 characters.';
     if (!username.trim())          e.username = 'Username is required.';
     else if (username.trim().length < 3) e.username = 'Username must be at least 3 characters.';
-    else if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) e.username = 'Only letters, numbers and underscores.';
+    else if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) e.username = t('profile.usernameRule');
     if (!politicalParty) e.politicalParty = 'Please select a political party.';
+    if (needsEmail && fillEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fillEmail.trim()))
+      e.fillEmail = 'Please enter a valid email address.';
+    if (needsPhone && fillPhone && !isValidPhoneNumber(fillPhone))
+      e.fillPhone = 'Please enter a valid phone number.';
+    // Optional here, unlike signup: an account that predates these fields
+    // should not be blocked from changing its username until it fills them.
+    // Half-answers are the exception, since they store nothing useful.
+    if (city && !state) e.city = t('auth.stateRequired');
+    if (city === 'Other' && !customCity.trim()) e.city = t('auth.cityRequired');
     return e;
   }
 
@@ -100,12 +141,21 @@ export default function ProfileSetup() {
         // Sent even when blank, because clearing the position is a real choice
         // and undefined would leave the previous one in place.
         party_position: partyPosition,
+        ...(needsEmail && fillEmail.trim() ? { email: fillEmail.trim() } : {}),
+        ...(needsPhone && fillPhone ? { phone: fillPhone } : {}),
+        ...(state ? { state } : {}),
+        ...(city ? { city: city === 'Other' ? customCity.trim() : city } : {}),
+        ...(dob ? { date_of_birth: dob } : {}),
       });
       curtainGo(nextRoute, { replace: true });
     } catch (err) {
-      const detail = err?.response?.data?.detail || err?.message || '';
-      if (detail.toLowerCase().includes('already taken') || detail.toLowerCase().includes('already exists')) {
+      const detail = (err?.response?.data?.detail || err?.message || '').toLowerCase();
+      if (detail.includes('username') && detail.includes('taken')) {
         setErrors({ username: 'This username is already taken. Try another.' });
+      } else if (detail.includes('email') && detail.includes('exists')) {
+        setErrors({ fillEmail: 'This email is already in use.' });
+      } else if (detail.includes('phone') && detail.includes('exists')) {
+        setErrors({ fillPhone: 'This phone number is already in use.' });
       } else {
         setAuthError('Could not save your profile. Please try again.');
       }
@@ -139,7 +189,7 @@ export default function ProfileSetup() {
             <div className="flex items-center gap-2.5">
               <img src={logoSrc} alt="AmbedkarGPT" className="h-9 w-9 object-contain drop-shadow-[0_0_12px_rgba(63,159,255,0.5)]" />
               <span className="font-display text-[20px] font-bold leading-none tracking-tight">
-                <span className="text-white">Ambedkar</span>
+                <span className="text-white">{t('brand.ambedkar')}</span>
                 <span className="gradient-text-cyan">GPT</span>
               </span>
             </div>
@@ -152,7 +202,7 @@ export default function ProfileSetup() {
               onClick={handleSkip}
               className="ml-auto inline-flex h-10 items-center gap-2 rounded-full border border-[#1e3260]/70 px-4 text-[13px] font-medium text-[#8b9dc4] transition hover:border-[#3a6bc4]/70 hover:text-white"
             >
-              Skip for now
+              {t('profile.skip')}
               <ArrowRight size={15} strokeWidth={2} />
             </button>
           </>
@@ -161,11 +211,11 @@ export default function ProfileSetup() {
             <button
               type="button"
               onClick={handleSkip}
-              aria-label="Back to dashboard"
+              aria-label={t('profile.backToDash')}
               className="inline-flex h-10 items-center gap-2 rounded-full border border-[#1e3260]/70 px-4 text-[13px] font-medium text-[#8b9dc4] transition hover:border-[#3a6bc4]/70 hover:text-white"
             >
               <ArrowLeft size={15} strokeWidth={2} />
-              <span className="hidden sm:inline">Back</span>
+              <span className="hidden sm:inline">{t('common.back')}</span>
             </button>
             <button
               type="button"
@@ -175,7 +225,7 @@ export default function ProfileSetup() {
             >
               <img src={logoSrc} alt="" className="h-9 w-9 object-contain drop-shadow-[0_0_12px_rgba(63,159,255,0.5)]" />
               <span className="font-display text-[20px] font-bold leading-none tracking-tight">
-                <span className="text-white">Ambedkar</span>
+                <span className="text-white">{t('brand.ambedkar')}</span>
                 <span className="gradient-text-cyan">GPT</span>
               </span>
             </button>
@@ -220,16 +270,14 @@ export default function ProfileSetup() {
           {/* Step badge */}
           <div className="mb-5 inline-flex items-center gap-2 rounded-full px-3 py-1" style={{ background: 'rgba(63,159,255,0.1)', border: '1px solid rgba(63,159,255,0.2)' }}>
             <span className="h-1.5 w-1.5 rounded-full bg-[#3f9fff]" />
-            <span className="text-[11px] font-medium tracking-wide" style={{ color: '#6baaff' }}>{isOnboarding ? 'PROFILE SETUP' : 'YOUR PROFILE'}</span>
+            <span className="text-[11px] font-medium tracking-wide" style={{ color: '#6baaff' }}>{isOnboarding ? t('profile.setupCaps') : t('profile.yourProfile')}</span>
           </div>
 
           <h1 className="font-display text-[28px] font-bold leading-tight text-white md:text-[32px]">
-            {isOnboarding ? 'Tell us your name' : 'Edit your profile'}
+            {isOnboarding ? t('profile.tellName') : t('profile.editProfile')}
           </h1>
           <p className="mt-2 text-[13.5px] leading-relaxed" style={{ color: '#7a8db5' }}>
-            {isOnboarding
-              ? 'This will be shown on your profile and posts. You can change it later.'
-              : 'Your name, handle and party. Your party decides which news feed you see.'}
+            {isOnboarding ? t('profile.onboardHint') : t('profile.editHint')}
           </p>
 
           {authError && (
@@ -241,7 +289,7 @@ export default function ProfileSetup() {
           <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
             <FieldInput
               icon={User}
-              label="Full Name"
+              label={t('profile.fullNameLabel')}
               placeholder="e.g. Rajesh Kumar"
               value={fullName}
               onChange={(e) => { setFullName(e.target.value); setErrors((p) => ({ ...p, fullName: '' })); }}
@@ -250,19 +298,136 @@ export default function ProfileSetup() {
             />
             <FieldInput
               icon={AtSign}
-              label="Username"
+              label={t('profile.usernameLabel')}
               placeholder="your_handle"
               value={username}
               onChange={(e) => { setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')); setErrors((p) => ({ ...p, username: '' })); }}
               error={errors.username}
-              hint="Only letters, numbers and underscores. Shown as @username."
+              hint={t('profile.usernameHint')}
               maxLength={50}
             />
+
+            {/* Whichever contact method the signup path didn't collect.
+                Optional — filling it in is a convenience, not a gate. */}
+            {needsEmail && (
+              <FieldInput
+                icon={Mail}
+                label={t('auth.email')}
+                placeholder="you@example.com"
+                value={fillEmail}
+                onChange={(e) => { setFillEmail(e.target.value); setErrors((p) => ({ ...p, fillEmail: '' })); }}
+                error={errors.fillEmail}
+                hint={t('profile.addEmailHint')}
+              />
+            )}
+            {needsPhone && (
+              <PhoneField
+                value={fillPhone}
+                onChange={(v) => { setFillPhone(v ?? ''); setErrors((p) => ({ ...p, fillPhone: '' })); }}
+                error={errors.fillPhone}
+                hint={t('profile.addPhoneHint')}
+                optional
+              />
+            )}
+
+            {/* State, city and date of birth. Signup collects these now, so
+                these are here for the accounts that predate it. Optional, so
+                an old account can still change its name without being made
+                to complete a form it never agreed to. */}
+            <div>
+              <label className="mb-1.5 block text-[13px] font-medium text-white">
+                {t('auth.stateLabel')} / {t('auth.cityLabel')}
+                <span className="ml-1.5 font-normal" style={{ color: '#5a6e9a' }}>{t('common.optional')}</span>
+              </label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="relative">
+                  <select
+                    value={state}
+                    onChange={(e) => handleStateChange(e.target.value)}
+                    aria-label={t('auth.stateLabel')}
+                    className="w-full appearance-none rounded-xl px-4 py-3.5 pr-10 text-[14px] outline-none transition"
+                    style={{
+                      backgroundColor: '#0a1130',
+                      border: '1px solid #1e3260',
+                      color: state ? '#ffffff' : '#8b94b8',
+                    }}
+                  >
+                    <option value="" className="bg-[#0a1130]">{t('auth.selectState')}</option>
+                    {INDIAN_STATES.map((s) => (
+                      <option key={s} value={s} className="bg-[#0a1130] text-white">{s}</option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={16}
+                    strokeWidth={2}
+                    className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2"
+                    style={{ color: '#8b94b8' }}
+                  />
+                </div>
+
+                <div className="relative">
+                  <select
+                    value={city}
+                    onChange={(e) => { setCity(e.target.value); setCustomCity(''); setErrors((p) => ({ ...p, city: '' })); }}
+                    disabled={!state}
+                    aria-label={t('auth.cityLabel')}
+                    className="w-full appearance-none rounded-xl px-4 py-3.5 pr-10 text-[14px] outline-none transition disabled:cursor-not-allowed disabled:opacity-50"
+                    style={{
+                      backgroundColor: '#0a1130',
+                      border: `1px solid ${errors.city ? '#ef4444' : '#1e3260'}`,
+                      color: city ? '#ffffff' : '#8b94b8',
+                    }}
+                  >
+                    <option value="" className="bg-[#0a1130]">
+                      {state ? t('auth.selectCity') : t('auth.chooseStateFirst')}
+                    </option>
+                    {(CITIES_BY_STATE[state] || []).map((c) => (
+                      <option key={c} value={c} className="bg-[#0a1130] text-white">
+                        {c === 'Other' ? t('auth.otherCity') : c}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={16}
+                    strokeWidth={2}
+                    className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2"
+                    style={{ color: '#8b94b8' }}
+                  />
+                </div>
+              </div>
+
+              {city === 'Other' && (
+                <input
+                  type="text"
+                  value={customCity}
+                  onChange={(e) => { setCustomCity(e.target.value); setErrors((p) => ({ ...p, city: '' })); }}
+                  placeholder={t('auth.customCityPlaceholder')}
+                  maxLength={100}
+                  className="mt-3 w-full rounded-xl px-4 py-3.5 text-[14px] text-white outline-none transition placeholder:text-[#4a5e8a]"
+                  style={{ backgroundColor: '#0a1130', border: '1px solid #1e3260' }}
+                />
+              )}
+              {errors.city && <p className="mt-1.5 text-[12px]" style={{ color: '#ef4444' }}>{errors.city}</p>}
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-[13px] font-medium text-white">
+                {t('auth.dobLabel')}
+                <span className="ml-1.5 font-normal" style={{ color: '#5a6e9a' }}>{t('common.optional')}</span>
+              </label>
+              <input
+                type="date"
+                value={dob}
+                onChange={(e) => setDob(e.target.value)}
+                max={new Date().toISOString().slice(0, 10)}
+                className="input-field w-full rounded-xl px-4 py-3.5 text-[14px]"
+              />
+            </div>
 
             {/* Party affiliation — decides which news feed the user sees */}
             <div>
               <label className="mb-1.5 block text-[13px] font-medium text-white">
-                Political party you support
+                {t('profile.partySupport')}
               </label>
               <div className="relative">
                 <select
@@ -275,10 +440,10 @@ export default function ProfileSetup() {
                     color: politicalParty ? '#ffffff' : '#8b94b8',
                   }}
                 >
-                  <option value="" className="bg-[#0a1130]">Select a political party</option>
+                  <option value="" className="bg-[#0a1130]">{t('profile.selectParty')}</option>
                   {POLITICAL_PARTIES.map((p) => (
                     <option key={p.name} value={p.name} className="bg-[#0a1130] text-white">
-                      {p.name}
+                      {partyLabel(p.name, lang)}
                     </option>
                   ))}
                 </select>
@@ -291,7 +456,7 @@ export default function ProfileSetup() {
               </div>
               {errors.politicalParty
                 ? <p className="mt-1.5 text-[12px]" style={{ color: '#ef4444' }}>{errors.politicalParty}</p>
-                : <p className="mt-1.5 text-[12px]" style={{ color: '#5a6e9a' }}>Your news feed is tailored to this choice.</p>}
+                : <p className="mt-1.5 text-[12px]" style={{ color: '#5a6e9a' }}>{t('profile.feedTailored')}</p>}
             </div>
 
             {/* Position in the party, asked in two steps. One list of 41 titles
@@ -303,8 +468,8 @@ export default function ProfileSetup() {
                 legitimate answer. */}
             <div>
               <label className="mb-1.5 block text-[13px] font-medium text-white">
-                Your position in the party
-                <span className="ml-1.5 font-normal" style={{ color: '#5a6e9a' }}>(optional)</span>
+                {t('profile.positionInParty')}
+                <span className="ml-1.5 font-normal" style={{ color: '#5a6e9a' }}>{t('common.optional')}</span>
               </label>
 
               <div className="grid gap-3 sm:grid-cols-2">
@@ -313,7 +478,7 @@ export default function ProfileSetup() {
                     value={partyLevel}
                     onChange={(e) => handleLevelChange(e.target.value)}
                     disabled={!politicalParty}
-                    aria-label="Level"
+                    aria-label={t('profile.levelLabel')}
                     className="w-full appearance-none rounded-xl px-4 py-3.5 pr-10 text-[14px] outline-none transition disabled:cursor-not-allowed disabled:opacity-50"
                     style={{
                       backgroundColor: '#0a1130',
@@ -322,11 +487,11 @@ export default function ProfileSetup() {
                     }}
                   >
                     <option value="" className="bg-[#0a1130]">
-                      {politicalParty ? 'Level' : 'Choose a party first'}
+                      {politicalParty ? t('profile.levelLabel') : t('profile.chooseParty')}
                     </option>
                     {ROLE_GROUPS.map((g) => (
                       <option key={g.group} value={g.group} className="bg-[#0a1130] text-white">
-                        {g.group}
+                        {levelLabel(g.group, lang)}
                       </option>
                     ))}
                   </select>
@@ -343,7 +508,7 @@ export default function ProfileSetup() {
                     value={partyPosition}
                     onChange={(e) => setPartyPosition(e.target.value)}
                     disabled={!partyLevel}
-                    aria-label="Position"
+                    aria-label={t('profile.positionLabel')}
                     className="w-full appearance-none rounded-xl px-4 py-3.5 pr-10 text-[14px] outline-none transition disabled:cursor-not-allowed disabled:opacity-50"
                     style={{
                       backgroundColor: '#0a1130',
@@ -352,7 +517,7 @@ export default function ProfileSetup() {
                     }}
                   >
                     <option value="" className="bg-[#0a1130]">
-                      {partyLevel ? 'Position' : 'Pick a level first'}
+                      {partyLevel ? t('profile.positionLabel') : t('profile.pickLevelFirst')}
                     </option>
                     {rolesInGroup(partyLevel).map((r) => (
                       <option key={r.id} value={r.id} className="bg-[#0a1130] text-white">
@@ -370,7 +535,7 @@ export default function ProfileSetup() {
               </div>
 
               <p className="mt-1.5 text-[12px]" style={{ color: '#5a6e9a' }}>
-                Sets how your posts speak: what they claim, and whether they speak for the party.
+                {t('profile.positionHint')}
               </p>
             </div>
 
@@ -386,11 +551,11 @@ export default function ProfileSetup() {
               {loading ? (
                 <>
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                  Saving…
+                  {t('common.saving')}
                 </>
               ) : (
                 <>
-                  {isOnboarding ? 'Continue' : 'Save changes'}
+                  {isOnboarding ? t('common.next') : t('profile.saveChanges')}
                   <ArrowRight size={15} strokeWidth={2.2} />
                 </>
               )}
@@ -403,7 +568,7 @@ export default function ProfileSetup() {
             className="mt-4 w-full py-2 text-center text-[13px] transition-opacity hover:opacity-100"
             style={{ color: '#4a5e8a', opacity: 0.7 }}
           >
-            {isOnboarding ? 'Skip for now' : 'Cancel'}
+            {isOnboarding ? t('profile.skip') : t('common.cancel')}
           </button>
         </div>
 
@@ -421,7 +586,7 @@ export default function ProfileSetup() {
             />
           ))}
         </div>
-        <p className="mt-2 text-[11px]" style={{ color: '#3a4e72' }}>Step 1 of 3</p>
+        <p className="mt-2 text-[11px]" style={{ color: '#3a4e72' }}>{t('profile.stepOf')}</p>
 
           </div>
         </div>

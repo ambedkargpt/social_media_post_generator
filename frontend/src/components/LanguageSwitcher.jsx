@@ -1,10 +1,12 @@
 import { useRef, useState, useEffect } from 'react';
 import { Globe } from 'lucide-react';
-import { SITE_LANGUAGES, getSiteLanguage, setSiteLanguage } from '../utils/siteLanguage';
+import { SITE_LANGUAGES, getSiteLanguage } from '../utils/siteLanguage';
+import { useI18n } from '../i18n/index.jsx';
 
 export default function LanguageSwitcher() {
   const [open, setOpen] = useState(false);
-  const [current, setCurrent] = useState(getSiteLanguage() ?? 'en');
+  const { changeLanguage } = useI18n();
+  const [current, setCurrent] = useState(getSiteLanguage() ?? 'hi');
   const ref = useRef(null);
 
   useEffect(() => {
@@ -24,11 +26,13 @@ export default function LanguageSwitcher() {
   }, [open]);
 
   function select(code) {
-    setSiteLanguage(code);
+    // Live, not a reload. changeLanguage persists the choice and moves the
+    // provider, so every screen re-renders in place: the reload was only ever
+    // there because nothing held the language in React state, and it threw
+    // away whatever the person was in the middle of doing.
+    changeLanguage(code);
     setCurrent(code);
     setOpen(false);
-    sessionStorage.setItem('skip-splash', '1');
-    window.location.reload();
   }
 
   const currentLang = SITE_LANGUAGES.find((l) => l.code === current);

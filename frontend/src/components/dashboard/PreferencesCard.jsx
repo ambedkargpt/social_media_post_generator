@@ -1,5 +1,6 @@
 import Card, { CardTitle } from './Card';
 import { useNavigate } from 'react-router-dom';
+import { useI18n } from '../../i18n/index.jsx';
 
 // Map backend question IDs → friendly display labels
 const DISPLAY_MAP = {
@@ -25,6 +26,7 @@ const TINTS = [
 ];
 
 export default function PreferencesCard({ answers = [] }) {
+  const { t } = useI18n();
   const navigate = useNavigate();
 
   // Build a lookup map from answers array
@@ -42,15 +44,15 @@ export default function PreferencesCard({ answers = [] }) {
   if (!answers.length) {
     return (
       <Card className="h-full flex flex-col justify-between">
-        <CardTitle>Your Preferences</CardTitle>
+        <CardTitle>{t('prefcard.title')}</CardTitle>
         <div className="flex flex-1 flex-col items-center justify-center py-10 text-center">
-          <p className="text-[13px] text-[#6b78a0]">No preferences set yet.</p>
+          <p className="text-[13px] text-[#6b78a0]">{t('prefcard.none')}</p>
           <button
             type="button"
             onClick={() => navigate('/preferences')}
             className="mt-4 rounded-xl btn-gradient px-6 py-2.5 text-[13px] font-semibold text-white"
           >
-            Set Up Preferences
+            {t('prefcard.setUp')}
           </button>
         </div>
       </Card>
@@ -73,7 +75,7 @@ export default function PreferencesCard({ answers = [] }) {
       <div className="mt-6 h-px w-full bg-gradient-to-r from-transparent via-[#2a3566]/60 to-transparent" />
 
       <div className="mt-5">
-        <div className="text-[13px] text-[#8b94b8]">All Selected Values</div>
+        <div className="text-[13px] text-[#8b94b8]">{t('prefcard.allValues')}</div>
         <div className="mt-3 flex flex-wrap gap-2">
           {tags.map((tag, i) => (
             <span

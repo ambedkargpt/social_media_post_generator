@@ -5,18 +5,19 @@ import Sparkle from "./Sparkle";
 import { useAuth } from "../../context/AuthContext";
 import squiggleSrc from "../../assets/images/squiggle-lines.png";
 import ambedkarPortrait from "../../assets/images/hero-ambedkar.webp";
+import { useI18n } from '../../i18n/index.jsx';
 
 // Headline words — null = <br /> slot
 const RAW_WORDS = [
-  { text: "Artificial",   cyan: false },
-  { text: "Intelligence", cyan: false },
-  { text: "(AI)",         cyan: true  },
+  { key: "hero.w1", cyan: false },
+  { key: "hero.w2", cyan: false },
+  { key: "hero.w3", cyan: true  },
   null,
-  { text: "Meets",        cyan: true  },
+  { key: "hero.w4", cyan: true  },
   null,
-  { text: "Ambedkar's",  cyan: false },
-  { text: "Intelligence", cyan: false },
-  { text: "(AI)",         cyan: true  },
+  { key: "hero.w5", cyan: false },
+  { key: "hero.w6", cyan: false },
+  { key: "hero.w7", cyan: true  },
 ];
 
 let _wi = 0;
@@ -27,6 +28,7 @@ const WORDS = RAW_WORDS.map((w) =>
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
 export default function HeroSection({ splashDone = true }) {
+  const { t } = useI18n();
   const [ready, setReady] = useState(false);
   const navigate = useNavigate();
   const { currentUser } = useAuth();
@@ -153,7 +155,7 @@ export default function HeroSection({ splashDone = true }) {
             style={fadeUp(0)}
           >
             <Sparkle size={16} color="#4fb4ff" />
-            An AI Tool For Political Dominance
+            {t('landing.badge')}
           </div>
 
           {/* Headline — slow word-by-word */}
@@ -173,7 +175,7 @@ export default function HeroSection({ splashDone = true }) {
                     transform: ready ? "translateY(0)" : "translateY(18px)",
                   }}
                 >
-                  {item.text}
+                  {t(item.key)}
                 </span>
               );
             })}
@@ -184,9 +186,7 @@ export default function HeroSection({ splashDone = true }) {
             className="font-count mt-6 max-w-[700px] text-[22px] leading-8 text-[#b7c6e1] md:text-[24px] md:leading-9"
             style={fadeUp(1050)}
           >
-            Combine Ambedkar&apos;s vision with AI to write winning arguments,
-            turn viral posts into real-world votes, and lead the Bahujan leaders
-            to a historic victory.
+            {t('landing.heroSub')}
           </p>
 
           {/* CTA */}
@@ -205,7 +205,7 @@ export default function HeroSection({ splashDone = true }) {
               onClick={handleBuildNarrative}
               className="btn-glass-violet group inline-flex h-14 items-center gap-2 rounded-xl px-6 font-count text-[17px] font-semibold text-white sm:px-9 sm:text-[20px] md:h-15 md:text-[22px]"
             >
-              Build your narrative
+              {t('landing.buildNarrative')}
               <ArrowRight
                 size={19}
                 strokeWidth={2.2}

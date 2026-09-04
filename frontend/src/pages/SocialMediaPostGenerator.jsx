@@ -17,7 +17,9 @@ import { CORE_QUESTION_IDS } from '../utils/preferenceQuestions';
 import { getSiteLanguage, SITE_LANGUAGES } from '../utils/siteLanguage';
 import { parsePost, hashtagsText } from '../utils/parsePost';
 import Spinner from '../components/Spinner';
+import { useI18n } from '../i18n/index.jsx';
 import SpeakButton from '../components/generate/SpeakButton';
+import { toneLabel } from '../utils/displayLabel';
 
 const TONES = ['Professional', 'Inspirational', 'Creative', 'Casual', 'Motivational'];
 const ALSO_GENERATE = ['Audio', 'Shorts', 'Image'];
@@ -94,12 +96,21 @@ const CONTENT_TYPES = {
   news:             { label: 'News Article',     color: '#5a6e9a' },
 };
 
+// A party's own uploads are its news, not a neutral article about it, and the
+// section decides which reading applies. General keeps "News Article".
+function newsTypeLabel(section) {
+  return section === 'party' ? 'gen.partyNews' : 'gen.newsArticle';
+}
+
 // Two standing ranges, plus a per-day jump built from the days that actually
 // carry articles. A free calendar would let the user land on a day with nothing
 // published; a list built from the data cannot be picked wrong.
+// "Last 7 days" is gone. It was a rolling window over a feed that only ever
+// holds a few days, so it selected either everything or nearly everything and
+// told nobody which days those were. The day list below does that job, and
+// does it from the days that actually carry articles.
 const DATE_RANGES = [
-  { id: 'all', label: 'All dates',   days: null },
-  { id: '7d',  label: 'Last 7 days', days: 7 },
+  { id: 'all', label: 'All dates', days: null },
 ];
 
 const DAY_PREFIX = 'day:';
@@ -124,10 +135,10 @@ function dayGroupLabel(dateValue) {
   if (!dateValue) return 'Undated';
   const t = new Date(dateValue);
   if (Number.isNaN(t.getTime())) return 'Undated';
-  const diffDays = Math.round((startOfDay(new Date()) - startOfDay(t)) / 86400000);
-  if (diffDays <= 0) return 'Today';
-  if (diffDays === 1) return 'Yesterday';
-  if (diffDays === 2) return 'Day before yesterday';
+  // The date, always. "Today" and "Day before yesterday" sat in a list beside
+  // "Sunday, Aug 30" and read as a different kind of thing, and they are the
+  // one label that stops being true while the page is open: a tab left
+  // overnight keeps calling yesterday's stories Today.
   return t.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' });
 }
 
@@ -155,17 +166,24 @@ function matchesDate(dateValue, filterId) {
 function resolveTenantForUser(partyName, tenants) {
   const raw = (partyName ?? '').trim().toLowerCase();
   if (!raw) return null;
+  // The opposition tenant (BJP) is scraped to be countered, never to be
+  // someone's own party — excluded here the same way it is excluded from
+  // the signup party picker, so it can never become "your party" even if a
+  // stray political_party value happened to match its name or slug.
+  const selectable = tenants.filter((t) => !t.is_general && !t.is_opposition);
   return (
-    tenants.find((t) => !t.is_general && raw.includes(String(t.name).toLowerCase()))
-    ?? tenants.find((t) => !t.is_general && raw.includes(String(t.slug).toLowerCase()))
+    selectable.find((t) => raw.includes(String(t.name).toLowerCase()))
+    ?? selectable.find((t) => raw.includes(String(t.slug).toLowerCase()))
     ?? null
   );
 }
 
-// Accent per section so party news and general news are visually distinct.
+// Accent per section so party news, opposition news and general news are
+// visually distinct.
 const SECTION_THEME = {
-  party:   { accent: '#3f9fff', soft: 'rgba(63,159,255,0.12)', ring: 'rgba(63,159,255,0.45)' },
-  general: { accent: '#f0a63a', soft: 'rgba(240,166,58,0.12)', ring: 'rgba(240,166,58,0.45)' },
+  party:      { accent: '#3f9fff', soft: 'rgba(63,159,255,0.12)', ring: 'rgba(63,159,255,0.45)' },
+  opposition: { accent: '#e5484d', soft: 'rgba(229,72,77,0.12)',  ring: 'rgba(229,72,77,0.45)' },
+  general:    { accent: '#f0a63a', soft: 'rgba(240,166,58,0.12)', ring: 'rgba(240,166,58,0.45)' },
 };
 
 function formatNewsDate(d) {
@@ -196,7 +214,7 @@ export default function SocialMediaPostGenerator() {
   const [typeFilter,      setTypeFilter]      = useState('all'); // all | news | press_conference
   const [page,            setPage]            = useState(1);
   const [tenants,         setTenants]         = useState([]);
-  const [newsSection,     setNewsSection]     = useState('party'); // 'party' | 'general'
+  const [newsSection,     setNewsSection]     = useState('party'); // 'party' | 'opposition' | 'general'
   const [filterOpen,      setFilterOpen]      = useState(false);
   const [view,            setView]            = useState('feed'); // 'feed' | 'preview' | 'generated'
   const [generating,      setGenerating]      = useState(false);
@@ -226,7 +244,8 @@ export default function SocialMediaPostGenerator() {
   const [showMobilePrefs, setShowMobilePrefs] = useState(false);
   const filterRef = useRef(null);
 
-  const siteLang = getSiteLanguage() ?? 'en';
+  const { t, lang } = useI18n();
+  const siteLang = getSiteLanguage() ?? 'hi';
   const atDailyLimit = quota?.daily_remaining === 0;
   const quotaCountdown = useCountdown(atDailyLimit ? quota?.reset_at : null);
 
@@ -247,10 +266,10 @@ export default function SocialMediaPostGenerator() {
   const loadNews = useCallback(() => {
     setNewsLoading(true);
     setNewsError(false);
-    // Ask for the chosen party plus general news in one call; the UI splits
-    // them into the two sections locally.
+    // Ask for the chosen party plus general and opposition news in one call;
+    // the UI splits them into the three sections locally.
     const query = { limit: 100, language: siteLang };
-    if (selectedParty) { query.tenant = selectedParty; query.includeGeneral = true; }
+    if (selectedParty) { query.tenant = selectedParty; query.includeGeneral = true; query.includeOpposition = true; }
     getNews(query)
       .then((data) => {
         if (data?.length) {
@@ -258,7 +277,7 @@ export default function SocialMediaPostGenerator() {
           setNewsLoading(false);
         } else {
           const fallback = { limit: 100 };
-          if (selectedParty) { fallback.tenant = selectedParty; fallback.includeGeneral = true; }
+          if (selectedParty) { fallback.tenant = selectedParty; fallback.includeGeneral = true; fallback.includeOpposition = true; }
           getNews(fallback).then((all) => {
             if (all?.length) setArticles(all.map(adaptNews));
           }).catch(() => setNewsError(true)).finally(() => setNewsLoading(false));
@@ -342,11 +361,19 @@ export default function SocialMediaPostGenerator() {
   }
 
 
-  // Split the feed into the two sections: the chosen party's news, and the
-  // neutral/general news (Ravish) that every user sees.
+  // Split the feed into three sections: the chosen party's news, the
+  // opposition's (BJP, not scraped yet), and the neutral/general news
+  // (Ravish) that every user sees.
   const partyArticles = useMemo(
     () => (activeParty ? articles.filter((a) => a.tenantSlug === activeParty.slug) : []),
     [articles, activeParty]
+  );
+  // No tenant scrapes BJP yet, so this is always empty for now — the tab
+  // exists so the section has a home once that scraping exists, rather than
+  // needing this whole area rewired later.
+  const oppositionArticles = useMemo(
+    () => articles.filter((a) => a.tenantSlug === 'bjp'),
+    [articles]
   );
   const generalArticles = useMemo(
     () => articles.filter((a) => a.tenantSlug === 'general'),
@@ -356,7 +383,9 @@ export default function SocialMediaPostGenerator() {
   // Without a party chosen there is only one list, so show everything.
   const sectionArticles = !activeParty
     ? articles
-    : (newsSection === 'party' ? partyArticles : generalArticles);
+    : newsSection === 'party' ? partyArticles
+    : newsSection === 'opposition' ? oppositionArticles
+    : generalArticles;
 
   // Accent for the section currently on screen; falls back to the party colour
   // when no party is set, so the heading is never unstyled.
@@ -644,7 +673,7 @@ export default function SocialMediaPostGenerator() {
             className="inline-flex items-center gap-2 rounded-full border border-[#1e3260]/70 bg-[#0d1531]/60 px-3 py-1.5 text-[11.5px] font-medium text-[#8b94b8] transition hover:border-[#3a6bc4]/60 hover:text-white"
           >
             <ArrowLeft size={12} strokeWidth={2} />
-            Services
+            {t('nav.services')}
           </button>
 
           {/* Which tool you are in. This used to sit as a banner across the top
@@ -653,15 +682,15 @@ export default function SocialMediaPostGenerator() {
               names the page, and the feed starts at the search bar. */}
           <div className="mt-4">
             <p className="font-display text-[16px] font-bold leading-snug text-white">
-              Social Media Post Generator
+              {t('gen.title')}
             </p>
             <p className="mt-1 text-[11.5px] leading-relaxed text-[#6b78a0]">
-              Educate &middot; Agitate &middot; Organize
-              <span className="block text-[#5a6584]">&mdash; Dr. B.R. Ambedkar</span>
+              {t('gen.motto')}
+              <span className="block text-[#5a6584]">{t('brand.attrib')}</span>
             </p>
             <span className="mt-2.5 inline-flex items-center gap-1.5 rounded-full border border-[#3f9fff]/20 bg-[#3f9fff]/8 px-2.5 py-1 text-[10.5px] font-semibold text-[#6aa8ff]">
               <Sparkles size={9} strokeWidth={2} />
-              AI-Powered
+              {t('gen.aiPowered')}
             </span>
           </div>
         </div>
@@ -683,7 +712,7 @@ export default function SocialMediaPostGenerator() {
                 onClick={() => navigate('/profile-setup')}
                 className="mt-1 text-[11px] font-medium text-[#ef6a6a] transition hover:text-[#ff8a8a]"
               >
-                Complete your profile →
+                {t('gen.completeProfile')}
               </button>
             </div>
 
@@ -691,14 +720,14 @@ export default function SocialMediaPostGenerator() {
             <div className="mt-4 grid grid-cols-2 gap-3">
               <div className="rounded-xl border border-[#1e2636]/80 bg-[#0b0f18] px-3 py-3 text-center">
                 <p className="font-count text-[22px] font-bold text-[#4a9eff]">127</p>
-                <p className="mt-0.5 text-[10px] text-[#8b93a5]">Activity Score</p>
+                <p className="mt-0.5 text-[10px] text-[#8b93a5]">{t('gen.activityScore')}</p>
               </div>
               <div className="rounded-xl border border-[#3a3320]/80 bg-[#17130a] px-3 py-3 text-center">
                 <p className="flex items-center justify-center gap-1 font-display text-[18px] font-bold text-[#f5b73d]">
                   <Star size={15} strokeWidth={2} className="fill-[#f5b73d]" />
                   Pro
                 </p>
-                <p className="mt-0.5 text-[10px] text-[#8b93a5]">Subscription</p>
+                <p className="mt-0.5 text-[10px] text-[#8b93a5]">{t('gen.subscription')}</p>
               </div>
             </div>
           </div>
@@ -707,7 +736,7 @@ export default function SocialMediaPostGenerator() {
         {/* Party affiliation — set at signup, shown read-only */}
         <div className="px-4 pt-5">
           <p className="mb-2.5 px-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#8b93a5]">
-            Your Party
+            {t('gen.yourParty')}
           </p>
           {activeParty ? (
             <div
@@ -725,15 +754,15 @@ export default function SocialMediaPostGenerator() {
               onClick={() => navigate('/profile-setup')}
               className="w-full rounded-xl border border-[#1e2636]/80 bg-[#0e1320] px-3.5 py-3 text-left text-[12.5px] text-[#8b93a5] transition hover:border-[#3f9fff]/45 hover:text-white"
             >
-              No party set — showing general news only.
-              <span className="mt-0.5 block text-[11.5px] text-[#6aa8ff]">Set your party →</span>
+              {t('gen.noPartyLine')}
+              <span className="mt-0.5 block text-[11.5px] text-[#6aa8ff]">{t('gen.setParty')}</span>
             </button>
           )}
         </div>
 
         {/* Target platform */}
         <div className="px-4 pt-5">
-          <p className="mb-2.5 px-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#8b93a5]">Target Platform</p>
+          <p className="mb-2.5 px-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#8b93a5]">{t('gen.targetPlatform')}</p>
           <div className="space-y-2">
             {PLATFORMS.map((p) => {
               const active = platform === p.id;
@@ -762,15 +791,15 @@ export default function SocialMediaPostGenerator() {
         {/* Select tone */}
         <div className="flex-1 px-4 pb-2 pt-5">
           <div className="rounded-2xl border border-[#1e2636]/80 bg-[#0e1320] p-4">
-            <p className="mb-3 text-[13px] font-semibold text-white">Select tone</p>
+            <p className="mb-3 text-[13px] font-semibold text-white">{t('gen.selectToneLabel')}</p>
             <div className="space-y-2">
-              {TONES.map((t) => {
-                const active = tone === t;
+              {TONES.map((tn) => {
+                const active = tone === tn;
                 return (
                   <button
-                    key={t}
+                    key={tn}
                     type="button"
-                    onClick={() => setTone(t)}
+                    onClick={() => setTone(tn)}
                     className="w-full rounded-lg border py-2.5 text-center text-[12.5px] font-medium transition"
                     style={{
                       borderColor: active ? '#3f9fff' : 'rgba(30,38,54,0.8)',
@@ -778,7 +807,7 @@ export default function SocialMediaPostGenerator() {
                       color: active ? '#6aa8ff' : '#8b93a5',
                     }}
                   >
-                    {t}
+                    {toneLabel(tn, lang)}
                   </button>
                 );
               })}
@@ -813,7 +842,7 @@ export default function SocialMediaPostGenerator() {
               type="text"
               value={searchInput}
               onChange={(e) => { setSearchInput(e.target.value); setPage(1); setView('feed'); }}
-              placeholder="Search Your Content"
+              placeholder={t('gen.searchContent')}
               className="w-full rounded-full border border-[#1e3260]/70 bg-[#0a1130]/80 py-2.5 pl-9 pr-4 text-[13px] text-white placeholder-[#6b78a0] outline-none transition focus:border-[#3f9fff]/70 focus:shadow-[0_0_0_3px_rgba(63,159,255,0.12)]"
             />
           </div>
@@ -829,7 +858,7 @@ export default function SocialMediaPostGenerator() {
               }`}
             >
               <Filter size={13} strokeWidth={2} />
-              {selectedDayLabel ?? 'Filter News'}
+              {selectedDayLabel ?? t('gen.filterNewsBtn')}
               {filtersActive > 0 && (
                 <span className="rounded-full bg-[#3f9fff] px-1.5 py-0.5 font-count text-[10px] leading-none text-white">
                   {filtersActive}
@@ -841,7 +870,7 @@ export default function SocialMediaPostGenerator() {
               <div className="absolute right-0 top-[calc(100%+6px)] z-40 w-64 overflow-hidden rounded-xl border border-[#1e3260]/70 bg-[#0d1531] shadow-xl">
                 {/* Date */}
                 <p className="px-4 pb-1.5 pt-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#5a6e9a]">
-                  Date
+                  {t('gen.date')}
                 </p>
                 {DATE_RANGES.map((d) => (
                   <button
@@ -860,7 +889,7 @@ export default function SocialMediaPostGenerator() {
                 {availableDays.length > 0 && (
                   <>
                     <p className="mt-1 border-t border-[#1e3260]/60 px-4 pb-1.5 pt-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#5a6e9a]">
-                      Pick a day
+                      {t('gen.pickADay')}
                     </p>
                     <div className="max-h-52 overflow-y-auto">
                       {availableDays.map((d) => {
@@ -893,7 +922,7 @@ export default function SocialMediaPostGenerator() {
                     onClick={() => { setDateFilter('all'); setTypeFilter('all'); setActiveFilter('All'); setPage(1); }}
                     className="w-full border-t border-[#1e3260]/60 px-4 py-2.5 text-left text-[12px] text-[#8b94b8] transition hover:bg-[#0f1a3a] hover:text-white"
                   >
-                    Clear filters
+                    {t('gen.clearFilters')}
                   </button>
                 )}
               </div>
@@ -904,19 +933,19 @@ export default function SocialMediaPostGenerator() {
         {/* ── Mobile tone selector (left sidebar is hidden on mobile) ── */}
         <div className="mx-6 mb-3 lg:hidden md:mx-8">
           <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
-            <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#6aa8ff]">Tone</span>
-            {TONES.map((t) => (
+            <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#6aa8ff]">{t('gen.tone')}</span>
+            {TONES.map((tn) => (
               <button
-                key={t}
+                key={tn}
                 type="button"
-                onClick={() => setTone(t)}
+                onClick={() => setTone(tn)}
                 className={`shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10.5px] font-medium transition ${
-                  tone === t
+                  tone === tn
                     ? 'border-[#3f9fff]/60 bg-[#0d1a3a] text-[#3f9fff]'
                     : 'border-[#1e3260]/60 bg-[#0a1130]/60 text-[#6b78a0] hover:text-white'
                 }`}
               >
-                {t}
+                {toneLabel(tn, lang)}
               </button>
             ))}
           </div>
@@ -925,14 +954,16 @@ export default function SocialMediaPostGenerator() {
         {/* ── Feed view ── */}
         {view === 'feed' && (
           <div className="flex-1 overflow-y-auto px-6 pb-10 md:px-8">
-            {/* Two news sections: chosen party vs general (neutral) news.
-                Underlined tabs rather than pills, and each section carries its
-                own accent so it is obvious which feed you are reading. */}
+            {/* Three news sections: chosen party, opposition (BJP, empty
+                until it is scraped), and general (neutral) news. Underlined
+                tabs rather than pills, and each section carries its own
+                accent so it is obvious which feed you are reading. */}
             {activeParty && (
               <div className="mb-5 flex items-end gap-1.5 border-b border-[#1e2636]/90">
                 {[
-                  { id: 'party',   label: activeParty.name, count: partyArticles.length },
-                  { id: 'general', label: 'General News',    count: generalArticles.length },
+                  { id: 'party',      label: activeParty.name,          count: partyArticles.length },
+                  { id: 'opposition', label: t('gen.oppositionNews'),   count: oppositionArticles.length },
+                  { id: 'general',    label: t('gen.generalNews'),      count: generalArticles.length },
                 ].map((s) => {
                   const active = newsSection === s.id;
                   const tint = SECTION_THEME[s.id].accent;
@@ -940,7 +971,14 @@ export default function SocialMediaPostGenerator() {
                     <button
                       key={s.id}
                       type="button"
-                      onClick={() => { setNewsSection(s.id); setPage(1); }}
+                      onClick={() => {
+                        setNewsSection(s.id);
+                        setPage(1);
+                        // Neither general nor opposition has press conferences,
+                        // so carrying that filter across from the party tab
+                        // would show an empty section and look broken.
+                        if (s.id === 'general' || s.id === 'opposition') setTypeFilter('all');
+                      }}
                       title={s.label}
                       className="group relative -mb-px flex items-center gap-2.5 rounded-t-xl px-4 pb-3 pt-2.5 text-[13.5px] font-semibold transition-colors duration-150"
                       style={{
@@ -991,35 +1029,44 @@ export default function SocialMediaPostGenerator() {
             {/* Content type — pills rather than tabs, so the party tabs above
                 stay the primary level of navigation. */}
             <div className="mb-6 flex flex-wrap items-center gap-2.5">
-              {[
-                { id: 'all',              label: 'All',                         color: '#8a9ac0' },
-                { id: 'press_conference', label: CONTENT_TYPES.press_conference.label, color: CONTENT_TYPES.press_conference.color },
-                { id: 'news',             label: CONTENT_TYPES.news.label,      color: '#6aa8ff' },
-              ].map((t) => {
-                const active = typeFilter === t.id;
-                const count = t.id === 'all'
+              {(newsSection === 'general' || newsSection === 'opposition'
+                // General is scraped from the videos tab alone, so every item
+                // is the same type. Three filters over one type is furniture:
+                // "All" and "News Articles" select the same set and "Press
+                // Conference" selects nothing. Opposition has no data yet, so
+                // it gets the same single-chip treatment until its own scrape
+                // defines what content types it actually carries.
+                ? [{ id: 'all', label: newsTypeLabel(newsSection), color: '#6aa8ff' }]
+                : [
+                    { id: 'all',              label: 'gen.all',                              color: '#8a9ac0' },
+                    { id: 'press_conference', label: 'gen.pressConference',                  color: CONTENT_TYPES.press_conference.color },
+                    { id: 'news',             label: newsTypeLabel(newsSection),             color: '#6aa8ff' },
+                  ]
+              ).map((chip) => {
+                const active = typeFilter === chip.id;
+                const count = chip.id === 'all'
                   ? sectionArticles.length
-                  : sectionArticles.filter((a) => a.contentType === t.id).length;
+                  : sectionArticles.filter((a) => a.contentType === chip.id).length;
                 return (
                   <button
-                    key={t.id}
+                    key={chip.id}
                     type="button"
-                    onClick={() => { setTypeFilter(t.id); setPage(1); setView('feed'); }}
+                    onClick={() => { setTypeFilter(chip.id); setPage(1); setView('feed'); }}
                     className="inline-flex items-center gap-2.5 rounded-full border px-5 py-2.5 text-[16px] font-semibold transition"
                     style={{
-                      borderColor: active ? t.color : 'rgba(30,38,54,0.9)',
-                      backgroundColor: active ? `${t.color}1f` : 'transparent',
-                      color: active ? t.color : '#7d8aa6',
+                      borderColor: active ? chip.color : 'rgba(30,38,54,0.9)',
+                      backgroundColor: active ? `${chip.color}1f` : 'transparent',
+                      color: active ? chip.color : '#7d8aa6',
                     }}
                   >
-                    {t.id === 'press_conference' && <Radio size={16} strokeWidth={2} />}
-                    {t.id === 'news' && <FileText size={16} strokeWidth={2} />}
-                    {t.label}
+                    {chip.id === 'press_conference' && <Radio size={16} strokeWidth={2} />}
+                    {chip.id === 'news' && <FileText size={16} strokeWidth={2} />}
+                    {t(chip.label)}
                     <span
                       className="rounded-full px-2 py-1 font-count text-[13px] leading-none"
                       style={{
-                        backgroundColor: active ? `${t.color}26` : 'rgba(30,38,54,0.9)',
-                        color: active ? t.color : '#5a6e9a',
+                        backgroundColor: active ? `${chip.color}26` : 'rgba(30,38,54,0.9)',
+                        color: active ? chip.color : '#5a6e9a',
                       }}
                     >
                       {count}
@@ -1062,20 +1109,30 @@ export default function SocialMediaPostGenerator() {
             )}
             {!newsLoading && newsError && (
               <div className="flex flex-col items-center gap-3 rounded-2xl border border-red-500/20 bg-red-500/5 px-6 py-10 text-center">
-                <p className="text-[13px] text-red-400">Failed to load news articles.</p>
+                <p className="text-[13px] text-red-400">{t('gen.failedToLoad')}</p>
                 <button
                   type="button"
                   onClick={loadNews}
                   className="rounded-full border border-red-500/30 bg-red-500/10 px-4 py-2 text-[12px] font-medium text-red-400 transition hover:bg-red-500/20"
                 >
-                  Retry
+                  {t('gen.retry')}
                 </button>
               </div>
             )}
-            {!newsLoading && !newsError && filteredArticles.length === 0 && (
+            {!newsLoading && !newsError && filteredArticles.length === 0 && newsSection === 'opposition' && (
+              // Distinct from the generic empty state below: there is no
+              // filter to change here, the scrape just does not exist yet.
               <div className="flex flex-col items-center gap-2 py-16 text-center">
-                <p className="text-[14px] font-medium text-[#6aa8ff]">No articles found</p>
-                <p className="text-[12px] text-[#4a5a80]">Try a different search or filter</p>
+                <p className="text-[14px] font-medium" style={{ color: SECTION_THEME.opposition.accent }}>
+                  {t('gen.oppositionComingSoon')}
+                </p>
+                <p className="text-[12px] text-[#4a5a80]">{t('gen.oppositionComingSoonSub')}</p>
+              </div>
+            )}
+            {!newsLoading && !newsError && filteredArticles.length === 0 && newsSection !== 'opposition' && (
+              <div className="flex flex-col items-center gap-2 py-16 text-center">
+                <p className="text-[14px] font-medium text-[#6aa8ff]">{t('gen.noArticlesFound')}</p>
+                <p className="text-[12px] text-[#4a5a80]">{t('gen.tryDifferent')}</p>
               </div>
             )}
             {!newsLoading && !newsError && filteredArticles.length > 0 && (
@@ -1087,14 +1144,14 @@ export default function SocialMediaPostGenerator() {
                     The accent bar moves under the title for the same reason:
                     a vertical bar only works against left-aligned text. */}
                 <h3 className="font-display text-[34px] font-bold leading-tight tracking-tight text-white md:text-[38px]">
-                  Headlines
+                  {t('gen.headlines')}
                 </h3>
                 <span
                   className="mx-auto mt-2 block h-[3px] w-16 rounded-full"
                   style={{ backgroundColor: theme.accent, boxShadow: `0 0 12px ${theme.accent}88` }}
                 />
                 <p className="mt-3 text-[14.5px] text-[#7d8aa6]">
-                  Pick a story below to generate a post from it.
+                  {t('gen.pickStory')}
                 </p>
               </div>
 
@@ -1141,7 +1198,9 @@ export default function SocialMediaPostGenerator() {
                           {article.contentType === 'press_conference'
                             ? <Radio size={12} strokeWidth={2} />
                             : <FileText size={12} strokeWidth={2} />}
-                          {(CONTENT_TYPES[article.contentType] ?? CONTENT_TYPES.news).label}
+                          {article.contentType === 'press_conference'
+                            ? t('gen.pressConference')
+                            : t(newsTypeLabel(newsSection))}
                         </span>
                         <span
                           className="shrink-0 rounded-full border px-3 py-1 font-count text-[11px] uppercase tracking-wider"
@@ -1192,7 +1251,7 @@ export default function SocialMediaPostGenerator() {
                     className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#1e2636]/80 bg-[#0e1320] px-3 text-[12.5px] font-medium text-[#8a9ac0] transition hover:border-[#3f9fff]/45 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <ChevronDown size={13} strokeWidth={2} className="rotate-90" />
-                    Prev
+                    {t('gen.prev')}
                   </button>
 
                   {getPageItems(currentPage, totalPages).map((item, i) =>
@@ -1222,7 +1281,7 @@ export default function SocialMediaPostGenerator() {
                     disabled={currentPage === totalPages}
                     className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#1e2636]/80 bg-[#0e1320] px-3 text-[12.5px] font-medium text-[#8a9ac0] transition hover:border-[#3f9fff]/45 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    Next
+                    {t('gen.next')}
                     <ChevronDown size={13} strokeWidth={2} className="-rotate-90" />
                   </button>
                 </div>
@@ -1242,7 +1301,7 @@ export default function SocialMediaPostGenerator() {
                 className="inline-flex items-center gap-1.5 rounded-full border border-[#1e3260]/70 bg-[#0d1531]/60 px-3 py-1.5 text-[12px] font-medium text-[#8b94b8] transition hover:border-[#3f9fff]/50 hover:text-white"
               >
                 <ArrowLeft size={12} strokeWidth={2} />
-                Back
+                {t('common.back')}
               </button>
               <span className="inline-block rounded-full border border-[#1e3a6e]/60 bg-[#0d1840]/60 px-2.5 py-0.5 font-count text-[10px] uppercase tracking-widest text-[#6aa8ff]">
                 {selectedArticle.category}
@@ -1270,7 +1329,7 @@ export default function SocialMediaPostGenerator() {
 
             {/* Platform selector */}
             <div className="mt-5">
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#6aa8ff]">Platform</p>
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#6aa8ff]">{t('gen.platform')}</p>
               <div className="grid grid-cols-4 gap-2">
                 {PLATFORMS.map((p) => (
                   <button
@@ -1330,7 +1389,7 @@ export default function SocialMediaPostGenerator() {
               >
                 <div className="flex items-center gap-2">
                   <Sparkles size={13} strokeWidth={2} className="text-[#6aa8ff]" />
-                  <span className="text-[13px] font-semibold text-white">Post Preferences</span>
+                  <span className="text-[13px] font-semibold text-white">{t('gen.postPreferences')}</span>
                   <span className="text-[11px] text-[#6b78a0]">· tune the AI voice</span>
                 </div>
                 <ChevronDown
@@ -1387,7 +1446,7 @@ export default function SocialMediaPostGenerator() {
               {atDailyLimit ? (
                 <>⏳ Come back in {quotaCountdown}</>
               ) : (
-                <><Sparkles size={15} strokeWidth={2} /> Generate Post</>
+                <><Sparkles size={15} strokeWidth={2} /> {t('gen.generatePost')}</>
               )}
             </button>
           </div>
@@ -1406,10 +1465,10 @@ export default function SocialMediaPostGenerator() {
                 className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#1e3260]/70 bg-[#0d1531]/60 text-[#8b94b8] transition hover:border-[#3f9fff]/50 hover:text-white sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-1.5"
               >
                 <ArrowLeft size={12} strokeWidth={2} />
-                <span className="hidden text-[12px] font-medium sm:inline">Article</span>
+                <span className="hidden text-[12px] font-medium sm:inline">{t('gen.article')}</span>
               </button>
 
-              <h2 className="font-display text-[16px] font-semibold text-white sm:text-[18px]">Generated Post</h2>
+              <h2 className="font-display text-[16px] font-semibold text-white sm:text-[18px]">{t('gen.generatedPost')}</h2>
 
               {/* Action buttons */}
               <div className="ml-auto flex items-center gap-1 sm:gap-2">
@@ -1451,7 +1510,7 @@ export default function SocialMediaPostGenerator() {
                   className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#1e3260]/70 bg-[#0d1531]/60 text-[#8b94b8] transition hover:border-[#3f9fff]/60 hover:text-white disabled:opacity-40 sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-2"
                 >
                   <RefreshCw size={12} strokeWidth={2} className={generating ? 'animate-spin' : ''} />
-                  <span className="hidden text-[12px] font-medium sm:inline">Regenerate</span>
+                  <span className="hidden text-[12px] font-medium sm:inline">{t('gen.regenerate')}</span>
                 </button>
 
                 {/* Copy */}
@@ -1561,7 +1620,7 @@ export default function SocialMediaPostGenerator() {
                   value={refinementNote}
                   onChange={(e) => setRefinementNote(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && refinementNote.trim() && handleRegenerate()}
-                  placeholder="What should be different? (optional — press Enter or click Regenerate)"
+                  placeholder={t('gen.refinementPlaceholder')}
                   className="w-full rounded-xl border border-[#1e3260]/50 bg-[#0a1130]/60 px-4 py-2.5 text-[12.5px] text-white placeholder-[#3a4e70] outline-none transition focus:border-[#3f9fff]/50 focus:shadow-[0_0_0_3px_rgba(63,159,255,0.1)]"
                 />
               </div>
@@ -1571,7 +1630,7 @@ export default function SocialMediaPostGenerator() {
             {!generating && generatedPost && (
               <div className="mt-2 flex items-center gap-1.5 justify-end">
                 <img src={logoSrc} alt="" className="h-3.5 w-3.5 object-contain opacity-50" />
-                <span className="text-[10.5px] text-[#3a4e70]">Generated by AmbedkarGPT</span>
+                <span className="text-[10.5px] text-[#3a4e70]">{t('gen.generatedBy')}</span>
               </div>
             )}
 
@@ -1607,7 +1666,7 @@ export default function SocialMediaPostGenerator() {
               </div>
               {/* Words */}
               <div className="rounded-xl border border-[#1e3260]/60 bg-[#0a1130]/60 px-4 py-3 text-center">
-                <div className="text-[11px] text-[#8b94b8]">Words</div>
+                <div className="text-[11px] text-[#8b94b8]">{t('gen.words')}</div>
                 <div className="mt-1 font-count text-[22px] font-bold tabular-nums text-white">{words}</div>
               </div>
               {/* Hashtags copy */}
@@ -1617,11 +1676,11 @@ export default function SocialMediaPostGenerator() {
                 disabled={!generatedPost}
                 className="rounded-xl border border-[#1e3260]/60 bg-[#0a1130]/60 px-4 py-3 text-center transition hover:border-[#3f9fff]/40 hover:bg-[#0d1635]/70 disabled:opacity-40"
               >
-                <div className="text-[11px] text-[#8b94b8]">Hashtags</div>
+                <div className="text-[11px] text-[#8b94b8]">{t('gen.hashtags')}</div>
                 <div className="mt-1 flex items-center justify-center gap-1.5">
                   {copiedHashtags
-                    ? <><Check size={14} strokeWidth={2.5} className="text-[#22c55e]" /><span className="font-count text-[13px] font-bold text-[#22c55e]">Copied!</span></>
-                    : <><Copy size={13} strokeWidth={2} className="text-[#5fa5ff]" /><span className="font-count text-[13px] font-bold text-[#5fa5ff]">Copy</span></>
+                    ? <><Check size={14} strokeWidth={2.5} className="text-[#22c55e]" /><span className="font-count text-[13px] font-bold text-[#22c55e]">{t('gen.copied')}</span></>
+                    : <><Copy size={13} strokeWidth={2} className="text-[#5fa5ff]" /><span className="font-count text-[13px] font-bold text-[#5fa5ff]">{t('common.copy')}</span></>
                   }
                 </div>
               </button>
@@ -1630,7 +1689,7 @@ export default function SocialMediaPostGenerator() {
             {/* You Can Also Generate — card with grid buttons */}
             <div className="mt-5 overflow-hidden rounded-2xl border border-[#1e3260]/60 bg-[#0a1130]/70 p-5">
               <p className="mb-4 font-display text-[14px] font-semibold text-white">
-                You Can Also Generate
+                {t('gen.alsoGenerate')}
               </p>
               <div className="grid grid-cols-3 gap-3">
                 {ALSO_GENERATE.map((label) => (

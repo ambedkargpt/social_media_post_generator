@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom';
 import BrandPanel from './BrandPanel';
 import BackgroundDecorations from './BackgroundDecorations';
+import { useI18n } from '../i18n/index.jsx';
 
 const logoSrc = new URL('../assets/images/logo-animation.png', import.meta.url).href;
 
 export default function AuthLayout({ children, brandSide = 'right', brandVariant = 'login' }) {
+  const { t } = useI18n();
   const brandPanel = (
     <div className="hidden md:block md:w-[52%] relative">
       <BrandPanel variant={brandVariant} />
@@ -37,7 +39,7 @@ export default function AuthLayout({ children, brandSide = 'right', brandVariant
             className="h-10 w-10 object-contain drop-shadow-[0_0_16px_rgba(63,159,255,0.6)]"
           />
           <span className="font-display text-[22px] font-bold leading-none tracking-tight">
-            <span className="text-white">Ambedkar</span>
+            <span className="text-white">{t('brand.ambedkar')}</span>
             <span className="gradient-text-cyan">GPT</span>
           </span>
         </Link>

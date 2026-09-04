@@ -9,6 +9,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { sendChatMessage } from '../api/chat';
 import logoSrc from '../assets/images/logo-animation.png';
+import { useI18n } from '../i18n/index.jsx';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -16,41 +17,35 @@ const CATEGORIES = [
   {
     id: 'constitution',
     icon: Scale,
-    title: 'Constitution & Law',
-    desc: 'Articles, rights, and constitutional history',
     prompt: 'Explain the fundamental rights in the Indian Constitution as drafted by Dr. Ambedkar and why they matter for marginalized communities.',
   },
   {
     id: 'writings',
     icon: BookOpen,
-    title: "Ambedkar's Writings",
-    desc: 'Books, speeches, and essays',
     prompt: "What are Dr. Ambedkar's most important books and what key ideas does each one explore?",
   },
   {
     id: 'justice',
     icon: Heart,
-    title: 'Social Justice',
-    desc: 'Caste, equality, and reform movements',
     prompt: 'How did Dr. Ambedkar define social justice and what concrete steps did he propose to achieve it?',
   },
   {
     id: 'faqs',
     icon: HelpCircle,
-    title: 'FAQs',
-    desc: "Common questions about Ambedkar's life and work",
     prompt: "What are some frequently asked questions about Dr. B.R. Ambedkar's life, education, and legacy?",
   },
 ];
 
-const WELCOME_MESSAGE = {
+// A factory, not a constant: the greeting has to be built in the language in
+// force when the chat opens, and a module-level object is frozen in whatever
+// language happened to be loaded first.
+const welcomeMessage = (t) => ({
   id: 'welcome',
   role: 'assistant',
-  content:
-    "Hello! I'm BheemBot, your AI knowledge assistant trained on Dr. BR Ambedkar's writings and speeches. Ask me about constitutional law, social justice, or his philosophy.",
+  content: t('bot.welcome'),
   sources: [],
   timestamp: Date.now(),
-};
+});
 
 const SIDEBAR_WIDTH_KEY  = 'bheembot_sidebar_width';
 const sessionKey = (userId) => `bheembot_history_${userId || 'anon'}`;
@@ -141,12 +136,13 @@ function MessageBubble({ msg }) {
 // ── Sidebar ────────────────────────────────────────────────────────────────────
 
 function ChatSidebar({ onCategoryClick, searchQuery, setSearchQuery, onClose, mobile }) {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const filtered = searchQuery
     ? CATEGORIES.filter(
         (c) =>
-          c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          c.desc.toLowerCase().includes(searchQuery.toLowerCase()),
+          t(`bot.cat.${c.id}.title`).toLowerCase().includes(searchQuery.toLowerCase()) ||
+          t(`bot.cat.${c.id}.desc`).toLowerCase().includes(searchQuery.toLowerCase()),
       )
     : CATEGORIES;
 
@@ -166,7 +162,7 @@ function ChatSidebar({ onCategoryClick, searchQuery, setSearchQuery, onClose, mo
             style={{ background: 'transparent' }}
           />
           <span className="truncate font-display text-[14px] font-semibold gradient-text-blue">
-            AmbedkarGpt
+            {t('brand.ambedkar')}GPT
           </span>
         </button>
         {mobile && (
@@ -182,7 +178,7 @@ function ChatSidebar({ onCategoryClick, searchQuery, setSearchQuery, onClose, mo
           <Search size={12} strokeWidth={2} className="shrink-0 text-[#4a6080]" />
           <input
             type="text"
-            placeholder="Search categories..."
+            placeholder={t('bot.searchCategories')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-transparent text-[12px] text-white placeholder:text-[#4a6080] outline-none"
@@ -193,11 +189,11 @@ function ChatSidebar({ onCategoryClick, searchQuery, setSearchQuery, onClose, mo
       {/* Categories */}
       <div className="flex-1 overflow-y-auto px-3 pb-2">
         <p className="mb-2 px-1 text-[9.5px] font-semibold uppercase tracking-[0.18em] text-[#4a6080]">
-          Knowledge Categories
+          {t('bot.knowledgeCategories')}
         </p>
         <div className="space-y-1">
           {/* eslint-disable-next-line no-unused-vars */}
-          {filtered.map(({ id, icon: CatIcon, title, desc, prompt }) => (
+          {filtered.map(({ id, icon: CatIcon, prompt }) => (
             <button
               key={id}
               type="button"
@@ -209,15 +205,15 @@ function ChatSidebar({ onCategoryClick, searchQuery, setSearchQuery, onClose, mo
                   <CatIcon size={12} strokeWidth={1.8} />
                 </span>
                 <div className="min-w-0">
-                  <p className="truncate text-[12px] font-semibold text-white">{title}</p>
-                  <p className="mt-0.5 text-[10.5px] leading-snug text-[#5a7a9e]">{desc}</p>
+                  <p className="truncate text-[12px] font-semibold text-white">{t(`bot.cat.${id}.title`)}</p>
+                  <p className="mt-0.5 text-[10.5px] leading-snug text-[#5a7a9e]">{t(`bot.cat.${id}.desc`)}</p>
                 </div>
                 <ChevronRight size={12} strokeWidth={1.8} className="mt-1 shrink-0 text-[#1e3260] transition group-hover:text-[#4d94ff]" />
               </div>
             </button>
           ))}
           {filtered.length === 0 && (
-            <p className="px-2 py-3 text-[11.5px] text-[#4a6080]">No categories match your search.</p>
+            <p className="px-2 py-3 text-[11.5px] text-[#4a6080]">{t('bot.noCategories')}</p>
           )}
         </div>
       </div>
@@ -230,13 +226,13 @@ function ChatSidebar({ onCategoryClick, searchQuery, setSearchQuery, onClose, mo
           className="flex w-full items-center gap-2 rounded-xl border border-[#1e3260]/40 bg-[#0a1428]/60 px-3 py-2 text-[11.5px] text-[#5a7a9e] transition hover:border-[#3a6bc4]/60 hover:text-white"
         >
           <LayoutDashboard size={13} strokeWidth={1.8} />
-          Back to Dashboard
+          {t('bot.backToDashboard')}
         </button>
       </div>
 
       {/* Footer */}
       <p className="px-4 pb-4 text-[10px] text-[#2a3a5e]">
-        Powered by advanced RAG technology
+        {t('bot.poweredBy')}
       </p>
     </aside>
   );
@@ -245,11 +241,12 @@ function ChatSidebar({ onCategoryClick, searchQuery, setSearchQuery, onClose, mo
 // ── Resize handle ──────────────────────────────────────────────────────────────
 
 function ResizeHandle({ onMouseDown, isDragging }) {
+  const { t } = useI18n();
   return (
     <div
       onMouseDown={onMouseDown}
       className="group relative z-20 hidden w-[5px] shrink-0 cursor-col-resize select-none md:flex md:items-center md:justify-center"
-      title="Drag to resize"
+      title={t('bot.dragResize')}
       style={{ background: 'transparent' }}
     >
       {/* Visible line */}
@@ -286,6 +283,7 @@ function ResizeHandle({ onMouseDown, isDragging }) {
 // ── Main Page ──────────────────────────────────────────────────────────────────
 
 export default function BheemBot() {
+  const { t } = useI18n();
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -304,7 +302,7 @@ export default function BheemBot() {
       const stored = sessionStorage.getItem(sessionKey(currentUser?.id));
       if (stored) return JSON.parse(stored);
     } catch { /* ignore */ }
-    return [WELCOME_MESSAGE];
+    return [welcomeMessage(t)];
   });
   const [input,        setInput]        = useState('');
   const [sending,      setSending]      = useState(false);
@@ -339,9 +337,9 @@ export default function BheemBot() {
       prevUserIdRef.current = currentUser?.id;
       try {
         const stored = sessionStorage.getItem(sessionKey(currentUser?.id));
-        setMessages(stored ? JSON.parse(stored) : [WELCOME_MESSAGE]);
+        setMessages(stored ? JSON.parse(stored) : [welcomeMessage(t)]);
       } catch {
-        setMessages([WELCOME_MESSAGE]);
+        setMessages([welcomeMessage(t)]);
       }
     }
   }, [currentUser?.id]);
@@ -526,10 +524,10 @@ export default function BheemBot() {
               <Sparkles size={16} strokeWidth={2} className="text-white" />
             </div>
             <div>
-              <h1 className="font-display text-[15px] font-semibold text-white">AI Knowledge Assistant</h1>
+              <h1 className="font-display text-[15px] font-semibold text-white">{t('bot.assistant')}</h1>
               <div className="flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e] shadow-[0_0_6px_rgba(34,197,94,0.8)]" />
-                <span className="text-[11px] text-[#22c55e]">Online</span>
+                <span className="text-[11px] text-[#22c55e]">{t('bot.online')}</span>
               </div>
             </div>
           </div>
@@ -544,7 +542,7 @@ export default function BheemBot() {
               className="hidden items-center gap-1.5 rounded-xl border border-[#1e3260]/60 bg-[#0a1428]/60 px-3 py-1.5 text-[12px] text-[#5a7a9e] transition hover:border-[#3a6bc4]/60 hover:text-white sm:flex"
             >
               <LayoutDashboard size={12} strokeWidth={1.8} />
-              Dashboard
+              {t('nav.dashboard')}
             </button>
           </div>
         </header>
@@ -563,7 +561,7 @@ export default function BheemBot() {
             <button
               type="button"
               disabled
-              title="Attachment (coming soon)"
+              title={t('bot.attachSoon')}
               className="mb-0.5 shrink-0 text-[#2a3a5e]"
             >
               <Paperclip size={16} strokeWidth={1.8} />
@@ -575,7 +573,7 @@ export default function BheemBot() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask me anything..."
+              placeholder={t('bot.askAnything')}
               className="flex-1 resize-none bg-transparent text-[13.5px] text-white placeholder:text-[#3a4e6e] outline-none leading-[1.5]"
               style={{ maxHeight: '120px', overflowY: 'auto' }}
               onInput={(e) => {
@@ -587,7 +585,7 @@ export default function BheemBot() {
             <button
               type="button"
               disabled
-              title="Voice input (coming soon)"
+              title={t('bot.voiceSoon')}
               className="mb-0.5 shrink-0 text-[#2a3a5e]"
             >
               <Mic size={16} strokeWidth={1.8} />

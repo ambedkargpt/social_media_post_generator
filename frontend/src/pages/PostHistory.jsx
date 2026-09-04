@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { getPosts, updatePost, deletePost, translatePost } from '../api/posts';
 import PostContent from '../components/generate/PostContent';
 import logoSrc from '../assets/images/logo-animation.png';
+import { useI18n } from '../i18n/index.jsx';
 
 const STATUS_COLORS = {
   draft:     { bg: 'rgba(255,176,56,0.12)',  border: 'rgba(255,176,56,0.35)',  text: '#ffb038' },
@@ -14,13 +15,14 @@ const STATUS_COLORS = {
 };
 
 function StatusBadge({ status }) {
+  const { t, lang } = useI18n();
   const s = STATUS_COLORS[status] ?? STATUS_COLORS.draft;
   return (
     <span
       className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize"
       style={{ backgroundColor: s.bg, border: `1px solid ${s.border}`, color: s.text }}
     >
-      {status}
+      {t(`status.${status}`)}
     </span>
   );
 }
@@ -59,7 +61,7 @@ function PostModal({ post, onClose, onCopy, copiedId }) {
   }
 
   const date = post.created_at
-    ? new Date(post.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+    ? new Date(post.created_at).toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
     : '';
 
   // Rendered into document.body. An ancestor with will-change/transform becomes
@@ -128,6 +130,7 @@ function PostModal({ post, onClose, onCopy, copiedId }) {
 }
 
 function PostCard({ post, onOpen, onCopy, onPublish, onArchive, copiedId }) {
+  const { t, lang } = useI18n();
   const [translating, setTranslating]     = useState(false);
   const [translated, setTranslated]       = useState('');
   const [showTranslated, setShowTranslated] = useState(false);
@@ -137,7 +140,7 @@ function PostCard({ post, onOpen, onCopy, onPublish, onArchive, copiedId }) {
   const preview    = content.slice(0, 200);
   const hasMore    = content.length > 200;
   const date = post.created_at
-    ? new Date(post.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+    ? new Date(post.created_at).toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
     : '';
 
   async function handleTranslate() {
@@ -197,7 +200,7 @@ function PostCard({ post, onOpen, onCopy, onPublish, onArchive, copiedId }) {
               className="flex h-7 items-center justify-center gap-1 rounded-lg border border-[#1e3260]/60 px-1.5 text-[#6b78a0] transition hover:border-[#22c55e]/50 hover:text-[#22c55e] sm:px-2.5"
             >
               <BookmarkCheck size={12} strokeWidth={2} />
-              <span className="hidden text-[11px] font-medium sm:inline">Publish</span>
+              <span className="hidden text-[11px] font-medium sm:inline">{t('gen.publish')}</span>
             </button>
           )}
 
@@ -225,8 +228,8 @@ function PostCard({ post, onOpen, onCopy, onPublish, onArchive, copiedId }) {
             }}
           >
             {copiedId === post.id
-              ? <><Check size={12} strokeWidth={2.5} /><span className="hidden text-[11px] font-medium sm:inline">Copied</span></>
-              : <><Copy  size={12} strokeWidth={2}   /><span className="hidden text-[11px] font-medium sm:inline">Copy</span></>
+              ? <><Check size={12} strokeWidth={2.5} /><span className="hidden text-[11px] font-medium sm:inline">{t('common.copied')}</span></>
+              : <><Copy  size={12} strokeWidth={2}   /><span className="hidden text-[11px] font-medium sm:inline">{t('common.copy')}</span></>
             }
           </button>
         </div>
@@ -247,7 +250,7 @@ function PostCard({ post, onOpen, onCopy, onPublish, onArchive, copiedId }) {
         style={{ color: '#3f9fff' }}
       >
         <Maximize2 size={12} strokeWidth={2.2} />
-        Read full post
+        {t('history.readFull')}
       </button>
 
       {/* hashtags */}
@@ -269,6 +272,7 @@ function PostCard({ post, onOpen, onCopy, onPublish, onArchive, copiedId }) {
 }
 
 export default function PostHistory() {
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
 
@@ -350,7 +354,7 @@ export default function PostHistory() {
             className="flex items-center gap-2 rounded-full border border-[#1e3260]/70 px-4 py-2 text-[13px] font-medium text-[#6b78a0] transition hover:border-[#3a6bc4]/60 hover:text-white"
           >
             <ArrowLeft size={14} strokeWidth={2} />
-            Dashboard
+            {t('nav.dashboard')}
           </button>
 
           {/* Right: action */}
@@ -362,7 +366,7 @@ export default function PostHistory() {
               style={{ background: 'linear-gradient(90deg,#0a7dff,#3a9fff)', boxShadow: '0 4px 18px rgba(10,125,255,0.35)' }}
             >
               <Sparkles size={15} strokeWidth={2.1} />
-              Generate New
+              {t('history.generateNew')}
             </button>
           </div>
         </div>
@@ -371,8 +375,8 @@ export default function PostHistory() {
       <main className="relative z-10 mx-auto max-w-[960px] px-6 py-8">
         {/* Title */}
         <div className="mb-7">
-          <h1 className="font-display text-[28px] font-bold text-white">Post History</h1>
-          <p className="mt-1 text-[13.5px] text-[#6b78a0]">All posts you've generated — read, copy, publish, or archive them.</p>
+          <h1 className="font-display text-[28px] font-bold text-white">{t('history.title')}</h1>
+          <p className="mt-1 text-[13.5px] text-[#6b78a0]">{t('history.sub')}</p>
         </div>
 
         {/* Search + filter bar */}
@@ -381,7 +385,7 @@ export default function PostHistory() {
             <Search size={14} strokeWidth={2} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#4e5a80]" />
             <input
               type="text"
-              placeholder="Search posts…"
+              placeholder={t('history.searchPosts')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full rounded-xl border border-[#1a2c55] bg-[#07101f] py-2.5 pl-9 pr-4 text-[13.5px] text-white placeholder:text-[#4e5a80] outline-none transition focus:border-[#3f9fff]/50"
@@ -401,7 +405,7 @@ export default function PostHistory() {
                   boxShadow: filter === tab ? '0 1px 4px rgba(0,0,0,0.4)' : 'none',
                 }}
               >
-                {tab} <span className="ml-0.5 opacity-60">({counts[tab]})</span>
+                {t(`status.${tab}`)} <span className="ml-0.5 opacity-60">({counts[tab]})</span>
               </button>
             ))}
           </div>
@@ -426,7 +430,7 @@ export default function PostHistory() {
                 style={{ background: 'linear-gradient(90deg,#0a7dff,#3a9fff)' }}
               >
                 <Sparkles size={13} strokeWidth={2} />
-                Generate a post
+                {t('history.generateAPost')}
               </button>
             )}
           </div>

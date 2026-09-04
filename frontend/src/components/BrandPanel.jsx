@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import ImagePlaceholder from './ImagePlaceholder';
+import { useI18n } from '../i18n/index.jsx';
 
 // eager-load image assets so the build bundles them
 const imageModules = import.meta.glob('../assets/images/*.{jpg,jpeg,png,webp}', {
@@ -31,11 +32,12 @@ function LogoMark({ size = 44 }) {
 }
 
 function BrandLogo() {
+  const { t } = useI18n();
   return (
     <Link to="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-85">
       <LogoMark />
       <span className="text-[26px] font-semibold leading-none tracking-tight md:text-[30px]">
-        <span className="text-white">Ambedkar</span>
+        <span className="text-white">{t('brand.ambedkar')}</span>
         <span className="gradient-text-cyan">GPT</span>
       </span>
     </Link>
@@ -95,6 +97,7 @@ function FramedImage({ src, label, variant = 'login' }) {
 }
 
 export default function BrandPanel({ variant = 'login' }) {
+  const { t } = useI18n();
   const isSignup = variant === 'signup';
   const src = isSignup ? statueSrc : portraitSrc;
   const label = isSignup ? 'Ambedkar Statue' : 'Ambedkar Portrait';
@@ -107,17 +110,17 @@ export default function BrandPanel({ variant = 'login' }) {
 
         <div className={`text-center ${isSignup ? '-mt-8' : ''}`}>
           <p className="font-serif text-[15px] italic text-[#9fb5e0]">
-            “Educate, Agitate, Organize”
+            {t('brand.quote')}
           </p>
           <p className="mt-1 text-[11.5px] uppercase tracking-[0.18em] text-[#6b80ab]">
-            — Dr. B.R. Ambedkar
+            {t('brand.attrib')}
           </p>
           <div className="mt-4">
             <p className="font-display text-[26px] font-semibold leading-[1.1] text-white md:text-[30px]">
-              Empowering Minds with
+              {t('brand.empowering')}
             </p>
             <p className="font-display text-[26px] font-semibold italic leading-[1.1] gradient-text-cyan md:text-[30px]">
-              Knowledge &amp; Equality
+              {t('brand.knowledge')}
             </p>
           </div>
         </div>
