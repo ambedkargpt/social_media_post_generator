@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Volume2, Square, AlertTriangle } from 'lucide-react';
 import { parsePost } from '../../utils/parsePost';
+import { useI18n } from '../../i18n/index.jsx';
 
 /**
  * Read the generated post aloud.
@@ -32,7 +33,8 @@ function speakableText(content) {
   return [headline, ...paragraphs].filter(Boolean).join(' ');
 }
 
-export default function SpeakButton({ content, lang = 'hi', className = '' }) {
+export default function SpeakButton({ content, lang = 'hi', className = '', compact = false }) {
+  const { t } = useI18n();
   const [speaking, setSpeaking] = useState(false);
   const [voices, setVoices]     = useState([]);
   const cancelled = useRef(false);
@@ -101,26 +103,36 @@ export default function SpeakButton({ content, lang = 'hi', className = '' }) {
         type="button"
         onClick={speaking ? stop : start}
         disabled={!content?.trim()}
-        aria-label={speaking ? 'Stop reading the post aloud' : 'Read the post aloud'}
-        className="flex items-center gap-2 rounded-lg border border-[#1e3a6e] bg-[#0d1840] px-3 py-2 text-[13px] font-medium text-white transition hover:border-[#3f9fff]/60 hover:bg-[#0f2050] disabled:cursor-not-allowed disabled:opacity-50"
+        aria-label={speaking ? t('gen.stopReading') : t('gen.readAloud')}
+        title={speaking ? t('gen.stop') : t('gen.listen')}
+        className={
+          compact
+            // Sits in the history card's action row, which is h-7 with 12px
+            // icons; the default size would tower over the buttons beside it.
+            ? 'flex h-7 items-center justify-center gap-1 rounded-lg border border-[#1e3260]/60 px-1.5 text-[#6b78a0] transition hover:border-[#3f9fff]/50 hover:text-[#3f9fff] disabled:cursor-not-allowed disabled:opacity-50 sm:px-2.5'
+            : 'flex items-center gap-2 rounded-lg border border-[#1e3a6e] bg-[#0d1840] px-3 py-2 text-[13px] font-medium text-white transition hover:border-[#3f9fff]/60 hover:bg-[#0f2050] disabled:cursor-not-allowed disabled:opacity-50'
+        }
+        style={compact && speaking ? { borderColor: 'rgba(255,138,138,0.45)', color: '#ff8a8a' } : {}}
       >
         {speaking ? (
           <>
-            <Square size={14} strokeWidth={2.4} className="text-[#ff8a8a]" />
-            Stop
+            <Square size={compact ? 12 : 14} strokeWidth={2.4} className={compact ? '' : 'text-[#ff8a8a]'} />
+            <span className={compact ? 'hidden text-[11px] font-medium sm:inline' : ''}>{t('gen.stop')}</span>
           </>
         ) : (
           <>
-            <Volume2 size={15} strokeWidth={2} className="text-[#7fb5ff]" />
-            Listen
+            <Volume2 size={compact ? 12 : 15} strokeWidth={2} className={compact ? '' : 'text-[#7fb5ff]'} />
+            <span className={compact ? 'hidden text-[11px] font-medium sm:inline' : ''}>{t('gen.listen')}</span>
           </>
         )}
       </button>
 
-      {missingVoice && (
+      {/* Suppressed in compact mode: the history list can show many cards at
+          once and one warning per card would bury the posts themselves. */}
+      {missingVoice && !compact && (
         <span className="flex items-center gap-1.5 text-[11px] text-[#c9a227]">
           <AlertTriangle size={11} strokeWidth={2.2} />
-          No Hindi voice on this device, so it will sound wrong.
+          {t('gen.noHindiVoice')}
         </span>
       )}
     </div>
