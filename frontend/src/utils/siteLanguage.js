@@ -1,8 +1,8 @@
 const STORAGE_KEY = 'ambedkargpt-site-language';
 
 export const SITE_LANGUAGES = [
-  { code: 'en', label: 'English' },
   { code: 'hi', label: 'हिंदी' },
+  { code: 'en', label: 'English' },
 ];
 
 export function getSiteLanguage() {

@@ -109,7 +109,7 @@ function SidebarContent({ active, onSelect, onClose, onLogout }) {
             return (
               <div
                 key={item.id}
-                title={`${t(item.labelKey)} — coming soon`}
+                title={`${t(item.labelKey)} — ${t('nav.comingSoonSuffix')}`}
                 aria-disabled="true"
                 className="flex w-full cursor-not-allowed items-center gap-3 rounded-xl px-3.5 py-2.5 text-[13.5px] font-medium text-[#4d587a]"
               >
