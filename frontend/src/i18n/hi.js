@@ -704,4 +704,7 @@ export default {
   "nav.comingSoonSuffix": "जल्द आ रहा है",
   "gen.oppositionComingSoon": "विपक्ष की ख़बरें अभी स्क्रैप नहीं की गई हैं।",
   "gen.oppositionComingSoonSub": "यह सेक्शन भाजपा की कवरेज के लिए आरक्षित है। इसके तैयार होने पर फिर देखें।",
+  "gen.noHindiVoice": "इस डिवाइस पर हिंदी आवाज़ नहीं है, इसलिए उच्चारण सही नहीं लगेगा।",
+  "gen.readAloud": "पोस्ट को सुनें",
+  "gen.stopReading": "पोस्ट सुनना रोकें",
 };

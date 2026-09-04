@@ -700,4 +700,7 @@ export default {
   "nav.comingSoonSuffix": "coming soon",
   "gen.oppositionComingSoon": "Opposition news isn't scraped yet.",
   "gen.oppositionComingSoonSub": "This section is reserved for BJP coverage. Check back once it's set up.",
+  "gen.noHindiVoice": "No Hindi voice on this device, so it will sound wrong.",
+  "gen.readAloud": "Read the post aloud",
+  "gen.stopReading": "Stop reading the post aloud",
 };
