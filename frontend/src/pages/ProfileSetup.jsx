@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, AtSign, ArrowRight, ArrowLeft, ChevronDown } from 'lucide-react';
+import { User, AtSign, Mail, ArrowRight, ArrowLeft, ChevronDown } from 'lucide-react';
+import { isValidPhoneNumber } from 'react-phone-number-input';
 import { useAuth } from '../context/AuthContext';
 import { useCurtain } from '../context/CurtainContext';
 import { POLITICAL_PARTIES } from '../utils/politicalParties';
 import { ROLE_GROUPS, roleLabel, groupForId, rolesInGroup } from '../utils/partyRoles';
+import { INDIAN_STATES, CITIES_BY_STATE } from '../utils/indianStatesCities';
+import PhoneField  from '../components/PhoneField';
 import logoSrc     from '../assets/images/logo-animation.png';
 import ambedkarSrc from '../assets/images/qna-ambedkar.png';
 import { useI18n } from '../i18n/index.jsx';
@@ -61,8 +64,34 @@ export default function ProfileSetup() {
   const isOnboarding = !currentUser?.full_name;
   const nextRoute = isOnboarding ? '/questionnaire' : '/dashboard';
   const [username, setUsername]   = useState(currentUser?.username || '');
+  // Whichever of the two a signup didn't collect — phone signup has no email
+  // on file and vice versa. Filled in here, both stay optional: nothing
+  // forces someone to add the identifier they deliberately skipped.
+  const needsEmail = !currentUser?.email;
+  const needsPhone = !currentUser?.phone;
+  const [fillEmail, setFillEmail] = useState('');
+  const [fillPhone, setFillPhone] = useState('');
+  // Where they are. Accounts created before signup asked for these have them
+  // empty, which is the whole reason they are editable here.
+  const [state, setState] = useState(currentUser?.state || '');
+  // A saved city that is not in its state's list came from the "Other" box,
+  // so it has to resolve back to Other with the text restored. Selecting the
+  // city itself would silently drop what they typed.
+  const savedCity = currentUser?.city || '';
+  const savedCityKnown =
+    !!savedCity && (CITIES_BY_STATE[currentUser?.state] || []).includes(savedCity);
+  const [city, setCity] = useState(savedCity ? (savedCityKnown ? savedCity : 'Other') : '');
+  const [customCity, setCustomCity] = useState(savedCity && !savedCityKnown ? savedCity : '');
+  const [dob, setDob] = useState(currentUser?.date_of_birth || '');
   const [politicalParty, setPoliticalParty] = useState(currentUser?.political_party || '');
   const [partyPosition, setPartyPosition] = useState(currentUser?.party_position || '');
+
+  function handleStateChange(newState) {
+    setState(newState);
+    setCity('');
+    setCustomCity('');
+    setErrors((p) => ({ ...p, city: '' }));
+  }
   // Derived from the saved position so reopening the form lands on the level
   // already chosen, rather than asking someone to find it again.
   const [partyLevel, setPartyLevel] = useState(() => groupForId(currentUser?.party_position || ''));
@@ -85,6 +114,15 @@ export default function ProfileSetup() {
     else if (username.trim().length < 3) e.username = 'Username must be at least 3 characters.';
     else if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) e.username = t('profile.usernameRule');
     if (!politicalParty) e.politicalParty = 'Please select a political party.';
+    if (needsEmail && fillEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fillEmail.trim()))
+      e.fillEmail = 'Please enter a valid email address.';
+    if (needsPhone && fillPhone && !isValidPhoneNumber(fillPhone))
+      e.fillPhone = 'Please enter a valid phone number.';
+    // Optional here, unlike signup: an account that predates these fields
+    // should not be blocked from changing its username until it fills them.
+    // Half-answers are the exception, since they store nothing useful.
+    if (city && !state) e.city = t('auth.stateRequired');
+    if (city === 'Other' && !customCity.trim()) e.city = t('auth.cityRequired');
     return e;
   }
 
@@ -103,12 +141,21 @@ export default function ProfileSetup() {
         // Sent even when blank, because clearing the position is a real choice
         // and undefined would leave the previous one in place.
         party_position: partyPosition,
+        ...(needsEmail && fillEmail.trim() ? { email: fillEmail.trim() } : {}),
+        ...(needsPhone && fillPhone ? { phone: fillPhone } : {}),
+        ...(state ? { state } : {}),
+        ...(city ? { city: city === 'Other' ? customCity.trim() : city } : {}),
+        ...(dob ? { date_of_birth: dob } : {}),
       });
       curtainGo(nextRoute, { replace: true });
     } catch (err) {
-      const detail = err?.response?.data?.detail || err?.message || '';
-      if (detail.toLowerCase().includes('already taken') || detail.toLowerCase().includes('already exists')) {
+      const detail = (err?.response?.data?.detail || err?.message || '').toLowerCase();
+      if (detail.includes('username') && detail.includes('taken')) {
         setErrors({ username: 'This username is already taken. Try another.' });
+      } else if (detail.includes('email') && detail.includes('exists')) {
+        setErrors({ fillEmail: 'This email is already in use.' });
+      } else if (detail.includes('phone') && detail.includes('exists')) {
+        setErrors({ fillPhone: 'This phone number is already in use.' });
       } else {
         setAuthError('Could not save your profile. Please try again.');
       }
@@ -260,6 +307,123 @@ export default function ProfileSetup() {
               maxLength={50}
             />
 
+            {/* Whichever contact method the signup path didn't collect.
+                Optional — filling it in is a convenience, not a gate. */}
+            {needsEmail && (
+              <FieldInput
+                icon={Mail}
+                label={t('auth.email')}
+                placeholder="you@example.com"
+                value={fillEmail}
+                onChange={(e) => { setFillEmail(e.target.value); setErrors((p) => ({ ...p, fillEmail: '' })); }}
+                error={errors.fillEmail}
+                hint={t('profile.addEmailHint')}
+              />
+            )}
+            {needsPhone && (
+              <PhoneField
+                value={fillPhone}
+                onChange={(v) => { setFillPhone(v ?? ''); setErrors((p) => ({ ...p, fillPhone: '' })); }}
+                error={errors.fillPhone}
+                hint={t('profile.addPhoneHint')}
+                optional
+              />
+            )}
+
+            {/* State, city and date of birth. Signup collects these now, so
+                these are here for the accounts that predate it. Optional, so
+                an old account can still change its name without being made
+                to complete a form it never agreed to. */}
+            <div>
+              <label className="mb-1.5 block text-[13px] font-medium text-white">
+                {t('auth.stateLabel')} / {t('auth.cityLabel')}
+                <span className="ml-1.5 font-normal" style={{ color: '#5a6e9a' }}>{t('common.optional')}</span>
+              </label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="relative">
+                  <select
+                    value={state}
+                    onChange={(e) => handleStateChange(e.target.value)}
+                    aria-label={t('auth.stateLabel')}
+                    className="w-full appearance-none rounded-xl px-4 py-3.5 pr-10 text-[14px] outline-none transition"
+                    style={{
+                      backgroundColor: '#0a1130',
+                      border: '1px solid #1e3260',
+                      color: state ? '#ffffff' : '#8b94b8',
+                    }}
+                  >
+                    <option value="" className="bg-[#0a1130]">{t('auth.selectState')}</option>
+                    {INDIAN_STATES.map((s) => (
+                      <option key={s} value={s} className="bg-[#0a1130] text-white">{s}</option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={16}
+                    strokeWidth={2}
+                    className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2"
+                    style={{ color: '#8b94b8' }}
+                  />
+                </div>
+
+                <div className="relative">
+                  <select
+                    value={city}
+                    onChange={(e) => { setCity(e.target.value); setCustomCity(''); setErrors((p) => ({ ...p, city: '' })); }}
+                    disabled={!state}
+                    aria-label={t('auth.cityLabel')}
+                    className="w-full appearance-none rounded-xl px-4 py-3.5 pr-10 text-[14px] outline-none transition disabled:cursor-not-allowed disabled:opacity-50"
+                    style={{
+                      backgroundColor: '#0a1130',
+                      border: `1px solid ${errors.city ? '#ef4444' : '#1e3260'}`,
+                      color: city ? '#ffffff' : '#8b94b8',
+                    }}
+                  >
+                    <option value="" className="bg-[#0a1130]">
+                      {state ? t('auth.selectCity') : t('auth.chooseStateFirst')}
+                    </option>
+                    {(CITIES_BY_STATE[state] || []).map((c) => (
+                      <option key={c} value={c} className="bg-[#0a1130] text-white">
+                        {c === 'Other' ? t('auth.otherCity') : c}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={16}
+                    strokeWidth={2}
+                    className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2"
+                    style={{ color: '#8b94b8' }}
+                  />
+                </div>
+              </div>
+
+              {city === 'Other' && (
+                <input
+                  type="text"
+                  value={customCity}
+                  onChange={(e) => { setCustomCity(e.target.value); setErrors((p) => ({ ...p, city: '' })); }}
+                  placeholder={t('auth.customCityPlaceholder')}
+                  maxLength={100}
+                  className="mt-3 w-full rounded-xl px-4 py-3.5 text-[14px] text-white outline-none transition placeholder:text-[#4a5e8a]"
+                  style={{ backgroundColor: '#0a1130', border: '1px solid #1e3260' }}
+                />
+              )}
+              {errors.city && <p className="mt-1.5 text-[12px]" style={{ color: '#ef4444' }}>{errors.city}</p>}
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-[13px] font-medium text-white">
+                {t('auth.dobLabel')}
+                <span className="ml-1.5 font-normal" style={{ color: '#5a6e9a' }}>{t('common.optional')}</span>
+              </label>
+              <input
+                type="date"
+                value={dob}
+                onChange={(e) => setDob(e.target.value)}
+                max={new Date().toISOString().slice(0, 10)}
+                className="input-field w-full rounded-xl px-4 py-3.5 text-[14px]"
+              />
+            </div>
+
             {/* Party affiliation — decides which news feed the user sees */}
             <div>
               <label className="mb-1.5 block text-[13px] font-medium text-white">
@@ -305,7 +469,7 @@ export default function ProfileSetup() {
             <div>
               <label className="mb-1.5 block text-[13px] font-medium text-white">
                 {t('profile.positionInParty')}
-                <span className="ml-1.5 font-normal" style={{ color: '#5a6e9a' }}>(optional)</span>
+                <span className="ml-1.5 font-normal" style={{ color: '#5a6e9a' }}>{t('common.optional')}</span>
               </label>
 
               <div className="grid gap-3 sm:grid-cols-2">
@@ -387,7 +551,7 @@ export default function ProfileSetup() {
               {loading ? (
                 <>
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                  Saving…
+                  {t('common.saving')}
                 </>
               ) : (
                 <>

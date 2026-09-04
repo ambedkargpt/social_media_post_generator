@@ -13,6 +13,7 @@ import LegalModal    from '../components/LegalModal';
 
 import { POLITICAL_PARTIES } from '../utils/politicalParties';
 import { ROLE_GROUPS, roleLabel, rolesInGroup } from '../utils/partyRoles';
+import { INDIAN_STATES, CITIES_BY_STATE } from '../utils/indianStatesCities';
 import { useI18n } from '../i18n/index.jsx';
 import { partyLabel, levelLabel } from '../utils/displayLabel';
 
@@ -25,6 +26,16 @@ export default function Signup() {
   const [mode, setMode]                       = useState('email');
   const [email, setEmail]                     = useState('');
   const [phone, setPhone]                     = useState('');
+  // Secondary phone, collected only in email mode — phone mode already has
+  // `phone` above as the primary identifier.
+  const [secondaryPhone, setSecondaryPhone]   = useState('');
+  const [state, setState]                     = useState('');
+  // Holds a known city name or the literal 'Other'; `customCity` is the free
+  // text typed when the list doesn't have theirs, so a mandatory field never
+  // blocks someone whose town isn't in the list.
+  const [city, setCity]                       = useState('');
+  const [customCity, setCustomCity]           = useState('');
+  const [dob, setDob]                         = useState('');
   const [password, setPassword]               = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [subscribed, setSubscribed]           = useState(false);
@@ -49,6 +60,15 @@ export default function Signup() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // The city list depends on the state, so switching states leaves a
+  // selection from the old list dangling if it isn't cleared here.
+  function handleStateChange(newState) {
+    setState(newState);
+    setCity('');
+    setCustomCity('');
+    setErrors((p) => ({ ...p, state: '', city: '' }));
+  }
+
   function validate() {
     const e = {};
     if (mode === 'email') {
@@ -58,10 +78,15 @@ export default function Signup() {
       else if (password.length < 8)  e.password = t('auth.passwordMinLen');
       if (!confirmPassword)          e.confirmPassword = t('auth.confirmPasswordRequired');
       else if (confirmPassword !== password) e.confirmPassword = t('auth.passwordMismatch');
+      // Optional, but if given it has to actually be a phone number.
+      if (secondaryPhone && !isValidPhoneNumber(secondaryPhone)) e.secondaryPhone = 'Please enter a valid phone number.';
     } else {
       if (!phone)                          e.phone = 'Phone number is required.';
       else if (!isValidPhoneNumber(phone)) e.phone = 'Please enter a valid phone number.';
     }
+    if (!state) e.state = t('auth.stateRequired');
+    if (!city)  e.city = t('auth.cityRequired');
+    else if (city === 'Other' && !customCity.trim()) e.city = t('auth.cityRequired');
     if (!politicalParty) e.politicalParty = t('auth.pickPartyFirst');
     if (!termsAccepted)  e.terms = 'You must accept the Terms of Service and Privacy Policy.';
     return e;
@@ -84,11 +109,13 @@ export default function Signup() {
     setAuthError('');
     setLoading(true);
     try {
+      const resolvedCity = city === 'Other' ? customCity.trim() : city;
+      const extra = { state, city: resolvedCity, dateOfBirth: dob || undefined };
       if (mode === 'phone') {
-        const data = await signupWithPhone(phone, politicalParty || undefined, partyPosition || undefined);
+        const data = await signupWithPhone(phone, politicalParty || undefined, partyPosition || undefined, extra);
         navigate('/otp', { state: { identifier: data?.otp_target || phone, type: 'phone', mode: 'signup', password: '', devOtp: data?.dev_otp || '' } });
       } else {
-        const data = await signupWithEmail(email.trim(), password, politicalParty || undefined, partyPosition || undefined);
+        const data = await signupWithEmail(email.trim(), password, politicalParty || undefined, partyPosition || undefined, { ...extra, phone: secondaryPhone || undefined });
         navigate('/otp', { state: { identifier: email.trim(), type: 'email', mode: 'signup', password, devOtp: data?.dev_otp || '' } });
       }
     } catch (err) {
@@ -189,8 +216,81 @@ export default function Signup() {
                 onChange={(e) => { setConfirmPassword(e.target.value); setErrors((p) => ({ ...p, confirmPassword: '' })); }}
                 error={errors.confirmPassword}
               />
+              {/* Phone mode already collects `phone` as the primary identifier
+                  above; email mode has no phone on file at all unless asked
+                  here. */}
+              <PhoneField
+                value={secondaryPhone}
+                onChange={(v) => { setSecondaryPhone(v ?? ''); setErrors((p) => ({ ...p, secondaryPhone: '' })); }}
+                error={errors.secondaryPhone}
+                optional
+              />
             </>
           )}
+
+          {/* State → City cascade. City's option list depends on state, so it
+              stays disabled (and its own selection cleared) until a state is
+              chosen — matching the pattern most address forms use. */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium" style={{ color: '#e5e7eb' }}>
+                {t('auth.stateLabel')}
+              </label>
+              <select
+                value={state}
+                onChange={(e) => handleStateChange(e.target.value)}
+                className={`input-field w-full px-4 py-3 rounded-xl text-sm${errors.state ? ' error' : ''}`}
+              >
+                <option value="">{t('auth.selectState')}</option>
+                {INDIAN_STATES.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+              {errors.state && <p className="text-xs" style={{ color: '#ef4444' }}>{errors.state}</p>}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium" style={{ color: '#e5e7eb' }}>
+                {t('auth.cityLabel')}
+              </label>
+              <select
+                value={city}
+                onChange={(e) => { setCity(e.target.value); setCustomCity(''); setErrors((p) => ({ ...p, city: '' })); }}
+                disabled={!state}
+                className={`input-field w-full px-4 py-3 rounded-xl text-sm disabled:cursor-not-allowed disabled:opacity-50${errors.city ? ' error' : ''}`}
+              >
+                <option value="">{state ? t('auth.selectCity') : t('auth.chooseStateFirst')}</option>
+                {(CITIES_BY_STATE[state] || []).map((c) => (
+                  <option key={c} value={c}>{c === 'Other' ? t('auth.otherCity') : c}</option>
+                ))}
+              </select>
+              {errors.city && <p className="text-xs" style={{ color: '#ef4444' }}>{errors.city}</p>}
+            </div>
+          </div>
+
+          {city === 'Other' && (
+            <input
+              type="text"
+              value={customCity}
+              onChange={(e) => setCustomCity(e.target.value)}
+              placeholder={t('auth.customCityPlaceholder')}
+              maxLength={100}
+              className="input-field w-full px-4 py-3 rounded-xl text-sm"
+            />
+          )}
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium" style={{ color: '#e5e7eb' }}>
+              {t('auth.dobLabel')}
+              <span className="ml-1.5 font-normal" style={{ color: '#5a6e9a' }}>{t('common.optional')}</span>
+            </label>
+            <input
+              type="date"
+              value={dob}
+              onChange={(e) => setDob(e.target.value)}
+              max={new Date().toISOString().slice(0, 10)}
+              className="input-field w-full px-4 py-3 rounded-xl text-sm"
+            />
+          </div>
 
           {/* Political Party Dropdown */}
           <div ref={partyDropdownRef} className="relative">

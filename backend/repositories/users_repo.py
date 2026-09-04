@@ -24,6 +24,9 @@ class UsersRepository:
         party_position: str = "",
         is_email_verified: bool = False,
         is_phone_verified: bool = False,
+        state: Optional[str] = None,
+        city: Optional[str] = None,
+        date_of_birth: Optional[str] = None,
     ) -> dict:
         now = datetime.now(timezone.utc)
         doc = {
@@ -33,6 +36,9 @@ class UsersRepository:
             "phone": phone,
             "political_party": political_party,
             "party_position": party_position or "",
+            "state": state,
+            "city": city,
+            "date_of_birth": date_of_birth,
             "auth_providers": auth_providers,
             "is_email_verified": is_email_verified,
             "is_phone_verified": is_phone_verified,

@@ -459,6 +459,10 @@ html { scroll-behavior: smooth; }
   border-color: #4f6bff;
   box-shadow: 0 0 0 3px rgba(79, 107, 255, 0.2);
 }
+/* Without this the browser assumes a light UI for its own chrome around the
+   input, so the native calendar-picker icon renders dark-on-dark and is
+   effectively invisible against this theme's dark fields. */
+.input-field[type="date"] { color-scheme: dark; }
 .input-field.error {
   border-color: #ef4444;
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
