@@ -36,7 +36,11 @@ LOG = ROOT / "backend" / "outputs" / "overnight_scrape.log"
 # can afford to do because it is already ahead.
 #
 # Ordering only. Nothing about how a channel is scraped changes.
-CHANNELS = ("samajwadi", "congress")
+#
+# bjp is appended last with no tuning behind its position: there is no video-
+# count data for it yet the way there is for the other two. Move it earlier
+# once a real run shows whether it is starving the others of budget.
+CHANNELS = ("samajwadi", "ravish", "congress", "bjp")
 
 # A video that is known to exist and to have captions. Probing one known id is
 # cheaper and more honest than trying a whole run to find out.

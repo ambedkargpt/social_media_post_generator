@@ -1,6 +1,7 @@
 {
   "name": "ravish",
   "channel_url": "https://www.youtube.com/@ravishkumar.official/videos",
+  "lookback_days": 2,
   "tenant_slug": "general",
   "channel_slug": "ravishkumar.official",
   "transcripts_dir": "outputs/transcripts/ravishkumar.official",
