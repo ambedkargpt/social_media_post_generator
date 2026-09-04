@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { UserCog, SlidersHorizontal, LogOut } from 'lucide-react';
 import { partyLogo } from '../../utils/politicalParties';
+import { useI18n } from '../../i18n/index.jsx';
 
 /**
  * Account menu behind the topbar avatar.
@@ -13,6 +14,7 @@ import { partyLogo } from '../../utils/politicalParties';
  * and it is where people expect to find them.
  */
 export default function ProfileMenu({ name, email, initial, party, onLogout }) {
+  const { t } = useI18n();
   // Resolved from the full list, not the offered one, so an account carrying a
   // party we no longer offer still shows its own logo instead of nothing.
   const logo = partyLogo(party);
@@ -69,8 +71,8 @@ export default function ProfileMenu({ name, email, initial, party, onLogout }) {
   }
 
   const items = [
-    { label: 'Update profile', icon: UserCog, onClick: () => go('/profile-setup') },
-    { label: 'Preferences', icon: SlidersHorizontal, onClick: () => go('/preferences') },
+    { label: t('dash.updateProfile'), icon: UserCog, onClick: () => go('/profile-setup') },
+    { label: t('dash.preferences'), icon: SlidersHorizontal, onClick: () => go('/preferences') },
   ];
 
   return (
@@ -81,7 +83,7 @@ export default function ProfileMenu({ name, email, initial, party, onLogout }) {
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="Account menu"
+        aria-label={t('nav.accountMenu')}
         className="flex items-center gap-3 rounded-full transition hover:opacity-90"
       >
         <div className="hidden text-right leading-tight sm:block">
@@ -115,7 +117,7 @@ export default function ProfileMenu({ name, email, initial, party, onLogout }) {
           <div className="fixed inset-0 z-[190]" onClick={() => setOpen(false)} />
           <div
             role="menu"
-            aria-label="Account"
+            aria-label={t('menu.accountLabel')}
             style={{ top: anchor.top, right: Math.max(anchor.right, 12) }}
             className="fixed z-[200] w-[248px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl border border-[#1e3260] bg-[#080e24] shadow-[0_24px_60px_rgba(0,0,0,0.6)]"
           >
@@ -162,12 +164,12 @@ export default function ProfileMenu({ name, email, initial, party, onLogout }) {
                 {loggingOut ? (
                   <>
                     <span className="spinner-ring shrink-0" style={{ width: 16, height: 16, borderWidth: 2 }} />
-                    Signing out…
+                    {t('auth.signingOut')}
                   </>
                 ) : (
                   <>
                     <LogOut size={16} strokeWidth={1.85} className="shrink-0 text-[#8b9dc4]" />
-                    Log out
+                    {t('auth.logout')}
                   </>
                 )}
               </button>

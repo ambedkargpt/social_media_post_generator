@@ -1,11 +1,13 @@
 import { useEffect, useState, useCallback } from 'react';
 import logoSrc from '../assets/images/logo-animation.png';
+import { useI18n } from '../i18n/index.jsx';
 
 const EXIT_MS = 180;
 // How long the splash holds before handing off to the landing page.
 const HOLD_MS = 2600;
 
 export default function OpeningSplash({ onDone }) {
+  const { t } = useI18n();
   const [phase, setPhase] = useState('enter');
 
   // Lock body scroll while splash is visible
@@ -86,7 +88,7 @@ export default function OpeningSplash({ onDone }) {
             filter: 'drop-shadow(0 0 28px rgba(50,120,255,0.3))',
           }}
         >
-          Ambedkar
+          {t('brand.ambedkar')}
         </h1>
         <span
           className="font-display text-[26px] font-bold tracking-[0.38em] uppercase sm:text-[32px] md:text-[44px] lg:text-[54px]"
@@ -107,7 +109,7 @@ export default function OpeningSplash({ onDone }) {
       <div className="splash-tagline relative z-10 mt-7 flex items-center gap-3 sm:gap-5">
         <div className="h-px w-14 sm:w-20 md:w-28" style={{ background: 'linear-gradient(90deg, transparent, rgba(74,123,196,0.65))' }} />
         <span className="font-count text-[12px] uppercase tracking-[0.45em] sm:text-[14px]" style={{ color: '#5080b8' }}>
-          Bahujan AI Voice
+          {t('splash.tagline')}
         </span>
         <div className="h-px w-14 sm:w-20 md:w-28" style={{ background: 'linear-gradient(270deg, transparent, rgba(74,123,196,0.65))' }} />
       </div>
@@ -134,7 +136,7 @@ export default function OpeningSplash({ onDone }) {
           />
         </div>
         <span className="font-count text-[10.5px] uppercase tracking-[0.28em]" style={{ color: '#4d6da6' }}>
-          Loading
+          {t('splash.loading')}
         </span>
       </div>
 

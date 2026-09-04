@@ -679,4 +679,7 @@ export default {
   "corpus.headPre": "Knowledge That Powers",
   "know.headPre": "Grow Your Content",
   "brand.ambedkar": "Ambedkar",
+  "splash.tagline": "Bahujan AI Voice",
+  "splash.loading": "Loading",
+  "menu.accountLabel": "Account",
 };

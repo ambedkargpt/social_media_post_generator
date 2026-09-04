@@ -87,6 +87,136 @@ html { scroll-behavior: smooth; }
   line-height: 1.4;
 }
 
+/* Devanagari sits shorter in its em-box than Latin at the same font-size:
+   Mangal/Noto Sans Devanagari have a noticeably smaller x-height, so 13px Hindi
+   reads visibly smaller than 13px English even though the number is identical.
+   This bumps every UI text size (navbar, labels, section sub-copy, dashboard
+   chrome) by roughly 12% under Hindi, covering both Tailwind's named scale
+   (text-sm, text-xs, ...) and arbitrary text-[Npx] values. The smallest real
+   display heading anywhere in the app is 26px, so the 24px cutoff leaves
+   every h1/h2/h3 heading — already handled by the .font-display Hindi
+   line-height fix above — untouched, matching "not the main headings, the
+   other ones." [class~=...] matches the literal Tailwind class token as it
+   sits in the DOM class attribute (no CSS escaping needed there, unlike a
+   class *selector*), and — same as that heading fix — this file's plain,
+   unlayered CSS already outranks Tailwind's own layered utilities, so no
+   !important is needed. */
+
+:root[lang="hi"] [class~="text-[9.5px]"] {
+  font-size: 10.5px;
+}
+:root[lang="hi"] [class~="text-[10px]"] {
+  font-size: 11px;
+}
+:root[lang="hi"] [class~="text-[10.5px]"] {
+  font-size: 12px;
+}
+:root[lang="hi"] [class~="text-[11px]"] {
+  font-size: 12.5px;
+}
+:root[lang="hi"] [class~="text-[11.5px]"] {
+  font-size: 13px;
+}
+:root[lang="hi"] [class~="text-[12px]"], :root[lang="hi"] [class~="text-xs"] {
+  font-size: 13.5px;
+}
+:root[lang="hi"] [class~="text-[12.5px]"] {
+  font-size: 14px;
+}
+:root[lang="hi"] [class~="text-[13px]"] {
+  font-size: 14.5px;
+}
+:root[lang="hi"] [class~="text-[13.5px]"] {
+  font-size: 15px;
+}
+:root[lang="hi"] [class~="text-[14px]"], :root[lang="hi"] [class~="text-sm"] {
+  font-size: 15.5px;
+}
+:root[lang="hi"] [class~="text-[14.5px]"] {
+  font-size: 16px;
+}
+:root[lang="hi"] [class~="text-[15px]"] {
+  font-size: 17px;
+}
+:root[lang="hi"] [class~="text-[16px]"] {
+  font-size: 18px;
+}
+:root[lang="hi"] [class~="text-[16.5px]"] {
+  font-size: 18.5px;
+}
+:root[lang="hi"] [class~="text-[17px]"] {
+  font-size: 19px;
+}
+:root[lang="hi"] [class~="text-[18px]"], :root[lang="hi"] [class~="text-lg"] {
+  font-size: 20px;
+}
+:root[lang="hi"] [class~="text-[19px]"] {
+  font-size: 21.5px;
+}
+:root[lang="hi"] [class~="text-[20px]"], :root[lang="hi"] [class~="text-xl"] {
+  font-size: 22.5px;
+}
+:root[lang="hi"] [class~="text-[21px]"] {
+  font-size: 23.5px;
+}
+:root[lang="hi"] [class~="text-[22px]"] {
+  font-size: 24.5px;
+}
+:root[lang="hi"] [class~="text-[23px]"] {
+  font-size: 26px;
+}
+:root[lang="hi"] [class~="text-[24px]"], :root[lang="hi"] [class~="text-2xl"] {
+  font-size: 27px;
+}
+
+@media (min-width: 640px) {
+  :root[lang="hi"] [class~="sm:text-[14px]"] {
+    font-size: 15.5px;
+  }
+  :root[lang="hi"] [class~="sm:text-[18px]"] {
+    font-size: 20px;
+  }
+  :root[lang="hi"] [class~="sm:text-[20px]"] {
+    font-size: 22.5px;
+  }
+}
+
+@media (min-width: 768px) {
+  :root[lang="hi"] [class~="md:text-[13px]"] {
+    font-size: 14.5px;
+  }
+  :root[lang="hi"] [class~="md:text-[13.5px]"] {
+    font-size: 15px;
+  }
+  :root[lang="hi"] [class~="md:text-base"] {
+    font-size: 18px;
+  }
+  :root[lang="hi"] [class~="md:text-[17px]"] {
+    font-size: 19px;
+  }
+  :root[lang="hi"] [class~="md:text-[18px]"] {
+    font-size: 20px;
+  }
+  :root[lang="hi"] [class~="md:text-[19px]"] {
+    font-size: 21.5px;
+  }
+  :root[lang="hi"] [class~="md:text-[20px]"], :root[lang="hi"] [class~="md:text-xl"] {
+    font-size: 22.5px;
+  }
+  :root[lang="hi"] [class~="md:text-[21px]"] {
+    font-size: 23.5px;
+  }
+  :root[lang="hi"] [class~="md:text-[22px]"] {
+    font-size: 24.5px;
+  }
+  :root[lang="hi"] [class~="md:text-[23px]"] {
+    font-size: 26px;
+  }
+  :root[lang="hi"] [class~="md:text-[24px]"] {
+    font-size: 27px;
+  }
+}
+
 /* --- Reveal on scroll --- */
 .reveal-section {
   opacity: 0;

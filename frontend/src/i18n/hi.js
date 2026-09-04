@@ -683,4 +683,7 @@ export default {
   "corpus.headPre": "ज्ञान जो शक्ति देता है",
   "know.headPre": "अपनी सामग्री बढ़ाइए",
   "brand.ambedkar": "अंबेडकर",
+  "splash.tagline": "बहुजन AI आवाज़",
+  "splash.loading": "लोड हो रहा है",
+  "menu.accountLabel": "खाता",
 };
