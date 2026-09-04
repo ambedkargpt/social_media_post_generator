@@ -669,7 +669,7 @@ export default function SocialMediaPostGenerator() {
             </p>
             <p className="mt-1 text-[11.5px] leading-relaxed text-[#6b78a0]">
               {t('gen.motto')}
-              <span className="block text-[#5a6584]">&mdash; Dr. B.R. Ambedkar</span>
+              <span className="block text-[#5a6584]">{t('brand.attrib')}</span>
             </p>
             <span className="mt-2.5 inline-flex items-center gap-1.5 rounded-full border border-[#3f9fff]/20 bg-[#3f9fff]/8 px-2.5 py-1 text-[10.5px] font-semibold text-[#6aa8ff]">
               <Sparkles size={9} strokeWidth={2} />

@@ -680,4 +680,7 @@ export default {
   "con.tellUsNeed": "बताइए आपको क्या चाहिए...",
   "landing.loadingMap": "मानचित्र लोड हो रहा है…",
   "auth.continueWithGoogleBtn": "Google से जारी रखें",
+  "corpus.headPre": "ज्ञान जो शक्ति देता है",
+  "know.headPre": "अपनी सामग्री बढ़ाइए",
+  "brand.ambedkar": "अंबेडकर",
 };

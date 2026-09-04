@@ -41,7 +41,7 @@ export default function DalitCorpusSection() {
         </div>
 
         <h2 className="mx-auto mt-8 max-w-[900px] text-center font-display text-[52px] font-bold leading-[1.05] text-white md:text-[72px]">
-          Knowledge That Powers{' '}
+          {t('corpus.headPre')}{' '}
           <span className="italic gradient-text-blue">{t('landing.theMovement')}</span>
         </h2>
 

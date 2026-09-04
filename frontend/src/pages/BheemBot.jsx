@@ -162,7 +162,7 @@ function ChatSidebar({ onCategoryClick, searchQuery, setSearchQuery, onClose, mo
             style={{ background: 'transparent' }}
           />
           <span className="truncate font-display text-[14px] font-semibold gradient-text-blue">
-            AmbedkarGpt
+            {t('brand.ambedkar')}GPT
           </span>
         </button>
         {mobile && (

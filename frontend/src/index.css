@@ -74,6 +74,19 @@ html { scroll-behavior: smooth; }
   font-family: var(--font-hindi);
 }
 
+/* Headings set .font-display directly, which does not chain to --font-hindi:
+   Anybody/Inter have no Devanagari glyphs, so the browser fell through to
+   whatever Devanagari font the OS happens to install, at line-heights tuned
+   for Latin ascenders. Devanagari's matras and reph sit taller and lower
+   than that, so they were getting clipped by the line box. Unlayered rules
+   here already beat Tailwind's leading-* utilities (Tailwind's own output
+   is layered; plain CSS in this file is not), so this wins without !important.*/
+:root[lang="hi"] .font-display,
+:root[lang="hi"] .font-serif {
+  font-family: var(--font-hindi);
+  line-height: 1.4;
+}
+
 /* --- Reveal on scroll --- */
 .reveal-section {
   opacity: 0;

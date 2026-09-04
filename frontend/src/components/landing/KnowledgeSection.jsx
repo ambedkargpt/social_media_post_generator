@@ -356,7 +356,7 @@ export default function KnowledgeSection() {
         <SectionLabel>{t('landing.ourServices')}</SectionLabel>
 
         <h2 className="mx-auto mt-8 max-w-[820px] text-center font-display text-[46px] font-bold leading-[1.05] text-white md:text-[62px]">
-          Grow Your Content{' '}
+          {t('know.headPre')}{' '}
           <span className="gradient-text-blue italic">{t('landing.creatorJourney')}</span>
         </h2>
 

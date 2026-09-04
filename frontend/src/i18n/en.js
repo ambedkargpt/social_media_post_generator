@@ -676,4 +676,7 @@ export default {
   "con.tellUsNeed": "Tell us what you need...",
   "landing.loadingMap": "Loading map…",
   "auth.continueWithGoogleBtn": "Continue with Google",
+  "corpus.headPre": "Knowledge That Powers",
+  "know.headPre": "Grow Your Content",
+  "brand.ambedkar": "Ambedkar",
 };

@@ -32,11 +32,12 @@ function LogoMark({ size = 44 }) {
 }
 
 function BrandLogo() {
+  const { t } = useI18n();
   return (
     <Link to="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-85">
       <LogoMark />
       <span className="text-[26px] font-semibold leading-none tracking-tight md:text-[30px]">
-        <span className="text-white">Ambedkar</span>
+        <span className="text-white">{t('brand.ambedkar')}</span>
         <span className="gradient-text-cyan">GPT</span>
       </span>
     </Link>

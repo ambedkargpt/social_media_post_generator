@@ -129,7 +129,7 @@ export default function Navbar() {
             className="h-10 w-10 object-contain drop-shadow-[0_0_16px_rgba(63,159,255,0.65)] md:h-12 md:w-12"
           />
           <span className="font-display text-[18px] font-bold leading-none tracking-tight md:text-[24px]">
-            <span className="hidden text-white sm:inline">Ambedkar</span>
+            <span className="hidden text-white sm:inline">{t('brand.ambedkar')}</span>
             <span className="gradient-text-cyan">GPT</span>
           </span>
         </Link>

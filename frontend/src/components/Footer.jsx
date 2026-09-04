@@ -88,7 +88,7 @@ export default function Footer() {
                 className="h-9 w-9 object-contain drop-shadow-[0_0_12px_rgba(63,159,255,0.35)]"
               />
               <span className="text-[21px] font-semibold leading-none tracking-tight">
-                <span className="text-white">Ambedkar</span>
+                <span className="text-white">{t('brand.ambedkar')}</span>
                 <span className="gradient-text-cyan">GPT</span>
               </span>
             </Link>
