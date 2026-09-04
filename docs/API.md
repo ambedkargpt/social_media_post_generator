@@ -72,6 +72,14 @@ more detail in `backend/docs/AUTH_API.md` and `backend/auth/README.md`.
 | `tenant` | string | none | Party tenant id or slug. Omit for all news. |
 | `include_general` | bool | `true` | With a tenant given, also include general/neutral news. |
 
+Party news carries a rolling three-day window. For the `congress` and
+`samajwadi` tenants, `GET /news/` returns only stories published inside
+`FRESH_WINDOW` (`backend/repositories/news_repo.py`) — a karyakarta posting about
+a three-day-old story is posting about something the cycle has moved past.
+Nothing is deleted or flagged, so a story leaves the feed on its own and comes
+back if the window is widened. General news is exempt deliberately: its pipeline
+is not running fresh, and a blanket rule would empty that tab.
+
 Note that all four read endpoints are unauthenticated, so the news catalogue —
 including anything not yet meant to be public — is world-readable wherever the
 API is exposed. Only writes require a token. If that is not the intent, add the

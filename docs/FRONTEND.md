@@ -23,12 +23,13 @@ cd frontend && npm ci && npm run dev
 `src/main.jsx` does three things before the first render:
 
 1. `purgeLegacySession()` clears tokens an earlier build left in `localStorage`.
-2. Stamps `document.documentElement.lang` from the stored site language, so the
-   font rules in CSS apply on the first paint rather than after a swap.
+2. Stamps `document.documentElement.lang`, falling back to `DEFAULT_LANGUAGE`
+   when nothing is stored, so the Devanagari font rules in CSS apply on the
+   first paint rather than after a reflow.
 3. Renders `<App />`, then removes the static `#boot` screen from `index.html`
    inside a `requestAnimationFrame` — after paint, so no frame shows neither.
 
-`App.jsx` nests the providers in this order: `ErrorBoundary` →
+`App.jsx` nests the providers in this order: `ErrorBoundary` → `I18nProvider` →
 `GoogleOAuthProvider` → `BrowserRouter` → `CurtainProvider` → `AuthProvider`.
 
 `IntroGate` runs the first-visit splash → language-popup → done sequence, and is
@@ -131,6 +132,31 @@ user, including the two sentinel values the backend returns deliberately:
 `src/firebase.js` is a two-line stub — Firebase auth was replaced by the JWT
 backend and the file only exists so older imports keep resolving.
 
+## Interface language
+
+`src/i18n/` is the whole translation layer: `en.js` and `hi.js` are flat
+key-to-string dictionaries, and `index.jsx` holds the provider, the `translate()`
+helper and the `useI18n()` hook.
+
+**Hindi is the default** — `DEFAULT_LANGUAGE = 'hi'`. The docstring gives the
+reason: the audience is Hindi-speaking party workers, so English was the wrong
+default even while it was the only option.
+
+It is hand-rolled rather than `react-i18next`, deliberately — two languages, flat
+keys, no pluralisation rules worth the name, and the bundle already carries
+Leaflet and the OAuth SDK.
+
+Lookup falls back twice: the chosen language, then English, then the key itself.
+A screen nobody has translated yet shows its old English text instead of
+breaking, and a key missing from both dictionaries renders raw, which is meant to
+look like the bug it is.
+
+`useI18n()` works outside the provider too, returning the default language rather
+than throwing, so a component in a portal or a test mounting one screen alone
+does not crash. `changeLanguage()` writes through `siteLanguage.js` and re-stamps
+`<html lang>`, which drives both the Devanagari font stack in `index.css` and the
+voice a screen reader picks.
+
 ## Shared data modules
 
 `src/utils/` holds the values that two or more screens must agree on:
@@ -146,7 +172,8 @@ backend and the file only exists so older imports keep resolving.
   panel previously hardcoded their own lists and disagreed with the database.
 - `parsePost.js` — splits a generated post into headline, body and hashtags,
   handling both the separate-block and inline-hashtag shapes the model emits.
-- `siteLanguage.js` — `en`/`hi` site language in `localStorage`.
+- `siteLanguage.js` — persists the `en`/`hi` choice in `localStorage`. The
+  strings themselves live in `src/i18n/`, above.
 - `appReady.js` — a pub-sub singleton so animations wait for the splash to end.
 - `socialPostGenerator.js` — the client-side template generator kept from the
   prototype; the real posts come from `POST /posts/generate`.
