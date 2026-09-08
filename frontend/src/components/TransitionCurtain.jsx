@@ -1,7 +1,9 @@
 import logoSrc from '../assets/images/logo-animation.png';
 import { useCurtain } from '../context/CurtainContext';
+import { useI18n } from '../i18n/index.jsx';
 
 export default function TransitionCurtain() {
+  const { t } = useI18n();
   const { active } = useCurtain();
 
   if (!active) return null;
@@ -32,7 +34,7 @@ export default function TransitionCurtain() {
             filter: 'drop-shadow(0 0 18px rgba(50,120,255,0.4))',
           }}
         >
-          AmbedkarGPT
+          {t('brand.wordmark')}
         </span>
       </div>
     </div>

@@ -291,7 +291,7 @@ function PostCard({ post, onOpen, onCopy, onPublish, onArchive, copiedId }) {
             <button
               type="button"
               onClick={() => onPublish(post.id)}
-              title="Publish"
+              title={t('history.publish')}
               className="flex h-7 items-center justify-center gap-1 rounded-lg border border-[#1e3260]/60 px-1.5 text-[#6b78a0] transition hover:border-[#22c55e]/50 hover:text-[#22c55e] sm:px-2.5"
             >
               <BookmarkCheck size={12} strokeWidth={2} />
@@ -306,7 +306,7 @@ function PostCard({ post, onOpen, onCopy, onPublish, onArchive, copiedId }) {
             <button
               type="button"
               onClick={() => onArchive(post.id)}
-              title="Archive"
+              title={t('history.archive')}
               className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#1e3260]/60 text-[#6b78a0] transition hover:border-red-500/40 hover:text-red-400"
             >
               <Trash2 size={12} strokeWidth={2} />
@@ -561,7 +561,7 @@ export default function PostHistory() {
         {/* Posts list */}
         {loading ? (
           <div className="flex items-center justify-center py-20 text-[#4e5a80] text-[14px]">
-            Loading posts…
+            {t('history.loading')}
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">

@@ -43,7 +43,7 @@ export default function RecentSearchesTable({ posts = [], loading = false }) {
 
       <div className="mt-5 w-full overflow-x-auto">
         {loading ? (
-          <p className="py-8 text-center text-[13px] text-[#6b78a0]">Loading…</p>
+          <p className="py-8 text-center text-[13px] text-[#6b78a0]">{t('common.loading')}</p>
         ) : recent.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 text-center">
             <FileText size={32} strokeWidth={1.4} className="text-[#2a3566] mb-3" />

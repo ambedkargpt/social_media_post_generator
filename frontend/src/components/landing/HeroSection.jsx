@@ -196,7 +196,7 @@ export default function HeroSection({ splashDone = true }) {
               onClick={handleBheemBot}
               className="btn-gradient inline-flex h-14 items-center gap-2 rounded-xl px-6 font-count text-[17px] font-semibold text-white sm:px-9 sm:text-[20px] md:h-15 md:text-[22px]"
             >
-              BheemBot
+              {t('bot.title')}
               <ArrowRight size={19} strokeWidth={2.2} className="shrink-0" />
             </button>
 

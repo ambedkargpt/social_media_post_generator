@@ -61,7 +61,7 @@ export default function SearchActivityChart({ posts = [] }) {
 
       {posts.length === 0 ? (
         <p className="mt-4 py-8 text-center text-[13px] text-[#6b78a0]">
-          No posts yet — generate one to see activity.
+          {t('charts.noPosts')}
         </p>
       ) : (
         <div className="mt-4 w-full overflow-hidden">

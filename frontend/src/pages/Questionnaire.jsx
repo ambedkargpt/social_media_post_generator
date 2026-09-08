@@ -123,7 +123,7 @@ export default function Questionnaire() {
       >
         {fetchErr ? (
           <p className="font-count text-[14px] text-[#e55555]">
-            Failed to load questions. Please refresh and try again.
+            {t('questionnaire.loadFailed')}
           </p>
         ) : (
           <div className="flex flex-col items-center gap-4">

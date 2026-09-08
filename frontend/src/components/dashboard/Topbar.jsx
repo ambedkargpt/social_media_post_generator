@@ -20,7 +20,7 @@ export default function Topbar({ user, onMenuOpen, totalPosts, onLogout }) {
         type="button"
         onClick={onMenuOpen}
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#1e3260]/60 text-[#5a7a9e] transition hover:text-white lg:hidden"
-        aria-label="Open menu"
+        aria-label={t('common.openMenu')}
       >
         <Menu size={17} strokeWidth={1.8} />
       </button>

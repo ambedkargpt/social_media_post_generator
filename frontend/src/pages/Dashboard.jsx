@@ -304,7 +304,7 @@ export default function Dashboard() {
                   <Bot size={18} strokeWidth={2} className="text-white" />
                 </div>
                 <div>
-                  <h3 className="font-display text-[15px] font-semibold text-white">BheemBot</h3>
+                  <h3 className="font-display text-[15px] font-semibold text-white">{t('bot.title')}</h3>
                   <div className="flex items-center gap-1.5">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e] shadow-[0_0_5px_rgba(34,197,94,0.7)]" />
                     <span className="text-[11px] text-[#22c55e]">{t('dash.online')}</span>
@@ -313,7 +313,7 @@ export default function Dashboard() {
               </div>
 
               <p className="text-[12.5px] leading-relaxed text-[#7a98bc] mb-4">
-                Chat with Ambedkar&apos;s AI — ask about constitutional law, social justice, or his philosophy.
+                {t('dash.bheembotDesc')}
               </p>
 
               <div className="flex flex-wrap gap-1.5 mb-4">

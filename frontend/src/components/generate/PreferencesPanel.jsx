@@ -1,22 +1,26 @@
 import { useState } from 'react';
 import { Sparkles, ChevronDown, RotateCcw } from 'lucide-react';
 import { labelWithSize } from '../../utils/preferenceQuestions';
+import { questionLabel } from '../../i18n/preferenceOptions';
 import { useI18n } from '../../i18n/index.jsx';
 
 // UI-only display metadata per question_id — labels and hints are not stored
-// in the DB, so we keep a local map here. Falls back gracefully for unknown ids.
-const QUESTION_META = {
-  profile_user_role:              { label: 'Your role',         hint: 'Voice & authority layer' },
-  profile_tone:                   { label: 'Preferred tone',    hint: 'Word choice & emotional energy' },
-  profile_target_audience:        { label: 'Target audience',   hint: 'How the message is framed' },
-  profile_primary_focus:          { label: 'Primary focus',     hint: 'What the post is about' },
-  profile_ambedkarite_perspective:{ label: 'Perspective',       hint: 'Your core ideological anchor' },
-  profile_content_length:         { label: 'Content length',    hint: 'Controls output size' },
-  profile_call_to_action:         { label: 'Call to action',    hint: 'Ending & intent of post' },
+// in the DB, so the ids map to i18n keys here. Falls back gracefully for
+// unknown ids, which then show the question's own text from the DB.
+const META_KEYS = {
+  profile_user_role:               'qmeta.userRole',
+  profile_tone:                    'qmeta.tone',
+  profile_target_audience:         'qmeta.audience',
+  profile_primary_focus:           'qmeta.focus',
+  profile_ambedkarite_perspective: 'qmeta.perspective',
+  profile_content_length:          'qmeta.length',
+  profile_call_to_action:          'qmeta.cta',
 };
 
-function getMeta(questionId, questionText) {
-  return QUESTION_META[questionId] ?? { label: questionText, hint: '' };
+function getMeta(questionId, questionText, t, lang) {
+  const key = META_KEYS[questionId];
+  if (!key) return { label: questionLabel(questionText, lang), hint: '' };
+  return { label: t(`${key}.label`), hint: t(`${key}.hint`) };
 }
 
 // Build a defaults map from questions (first option of each)
@@ -26,7 +30,7 @@ function buildDefaults(questions) {
   );
 }
 
-function Dropdown({ value, options, onChange }) {
+function Dropdown({ value, options, onChange, lang }) {
   return (
     <div className="relative">
       <select
@@ -42,7 +46,7 @@ function Dropdown({ value, options, onChange }) {
           // "Short" and "Medium" say nothing about the size being chosen. The
           // Preferences page renders the same way. Full text on hover.
           <option key={opt} value={opt} title={opt} className="bg-[#0a1130] text-white">
-            {labelWithSize(opt)}
+            {labelWithSize(opt, lang)}
           </option>
         ))}
       </select>
@@ -60,7 +64,7 @@ function Dropdown({ value, options, onChange }) {
 // onChange   — controlled setter
 // defaultValues — what "reset" snaps back to (user's saved profile answers)
 export default function PreferencesPanel({ questions = [], value, onChange, defaultValues }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const fallbackDefaults = buildDefaults(questions);
   const resetTarget = defaultValues ?? fallbackDefaults;
 
@@ -99,7 +103,7 @@ export default function PreferencesPanel({ questions = [], value, onChange, defa
         <button
           type="button"
           onClick={reset}
-          title="Reset to defaults"
+          title={t('prefs.resetDefaults')}
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[#1e3260]/70 text-[#8b94b8] transition hover:border-[#3f9fff]/60 hover:text-white"
         >
           <RotateCcw size={11} strokeWidth={2} />
@@ -117,7 +121,7 @@ export default function PreferencesPanel({ questions = [], value, onChange, defa
           ))
         ) : (
           questions.map((q, i) => {
-            const { label, hint } = getMeta(q.question_id, q.question_text);
+            const { label, hint } = getMeta(q.question_id, q.question_text, t, lang);
             return (
               <div key={q.question_id}>
                 <div className="flex items-baseline justify-between gap-2">
@@ -133,6 +137,7 @@ export default function PreferencesPanel({ questions = [], value, onChange, defa
                   <Dropdown
                     value={current[q.question_id] ?? q.options[0]}
                     options={q.options}
+                    lang={lang}
                     onChange={(v) => setField(q.question_id, v)}
                   />
                 </div>

@@ -7,6 +7,7 @@ import { saveProfileAnswers, getProfileAnswers } from '../api/profile';
 import { getQuestions } from '../api/questions';
 import { CORE_QUESTION_IDS, labelWithSize } from '../utils/preferenceQuestions';
 import { useI18n } from '../i18n/index.jsx';
+import { questionLabel } from '../i18n/preferenceOptions';
 
 // ─── Question data ────────────────────────────────────────────────────────────
 
@@ -22,11 +23,15 @@ import { useI18n } from '../i18n/index.jsx';
 // the stored "Label -> Description" options, and is_required decides which
 // section a question belongs to.
 
+// The value saved for a question stays exactly what it has always been: the
+// English short label, which is what the backend normalises against. The raw
+// option is carried alongside it purely so the button can be drawn in the
+// site language, and nothing translated is ever written back.
 function toUiQuestion(q) {
   return {
     id: q.question_id,
     label: q.question_text,
-    options: (q.options ?? []).map(labelWithSize),
+    options: (q.options ?? []).map((opt) => ({ value: labelWithSize(opt), raw: opt })),
   };
 }
 
@@ -56,22 +61,23 @@ function readLocalPrefs() {
 // ─── Question card ────────────────────────────────────────────────────────────
 
 function QuestionCard({ q, num, value, onSelect }) {
+  const { lang } = useI18n();
   return (
     <div className="rounded-2xl border border-[#1a2d50]/60 bg-[#0e1628] p-6">
       <div className="mb-4 flex items-start gap-3">
         <span className="mt-0.5 shrink-0 font-count text-[13px] font-bold text-[#3f6bd4]">
           {String(num).padStart(2, '0')}
         </span>
-        <p className="text-[13.5px] font-medium leading-snug text-[#c0cde8]">{q.label}</p>
+        <p className="text-[13.5px] font-medium leading-snug text-[#c0cde8]">{questionLabel(q.label, lang)}</p>
       </div>
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
         {q.options.map((opt) => {
-          const active = value === opt;
+          const active = value === opt.value;
           return (
             <button
-              key={opt}
+              key={opt.value}
               type="button"
-              onClick={() => onSelect(opt)}
+              onClick={() => onSelect(opt.value)}
               className={[
                 'relative flex items-center justify-center gap-2 rounded-xl px-3 py-3 text-[12.5px] font-medium transition-all duration-200',
                 active
@@ -80,7 +86,7 @@ function QuestionCard({ q, num, value, onSelect }) {
               ].join(' ')}
             >
               {active && <Check size={11} strokeWidth={3} className="shrink-0" />}
-              {opt}
+              {labelWithSize(opt.raw, lang)}
             </button>
           );
         })}
@@ -182,7 +188,7 @@ export default function Preferences() {
     } catch {
       // Save locally even if remote fails so next visit still shows the right values
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs)); } catch { /* ignore */ }
-      setSaveError('Saved locally. Remote sync failed — please try again.');
+      setSaveError(t('prefs.savedLocally'));
     } finally {
       setSaving(false);
     }
@@ -344,7 +350,7 @@ export default function Preferences() {
                 className="inline-flex items-center gap-1.5 rounded-full border border-[#1e3260]/70 px-3 py-1.5 text-[12px] font-medium text-[#6b78a0] transition hover:border-[#3a6bc4]/60 hover:text-white"
               >
                 <Home size={11} strokeWidth={2} />
-                Dashboard
+                {t('nav.dashboard')}
               </button>
               <button
                 type="button"

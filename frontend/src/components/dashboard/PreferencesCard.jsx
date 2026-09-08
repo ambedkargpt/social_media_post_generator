@@ -1,17 +1,18 @@
 import Card, { CardTitle } from './Card';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../../i18n/index.jsx';
+import { optionLabel } from '../../i18n/preferenceOptions';
 
-// Map backend question IDs → friendly display labels
+// Map backend question IDs → the i18n key for their friendly display label
 const DISPLAY_MAP = {
-  profile_user_role:               'Role',
-  profile_tone:                    'Tone',
-  profile_target_audience:         'Target Audience',
-  profile_language:                'Language',
-  profile_target_platform:         'Platform',
-  profile_ambedkarite_perspective: 'Ideological Lens',
-  profile_content_length:          'Content Length',
-  profile_formality_level:         'Writing Style',
+  profile_user_role:               'prefrow.role',
+  profile_tone:                    'prefrow.tone',
+  profile_target_audience:         'prefrow.audience',
+  profile_language:                'prefrow.language',
+  profile_target_platform:         'prefrow.platform',
+  profile_ambedkarite_perspective: 'prefrow.lens',
+  profile_content_length:          'prefrow.length',
+  profile_formality_level:         'prefrow.style',
 };
 
 const DISPLAY_ORDER = Object.keys(DISPLAY_MAP);
@@ -26,7 +27,7 @@ const TINTS = [
 ];
 
 export default function PreferencesCard({ answers = [] }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
 
   // Build a lookup map from answers array
@@ -34,12 +35,17 @@ export default function PreferencesCard({ answers = [] }) {
   for (const a of answers) answerMap[a.question_id] = a.answer;
 
   // Rows: only keys we have answers for, in display order
+  // The answer stays the stored English; only the drawn label is translated.
   const rows = DISPLAY_ORDER
     .filter((k) => answerMap[k])
-    .map((k) => [DISPLAY_MAP[k], answerMap[k]]);
+    .map((k) => [t(DISPLAY_MAP[k]), optionLabel(answerMap[k], lang)]);
 
   // Tags: all answered values
-  const tags = answers.map((a) => a.answer).filter(Boolean).slice(0, 10);
+  const tags = answers
+    .map((a) => a.answer)
+    .filter(Boolean)
+    .slice(0, 10)
+    .map((a) => optionLabel(a, lang));
 
   if (!answers.length) {
     return (
@@ -61,7 +67,7 @@ export default function PreferencesCard({ answers = [] }) {
 
   return (
     <Card className="h-full">
-      <CardTitle>Your Preferences</CardTitle>
+      <CardTitle>{t('prefcard.title')}</CardTitle>
 
       <dl className="mt-5 space-y-4">
         {rows.map(([k, v]) => (

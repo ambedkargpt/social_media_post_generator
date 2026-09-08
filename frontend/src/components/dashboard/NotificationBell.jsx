@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Bell, Trophy, X } from 'lucide-react';
+import { useI18n } from '../../i18n/index.jsx';
 
 // Milestones worth telling someone about. Close together early, where the
 // encouragement matters, then further apart so it stays an achievement.
@@ -38,6 +39,7 @@ function saveSeen(list) {
  * it, so the dot now appears only when a milestone is genuinely unseen.
  */
 export default function NotificationBell({ totalPosts }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [seen, setSeen] = useState(loadSeen);
   const btnRef = useRef(null);
@@ -93,7 +95,7 @@ export default function NotificationBell({ totalPosts }) {
         ref={btnRef}
         type="button"
         onClick={toggle}
-        aria-label={unseen.length ? `Notifications, ${unseen.length} new` : 'Notifications'}
+        aria-label={unseen.length ? t('notif.titleWithNew', { count: unseen.length }) : t('notif.title')}
         aria-expanded={open}
         className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[#1a254a]/70 bg-[#0d1531]/60 text-[#a3b0d4] transition hover:border-[#2a4375]/80 hover:text-white"
       >
@@ -108,16 +110,16 @@ export default function NotificationBell({ totalPosts }) {
           <div className="fixed inset-0 z-[190]" onClick={() => setOpen(false)} />
           <div
             role="dialog"
-            aria-label="Notifications"
+            aria-label={t('notif.title')}
             style={{ top: anchor.top, right: Math.max(anchor.right, 12) }}
             className="fixed z-[200] w-[320px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl border border-[#1e3260] bg-[#080e24] shadow-[0_24px_60px_rgba(0,0,0,0.6)]"
           >
             <div className="flex items-center justify-between border-b border-[#1a2c55] px-4 py-3">
-              <span className="text-[14px] font-semibold text-white">Notifications</span>
+              <span className="text-[14px] font-semibold text-white">{t('notif.title')}</span>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                aria-label="Close"
+                aria-label={t('common.close')}
                 className="flex h-7 w-7 items-center justify-center rounded-lg text-[#8b94b8] transition hover:text-white"
               >
                 <X size={14} />
@@ -128,9 +130,9 @@ export default function NotificationBell({ totalPosts }) {
               {reached.length === 0 ? (
                 <div className="px-4 py-6 text-[13px] leading-relaxed text-[#8b94b8]">
                   {typeof totalPosts === 'number' ? (
-                    <>No milestones yet. Publish {MILESTONES[0]} posts to reach your first.</>
+                    <>{t('notif.noneYet', { count: MILESTONES[0] })}</>
                   ) : (
-                    <>Nothing to show yet.</>
+                    <>{t('notif.nothing')}</>
                   )}
                 </div>
               ) : (
@@ -142,10 +144,10 @@ export default function NotificationBell({ totalPosts }) {
                       </span>
                       <div className="min-w-0">
                         <p className="text-[13.5px] font-medium text-white">
-                          {m} posts published
+                          {t('notif.postsPublished', { count: m })}
                         </p>
                         <p className="mt-0.5 text-[12.5px] leading-relaxed text-[#8b94b8]">
-                          You crossed {m} published posts. Keep going.
+                          {t('notif.crossed', { count: m })}
                         </p>
                       </div>
                     </li>
@@ -156,8 +158,8 @@ export default function NotificationBell({ totalPosts }) {
 
             {next && (
               <div className="border-t border-[#1a2c55] px-4 py-3 text-[12.5px] text-[#8b94b8]">
-                Next milestone at <span className="font-semibold text-[#9dc3ff]">{next} posts</span>
-                {typeof totalPosts === 'number' && <> · {next - totalPosts} to go</>}
+                {t('notif.nextAt')} <span className="font-semibold text-[#9dc3ff]">{t('notif.nPosts', { count: next })}</span>
+                {typeof totalPosts === 'number' && <> · {t('notif.toGo', { count: next - totalPosts })}</>}
               </div>
             )}
           </div>
