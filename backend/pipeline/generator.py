@@ -261,6 +261,40 @@ def _danda_normalise(text: str) -> str:
     )
 
 
+# Chat models occasionally emit their own control tokens as ordinary text
+# instead of stopping on them, and the token then travels all the way to a
+# karyakarta's screen: a post ended "हमें इंसाफ चाहिए।</s>". Which token appears
+# depends on the family behind the endpoint, and the DeepSeek endpoint has
+# served more than one, so this covers the common ones rather than just the one
+# that was seen. The DeepSeek marker uses fullwidth pipes and U+2581, not ASCII.
+_SPECIAL_TOKEN_RE = re.compile(
+    r"</?s>"                                  # Llama / Mistral
+    r"|<\|(?:endoftext|im_start|im_end|eot_id|start_header_id|end_header_id"
+    r"|assistant|user|system)\|>"             # GPT / Qwen / Llama 3
+    r"|<｜[^｜]{0,40}｜>"                      # DeepSeek, e.g. <｜end▁of▁sentence｜>
+    r"|\[/?INST\]"                            # Mistral instruction markers
+)
+
+
+def _strip_special_tokens(text: str) -> str:
+    """
+    Drop model control tokens that leaked into the visible answer.
+
+    Runs before section parsing, not after: a stray token sitting against a
+    label ("Hashtags:</s>") would otherwise be parsed as part of the value and
+    survive into the post anyway.
+    """
+    if not text or not _SPECIAL_TOKEN_RE.search(text):
+        return text
+    out = _SPECIAL_TOKEN_RE.sub("", text)
+    # Only tidy what removal itself created. Running these unconditionally
+    # would rewrite spacing in posts that had no token to begin with, which is
+    # not this function's business.
+    out = re.sub(r"[ \t]{2,}", " ", out)
+    out = re.sub(r"[ \t]+([।.!?,])", r"\1", out)
+    return out.strip()
+
+
 def _strip_ai_tells(text: str) -> str:
     """
     Remove the em dash habit from generated posts.
@@ -451,7 +485,7 @@ def generate_post(
     choice = response.choices[0]
     usage = getattr(response, "usage", None)
     reasoning = getattr(getattr(usage, "completion_tokens_details", None), "reasoning_tokens", None)
-    text = (choice.message.content or "").strip()
+    text = _strip_special_tokens((choice.message.content or "").strip())
 
     # Logged every time, not just on failure: an empty body from a reasoning
     # model looks identical to a refusal, and the only way to tell them apart is
