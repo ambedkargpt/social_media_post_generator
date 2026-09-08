@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Mail, Copy, Check } from 'lucide-react';
+import { useI18n } from '../../i18n/index.jsx';
 
 const EMAIL = 'smartbhaujan@gmail.com';
 
@@ -25,6 +26,7 @@ const COPY = {
 };
 
 export default function CorpusContactModal({ type, onClose }) {
+  const { t } = useI18n();
   const content = COPY[type];
   const [copied, setCopied] = useState(false);
 
@@ -116,7 +118,7 @@ export default function CorpusContactModal({ type, onClose }) {
             href={`mailto:${EMAIL}?subject=${encodeURIComponent(content.subject)}`}
             className="btn-gradient mt-6 inline-flex h-14 w-full items-center justify-center gap-2 rounded-xl font-count text-[17px] font-semibold text-white"
           >
-            Write to us
+            {t('corpus.writeToUs')}
           </a>
         </div>
       </div>

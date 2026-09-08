@@ -60,9 +60,25 @@ def run_ingestion(context: PipelineContext) -> StageResult:
     filtered_urls, skipped_existing = fetch.filter_already_downloaded_urls(
         video_urls, processed_records, channel.transcripts_dir
     )
+    # Take the newest N when a cap is set. collect_recent_videos returns the
+    # window newest-first, and filter_already_downloaded_urls preserves that
+    # order, so this keeps the most current videos and defers the rest to a
+    # later run rather than dropping them.
+    queued_urls = len(filtered_urls)
+    capped_out = 0
+    if channel.max_videos_per_run and queued_urls > channel.max_videos_per_run:
+        capped_out = queued_urls - channel.max_videos_per_run
+        filtered_urls = filtered_urls[: channel.max_videos_per_run]
+        print(
+            f" Capped at {channel.max_videos_per_run} newest video(s); "
+            f"{capped_out} left for the next run."
+        )
+
     entries: list[dict] = []
     cleaned_count = 0
     transcript_failures = 0
+    consecutive_failures = 0
+    rate_limited = False
     for url in filtered_urls:
         meta = meta_by_url.get(url) or fetch.get_video_metadata(url)
         if not meta:
@@ -73,8 +89,20 @@ def run_ingestion(context: PipelineContext) -> StageResult:
             # matters more here than after a success: continuing straight to the
             # next request is what makes the rate limit cascade.
             transcript_failures += 1
+            consecutive_failures += 1
+            limit = channel.max_consecutive_transcript_failures
+            if limit and consecutive_failures >= limit:
+                # Every further request would be refused too, and each refusal
+                # still pays its backoff. Leave the rest for the next run.
+                rate_limited = True
+                print(
+                    f" {consecutive_failures} transcript refusals in a row - "
+                    f"stopping this channel and leaving the rest for a later run."
+                )
+                break
             time.sleep(random.uniform(20, 35))
             continue
+        consecutive_failures = 0
         # Clean once here so summaries, RAG chunks and entity extraction all
         # consume the same cleaned text rather than raw caption output.
         cleaned = clean_transcript(
@@ -134,6 +162,10 @@ def run_ingestion(context: PipelineContext) -> StageResult:
             "cleaned_transcripts": cleaned_count,
             "transcript_failures": transcript_failures,
             "lookback_days": channel.lookback_days or 0,
+            # Both are how a caller tells "this channel is done" from "this
+            # channel has more waiting", which decides whether a rerun is worth it.
+            "deferred_by_cap": capped_out,
+            "rate_limited": rate_limited,
         },
         artifacts_written=[str(channel.consolidated_txt_path), str(channel.processed_json_path)],
     )

@@ -5,7 +5,7 @@ import { useI18n } from '../i18n/index.jsx';
 
 export default function LanguageSwitcher() {
   const [open, setOpen] = useState(false);
-  const { changeLanguage } = useI18n();
+  const { t, changeLanguage } = useI18n();
   const [current, setCurrent] = useState(getSiteLanguage() ?? 'hi');
   const ref = useRef(null);
 
@@ -42,8 +42,8 @@ export default function LanguageSwitcher() {
       <button
         type="button"
         onClick={() => setOpen((p) => !p)}
-        aria-label="Change language"
-        title="Change language"
+        aria-label={t('lang.change')}
+        title={t('lang.change')}
         className="flex h-10 w-10 items-center justify-center rounded-full border border-[#1a254a]/70 bg-[#0d1531]/60 text-[#a3b0d4] transition hover:border-[#2a4375]/80 hover:text-white"
       >
         <Globe size={15} strokeWidth={1.9} />
@@ -55,7 +55,7 @@ export default function LanguageSwitcher() {
           style={{ borderColor: 'rgba(63,120,220,0.4)', backgroundColor: 'rgba(8,18,48,0.98)', minWidth: 140 }}
         >
           <p className="px-4 pt-3 pb-1.5 font-count text-[10px] uppercase tracking-widest text-[#4a6eaa]">
-            Language
+            {t('lang.heading')}
           </p>
           {SITE_LANGUAGES.map((lang) => (
             <button

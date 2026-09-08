@@ -402,7 +402,7 @@ export default function BheemBot() {
       timedOut = true;
       setMessages((prev) => [
         ...prev.filter((m) => m.id !== typingId),
-        { id: Date.now(), role: 'assistant', content: 'BheemBot is taking too long to respond. Please try again.', sources: [], timestamp: Date.now() },
+        { id: Date.now(), role: 'assistant', content: t('bot.slowReply'), sources: [], timestamp: Date.now() },
       ]);
       setSending(false);
     }, CHAT_TIMEOUT_MS);
@@ -606,7 +606,7 @@ export default function BheemBot() {
             </button>
           </div>
           <p className="mt-2 text-center text-[10.5px] text-[#2a3a5e]">
-            BheemBot may occasionally make mistakes. Always verify important information.
+            {t('bot.disclaimer')}
           </p>
         </div>
       </div>

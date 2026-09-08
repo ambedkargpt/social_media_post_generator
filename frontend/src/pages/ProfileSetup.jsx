@@ -221,7 +221,7 @@ export default function ProfileSetup() {
               type="button"
               onClick={handleSkip}
               className="flex items-center gap-2.5 transition-opacity hover:opacity-85"
-              aria-label="Back to dashboard"
+              aria-label={t('nav.backToDashboard')}
             >
               <img src={logoSrc} alt="" className="h-9 w-9 object-contain drop-shadow-[0_0_12px_rgba(63,159,255,0.5)]" />
               <span className="font-display text-[20px] font-bold leading-none tracking-tight">

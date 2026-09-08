@@ -6,6 +6,8 @@
     "https://www.youtube.com/@IndianNationalCongress/streams"
   ],
   "lookback_days": 2,
+  "max_videos_per_run": 8,
+  "max_consecutive_transcript_failures": 4,
   "tenant_slug": "congress",
   "channel_slug": "IndianNationalCongress",
   "transcripts_dir": "outputs/transcripts/IndianNationalCongress",

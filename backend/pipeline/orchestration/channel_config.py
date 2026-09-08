@@ -43,6 +43,13 @@ def load_channel_config(project_root: Path, channel: str) -> ChannelConfig:
         if lookback_days <= 0:
             lookback_days = None
 
+    def _opt_positive_int(key: str) -> int | None:
+        raw = payload.get(key)
+        if raw in (None, ""):
+            return None
+        value = int(raw)
+        return value if value > 0 else None
+
     def _opt_path(key: str) -> Path | None:
         raw = str(payload.get(key, "")).strip()
         return (project_root / raw).resolve() if raw else None
@@ -62,6 +69,8 @@ def load_channel_config(project_root: Path, channel: str) -> ChannelConfig:
         channel_slug=channel_slug,
         channel_urls=channel_urls,
         lookback_days=lookback_days,
+        max_videos_per_run=_opt_positive_int("max_videos_per_run"),
+        max_consecutive_transcript_failures=_opt_positive_int("max_consecutive_transcript_failures"),
         tenant_slug=str(payload.get("tenant_slug") or "general").strip().lower(),
         news_mode=("multi" if str(payload.get("news_mode") or "single").strip().lower() == "multi" else "single"),
         stories_per_video=int(payload.get("stories_per_video") or 1),

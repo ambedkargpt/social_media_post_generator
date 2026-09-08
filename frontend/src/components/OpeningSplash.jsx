@@ -50,7 +50,7 @@ export default function OpeningSplash({ onDone }) {
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Welcome to AmbedkarGPT"
+      aria-label={t('splash.welcome')}
       className={`fixed inset-0 z-[200] flex flex-col items-center justify-center overflow-hidden transition-opacity duration-180 ease-out ${
         phase === 'exit' ? 'pointer-events-none opacity-0' : 'opacity-100'
       }`}

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Search, Filter, Sparkles,
   Copy, Check, RefreshCw, ChevronDown, FileText, Star, Radio,
+  ArrowUpDown, List, LayoutGrid, ArrowLeftRight, Users, Globe,
 } from 'lucide-react';
 
 import PreferencesPanel from '../components/generate/PreferencesPanel';
@@ -19,7 +20,7 @@ import { parsePost, hashtagsText } from '../utils/parsePost';
 import Spinner from '../components/Spinner';
 import { useI18n } from '../i18n/index.jsx';
 import SpeakButton from '../components/generate/SpeakButton';
-import { toneLabel } from '../utils/displayLabel';
+import { partyLabel, toneLabel } from '../utils/displayLabel';
 
 const TONES = ['Professional', 'Inspirational', 'Creative', 'Casual', 'Motivational'];
 const ALSO_GENERATE = ['Audio', 'Shorts', 'Image'];
@@ -54,6 +55,29 @@ const PLATFORMS = [
 const MIN_PANEL = 220;
 const MAX_PANEL = 500;
 const PAGE_SIZE = 12; // news cards per page
+
+// Feed ordering and card layout are remembered per browser. Both are reading
+// preferences, not account settings, and localStorage throws outright in some
+// contexts (private windows, blocked site data), so every access is guarded and
+// falls back to the default rather than taking the page down.
+const SORT_KEY = 'ambedkargpt-news-sort';
+const VIEW_KEY = 'ambedkargpt-news-view';
+
+function readLocal(key, fallback) {
+  try {
+    return localStorage.getItem(key) || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeLocal(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Nothing to do: the preference simply does not survive this session.
+  }
+}
 
 // Build a compact page-number list with ellipsis gaps for the pager
 function getPageItems(current, total) {
@@ -96,10 +120,18 @@ const CONTENT_TYPES = {
   news:             { label: 'News Article',     color: '#5a6e9a' },
 };
 
-// A party's own uploads are its news, not a neutral article about it, and the
-// section decides which reading applies. General keeps "News Article".
-function newsTypeLabel(section) {
-  return section === 'party' ? 'gen.partyNews' : 'gen.newsArticle';
+// Short form of the party for the feed heading: "INC" rather than "Indian
+// National Congress". The tenant registry stores only the full name, so this
+// prefers a translated short form, falls back to the abbreviation the signup
+// list carries in brackets ("Samajwadi Party (SP)"), and finally to the full
+// name, which is always correct if never brief.
+function partyShortLabel(tenant, userPartyName, t, lang) {
+  const key = `partyShort.${tenant?.slug ?? ''}`;
+  const short = t(key);
+  if (short && short !== key) return short;
+  const bracketed = String(userPartyName ?? '').match(/\(([^)]{1,12})\)\s*$/);
+  if (bracketed) return bracketed[1].trim();
+  return partyLabel(tenant?.name, lang);
 }
 
 // Two standing ranges, plus a per-day jump built from the days that actually
@@ -180,10 +212,40 @@ function resolveTenantForUser(partyName, tenants) {
 
 // Accent per section so party news, opposition news and general news are
 // visually distinct.
+// The content types a party feed carries, in the order the chooser lists them.
+const TYPE_OPTIONS = [
+  { id: 'all',              label: 'gen.all' },
+  { id: 'press_conference', label: 'gen.pressConference' },
+  { id: 'news',             label: 'gen.newsArticle' },
+];
+
 const SECTION_THEME = {
   party:      { accent: '#3f9fff', soft: 'rgba(63,159,255,0.12)', ring: 'rgba(63,159,255,0.45)' },
   opposition: { accent: '#e5484d', soft: 'rgba(229,72,77,0.12)',  ring: 'rgba(229,72,77,0.45)' },
   general:    { accent: '#f0a63a', soft: 'rgba(240,166,58,0.12)', ring: 'rgba(240,166,58,0.45)' },
+};
+
+// The banner's own colour, by party. Chosen to read as that party without
+// reproducing its election symbol or logo, which are not ours to ship: the
+// initials badge and a tint carry the recognition instead.
+//
+// A party with no entry still gets a banner, in the neutral house blue. That
+// matters because the tenant registry can grow without this file.
+const PARTY_THEME = {
+  congress:  { accent: '#2a7de1', tint: 'rgba(42,125,225,0.16)' },
+  samajwadi: { accent: '#d1394a', tint: 'rgba(209,57,74,0.16)' },
+  bjp:       { accent: '#f0872a', tint: 'rgba(240,135,42,0.16)' },
+};
+
+const DEFAULT_PARTY_THEME = { accent: '#3f9fff', tint: 'rgba(63,159,255,0.14)' };
+
+// One line of what the party stands for, under its name. Not in the tenant
+// registry, so it lives here as i18n keys; a party without one shows nothing
+// rather than a placeholder.
+const PARTY_TAG_KEYS = {
+  congress:  ['ptag.congress.1', 'ptag.congress.2', 'ptag.congress.3'],
+  samajwadi: ['ptag.samajwadi.1', 'ptag.samajwadi.2', 'ptag.samajwadi.3'],
+  bjp:       ['ptag.bjp.1', 'ptag.bjp.2', 'ptag.bjp.3'],
 };
 
 function formatNewsDate(d) {
@@ -239,10 +301,19 @@ export default function SocialMediaPostGenerator() {
   // rendering of the same words told nobody anything the preview did not, and
   // the preview is what someone is actually about to publish.
   const postView = 'preview';
+  // Feed ordering and card layout. Both are per-viewer conveniences, so they
+  // live in localStorage rather than on the account: someone reading on a phone
+  // wants the list, the same person on a desktop wants the grid.
+  const [sortOrder,       setSortOrder]       = useState(() => readLocal(SORT_KEY, 'latest'));
+  const [sortOpen,        setSortOpen]        = useState(false);
+  const [typeOpen,        setTypeOpen]        = useState(false);
+  const [cardView,        setCardView]        = useState(() => readLocal(VIEW_KEY, 'grid'));
   const [refinementNote,  setRefinementNote]  = useState('');
   const [copiedHashtags,  setCopiedHashtags]  = useState(false);
   const [showMobilePrefs, setShowMobilePrefs] = useState(false);
   const filterRef = useRef(null);
+  const sortRef = useRef(null);
+  const typeRef = useRef(null);
 
   const { t, lang } = useI18n();
   const siteLang = getSiteLanguage() ?? 'hi';
@@ -341,6 +412,8 @@ export default function SocialMediaPostGenerator() {
     function onUp() { resizing.current = false; document.body.style.cursor = ''; document.body.style.userSelect = ''; }
     function onClickOutside(e) {
       if (filterRef.current && !filterRef.current.contains(e.target)) setFilterOpen(false);
+      if (sortRef.current && !sortRef.current.contains(e.target)) setSortOpen(false);
+      if (typeRef.current && !typeRef.current.contains(e.target)) setTypeOpen(false);
     }
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
@@ -444,14 +517,33 @@ export default function SocialMediaPostGenerator() {
     + (activeFilter !== 'All' ? 1 : 0);
 
   // Numbered pagination — slice the filtered list into fixed-size pages.
+  // The API already returns newest first, so "latest" costs nothing and
+  // "oldest" is the same list reversed by date. Sorting happens before
+  // pagination, or page 2 of "oldest" would be page 2 of the newest items.
+  // Undated items sort last either way: they carry no claim to a position.
+  const orderedArticles = useMemo(() => {
+    const stamp = (a) => {
+      const ms = new Date(a.date ?? '').getTime();
+      return Number.isNaN(ms) ? null : ms;
+    };
+    return [...filteredArticles].sort((a, b) => {
+      const x = stamp(a);
+      const y = stamp(b);
+      if (x === null && y === null) return 0;
+      if (x === null) return 1;
+      if (y === null) return -1;
+      return sortOrder === 'oldest' ? x - y : y - x;
+    });
+  }, [filteredArticles, sortOrder]);
+
   // Clamp during render so a stale-high page never slices out of range
   // (handlers reset to page 1 whenever the search/filter changes).
-  const totalPages = Math.max(1, Math.ceil(filteredArticles.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(orderedArticles.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const pagedArticles = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
-    return filteredArticles.slice(start, start + PAGE_SIZE);
-  }, [filteredArticles, currentPage]);
+    return orderedArticles.slice(start, start + PAGE_SIZE);
+  }, [orderedArticles, currentPage]);
 
   // Group the current page into day buckets, preserving the newest-first order
   // the API already applied.
@@ -661,11 +753,11 @@ export default function SocialMediaPostGenerator() {
           <button
             type="button"
             onClick={() => navigate('/dashboard')}
-            title="Go to Dashboard"
+            title={t('gen.goToDashboard')}
             className="mb-3 flex items-center gap-2 rounded-lg transition hover:opacity-90"
           >
             <img src={logoSrc} alt="AmbedkarGPT" className="h-8 w-8 object-contain drop-shadow-[0_0_10px_rgba(63,159,255,0.55)]" />
-            <span className="font-display text-[15px] font-bold gradient-text-blue">AmbedkarGPT</span>
+            <span className="font-display text-[15px] font-bold gradient-text-blue">{t('brand.wordmark')}</span>
           </button>
           <button
             type="button"
@@ -959,11 +1051,72 @@ export default function SocialMediaPostGenerator() {
                 tabs rather than pills, and each section carries its own
                 accent so it is obvious which feed you are reading. */}
             {activeParty && (
-              <div className="mb-5 flex items-end gap-1.5 border-b border-[#1e2636]/90">
+              <>
+              {/* Party banner. The name used to be the first tab's label,
+                  which made three tabs read as one proper noun beside two
+                  categories, and a long name pushed the other two off a narrow
+                  screen. It gets its own band here, in the party's colour, so
+                  the tabs below are three comparable things. */}
+              {(() => {
+                const pt = PARTY_THEME[activeParty.slug] ?? DEFAULT_PARTY_THEME;
+                const initials = partyShortLabel(activeParty, currentUser?.political_party, t, lang);
+                const tags = (PARTY_TAG_KEYS[activeParty.slug] ?? [])
+                  .map((k) => t(k))
+                  .filter((v) => v && !v.startsWith('ptag.'));
+                return (
+                  <div
+                    className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-4 rounded-2xl border px-5 py-4"
+                    style={{
+                      borderColor: `${pt.accent}3d`,
+                      background: `linear-gradient(100deg, #0e1320 0%, #0e1320 45%, ${pt.tint} 100%)`,
+                    }}
+                  >
+                    <span
+                      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl font-display text-[20px] font-bold text-white"
+                      style={{
+                        background: `linear-gradient(150deg, ${pt.accent} 0%, ${pt.accent}b0 100%)`,
+                        boxShadow: `0 6px 20px ${pt.accent}55`,
+                      }}
+                    >
+                      {initials}
+                    </span>
+
+                    <div className="min-w-0 flex-1">
+                      <h2 className="truncate font-display text-[21px] font-bold tracking-tight text-white">
+                        {partyLabel(activeParty.name, lang)}
+                      </h2>
+                      {tags.length > 0 && (
+                        <p className="mt-0.5 truncate text-[13px] text-[#8b94b8]">
+                          {tags.join('  ·  ')}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* The party comes from the profile, so this is where that
+                        setting lives rather than a second place to change it. */}
+                    <button
+                      type="button"
+                      onClick={() => navigate('/profile-setup')}
+                      className="inline-flex shrink-0 items-center gap-2 rounded-full border border-[#1e3260]/70 bg-[#0d1531]/80 px-4 py-2.5 text-[12.5px] font-medium text-[#a3b0d4] transition hover:border-[#3a6bc4]/60 hover:text-white"
+                    >
+                      <ArrowLeftRight size={13} strokeWidth={2} />
+                      {t('gen.changeParty')}
+                    </button>
+                  </div>
+                );
+              })()}
+              {/* Section chooser. Cards rather than a tab strip: each one
+                  now carries a count and a line saying what is in it, which a
+                  tab has no room for, and the three read as siblings. */}
+              <div className="mb-6 grid gap-3 sm:grid-cols-3">
                 {[
-                  { id: 'party',      label: activeParty.name,          count: partyArticles.length },
-                  { id: 'opposition', label: t('gen.oppositionNews'),   count: oppositionArticles.length },
-                  { id: 'general',    label: t('gen.generalNews'),      count: generalArticles.length },
+                  { id: 'party',      Icon: FileText, label: t('gen.partyNews'),
+                    sub: t('gen.partyNewsSub', { party: partyLabel(activeParty.name, lang) }),
+                    count: partyArticles.length },
+                  { id: 'opposition', Icon: Users,    label: t('gen.oppositionNews'),
+                    sub: t('gen.oppositionNewsSub'), count: oppositionArticles.length },
+                  { id: 'general',    Icon: Globe,    label: t('gen.generalNews'),
+                    sub: t('gen.generalNewsSub'),    count: generalArticles.length },
                 ].map((s) => {
                   const active = newsSection === s.id;
                   const tint = SECTION_THEME[s.id].accent;
@@ -979,102 +1132,55 @@ export default function SocialMediaPostGenerator() {
                         // would show an empty section and look broken.
                         if (s.id === 'general' || s.id === 'opposition') setTypeFilter('all');
                       }}
-                      title={s.label}
-                      className="group relative -mb-px flex items-center gap-2.5 rounded-t-xl px-4 pb-3 pt-2.5 text-[13.5px] font-semibold transition-colors duration-150"
+                      aria-pressed={active}
+                      className="flex items-start gap-3 rounded-2xl border px-4 py-3.5 text-left transition duration-150"
                       style={{
-                        // The active tab is lifted out of the strip and merges
-                        // with the feed below, the way a browser tab does.
-                        backgroundColor: active ? '#0e1320' : 'transparent',
-                        color: active ? '#ffffff' : '#7d8aa6',
-                        borderTop: `1px solid ${active ? 'rgba(30,38,54,0.9)' : 'transparent'}`,
-                        borderLeft: `1px solid ${active ? 'rgba(30,38,54,0.9)' : 'transparent'}`,
-                        borderRight: `1px solid ${active ? 'rgba(30,38,54,0.9)' : 'transparent'}`,
-                        borderBottom: `1px solid ${active ? '#0e1320' : 'transparent'}`,
+                        borderColor: active ? tint : 'rgba(30,38,54,0.9)',
+                        backgroundColor: active ? `${tint}12` : '#0b101c',
+                        boxShadow: active ? `0 0 0 1px ${tint}, 0 8px 24px ${tint}22` : 'none',
                       }}
-                      onMouseEnter={(e) => { if (!active) e.currentTarget.style.backgroundColor = 'rgba(20,26,40,0.7)'; }}
-                      onMouseLeave={(e) => { if (!active) e.currentTarget.style.backgroundColor = 'transparent'; }}
+                      onMouseEnter={(e) => { if (!active) e.currentTarget.style.borderColor = 'rgba(58,107,196,0.5)'; }}
+                      onMouseLeave={(e) => { if (!active) e.currentTarget.style.borderColor = 'rgba(30,38,54,0.9)'; }}
                     >
-                      {/* Accent dot sits where a browser tab shows its favicon */}
                       <span
-                        className="h-2 w-2 shrink-0 rounded-full transition"
+                        className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition"
                         style={{
-                          backgroundColor: active ? tint : '#3a4560',
-                          boxShadow: active ? `0 0 8px ${tint}` : 'none',
-                        }}
-                      />
-                      <span className="max-w-[210px] truncate">{s.label}</span>
-                      <span
-                        className="rounded-md px-1.5 py-0.5 font-count text-[11px] leading-none"
-                        style={{
-                          backgroundColor: active ? `${tint}22` : 'rgba(30,38,54,0.9)',
-                          color: active ? tint : '#5a6e9a',
+                          backgroundColor: active ? `${tint}22` : 'rgba(30,38,54,0.75)',
+                          color: active ? tint : '#6b78a0',
                         }}
                       >
-                        {s.count}
+                        <s.Icon size={16} strokeWidth={2} />
                       </span>
-                      {/* Accent bar across the tab top, like a highlighted browser tab */}
-                      <span
-                        className="absolute inset-x-0 top-0 h-[3px] rounded-t-xl transition-all"
-                        style={{
-                          backgroundColor: active ? tint : 'transparent',
-                          boxShadow: active ? `0 0 10px ${tint}88` : 'none',
-                        }}
-                      />
+
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2">
+                          <span
+                            className="truncate text-[14px] font-semibold"
+                            style={{ color: active ? '#ffffff' : '#c0cde8' }}
+                          >
+                            {s.label}
+                          </span>
+                          <span
+                            className="shrink-0 rounded-md px-1.5 py-0.5 font-count text-[11px] leading-none"
+                            style={{
+                              backgroundColor: active ? `${tint}26` : 'rgba(30,38,54,0.9)',
+                              color: active ? tint : '#5a6e9a',
+                            }}
+                          >
+                            {s.count}
+                          </span>
+                        </span>
+                        <span className="mt-0.5 block truncate text-[12px] text-[#6b78a0]">
+                          {s.sub}
+                        </span>
+                      </span>
                     </button>
                   );
                 })}
               </div>
+              </>
             )}
 
-            {/* Content type — pills rather than tabs, so the party tabs above
-                stay the primary level of navigation. */}
-            <div className="mb-6 flex flex-wrap items-center gap-2.5">
-              {(newsSection === 'general' || newsSection === 'opposition'
-                // General is scraped from the videos tab alone, so every item
-                // is the same type. Three filters over one type is furniture:
-                // "All" and "News Articles" select the same set and "Press
-                // Conference" selects nothing. Opposition has no data yet, so
-                // it gets the same single-chip treatment until its own scrape
-                // defines what content types it actually carries.
-                ? [{ id: 'all', label: newsTypeLabel(newsSection), color: '#6aa8ff' }]
-                : [
-                    { id: 'all',              label: 'gen.all',                              color: '#8a9ac0' },
-                    { id: 'press_conference', label: 'gen.pressConference',                  color: CONTENT_TYPES.press_conference.color },
-                    { id: 'news',             label: newsTypeLabel(newsSection),             color: '#6aa8ff' },
-                  ]
-              ).map((chip) => {
-                const active = typeFilter === chip.id;
-                const count = chip.id === 'all'
-                  ? sectionArticles.length
-                  : sectionArticles.filter((a) => a.contentType === chip.id).length;
-                return (
-                  <button
-                    key={chip.id}
-                    type="button"
-                    onClick={() => { setTypeFilter(chip.id); setPage(1); setView('feed'); }}
-                    className="inline-flex items-center gap-2.5 rounded-full border px-5 py-2.5 text-[16px] font-semibold transition"
-                    style={{
-                      borderColor: active ? chip.color : 'rgba(30,38,54,0.9)',
-                      backgroundColor: active ? `${chip.color}1f` : 'transparent',
-                      color: active ? chip.color : '#7d8aa6',
-                    }}
-                  >
-                    {chip.id === 'press_conference' && <Radio size={16} strokeWidth={2} />}
-                    {chip.id === 'news' && <FileText size={16} strokeWidth={2} />}
-                    {t(chip.label)}
-                    <span
-                      className="rounded-full px-2 py-1 font-count text-[13px] leading-none"
-                      style={{
-                        backgroundColor: active ? `${chip.color}26` : 'rgba(30,38,54,0.9)',
-                        color: active ? chip.color : '#5a6e9a',
-                      }}
-                    >
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
 
             {newsLoading && (
               <>
@@ -1137,22 +1243,151 @@ export default function SocialMediaPostGenerator() {
             )}
             {!newsLoading && !newsError && filteredArticles.length > 0 && (
               <>
-              {/* Section heading for the card grid */}
-              <div className="mb-6 mt-1 text-center">
-                {/* Centred, so the heading reads as a divider between the
-                    filters and the grid rather than as a left-aligned label.
-                    The accent bar moves under the title for the same reason:
-                    a vertical bar only works against left-aligned text. */}
-                <h3 className="font-display text-[34px] font-bold leading-tight tracking-tight text-white md:text-[38px]">
-                  {t('gen.headlines')}
-                </h3>
-                <span
-                  className="mx-auto mt-2 block h-[3px] w-16 rounded-full"
-                  style={{ backgroundColor: theme.accent, boxShadow: `0 0 12px ${theme.accent}88` }}
-                />
-                <p className="mt-3 text-[14.5px] text-[#7d8aa6]">
-                  {t('gen.pickStory')}
-                </p>
+              {/* Section heading for the cards, with the feed's own controls.
+                  Left-aligned rather than centred: the count, the ordering and
+                  the layout switch belong on the same line as the title, and a
+                  centred title leaves nowhere for them to sit. The accent bar
+                  sits above the title, which is what a left-aligned block
+                  wants. */}
+              <div className="mb-6 mt-1 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+                <div className="min-w-0">
+                  <span
+                    className="mb-3 block h-[3px] w-14 rounded-full"
+                    style={{ backgroundColor: theme.accent, boxShadow: `0 0 12px ${theme.accent}88` }}
+                  />
+                  <h3 className="font-display text-[30px] font-bold leading-tight tracking-tight text-white md:text-[34px]">
+                    {t('gen.headlines')}
+                  </h3>
+                  <p className="mt-1.5 text-[14px] text-[#7d8aa6]">
+                    {t('gen.pickStory')}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  {/* Counts the whole filtered feed, not the current page: it
+                      answers "how much is here", which paging should not change. */}
+                  <span className="whitespace-nowrap font-count text-[13px] text-[#7d8aa6]">
+                    <span className="font-semibold text-white">{orderedArticles.length}</span>{' '}
+                    {t(orderedArticles.length === 1 ? 'gen.storyOne' : 'gen.storyMany')}
+                  </span>
+
+                  <span className="h-5 w-px bg-[#1e2636]" />
+
+                  {/* Content type. General and Opposition are scraped from the
+                      videos tab alone, so every item in them is one type and a
+                      chooser over one option is furniture: it is left out for
+                      those sections rather than shown with nothing to pick. */}
+                  {newsSection === 'party' && (
+                    <div ref={typeRef} className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setTypeOpen((p) => !p)}
+                        aria-expanded={typeOpen}
+                        className="inline-flex items-center gap-2 rounded-full border border-[#1e3260]/70 bg-[#0d1531]/80 px-4 py-2 text-[12.5px] font-medium text-[#a3b0d4] transition hover:border-[#3a6bc4]/60 hover:text-white"
+                      >
+                        {typeFilter === 'press_conference'
+                          ? <Radio size={13} strokeWidth={2} />
+                          : <FileText size={13} strokeWidth={2} />}
+                        {t(TYPE_OPTIONS.find((o) => o.id === typeFilter)?.label ?? 'gen.all')}
+                        <ChevronDown size={13} strokeWidth={2} className="text-[#6b78a0]" />
+                      </button>
+                      {typeOpen && (
+                        <div className="absolute right-0 top-[calc(100%+6px)] z-40 w-56 overflow-hidden rounded-xl border border-[#1e3260]/70 bg-[#0d1531] shadow-xl">
+                          {TYPE_OPTIONS.map((o) => {
+                            const on = typeFilter === o.id;
+                            const count = o.id === 'all'
+                              ? sectionArticles.length
+                              : sectionArticles.filter((a) => a.contentType === o.id).length;
+                            return (
+                              <button
+                                key={o.id}
+                                type="button"
+                                onClick={() => {
+                                  setTypeFilter(o.id);
+                                  setTypeOpen(false);
+                                  setPage(1);
+                                  setView('feed');
+                                }}
+                                className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-[12.5px] transition hover:bg-[#0f1a3a] ${
+                                  on ? 'text-[#3f9fff]' : 'text-white/80'
+                                }`}
+                              >
+                                <span className="truncate">{t(o.label)}</span>
+                                <span className="shrink-0 font-count text-[11px] text-[#5a6e9a]">{count}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {newsSection === 'party' && <span className="h-5 w-px bg-[#1e2636]" />}
+
+                  {/* Sort */}
+                  <div ref={sortRef} className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setSortOpen((p) => !p)}
+                      aria-expanded={sortOpen}
+                      className="inline-flex items-center gap-2 rounded-full border border-[#1e3260]/70 bg-[#0d1531]/80 px-4 py-2 text-[12.5px] font-medium text-[#a3b0d4] transition hover:border-[#3a6bc4]/60 hover:text-white"
+                    >
+                      <ArrowUpDown size={13} strokeWidth={2} />
+                      {t(sortOrder === 'oldest' ? 'gen.oldestFirst' : 'gen.latestFirst')}
+                      <ChevronDown size={13} strokeWidth={2} className="text-[#6b78a0]" />
+                    </button>
+                    {sortOpen && (
+                      <div className="absolute right-0 top-[calc(100%+6px)] z-40 w-44 overflow-hidden rounded-xl border border-[#1e3260]/70 bg-[#0d1531] shadow-xl">
+                        {['latest', 'oldest'].map((id) => (
+                          <button
+                            key={id}
+                            type="button"
+                            onClick={() => {
+                              setSortOrder(id);
+                              writeLocal(SORT_KEY, id);
+                              setSortOpen(false);
+                              setPage(1);
+                            }}
+                            className={`flex w-full items-center justify-between px-4 py-2.5 text-left text-[12.5px] transition hover:bg-[#0f1a3a] ${
+                              sortOrder === id ? 'text-[#3f9fff]' : 'text-white/80'
+                            }`}
+                          >
+                            {t(id === 'oldest' ? 'gen.oldestFirst' : 'gen.latestFirst')}
+                            {sortOrder === id && <span className="h-1.5 w-1.5 rounded-full bg-[#3f9fff]" />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Layout */}
+                  <div className="flex items-center gap-1 rounded-xl border border-[#1e3260]/70 bg-[#0d1531]/80 p-1">
+                    {[
+                      { id: 'list', Icon: List,       label: 'gen.viewList' },
+                      { id: 'grid', Icon: LayoutGrid, label: 'gen.viewGrid' },
+                    ].map(({ id, Icon, label }) => {
+                      const on = cardView === id;
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => { setCardView(id); writeLocal(VIEW_KEY, id); }}
+                          aria-label={t(label)}
+                          title={t(label)}
+                          aria-pressed={on}
+                          className="flex h-8 w-9 items-center justify-center rounded-lg transition"
+                          style={{
+                            backgroundColor: on ? 'rgba(63,159,255,0.14)' : 'transparent',
+                            color: on ? '#6aa8ff' : '#6b78a0',
+                            boxShadow: on ? 'inset 0 0 0 1px rgba(63,159,255,0.45)' : 'none',
+                          }}
+                        >
+                          <Icon size={15} strokeWidth={2} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
 
               {pagedGroups.map((group) => (
@@ -1166,7 +1401,7 @@ export default function SocialMediaPostGenerator() {
                     <span className="h-px flex-1 bg-[#1e2636]/80" />
                   </div>
 
-                  <div className="grid gap-5 lg:grid-cols-2">
+                  <div className={cardView === 'list' ? 'flex flex-col gap-3' : 'grid gap-5 lg:grid-cols-2'}>
                 {group.items.map((article) => {
                   const dateLabel = formatNewsDate(article.date);
                   // Colour follows the article's own tenant, so a mixed list
@@ -1179,7 +1414,9 @@ export default function SocialMediaPostGenerator() {
                       key={article.id}
                       type="button"
                       onClick={() => handlePreview(article)}
-                      className="group flex flex-col overflow-hidden rounded-2xl border p-6 text-left transition duration-200 hover:-translate-y-0.5 hover:bg-[#111726] hover:shadow-[0_12px_32px_rgba(0,0,0,0.45)]"
+                      className={`group flex flex-col overflow-hidden rounded-2xl border text-left transition duration-200 hover:-translate-y-0.5 hover:bg-[#111726] hover:shadow-[0_12px_32px_rgba(0,0,0,0.45)] ${
+                        cardView === 'list' ? 'px-5 py-4' : 'p-6'
+                      }`}
                       style={{
                         borderColor: 'rgba(30,38,54,0.8)',
                         backgroundColor: '#0e1320',
@@ -1200,7 +1437,7 @@ export default function SocialMediaPostGenerator() {
                             : <FileText size={12} strokeWidth={2} />}
                           {article.contentType === 'press_conference'
                             ? t('gen.pressConference')
-                            : t(newsTypeLabel(newsSection))}
+                            : t('gen.newsArticle')}
                         </span>
                         <span
                           className="shrink-0 rounded-full border px-3 py-1 font-count text-[11px] uppercase tracking-wider"
@@ -1214,15 +1451,25 @@ export default function SocialMediaPostGenerator() {
                         </span>
                       </div>
 
-                      <p className="line-clamp-3 font-hindi text-[21px] font-bold leading-[1.6] pt-0.5 text-white">
+                      <p className={`font-hindi font-bold leading-[1.6] pt-0.5 text-white ${
+                        cardView === 'list' ? 'line-clamp-2 text-[19px]' : 'line-clamp-3 text-[21px]'
+                      }`}>
                         {article.title}
                       </p>
-                      <p className="font-hindi mt-3 line-clamp-3 flex-1 text-[16.5px] leading-[1.85] text-[#b9c8e4]">
-                        {truncateText(article.summary || article.content, 200)}
+                      {/* The summary is what makes a card tall. In a single
+                          column that height is the whole cost of scanning the
+                          feed, so the list keeps one line of it and the grid,
+                          which has two columns to fill, keeps three. */}
+                      <p className={`font-hindi mt-2 flex-1 leading-[1.85] text-[#b9c8e4] ${
+                        cardView === 'list' ? 'line-clamp-1 text-[15px]' : 'mt-3 line-clamp-3 text-[16.5px]'
+                      }`}>
+                        {truncateText(article.summary || article.content, cardView === 'list' ? 120 : 200)}
                       </p>
 
                       {/* Footer — short by {source} · date */}
-                      <div className="mt-4 flex items-center justify-between gap-2 border-t border-[#141d3a]/70 pt-3">
+                      <div className={`flex items-center justify-between gap-2 border-t border-[#141d3a]/70 ${
+                        cardView === 'list' ? 'mt-2.5 pt-2.5' : 'mt-4 pt-3'
+                      }`}>
                         <span className="min-w-0 truncate font-count text-[11.5px] text-[#5a6e9a]">
                           {dateLabel || 'AmbedkarGPT'}
                         </span>
@@ -1231,7 +1478,7 @@ export default function SocialMediaPostGenerator() {
                           style={{ color: cardAccent }}
                         >
                           <Sparkles size={12} strokeWidth={2} />
-                          Generate
+                          {t('gen.generate')}
                         </span>
                       </div>
                     </button>
@@ -1506,7 +1753,7 @@ export default function SocialMediaPostGenerator() {
                   type="button"
                   onClick={handleRegenerate}
                   disabled={generating}
-                  title="Regenerate"
+                  title={t('gen.regenerate')}
                   className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#1e3260]/70 bg-[#0d1531]/60 text-[#8b94b8] transition hover:border-[#3f9fff]/60 hover:text-white disabled:opacity-40 sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-2"
                 >
                   <RefreshCw size={12} strokeWidth={2} className={generating ? 'animate-spin' : ''} />
@@ -1554,7 +1801,7 @@ export default function SocialMediaPostGenerator() {
                 <div className="flex items-center gap-2">
                   {showTranslated && translatedPost && (
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-[#1e3a6e]/60 bg-[#0d1840]/60 px-2.5 py-0.5 font-count text-[10px] uppercase tracking-widest text-[#6aa8ff]">
-                      Translated · English
+                      {t('gen.translatedEnglish')}
                     </span>
                   )}
                   <span

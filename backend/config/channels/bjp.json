@@ -6,6 +6,8 @@
     "https://www.youtube.com/@bjp/streams"
   ],
   "lookback_days": 1,
+  "max_videos_per_run": 6,
+  "max_consecutive_transcript_failures": 4,
   "tenant_slug": "bjp",
   "channel_slug": "bjp",
   "transcripts_dir": "outputs/transcripts/bjp",
