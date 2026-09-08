@@ -18,6 +18,9 @@ POST_GENERATION_SYSTEM_NAME = "post_generation_system.txt"
 # Congress or general-news generation by a stray code path — only "bjp"
 # selects it, in _load_post_prompts below.
 POST_GENERATION_OPPOSITION_SYSTEM_NAME = "post_generation_opposition_system.txt"
+# Used when a story from outside the writer's own party names that party. See
+# _mentions_own_party for why the test is deliberately blunt.
+POST_GENERATION_OWN_PARTY_SYSTEM_NAME = "post_generation_own_party_system.txt"
 DEFAULT_SUMMARIES_PATH = Path(__file__).resolve().parents[1] / "data" / "video_summaries.json"
 POST_GENERATION_USER_NAME = "post_generation_user.txt"
 
@@ -30,8 +33,15 @@ def _fill_template(template: str, replacements: Dict[str, str]) -> str:
     return out
 
 
-def _load_post_prompts(prompts_dir: Path, *, opposition: bool = False) -> tuple[str, str]:
-    system_name = POST_GENERATION_OPPOSITION_SYSTEM_NAME if opposition else POST_GENERATION_SYSTEM_NAME
+def _load_post_prompts(
+    prompts_dir: Path, *, opposition: bool = False, own_party: bool = False
+) -> tuple[str, str]:
+    if opposition:
+        system_name = POST_GENERATION_OPPOSITION_SYSTEM_NAME
+    elif own_party:
+        system_name = POST_GENERATION_OWN_PARTY_SYSTEM_NAME
+    else:
+        system_name = POST_GENERATION_SYSTEM_NAME
     system_path = prompts_dir / system_name
     user_path = prompts_dir / POST_GENERATION_USER_NAME
     if not system_path.is_file():
@@ -42,6 +52,51 @@ def _load_post_prompts(prompts_dir: Path, *, opposition: bool = False) -> tuple[
         system_path.read_text(encoding="utf-8").strip(),
         user_path.read_text(encoding="utf-8").strip(),
     )
+
+
+# Party names as they appear in stories, keyed by the tenant slug the party
+# publishes under. Hindi and English both, because a Ravish transcript names
+# Congress in Devanagari and an English report does not.
+_PARTY_ALIASES: Dict[str, tuple[str, ...]] = {
+    "congress": ("congress", "कांग्रेस", "काँग्रेस", "यूपीए", "upa", "inc"),
+    "samajwadi": ("samajwadi", "समाजवादी", "सपा", "अखिलेश", "akhilesh"),
+    "bjp": ("bjp", "भाजपा", "बीजेपी", "भारतीय जनता"),
+}
+
+
+def _own_party_slug(profile: Dict[str, str]) -> str:
+    """Tenant slug for the party the writer belongs to, or "" when unset."""
+    raw = str(profile.get("political_party") or "").strip().lower()
+    if not raw:
+        return ""
+    for slug, aliases in _PARTY_ALIASES.items():
+        if any(a in raw for a in aliases):
+            return slug
+    return ""
+
+
+def _mentions_own_party(news: Dict, transcript: Optional[str], slug: str) -> bool:
+    """
+    Does this story talk about the writer's own party?
+
+    Deliberately blunt: any mention counts, favourable or not. Judging the
+    sentiment would need another model call on every generation, and it would
+    buy nothing, because a false positive here is harmless. The defensive prompt
+    writes for the party either way, which is what the reader wants from a
+    story about their own side whichever way it leans. A false negative is the
+    only expensive mistake, so the test errs towards catching more.
+    """
+    if not slug:
+        return False
+    haystack = " ".join(
+        str(news.get(k) or "") for k in ("title", "headline", "description", "summary", "content")
+    )
+    # The transcript is the largest and most specific source, and a charge often
+    # appears only there, so it is searched too when one was supplied.
+    if transcript:
+        haystack += " " + transcript
+    haystack = haystack.lower()
+    return any(alias in haystack for alias in _PARTY_ALIASES.get(slug, ()))
 
 
 def _norm_link(url: str) -> str:
@@ -389,8 +444,28 @@ def generate_post(
     # is speaking for. Selects the whole prompt file, not an appended
     # fragment, so a Congress or general-news generation can never pick up
     # opposition-mode instructions by a stray code path.
-    is_opposition_source = str(news.get("tenant_slug") or "").strip().lower() == "bjp"
-    system_msg, user_tpl = _load_post_prompts(prompts_dir, opposition=is_opposition_source)
+    news_slug = str(news.get("tenant_slug") or "").strip().lower()
+    is_opposition_source = news_slug == "bjp"
+
+    # A story from someone else's channel that names the writer's own party is
+    # the case the general prompt kept losing: it read the story, found a
+    # failure, and wrote against the reader's own side. The party's own feed is
+    # not this case, because a party does not upload attacks on itself, and the
+    # opposition file already governs the opposition's feed. So this is scoped
+    # to what is left, which in practice is General news.
+    own_slug = _own_party_slug(profile)
+    is_own_party_story = (
+        not is_opposition_source
+        and bool(own_slug)
+        and news_slug != own_slug
+        and _mentions_own_party(news, transcript, own_slug)
+    )
+    if is_own_party_story:
+        _log.info("post generation: own-party prompt (news tenant=%s, writer=%s)", news_slug or "?", own_slug)
+
+    system_msg, user_tpl = _load_post_prompts(
+        prompts_dir, opposition=is_opposition_source, own_party=is_own_party_story
+    )
 
     lang_instruction = _LANGUAGE_INSTRUCTIONS.get(language or "en", "")
 
