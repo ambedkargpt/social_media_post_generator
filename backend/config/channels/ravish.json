@@ -1,7 +1,9 @@
 {
   "name": "ravish",
   "channel_url": "https://www.youtube.com/@ravishkumar.official/videos",
-  "lookback_days": 2,
+  "lookback_days": 3,
+  "max_videos_per_run": 6,
+  "max_consecutive_transcript_failures": 4,
   "tenant_slug": "general",
   "channel_slug": "ravishkumar.official",
   "transcripts_dir": "outputs/transcripts/ravishkumar.official",
