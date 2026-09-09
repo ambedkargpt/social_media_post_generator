@@ -149,10 +149,12 @@ def ensure_rag_stack(settings) -> Tuple[ChunkEmbedder, Any, Dict[str, Dict[str, 
     video_context = json.loads(VIDEO_CONTEXT_PATH.read_text(encoding="utf-8"))
     context_by_title = {v["video_title"]: v for v in video_context}
 
-    te = load_title_embeddings(TITLE_EMB_PATH)
-    if te is None or te.model != settings.embedding_model:
-        te = build_title_embeddings(video_context, embedder)
-        save_title_embeddings(te, TITLE_EMB_PATH)
+    # Title embeddings are an optional offline artifact used only for legacy title matching.
+    # Do not block startup or exhaust Gemini API quota trying to embed 56 batches in real-time.
+    try:
+        load_title_embeddings(TITLE_EMB_PATH)
+    except Exception:
+        pass
 
     _RAG_CACHE = (embedder, store, context_by_title)
     return _RAG_CACHE

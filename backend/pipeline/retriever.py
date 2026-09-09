@@ -133,7 +133,9 @@ def _select_candidate_titles(
         q_emb = query_embedding.astype("float32").copy()
     else:
         q_emb = embedder.embed_query(query).astype("float32")
-    q_emb /= (float((q_emb @ q_emb) ** 0.5) + 1e-12)
+    _norm = float(np.linalg.norm(q_emb))
+    if _norm > 0:
+        q_emb /= _norm
 
     title_embs = None
     title_map = {}
@@ -165,12 +167,20 @@ def _select_candidate_titles(
             title_embs = None
 
     if title_embs is None:
-        # Fallback: embed titles on the fly (slower)
-        title_embs = embedder.embed_texts(all_titles, desc="Embedding video titles").astype("float32")
-        title_embs /= (np.linalg.norm(title_embs, axis=1, keepdims=True) + 1e-12)
-    else:
-        # Ensure cached embeddings are normalized
-        title_embs /= (np.linalg.norm(title_embs, axis=1, keepdims=True) + 1e-12)
+        # Fast lexical fallback: rank titles by token overlap without burning Gemini quota
+        q_tokens = set(q_norm.split())
+        lex_scored: List[Tuple[float, str]] = []
+        for t_raw, t_norm in zip(all_titles, titles_norm):
+            t_tokens = set(t_norm.split())
+            overlap = len(q_tokens & t_tokens)
+            lexical_boost = 1.0 if (q_norm and (q_norm in t_norm or t_norm in q_norm)) else 0.0
+            score = (overlap / (len(t_tokens) + 1e-6)) + lexical_boost
+            lex_scored.append((score, t_raw))
+        lex_scored.sort(key=lambda x: x[0], reverse=True)
+        return [t for _, t in lex_scored[:top_n]]
+
+    # Ensure cached embeddings are normalized
+    title_embs /= (np.linalg.norm(title_embs, axis=1, keepdims=True) + 1e-12)
 
     sims = title_embs @ q_emb  # (n_titles,)
 
