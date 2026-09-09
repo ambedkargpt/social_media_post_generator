@@ -134,12 +134,19 @@ def chat_message(
 
     # 3. Call LLM
     try:
-        openai_key = getattr(settings, "openai_api_key", None)
-        if not openai_key:
-            raise ValueError("OPENAI_API_KEY not configured")
-        client = OpenAI(api_key=openai_key)
+        if getattr(settings, "deepseek_api_key", None):
+            client = OpenAI(
+                api_key=settings.deepseek_api_key,
+                base_url=getattr(settings, "deepseek_base_url", None),
+            )
+            model_name = getattr(settings, "deepseek_model", "glm-5.3-flash")
+        elif getattr(settings, "openai_api_key", None) and settings.openai_api_key != "mock-dev-key":
+            client = OpenAI(api_key=settings.openai_api_key)
+            model_name = "gpt-4o-mini"
+        else:
+            raise ValueError("No valid LLM API key configured (DEEPSEEK_API_KEY or OPENAI_API_KEY)")
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model=model_name,
             messages=messages,
             max_tokens=700,
             temperature=0.5,
