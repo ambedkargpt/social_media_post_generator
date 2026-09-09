@@ -142,6 +142,7 @@ function MessageBubble({ msg }) {
 // ── Sidebar ────────────────────────────────────────────────────────────────────
 
 function ChatSidebar({ onCategoryClick, searchQuery, setSearchQuery, onClose, mobile }) {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const filtered = searchQuery
     ? CATEGORIES.filter(
@@ -246,6 +247,7 @@ function ChatSidebar({ onCategoryClick, searchQuery, setSearchQuery, onClose, mo
 // ── Resize handle ──────────────────────────────────────────────────────────────
 
 function ResizeHandle({ onMouseDown, isDragging }) {
+  const { t } = useI18n();
   return (
     <div
       onMouseDown={onMouseDown}
