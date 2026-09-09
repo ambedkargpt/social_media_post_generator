@@ -786,7 +786,12 @@ class PostsService:
                     status_code=status.HTTP_502_BAD_GATEWAY,
                     detail="DEEPSEEK_API_KEY is not set for post generation.",
                 )
-            client = OpenAI(api_key=settings.deepseek_api_key, base_url=settings.deepseek_base_url)
+            client = OpenAI(
+                api_key=settings.deepseek_api_key,
+                base_url=settings.deepseek_base_url,
+                timeout=60.0,
+                max_retries=1,
+            )
             return generate_post(
                 client=client,
                 model=self._current_generation_model(),

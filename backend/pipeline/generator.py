@@ -141,7 +141,7 @@ _LANGUAGE_INSTRUCTIONS: dict[str, str] = {
 # consumed nearly the whole budget and posts were cut off mid-word regardless of
 # the requested length. Devanagari also costs more tokens per word than Latin,
 # so a Hindi post needs noticeably more headroom than the word count suggests.
-_MAX_COMPLETION_TOKENS = int(os.getenv("POST_MAX_COMPLETION_TOKENS", "24000"))
+_MAX_COMPLETION_TOKENS = int(os.getenv("POST_MAX_COMPLETION_TOKENS", "2500"))
 # Devanagari costs roughly a token per character or two, so an unbounded
 # transcript would dominate the prompt.
 #
