@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Send, SlidersHorizontal, Bot, Sparkles, Music, ChevronRight } from 'lucide-react';
+import { FileText, Send, SlidersHorizontal, Bot, Sparkles, Music, ChevronRight, ChevronDown, Calendar } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
 import { getPosts, getDailyQuota } from '../api/posts';
@@ -10,6 +10,7 @@ import DailyQuotaWidget from '../components/dashboard/DailyQuotaWidget';
 
 import Sidebar              from '../components/dashboard/Sidebar';
 import Topbar               from '../components/dashboard/Topbar';
+import TopStoryCarousel     from '../components/dashboard/TopStoryCarousel';
 import StatCard             from '../components/dashboard/StatCard';
 import SearchActivityChart  from '../components/dashboard/SearchActivityChart';
 import DailyActivityChart   from '../components/dashboard/DailyActivityChart';
@@ -23,10 +24,13 @@ import AchievementsGrid     from '../components/dashboard/AchievementsGrid';
 import DashboardFooter      from '../components/dashboard/DashboardFooter';
 import { partyLogo }        from '../utils/politicalParties';
 import { useI18n }         from '../i18n/index.jsx';
+import {
+  formatFullDate, fromInputValue, sameDay, startOfDay, toInputValue, weekdayShort,
+} from '../utils/dashboardDates';
 
 export default function Dashboard() {
   const { currentUser, logout } = useAuth();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
   const [active, setActive] = useState('dashboard');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -36,6 +40,10 @@ export default function Dashboard() {
   const [dataLoading,      setDataLoading]     = useState(true);
   const [quota,            setQuota]           = useState(null);
   const [quotaLoading,     setQuotaLoading]    = useState(true);
+
+  // The day both charts end on. Today by default; the date pill changes it.
+  const [anchorDate, setAnchorDate] = useState(() => startOfDay(new Date()));
+  const dateInputRef = useRef(null);
 
   useEffect(() => {
     if (!currentUser?.id) return;
@@ -57,6 +65,24 @@ export default function Dashboard() {
     await logout();
     navigate('/login', { replace: true });
   }
+
+  // The native picker, opened from the pill. showPicker() is missing in older
+  // browsers and throws without a user gesture; focusing the input is the
+  // fallback there.
+  function openDatePicker() {
+    const el = dateInputRef.current;
+    if (!el) return;
+    try {
+      el.showPicker();
+    } catch {
+      el.focus();
+      el.click();
+    }
+  }
+
+  const dateLabel = `${
+    sameDay(anchorDate, new Date()) ? t('dash.today') : weekdayShort(anchorDate, lang)
+  }, ${formatFullDate(anchorDate, lang)}`;
 
   function handleNavSelect(id) {
     setActive(id);
@@ -92,6 +118,41 @@ export default function Dashboard() {
 
   const first = displayName.split('_')[0];
 
+  // ── Welcome ── Handed to the Topbar, so the greeting and the language,
+  // notification and profile controls share one header row.
+  const welcome = (
+    <div className="min-w-0">
+      <h1 className="flex flex-wrap items-center gap-x-3 gap-y-2 font-display text-[28px] md:text-[32px] font-bold leading-tight tracking-tight">
+        <span>
+          <span className="text-white">{t('dash.welcomeBack')} </span>
+          <span className="gradient-text-blue">{first}</span>
+        </span>
+        {/* The party mark. The disc stays 52px; the logo fills it to
+            48px, leaving a 2px white rim rather than the 6px of padding
+            it had. These symbols are drawn on their own coloured circle,
+            so a wide white ring around them just makes the mark smaller
+            for no gain. Source files are 250px square, so this is well
+            inside their resolution on a 2x screen. */}
+        {welcomeLogo && (
+          <span
+            className="inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-white shadow-[0_0_0_1px_rgba(63,159,255,0.35),0_4px_16px_rgba(0,0,0,0.35)]"
+            title={currentUser?.political_party || ''}
+          >
+            <img
+              src={welcomeLogo}
+              alt={currentUser?.political_party || 'Party'}
+              className="h-[48px] w-[48px] object-contain"
+              onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
+            />
+          </span>
+        )}
+      </h1>
+      <p className="mt-1.5 text-[15px] text-[#9aa5c4] md:text-[16px]">
+        {t('dash.subtitle')}
+      </p>
+    </div>
+  );
+
   return (
     <div
       className="flex h-screen overflow-hidden text-[#e5e7eb]"
@@ -105,7 +166,7 @@ export default function Dashboard() {
         onLogout={handleLogout}
       />
 
-      <div className="relative flex-1 min-w-0 overflow-y-auto">
+      <div className="relative flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
         <MilestoneBanner totalPosts={quota?.total_streak_posts} />
         <div className="px-6 md:px-10">
         <div className="pointer-events-none fixed top-0 right-0 h-[420px] w-[420px] rounded-full bg-[#3f9fff]/10 blur-[130px]" />
@@ -118,47 +179,90 @@ export default function Dashboard() {
           onMenuOpen={() => setMobileSidebarOpen(true)}
           totalPosts={quota?.total_streak_posts ?? totalPosts}
           onLogout={handleLogout}
+          leading={welcome}
         />
 
-        {/* ── Welcome ── */}
-        <div className="mb-7 flex items-end justify-between gap-4">
-          <div>
-            <h1 className="flex flex-wrap items-center gap-x-3 gap-y-2 font-display text-[28px] md:text-[32px] font-bold leading-tight tracking-tight">
-              <span>
-                <span className="text-white">{t('dash.welcomeBack')} </span>
-                <span className="gradient-text-blue">{first}</span>
-              </span>
-              {/* The party mark. The disc stays 52px; the logo fills it to
-                  48px, leaving a 2px white rim rather than the 6px of padding
-                  it had. These symbols are drawn on their own coloured circle,
-                  so a wide white ring around them just makes the mark smaller
-                  for no gain. Source files are 250px square, so this is well
-                  inside their resolution on a 2x screen. */}
-              {welcomeLogo && (
-                <span
-                  className="inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-white shadow-[0_0_0_1px_rgba(63,159,255,0.35),0_4px_16px_rgba(0,0,0,0.35)]"
-                  title={currentUser?.political_party || ''}
-                >
-                  <img
-                    src={welcomeLogo}
-                    alt={currentUser?.political_party || 'Party'}
-                    className="h-[48px] w-[48px] object-contain"
-                    onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
-                  />
-                </span>
-              )}
-            </h1>
-            <p className="mt-2 text-[16px] text-[#9aa5c4] md:text-[17px]">
-              {t('dash.subtitle')}
-            </p>
-          </div>
+        {/* ── Today's top story ── The primary action: the latest party,
+            opposition and general story in turn, with Generate Post. */}
+        <TopStoryCarousel />
 
+        {/* ── Activity ── The date pill sets the day both charts end on. The
+            input sits invisibly under the button so the browser anchors its
+            calendar to the pill. */}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-display text-[18px] font-semibold tracking-tight text-white">{t('dash.activity')}</h2>
+          <div className="relative shrink-0">
+            <button
+              type="button"
+              onClick={openDatePicker}
+              aria-label={t('dash.pickDate')}
+              className="inline-flex items-center gap-2.5 rounded-xl border border-[#1e3260]/70 bg-[#0d1531]/80 px-4 py-2.5 text-[13px] font-medium text-white/90 transition hover:border-[#3a6bc4]/60 hover:text-white"
+            >
+              <Calendar size={15} strokeWidth={2} className="text-[#a3b0d4]" />
+              {dateLabel}
+              <ChevronDown size={14} strokeWidth={2} className="text-[#6b78a0]" />
+            </button>
+            <input
+              ref={dateInputRef}
+              type="date"
+              tabIndex={-1}
+              aria-hidden="true"
+              max={toInputValue(new Date())}
+              value={toInputValue(anchorDate)}
+              onChange={(e) => {
+                const picked = fromInputValue(e.target.value);
+                if (picked) setAnchorDate(picked);
+              }}
+              className="pointer-events-none absolute inset-0 h-full w-full opacity-0"
+              style={{ colorScheme: 'dark' }}
+            />
+          </div>
+        </div>
+
+        {/* ── Stat cards ── */}
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard
+            label={t('dash.postsGenerated')}
+            value={dataLoading ? '…' : String(totalPosts)}
+            delta={null}
+            icon={<FileText size={15} strokeWidth={2} />}
+            iconGradient="bg-gradient-to-br from-[#3f9fff] to-[#2664d6]"
+          />
+          <StatCard
+            label={t('dash.publishedPosts')}
+            value={dataLoading ? '…' : String(publishedPosts)}
+            delta={null}
+            icon={<Send size={15} strokeWidth={2} />}
+            iconGradient="bg-gradient-to-br from-[#a855f7] to-[#7b3fd4]"
+          />
+          <StatCard
+            label={t('dash.draftPosts')}
+            value={dataLoading ? '…' : String(draftPosts)}
+            delta={null}
+            icon={<FileText size={15} strokeWidth={2} />}
+            iconGradient="bg-gradient-to-br from-[#22c55e] to-[#16a34a]"
+          />
+          <StatCard
+            label={t('dash.preferencesSet')}
+            value={dataLoading ? '…' : String(prefsAnswered)}
+            delta={null}
+            icon={<SlidersHorizontal size={15} strokeWidth={2} />}
+            iconGradient="bg-gradient-to-br from-[#ffb056] to-[#ff7a2d]"
+          />
+        </div>
+
+        {/* ── Charts row ── */}
+        <div className="mt-5 grid gap-5 grid-cols-1 lg:grid-cols-2">
+          <SearchActivityChart posts={posts} anchor={anchorDate} />
+          <DailyActivityChart posts={posts} anchor={anchorDate} />
         </div>
 
         {/* ── Quick actions ──
             The Topbar's Generate button routes to an intermediate services page,
-            which was the only way in. These surface the destinations directly. */}
-        <div className="mb-7 grid gap-4 grid-cols-1 sm:grid-cols-3">
+            which was the only way in. These surface the destinations directly.
+            Below the analytics now: the top story card is the dashboard's main
+            way into post generation. */}
+        <div className="mt-5 grid gap-4 grid-cols-1 sm:grid-cols-3">
           {[
             {
               label: t('dash.socialPost'),
@@ -218,44 +322,6 @@ export default function Dashboard() {
               />
             </button>
           ))}
-        </div>
-
-        {/* ── Stat cards ── */}
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard
-            label={t('dash.postsGenerated')}
-            value={dataLoading ? '…' : String(totalPosts)}
-            delta={null}
-            icon={<FileText size={15} strokeWidth={2} />}
-            iconGradient="bg-gradient-to-br from-[#3f9fff] to-[#2664d6]"
-          />
-          <StatCard
-            label={t('dash.publishedPosts')}
-            value={dataLoading ? '…' : String(publishedPosts)}
-            delta={null}
-            icon={<Send size={15} strokeWidth={2} />}
-            iconGradient="bg-gradient-to-br from-[#a855f7] to-[#7b3fd4]"
-          />
-          <StatCard
-            label={t('dash.draftPosts')}
-            value={dataLoading ? '…' : String(draftPosts)}
-            delta={null}
-            icon={<FileText size={15} strokeWidth={2} />}
-            iconGradient="bg-gradient-to-br from-[#22c55e] to-[#16a34a]"
-          />
-          <StatCard
-            label={t('dash.preferencesSet')}
-            value={dataLoading ? '…' : String(prefsAnswered)}
-            delta={null}
-            icon={<SlidersHorizontal size={15} strokeWidth={2} />}
-            iconGradient="bg-gradient-to-br from-[#ffb056] to-[#ff7a2d]"
-          />
-        </div>
-
-        {/* ── Charts row ── */}
-        <div className="mt-5 grid gap-5 grid-cols-1 lg:grid-cols-2">
-          <SearchActivityChart posts={posts} />
-          <DailyActivityChart posts={posts} />
         </div>
 
         {/* ── Categories pie + image generation ── */}

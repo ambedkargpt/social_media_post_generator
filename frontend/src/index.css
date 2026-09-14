@@ -953,6 +953,22 @@ html { scroll-behavior: smooth; }
 }
 
 /* --- Navbar mobile dropdown --- */
+/* Dashboard top story: the next story enters from the left while the one on
+   screen leaves to the right. 600ms matches SLIDE_MS in TopStoryCarousel. */
+@keyframes storyInFromLeft {
+  from { transform: translateX(-100%); opacity: 0.35; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+@keyframes storyOutToRight {
+  from { transform: translateX(0);    opacity: 1; }
+  to   { transform: translateX(100%); opacity: 0.35; }
+}
+.story-slide-in  { animation: storyInFromLeft 600ms cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+.story-slide-out { animation: storyOutToRight 600ms cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .story-slide-in, .story-slide-out { animation-duration: 1ms; }
+}
+
 @keyframes nav-dropdown {
   from { opacity: 0; transform: translateY(-6px); }
   to   { opacity: 1; transform: translateY(0); }
