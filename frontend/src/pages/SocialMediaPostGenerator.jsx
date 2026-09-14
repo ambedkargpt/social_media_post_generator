@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Search, Filter, Sparkles,
   Copy, Check, RefreshCw, ChevronDown, FileText, Star, Radio,
@@ -10,7 +10,8 @@ import PreferencesPanel from '../components/generate/PreferencesPanel';
 import PostContent from '../components/generate/PostContent';
 import logoSrc from '../assets/images/logo-animation.png';
 import { useAuth } from '../context/AuthContext';
-import { getNews, getTenants } from '../api/news';
+import { getNews, getNewsById, getTenants } from '../api/news';
+import { adaptNews, resolveTenantForUser } from '../utils/newsTenants';
 import { generatePostForNews, regeneratePostFromSnapshot, translatePost, updatePost, getDailyQuota } from '../api/posts';
 import { getQuestions } from '../api/questions';
 import { getProfileAnswers, saveProfileAnswers } from '../api/profile';
@@ -95,23 +96,8 @@ function getPageItems(current, total) {
 // Preference questions shown in the right panel, in display order
 const PREF_QUESTION_IDS = CORE_QUESTION_IDS;
 
-// Map backend NewsResponse → local article shape
-function adaptNews(item) {
-  return {
-    id:       item.id,
-    _backendId: item.id, // valid MongoDB ObjectId from backend
-    category: item.tags?.[0] ?? 'General',
-    title:    item.headline,
-    content:  item.description || item.summary,
-    summary:  item.summary || item.description || '',
-    source:   item.source_name || '',
-    date:     item.published_at || '',
-    topic:    item.summary || item.headline,
-    tenantId:   item.tenant_id ?? 0,
-    tenantSlug: item.tenant_slug || 'general',
-    contentType: item.content_type || 'news',
-  };
-}
+// adaptNews and resolveTenantForUser live in utils/newsTenants, shared with the
+// dashboard's top-story card so both read the same party and story shape.
 
 // Livestreamed briefings read differently from regular uploads, so the card
 // says which it is.
@@ -191,23 +177,6 @@ function matchesDate(dateValue, filterId) {
     return dayKey(dateValue) === filterId.slice(DAY_PREFIX.length);
   }
   return withinDays(dateValue, DATE_RANGES.find((d) => d.id === filterId)?.days ?? null);
-}
-
-// Signup stores a display name ("Indian National Congress (INC)"); the tenant
-// registry keys on a slug. Match on the registry name being contained in it.
-function resolveTenantForUser(partyName, tenants) {
-  const raw = (partyName ?? '').trim().toLowerCase();
-  if (!raw) return null;
-  // The opposition tenant (BJP) is scraped to be countered, never to be
-  // someone's own party — excluded here the same way it is excluded from
-  // the signup party picker, so it can never become "your party" even if a
-  // stray political_party value happened to match its name or slug.
-  const selectable = tenants.filter((t) => !t.is_general && !t.is_opposition);
-  return (
-    selectable.find((t) => raw.includes(String(t.name).toLowerCase()))
-    ?? selectable.find((t) => raw.includes(String(t.slug).toLowerCase()))
-    ?? null
-  );
 }
 
 // Accent per section so party news, opposition news and general news are
@@ -568,6 +537,35 @@ export default function SocialMediaPostGenerator() {
   const charPct = activePlatform.limit ? chars / activePlatform.limit : 0;
   const charOverLimit = chars > activePlatform.limit;
   const charWarning = charPct > 0.85 && !charOverLimit;
+
+  // A story handed over by the dashboard's top-story card. The card names the
+  // story it was showing when Generate Post was clicked, and this opens that
+  // story's page, never the one the carousel moved to next. Generation is left
+  // to the user from there, so preferences can be checked first. Fetched by id
+  // rather than looked up in the feed, which may still be loading or may be in
+  // another language. The route state is cleared at once, so a refresh or a
+  // back-navigation lands on the feed rather than reopening the story.
+  const location = useLocation();
+  const topStory = location.state?.topStory;
+  const handoffDone = useRef(false);
+
+  useEffect(() => {
+    if (handoffDone.current || !topStory?.newsId || !currentUser?.id) return;
+    handoffDone.current = true;
+    const { newsId, section } = topStory;
+    navigate(location.pathname, { replace: true, state: null });
+    getNewsById(newsId)
+      .then((item) => {
+        if (!item) return;
+        const article = adaptNews(item);
+        if (section) setNewsSection(section);
+        setSelectedArticle(article);
+        setGeneratedPost('');
+        setSelectedPostId(null);
+        setView('preview');
+      })
+      .catch(() => {});
+  }, [topStory, currentUser?.id]);
 
   function handlePreview(article) {
     setSelectedArticle(article);

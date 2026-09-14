@@ -22,6 +22,16 @@ def list_questions(
     return service.list(limit=limit, skip=skip)
 
 
+# Declared before /{question_id}. Routes match in order, so after it this path
+# would be read as a request for a question whose id is "position".
+@router.get("/position", response_model=list[QuestionResponse])
+def list_position_questions(
+    party: str = Query(..., description="Party name as stored on the user."),
+    group: str = Query(..., description="Position group, e.g. District or Frontal wing."),
+) -> list[QuestionResponse]:
+    return service.list_position(party_name=party, group=group)
+
+
 @router.get("/{question_id}", response_model=QuestionResponse)
 def get_question(question_id: str) -> QuestionResponse:
     return service.get(question_id)

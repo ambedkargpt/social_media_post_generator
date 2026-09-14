@@ -584,7 +584,44 @@ class PostsService:
         # writing from. This is partisan communication: the writer needs to know
         # which party's case it is making before it can make it.
         default_profile["political_party"] = str(user_doc.get("political_party") or "").strip()
+
+        # How this writer wants to write from their position, in their own
+        # answers. Empty for a party or position with no question set and for
+        # anyone who has not answered, so those prompts are unchanged.
+        default_profile["position_preferences"] = self._position_preferences(user_id, user_doc)
         return default_profile
+
+    def _position_preferences(self, user_id: str, user_doc: dict[str, Any]) -> str:
+        """
+        The writer's answers to the five questions for their party and position.
+
+        Rendered with each question beside its answer, because the same slot
+        means different things in different sets: the third question is how
+        hard to challenge the state government for a state leader, and how to
+        answer a claim about your community for a frontal wing. An answer on its
+        own would leave the model guessing which question it answered.
+        """
+        from backend.pipeline.position_questions import (
+            group_for_position,
+            question_ids_for,
+            question_party,
+            render_preferences,
+        )
+        from backend.repositories.questions_repo import QuestionsRepository
+
+        ids = question_ids_for(
+            question_party(user_doc.get("political_party")),
+            group_for_position(user_doc.get("party_position")),
+        )
+        if not ids:
+            return ""
+        rows = self.profile_answers_repo.list_by_user(
+            user_id=user_id, question_ids=ids, limit=len(ids), skip=0
+        )
+        answers = {str(row.get("question_id")): row.get("answer") for row in rows}
+        if not answers:
+            return ""
+        return render_preferences(QuestionsRepository().list_by_ids(ids), answers)
 
     def _rag_stack(self, tenant: str) -> tuple[Any, Any, Any]:
         """

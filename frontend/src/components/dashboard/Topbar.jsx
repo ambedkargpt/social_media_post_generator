@@ -5,7 +5,10 @@ import NotificationBell from './NotificationBell';
 import ProfileMenu from './ProfileMenu';
 import { useI18n } from '../../i18n/index.jsx';
 
-export default function Topbar({ user, onMenuOpen, totalPosts, onLogout }) {
+// `leading` replaces the Generate / MP-MLA pills with the page's own header
+// (the dashboard's welcome). Below lg it drops to its own row under the
+// hamburger and the controls, so the greeting never shares a phone-width line.
+export default function Topbar({ user, onMenuOpen, totalPosts, onLogout, leading = null }) {
   const { t } = useI18n();
   const navigate = useNavigate();
   const name  = user?.name  ?? '—';
@@ -14,7 +17,13 @@ export default function Topbar({ user, onMenuOpen, totalPosts, onLogout }) {
   const initial = (name?.[0] ?? 'A').toUpperCase();
 
   return (
-    <div className="flex items-center justify-between gap-4 pt-7 pb-6">
+    <div
+      className={
+        leading
+          ? 'flex flex-wrap items-center justify-between gap-4 pt-6 pb-5 lg:flex-nowrap lg:items-start'
+          : 'flex items-center justify-between gap-4 pt-7 pb-6'
+      }
+    >
       {/* Hamburger — mobile only */}
       <button
         type="button"
@@ -25,7 +34,10 @@ export default function Topbar({ user, onMenuOpen, totalPosts, onLogout }) {
         <Menu size={17} strokeWidth={1.8} />
       </button>
 
-      {/* Generate CTA + MP/MLA lookup (centered visually) */}
+      {leading ? (
+        <div className="order-last w-full min-w-0 lg:order-none lg:w-auto lg:flex-1">{leading}</div>
+      ) : (
+      /* Generate CTA + MP/MLA lookup (centered visually) */
       <div className="flex-1 flex items-center gap-3">
         <button
           type="button"
@@ -50,9 +62,10 @@ export default function Topbar({ user, onMenuOpen, totalPosts, onLogout }) {
           </span>
         </div>
       </div>
+      )}
 
       {/* language + notifications + user */}
-      <div className="flex items-center gap-4">
+      <div className={`flex items-center gap-4 ${leading ? 'ml-auto lg:pt-1' : ''}`}>
         <LanguageSwitcher />
         <NotificationBell totalPosts={totalPosts} />
 

@@ -10,7 +10,7 @@ export async function getNews({ limit = 100, skip = 0, language, tenant, include
   if (tenant !== undefined && tenant !== null && tenant !== '') params.tenant = tenant;
   if (includeGeneral !== undefined) params.include_general = includeGeneral;
   if (includeOpposition !== undefined) params.include_opposition = includeOpposition;
-  const { data } = await client.get('/news', { params });
+  const { data } = await client.get('/news/', { params });
   return data;
 }
 

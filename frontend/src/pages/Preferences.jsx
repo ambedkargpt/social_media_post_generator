@@ -4,7 +4,8 @@ import { ArrowLeft, Check, Save, Home, ArrowUp, Loader2 } from 'lucide-react';
 import logoSrc from '../assets/images/logo-animation.png';
 import { useAuth } from '../context/AuthContext';
 import { saveProfileAnswers, getProfileAnswers } from '../api/profile';
-import { getQuestions } from '../api/questions';
+import { getPositionQuestions, getQuestions } from '../api/questions';
+import { groupForId } from '../utils/partyRoles';
 import { CORE_QUESTION_IDS, labelWithSize } from '../utils/preferenceQuestions';
 import { useI18n } from '../i18n/index.jsx';
 import { questionLabel } from '../i18n/preferenceOptions';
@@ -68,9 +69,9 @@ function QuestionCard({ q, num, value, onSelect }) {
         <span className="mt-0.5 shrink-0 font-count text-[13px] font-bold text-[#3f6bd4]">
           {String(num).padStart(2, '0')}
         </span>
-        <p className="text-[13.5px] font-medium leading-snug text-[#c0cde8]">{questionLabel(q.label, lang)}</p>
+        <p className="text-[13.5px] font-medium leading-snug text-[#c0cde8]">{lang === 'hi' && q.labelHi ? q.labelHi : questionLabel(q.label, lang)}</p>
       </div>
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+      <div className={q.wide ? 'grid gap-2.5 sm:grid-cols-2' : 'grid grid-cols-2 gap-2.5 sm:grid-cols-3'}>
         {q.options.map((opt) => {
           const active = value === opt.value;
           return (
@@ -79,14 +80,16 @@ function QuestionCard({ q, num, value, onSelect }) {
               type="button"
               onClick={() => onSelect(opt.value)}
               className={[
-                'relative flex items-center justify-center gap-2 rounded-xl px-3 py-3 text-[12.5px] font-medium transition-all duration-200',
+                q.wide
+                  ? 'relative flex items-center justify-start gap-2 rounded-xl px-3.5 py-3 text-left text-[12.5px] font-medium leading-snug transition-all duration-200'
+                  : 'relative flex items-center justify-center gap-2 rounded-xl px-3 py-3 text-[12.5px] font-medium transition-all duration-200',
                 active
                   ? 'bg-gradient-to-r from-[#2563eb] to-[#3f9fff] text-white shadow-[0_4px_18px_rgba(37,99,235,0.45)]'
                   : 'border border-[#1e3260]/70 bg-[#0a1428]/80 text-[#7a90b8] hover:border-[#3f6bd4]/50 hover:bg-[#0f1d3a] hover:text-white',
               ].join(' ')}
             >
               {active && <Check size={11} strokeWidth={3} className="shrink-0" />}
-              {labelWithSize(opt.raw, lang)}
+              {q.wide ? (lang === 'hi' && opt.hi ? opt.hi : opt.raw) : labelWithSize(opt.raw, lang)}
             </button>
           );
         })}
@@ -130,6 +133,40 @@ export default function Preferences() {
   const [compulsory, setCompulsory] = useState([]);
   const [optional, setOptional]     = useState([]);
   const [prefs, setPrefs]       = useState(() => readLocalPrefs() ?? DEFAULTS);
+
+  // Five questions written for this user's party and the level of their
+  // position in it, so a national leader and a block worker are asked
+  // different things. Party and position are chosen on the profile screen and
+  // read back here from the saved user, which is also what the post generator
+  // reads to find the set: answers given against anything else never reach a post.
+  const userParty = currentUser?.political_party || '';
+  const positionGroup = groupForId(currentUser?.party_position || '');
+  // Mirrors question_party() in backend/pipeline/position_questions.py.
+  const partyHasPositionSet = /indian national congress|\(inc\)|bahujan samaj|\(bsp\)/i.test(userParty);
+  const [positionQuestions, setPositionQuestions] = useState([]);
+
+  useEffect(() => {
+    if (!userParty || !positionGroup) {
+      setPositionQuestions([]);
+      return undefined;
+    }
+    let cancelled = false;
+    getPositionQuestions(userParty, positionGroup)
+      .then((rows) => {
+        if (cancelled) return;
+        // The English option is the value saved and validated; the Hindi at the
+        // same index is only what gets drawn.
+        setPositionQuestions(rows.map((q) => ({
+          id: q.question_id,
+          label: q.question_text,
+          labelHi: q.question_text_hi,
+          wide: true,
+          options: (q.options ?? []).map((opt, i) => ({ value: opt, raw: opt, hi: q.options_hi?.[i] || '' })),
+        })));
+      })
+      .catch(() => { if (!cancelled) setPositionQuestions([]); });
+    return () => { cancelled = true; };
+  }, [userParty, positionGroup]);
 
   // Load the question set first: the answer map is keyed on it, and rendering
   // buttons for a question the database no longer has would let someone save
@@ -199,8 +236,11 @@ export default function Preferences() {
     setSaved(false);
   }
 
-  const answeredCount = Object.values(prefs).filter(Boolean).length;
-  const totalCount    = compulsory.length + optional.length;
+  // Counted over the questions on screen. Saved answers for a position the user
+  // has since left are still in prefs and would otherwise push this past the total.
+  const shownIds      = [...compulsory, ...positionQuestions, ...optional].map((q) => q.id);
+  const answeredCount = shownIds.filter((id) => prefs[id]).length;
+  const totalCount    = shownIds.length || 1;
 
   return (
     <div
@@ -281,6 +321,40 @@ export default function Preferences() {
           ))}
         </div>
 
+        {/* ── Position questions ── */}
+        {positionQuestions.length > 0 && (
+          <div className="mt-12">
+            <SectionHeader
+              label={t('prefs.positionTitle')}
+              badge={t('prefs.optionalBadge')}
+              description={t('prefs.positionDesc')}
+            />
+            <div className="space-y-4">
+              {positionQuestions.map((q, i) => (
+                <QuestionCard
+                  key={q.id}
+                  q={q}
+                  num={compulsory.length + i + 1}
+                  value={prefs[q.id]}
+                  onSelect={(v) => select(q.id, v)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        {partyHasPositionSet && !positionGroup && (
+          <div className="mt-12 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#1a2d50]/60 bg-[#0e1628] px-5 py-4">
+            <p className="text-[13px] text-[#8b94b8]">{t('prefs.positionNeedRole')}</p>
+            <button
+              type="button"
+              onClick={() => navigate('/profile-setup')}
+              className="rounded-full border border-[#1e3260]/70 px-4 py-2 text-[12.5px] font-medium text-[#a3b0d4] transition hover:border-[#3a6bc4]/60 hover:text-white"
+            >
+              {t('prefs.positionSetRole')}
+            </button>
+          </div>
+        )}
+
         {/* ── Optional questions ── */}
         <div className="mt-12">
           <SectionHeader
@@ -293,7 +367,7 @@ export default function Preferences() {
               <QuestionCard
                 key={q.id}
                 q={q}
-                num={compulsory.length + i + 1}
+                num={compulsory.length + positionQuestions.length + i + 1}
                 value={prefs[q.id]}
                 onSelect={(v) => select(q.id, v)}
               />

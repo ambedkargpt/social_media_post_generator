@@ -43,6 +43,7 @@ class PostsRepository:
         status: str | None = None,
         limit: int = 100,
         skip: int = 0,
+        include_meta: bool = False,
     ) -> list[dict]:
         query: dict[str, Any] = {}
         if user_id:
@@ -51,7 +52,25 @@ class PostsRepository:
             query["news_id"] = ObjectId(news_id)
         if status:
             query["status"] = status
-        return list(self.collection.find(query).sort("created_at", -1).skip(skip).limit(limit))
+        cursor = self.collection.find(query, projection=self._list_projection(include_meta))
+        return list(cursor.sort("created_at", -1).skip(skip).limit(limit))
+
+    @staticmethod
+    def _list_projection(include_meta: bool) -> dict[str, int] | None:
+        """
+        Leave generation_meta out of listings unless a caller asks for it.
+
+        It is the retrieval and research record kept so a post can be
+        regenerated, and it dwarfs the post: in one user's history the largest
+        document was 64 KB, of which 62 KB was this field and 2 KB was the
+        content anyone reads. Fifty-eight posts came to 2 MB on the wire for a
+        list view that shows none of it, and on a slow link that exceeded the
+        driver's socket timeout and returned a 500.
+
+        Nothing in the listing path uses it: the regenerate flow reads the post
+        by id, which is unaffected.
+        """
+        return None if include_meta else {"generation_meta": 0}
 
     def update(self, post_id: str, updates: dict[str, Any]) -> Optional[dict]:
         updates = {k: v for k, v in updates.items() if v is not None}

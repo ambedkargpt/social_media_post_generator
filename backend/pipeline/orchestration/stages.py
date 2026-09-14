@@ -77,32 +77,43 @@ def run_ingestion(context: PipelineContext) -> StageResult:
     entries: list[dict] = []
     cleaned_count = 0
     transcript_failures = 0
-    consecutive_failures = 0
+    no_caption_count = 0
+    consecutive_refusals = 0
     rate_limited = False
     for url in filtered_urls:
         meta = meta_by_url.get(url) or fetch.get_video_metadata(url)
         if not meta:
             continue
-        transcript = fetch.fetch_transcript_text(meta["id"])
+        transcript, reason = fetch.fetch_transcript_with_reason(meta["id"])
         if not transcript:
-            # A failed fetch is usually YouTube throttling (HTTP 429). Backing off
+            # A video with no captions is not a refusal. It says nothing about
+            # the next video, costs nothing to move past, and waiting cannot
+            # produce captions that were never published. Counting it as a
+            # refusal stopped a Congress run after four such videos while the
+            # next channel fetched with no failures at all.
+            if reason == "no_captions":
+                no_caption_count += 1
+                consecutive_refusals = 0
+                continue
+
+            # Everything else is throttling or a network failure. Backing off
             # matters more here than after a success: continuing straight to the
             # next request is what makes the rate limit cascade.
             transcript_failures += 1
-            consecutive_failures += 1
+            consecutive_refusals += 1
             limit = channel.max_consecutive_transcript_failures
-            if limit and consecutive_failures >= limit:
+            if limit and consecutive_refusals >= limit:
                 # Every further request would be refused too, and each refusal
                 # still pays its backoff. Leave the rest for the next run.
                 rate_limited = True
                 print(
-                    f" {consecutive_failures} transcript refusals in a row - "
+                    f" {consecutive_refusals} transcript refusals in a row - "
                     f"stopping this channel and leaving the rest for a later run."
                 )
                 break
             time.sleep(random.uniform(20, 35))
             continue
-        consecutive_failures = 0
+        consecutive_refusals = 0
         # Clean once here so summaries, RAG chunks and entity extraction all
         # consume the same cleaned text rather than raw caption output.
         cleaned = clean_transcript(
@@ -161,6 +172,9 @@ def run_ingestion(context: PipelineContext) -> StageResult:
             "skipped_existing": skipped_existing,
             "cleaned_transcripts": cleaned_count,
             "transcript_failures": transcript_failures,
+            # Separate, because they mean opposite things: refusals are worth
+            # retrying later, caption-less videos never will be.
+            "no_captions": no_caption_count,
             "lookback_days": channel.lookback_days or 0,
             # Both are how a caller tells "this channel is done" from "this
             # channel has more waiting", which decides whether a rerun is worth it.

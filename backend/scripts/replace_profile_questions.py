@@ -339,7 +339,10 @@ def main() -> None:
             }
         )
 
-    deleted = collection.delete_many({})
+    # Profile questions only. This used to empty the whole collection, which
+    # would now also delete the seventy position questions and orphan every
+    # answer saved against them. Those have their own seeder.
+    deleted = collection.delete_many({"question_id": {"$regex": "^profile_"}})
     inserted = collection.insert_many(docs)
     print(f"Deleted {deleted.deleted_count} existing question(s).")
     print(f"Inserted {len(inserted.inserted_ids)} profile question(s).")

@@ -385,18 +385,30 @@ def _fetch_transcript_via_ytdlp(video_id: str) -> str | None:
         return None
 
 
-def fetch_transcript_text(video_id: str) -> str | None:
+def fetch_transcript_with_reason(video_id: str) -> tuple[str | None, str]:
+    """
+    The transcript, and why there isn't one when there isn't.
+
+    Callers need to tell two failures apart. A video with no captions says
+    nothing about the next video, and waiting changes nothing. A throttle says
+    every following request will fail too, and only waiting helps. Collapsing
+    both into None made a run stop a channel after four caption-less Congress
+    videos, believing it was blocked, while the very next channel fetched
+    without a single failure.
+
+    Returns ("ok" | "no_captions" | "unavailable") alongside the text.
+    """
     try:
         transcript = (
             YouTubeTranscriptApi()
             .fetch(video_id, languages=["hi", "en"])
             .to_raw_data()
         )
-        return " ".join(t["text"] for t in transcript)
+        return " ".join(t["text"] for t in transcript), "ok"
     except (TranscriptsDisabled, NoTranscriptFound):
         # The video genuinely has no captions. Another route will not conjure
         # them, so do not spend a request finding that out again.
-        return None
+        return None, "no_captions"
     except Exception as e:
         print(f" Transcript error: {e}")
         # Everything else is a throttle, a network failure or an API change,
@@ -404,7 +416,14 @@ def fetch_transcript_text(video_id: str) -> str | None:
         text = _fetch_transcript_via_ytdlp(video_id)
         if text:
             print(f" recovered via yt-dlp ({len(text)} chars)")
-        return text
+            return text, "ok"
+        return None, "unavailable"
+
+
+def fetch_transcript_text(video_id: str) -> str | None:
+    """The transcript alone. Use fetch_transcript_with_reason when the caller
+    has to distinguish a caption-less video from a throttled request."""
+    return fetch_transcript_with_reason(video_id)[0]
 
 
 
