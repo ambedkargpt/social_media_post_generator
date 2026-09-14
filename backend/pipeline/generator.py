@@ -219,8 +219,16 @@ _MAX_TRANSCRIPT_CHARS = int(os.getenv("POST_TRANSCRIPT_CHARS", "4000"))
 
 # Matches section headers in English OR Hindi (LLM sometimes translates labels when
 # generating Hindi content).
+#
+# The label may share its line with the content. This used to require a newline
+# straight after the colon, so "Hashtags: #a #b" or "Headline: text" did not
+# split, the body came back empty, and the whole raw reply was saved as the post
+# with its labels still in it. A prompt whose format example put label and text
+# on one line made every post it wrote do this, and the model drifted into the
+# same shape under the other prompts at least once. Accepting it here is what
+# keeps either from reaching a reader.
 _SECTION_RE = re.compile(
-    r'^(Headline|शीर्षक|Social Media Post|सोशल मीडिया पोस्ट|Hashtags|हैशटेग)\s*:\s*\n',
+    r'^(Headline|शीर्षक|Social Media Post|सोशल मीडिया पोस्ट|Hashtags|हैशटेग)\s*:[ \t]*',
     re.IGNORECASE | re.MULTILINE,
 )
 
@@ -403,7 +411,12 @@ def _extract_post_body(raw: str) -> str:
     hashtags = "" if hashtags.upper() in ("N/A", "NA", "") else hashtags
 
     if not body:
-        return raw.strip()
+        # No body section, so the reply cannot be reassembled. It is still not
+        # returned verbatim: labels are stripped from the start of every line
+        # first. A reply can carry some labels without the body one - a June
+        # post labelled only its hashtags - and returning it untouched saved
+        # "Hashtags:" into the post. A reply with no labels at all is unchanged.
+        return _SECTION_RE.sub("", raw).strip()
 
     pieces = [p for p in [headline, body, hashtags] if p]
     return "\n\n".join(pieces)
