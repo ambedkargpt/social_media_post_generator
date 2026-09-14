@@ -40,3 +40,12 @@ class QuestionResponse(BaseModel):
     version: int
     created_at: datetime
     updated_at: datetime
+    # Position questions only, absent on profile questions. Which party and
+    # position group the question belongs to, its place in that set of five,
+    # and its Hindi. options_hi runs parallel to options: the English option is
+    # what gets saved, the Hindi at the same index is what gets shown.
+    party: Optional[str] = None
+    position_group: Optional[str] = None
+    display_order: Optional[int] = None
+    question_text_hi: Optional[str] = None
+    options_hi: list[str] = Field(default_factory=list)
