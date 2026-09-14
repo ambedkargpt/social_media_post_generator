@@ -50,7 +50,7 @@ export async function getDailyQuota() {
 
 // GET /posts — list user's posts
 export async function getPosts({ newsId, status, limit = 50, skip = 0 } = {}) {
-  const { data } = await client.get('/posts', {
+  const { data } = await client.get('/posts/', {
     params: { news_id: newsId, status, limit, skip },
   });
   return data;
