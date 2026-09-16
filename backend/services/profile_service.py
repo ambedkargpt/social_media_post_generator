@@ -32,7 +32,26 @@ class ProfileService:
         }
         effective_answers = {**existing_answers, **answers}
 
-        required_ids = [str(q["question_id"]) for q in active_questions if bool(q.get("is_required", False))]
+        # Required answers belong to the profile questions, and are enforced only
+        # when a save touches them. Onboarding asks the position questions
+        # instead, so a new user's first save is up to five position answers with
+        # no profile answers behind it. Checking the whole profile set there
+        # refused every such save with a 400, and onboarding saves without
+        # waiting, so the answers vanished without the user ever seeing an error.
+        from backend.pipeline.position_questions import CATEGORY as POSITION_CATEGORY
+
+        touches_profile = any(
+            str(question_map[str(qid)].get("category") or "") != POSITION_CATEGORY
+            for qid in answers
+            if str(qid) in question_map
+        )
+        required_ids = [
+            str(q["question_id"])
+            for q in active_questions
+            if touches_profile
+            and bool(q.get("is_required", False))
+            and str(q.get("category") or "") != POSITION_CATEGORY
+        ]
         missing_required = [qid for qid in required_ids if self._is_empty_answer(effective_answers.get(qid))]
         if missing_required:
             raise HTTPException(
