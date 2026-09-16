@@ -25,8 +25,8 @@ export default function ServiceCard({
       type="button"
       onClick={disabled ? undefined : onSelect}
       className={[
-        'group relative flex w-full flex-col justify-between overflow-hidden rounded-2xl border p-6 text-left transition-all duration-300',
-        disabled ? 'opacity-70 cursor-not-allowed' : 'hover:-translate-y-1',
+        'group relative flex w-full flex-col justify-between overflow-hidden rounded-2xl border p-5 text-left transition-all duration-300 sm:p-6',
+        disabled ? 'opacity-70 cursor-not-allowed' : 'active:scale-[0.99] sm:hover:-translate-y-1',
         selected ? 'border-[#3f9fff]/70' : 'border-[rgba(60,85,155,0.22)] hover:border-[#3f9fff]/40',
       ].join(' ')}
       style={{
@@ -46,7 +46,7 @@ export default function ServiceCard({
       {badge && (
         <span
           className={[
-            'absolute top-4 right-4 rounded-full border px-2.5 py-[3px] text-[10px] font-semibold tracking-wide uppercase',
+            'absolute top-4 right-4 rounded-full border px-2.5 py-[3px] text-[11px] font-semibold tracking-wide uppercase',
             badge === 'new'
               ? 'border-[#ffc94a]/50 bg-[#2e2614]/80 text-[#ffc94a]'
               : 'border-[#2a4375]/60 bg-[#0f1b3d]/80 text-[#8aa6e0]',
@@ -64,20 +64,20 @@ export default function ServiceCard({
       </div>
 
       {/* title + body */}
-      <div className="mt-5">
-        <h3 className="font-display text-[18px] font-semibold text-white tracking-tight">
+      <div className="mt-4 sm:mt-5">
+        <h3 className="font-display text-[22px] font-semibold leading-snug tracking-tight text-white">
           {title}
         </h3>
-        <p className="mt-2 text-[12.5px] leading-relaxed text-[#8b94b8]">
+        <p className="mt-2 line-clamp-3 text-[16px] leading-relaxed text-[#9aa5c4] sm:line-clamp-none">
           {description}
         </p>
       </div>
 
       {/* footer action */}
-      <div className="mt-6 flex items-center justify-between">
+      <div className="mt-5 flex items-center justify-between gap-3 sm:mt-6">
         <span
           className={[
-            'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11.5px] font-semibold transition',
+            'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[12.5px] font-semibold transition',
             selected
               ? 'border-[#3f9fff]/60 bg-[#15295a]/80 text-white'
               : 'border-[#2a4375]/50 bg-[#0d1531]/60 text-[#6aa8ff]',

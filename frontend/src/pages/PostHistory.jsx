@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
-  ArrowLeft,
   Copy,
   Check,
   Search,
@@ -14,10 +13,11 @@ import {
   Maximize2,
 } from "lucide-react";
 import SpeakButton from "../components/generate/SpeakButton";
+import DashboardShell from "../layouts/DashboardShell";
+import Topbar from "../components/dashboard/Topbar";
 import { useAuth } from "../context/AuthContext";
 import { getPosts, updatePost, deletePost, translatePost } from "../api/posts";
 import PostContent from "../components/generate/PostContent";
-import logoSrc from "../assets/images/logo-animation.png";
 import { useI18n } from "../i18n/index.jsx";
 
 const STATUS_COLORS = {
@@ -307,7 +307,7 @@ function PostCard({ post, onOpen, onCopy, onPublish, onArchive, copiedId }) {
               type="button"
               onClick={() => onArchive(post.id)}
               title={t('history.archive')}
-              className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#1e3260]/60 text-[#6b78a0] transition hover:border-red-500/40 hover:text-red-400"
+              className="flex h-9 w-9 items-center justify-center sm:h-7 sm:w-7 rounded-lg border border-[#1e3260]/60 text-[#6b78a0] transition hover:border-red-500/40 hover:text-red-400"
             >
               <Trash2 size={12} strokeWidth={2} />
             </button>
@@ -456,60 +456,30 @@ export default function PostHistory() {
   };
 
   return (
-    <div
-      className="min-h-screen text-[#e5e7eb]"
-      style={{
-        background:
-          "radial-gradient(1200px 700px at 50% -5%, #0d1636 0%, #070b1c 55%, #05081a 100%)",
-      }}
-    >
-      <div className="pointer-events-none fixed -left-48 top-0 h-[500px] w-[500px] rounded-full bg-[#3f9fff]/8 blur-[140px]" />
-      <div className="pointer-events-none fixed bottom-0 right-0 h-[420px] w-[420px] rounded-full bg-[#7b5cff]/8 blur-[140px]" />
-
-      {/* ── Header ── */}
-      <header className="sticky top-0 z-20 border-b border-[#141d3a]/70 bg-[#070b1c]/80 backdrop-blur-md">
-        <div className="flex w-full items-center gap-5 px-8 py-5 md:px-12">
-          {/* Left: brand */}
-          <div className="flex items-center gap-2.5">
-            <img
-              src={logoSrc}
-              alt="AmbedkarGPT"
-              className="h-8 w-8 object-contain drop-shadow-[0_0_10px_rgba(63,159,255,0.5)]"
-            />
-            <span className="font-display text-[17px] font-bold text-white">
-              Ambedkar<span className="gradient-text-cyan">GPT</span>
-            </span>
-          </div>
-
-          {/* Back button */}
-          <button
-            type="button"
-            onClick={() => navigate("/dashboard")}
-            className="flex items-center gap-2 rounded-full border border-[#1e3260]/70 px-4 py-2 text-[13px] font-medium text-[#6b78a0] transition hover:border-[#3a6bc4]/60 hover:text-white"
-          >
-            <ArrowLeft size={14} strokeWidth={2} />
-            {t("nav.dashboard")}
-          </button>
-
-          {/* Right: action */}
-          <div className="ml-auto">
+    <DashboardShell active="searches">
+      {/* The brand and the back-to-dashboard button that used to head this page
+          are both in the sidebar now, which is always on screen. */}
+      <div className="relative px-4 sm:px-6 md:px-10">
+        <Topbar
+          title={t("history.title")}
+          icon={<Search size={15} strokeWidth={2} className="hidden shrink-0 text-[#4f7fd4] lg:block" />}
+          right={
             <button
               type="button"
               onClick={() => navigate("/generate")}
-              className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[13.5px] font-semibold text-white"
+              className="hidden items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-[13px] font-semibold text-white sm:inline-flex"
               style={{
                 background: "linear-gradient(90deg,#0a7dff,#3a9fff)",
                 boxShadow: "0 4px 18px rgba(10,125,255,0.35)",
               }}
             >
-              <Sparkles size={15} strokeWidth={2.1} />
+              <Sparkles size={14} strokeWidth={2.1} />
               {t("history.generateNew")}
             </button>
-          </div>
-        </div>
-      </header>
+          }
+        />
 
-      <main className="relative z-10 mx-auto max-w-[960px] px-6 py-8">
+        <main className="relative z-10 mx-auto max-w-[960px] pb-8">
         {/* Title */}
         <div className="mb-7">
           <h1 className="font-display text-[28px] font-bold text-white">
@@ -573,9 +543,7 @@ export default function PostHistory() {
               />
             </div>
             <p className="text-[14px] text-[#6b78a0]">
-              {search
-                ? "No posts match your search."
-                : "No posts yet — go generate your first one!"}
+              {search ? t("history.emptySearch") : t("history.emptyStart")}
             </p>
             {!search && (
               <button
@@ -613,7 +581,8 @@ export default function PostHistory() {
             copiedId={copiedId}
           />
         )}
-      </main>
-    </div>
+        </main>
+      </div>
+    </DashboardShell>
   );
 }

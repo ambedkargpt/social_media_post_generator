@@ -953,20 +953,34 @@ html { scroll-behavior: smooth; }
 }
 
 /* --- Navbar mobile dropdown --- */
-/* Dashboard top story: the next story enters from the left while the one on
-   screen leaves to the right. 600ms matches SLIDE_MS in TopStoryCarousel. */
-@keyframes storyInFromLeft {
-  from { transform: translateX(-100%); opacity: 0.35; }
-  to   { transform: translateX(0);     opacity: 1; }
+/* Dashboard top story: stories cross-fade rather than slide. The visual takes
+   a trace of scale with it, the text a few pixels of rise — a wide editorial
+   card sliding sideways read as a banner advert. 500ms matches FADE_MS in
+   TopStoryCarousel. */
+@keyframes storyVisualIn  { from { opacity: 0; transform: scale(1.04); } to { opacity: 1; transform: scale(1); } }
+@keyframes storyVisualOut { from { opacity: 1; transform: scale(1); }    to { opacity: 0; transform: scale(0.985); } }
+@keyframes storyTextIn    { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes storyTextOut   { from { opacity: 1; transform: translateY(0); }   to { opacity: 0; transform: translateY(-6px); } }
+
+.story-visual-in  { animation: storyVisualIn  500ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.story-visual-out { animation: storyVisualOut 500ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.story-text-in    { animation: storyTextIn    500ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.story-text-out   { animation: storyTextOut   500ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* The party symbol, drawn as a mask so one file can take whichever accent the
+   section carries. The files are alpha only: colour comes from here. */
+.story-symbol {
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+          mask-position: center;
+  -webkit-mask-size: contain;
+          mask-size: contain;
 }
-@keyframes storyOutToRight {
-  from { transform: translateX(0);    opacity: 1; }
-  to   { transform: translateX(100%); opacity: 0.35; }
-}
-.story-slide-in  { animation: storyInFromLeft 600ms cubic-bezier(0.22, 0.61, 0.36, 1) both; }
-.story-slide-out { animation: storyOutToRight 600ms cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+
 @media (prefers-reduced-motion: reduce) {
-  .story-slide-in, .story-slide-out { animation-duration: 1ms; }
+  .story-visual-in, .story-visual-out,
+  .story-text-in, .story-text-out { animation-duration: 1ms; }
 }
 
 @keyframes nav-dropdown {
@@ -979,3 +993,316 @@ html { scroll-behavior: smooth; }
 ::-webkit-scrollbar-track { background: #050814; }
 ::-webkit-scrollbar-thumb { background: #1c2a55; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #2b3e7a; }
+
+/* ── Premium polish, stage 1: hero atmosphere ──────────────────────────────
+   A page-wide grain, a slow halo behind the hero heading, and a stronger
+   glow on the emphasised (AI) words. All of it is decorative: nothing takes
+   pointer events, and every animation stops under reduced motion. */
+
+/* Tiled SVG noise. One small tile, composited once, so it costs nothing to
+   scroll; the opacity is deliberately near the threshold of visibility. */
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-repeat: repeat;
+  background-size: 140px 140px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>");
+}
+
+/* Sits behind the hero headline so the words read as if they are lifting off
+   the background rather than printed on it. */
+.heading-halo {
+  position: absolute;
+  left: -6%;
+  top: -18%;
+  width: 92%;
+  height: 150%;
+  pointer-events: none;
+  background: radial-gradient(60% 55% at 32% 45%, rgba(63,159,255,0.20) 0%, rgba(41,108,255,0.10) 42%, transparent 72%);
+  filter: blur(18px);
+  animation: haloBreath 14s ease-in-out infinite;
+}
+@keyframes haloBreath {
+  0%, 100% { opacity: 0.75; transform: translate3d(0, 0, 0) scale(1); }
+  50%      { opacity: 1;    transform: translate3d(2%, -1.5%, 0) scale(1.05); }
+}
+
+/* The (AI) words carry the strongest glow on the page after the primary CTA. */
+.ai-emphasis {
+  text-shadow: 0 0 20px rgba(63,159,255,0.42), 0 0 52px rgba(41,108,255,0.24);
+}
+
+/* One arrow behaviour for every call to action. */
+.cta-arrow { transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1); }
+.group:hover .cta-arrow,
+.group:focus-visible .cta-arrow { transform: translateX(5px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .heading-halo { animation: none; }
+  .cta-arrow { transition: none; }
+}
+
+/* ── Premium polish, stages 2-5: one system for pills, cards and seams ─────
+   Three glow levels on purpose: atmosphere (backgrounds) is faintest, pills
+   and cards sit in the middle, and only the primary CTA and the hero's (AI)
+   carry the strong glow. Everything here stops animating under reduced
+   motion. */
+
+/* Section pill: glass, thin blue rim, and a slow breath on the outer glow. */
+.pill-premium {
+  background: linear-gradient(180deg, rgba(14,28,58,0.84) 0%, rgba(7,16,38,0.88) 100%);
+  border: 1px solid rgba(79,143,255,0.42);
+  box-shadow: 0 0 24px rgba(63,159,255,0.20), inset 0 1px 0 rgba(150,200,255,0.20);
+  backdrop-filter: blur(10px);
+  animation: pillBreath 9s ease-in-out infinite;
+}
+@keyframes pillBreath {
+  0%, 100% { box-shadow: 0 0 22px rgba(63,159,255,0.18), inset 0 1px 0 rgba(150,200,255,0.18); }
+  50%      { box-shadow: 0 0 34px rgba(63,159,255,0.30), inset 0 1px 0 rgba(150,200,255,0.26); }
+}
+
+/* One card surface for the whole page, so cards cannot drift apart. */
+.card-premium {
+  background: linear-gradient(180deg, rgba(18,31,64,0.72) 0%, rgba(9,17,38,0.80) 100%);
+  border: 1px solid rgba(95,140,210,0.22);
+  box-shadow: inset 0 1px 0 rgba(160,205,255,0.10), 0 18px 40px rgba(2,6,20,0.45);
+  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1), border-color 300ms ease, box-shadow 300ms ease;
+}
+.card-premium:hover {
+  transform: translateY(-4px);
+  border-color: rgba(120,175,255,0.42);
+  box-shadow: inset 0 1px 0 rgba(160,205,255,0.16), 0 26px 54px rgba(2,6,20,0.55), 0 0 26px rgba(63,159,255,0.14);
+}
+
+/* 01, 02 … quiet editorial numbering; never louder than the heading it sits above. */
+.card-index {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.22em;
+  color: rgba(99,150,225,0.8);
+}
+
+/* An oversized word set behind a section, as editorial typography rather than
+   a watermark: outlined, not filled, clipped by its section, and it steps down
+   on small screens so it never crowds the text it sits behind. */
+.bg-word {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(125,175,255,0.12);
+  font-size: clamp(56px, 15vw, 200px);
+  opacity: 0.6;
+}
+
+/* Icon and social buttons share one hover. */
+.icon-btn {
+  transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease, color 220ms ease;
+}
+.icon-btn:hover {
+  transform: translateY(-2px);
+  border-color: rgba(122,178,255,0.75);
+  box-shadow: 0 0 18px rgba(63,159,255,0.30);
+}
+
+/* The navbar mark, breathing slowly. */
+.logo-pulse { animation: logoPulse 6s ease-in-out infinite; }
+@keyframes logoPulse {
+  0%, 100% { filter: drop-shadow(0 0 12px rgba(63,159,255,0.45)); }
+  50%      { filter: drop-shadow(0 0 22px rgba(63,159,255,0.72)); }
+}
+
+/* The seam between two sections: a hairline that fades out at both ends, with
+   a wide soft glow above it. Light, not a rule across the page. */
+.section-seam {
+  position: relative;
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(90deg, transparent, rgba(63,159,255,0.20), transparent);
+}
+.section-seam::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -70px;
+  width: min(720px, 92%);
+  height: 140px;
+  transform: translateX(-50%);
+  background: radial-gradient(60% 50% at 50% 50%, rgba(63,159,255,0.10), transparent 70%);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill-premium, .logo-pulse { animation: none; }
+  .card-premium, .icon-btn { transition: none; }
+  .card-premium:hover, .icon-btn:hover { transform: none; }
+  .reveal-section { transition: none; }
+}
+
+/* ── Dashboard surfaces ────────────────────────────────────────────────────
+   The dashboard was a wall of cards that all carried the same weight. These
+   four surfaces are the whole system: a hero for today's story, a panel for
+   ordinary cards, a tile for the numbers, and a quiet inset for anything
+   nested inside a panel — so a nested element never draws the same border as
+   the card holding it. Definitions live here rather than in inline styles so
+   the surfaces cannot drift apart card by card. */
+
+.dash-panel {
+  position: relative;
+  border-radius: 16px;
+  border: 1px solid rgba(60, 85, 155, 0.22);
+  background: linear-gradient(180deg, rgba(16, 25, 55, 0.8) 0%, rgba(10, 16, 38, 0.8) 100%);
+  box-shadow: inset 0 1px 0 rgba(150, 195, 255, 0.05);
+}
+
+/* Today's story: the one card allowed a glow of its own. */
+.dash-hero {
+  position: relative;
+  border-radius: 18px;
+  border: 1px solid rgba(63, 159, 255, 0.28);
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(38, 92, 200, 0.22) 0%, transparent 55%),
+    linear-gradient(135deg, rgba(15, 29, 70, 0.95) 0%, rgba(10, 18, 44, 0.95) 55%, rgba(8, 13, 32, 0.95) 100%);
+  box-shadow: inset 0 1px 0 rgba(160, 205, 255, 0.12), 0 18px 46px rgba(12, 38, 105, 0.28);
+}
+
+/* The four numbers. Lighter than a panel on purpose: they are read at a
+   glance, not studied, so they should not compete with the story above them. */
+.dash-tile {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid rgba(60, 85, 155, 0.18);
+  background: linear-gradient(180deg, rgba(14, 23, 52, 0.7) 0%, rgba(9, 15, 36, 0.7) 100%);
+  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1), border-color 240ms ease, box-shadow 240ms ease;
+}
+
+/* Nested inside a panel: no border at all, just a slightly lifted ground.
+   This is what stops the card-inside-a-card look. */
+.dash-inset {
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.022);
+}
+
+/* One hover for everything on the dashboard that reacts to the pointer. */
+.dash-hover {
+  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1), border-color 240ms ease, box-shadow 240ms ease, background-color 240ms ease;
+}
+.dash-hover:hover {
+  transform: translateY(-2px);
+  border-color: rgba(120, 175, 255, 0.38);
+  box-shadow: 0 14px 34px rgba(2, 6, 20, 0.45);
+}
+
+/* Small uppercase section marker. Sets the reading order of the page:
+   ACTIVITY, ANALYTICS, QUICK ACTIONS, ACCOUNT, RECENT CONTENT. */
+.dash-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #6f7fa8;
+}
+/* Tracking is a Latin device. Applied to Devanagari it separates a matra from
+   the letter it sits on, and the label reads as loose characters. */
+:root[lang="hi"] .dash-eyebrow {
+  letter-spacing: 0.01em;
+  font-size: 11.5px;
+}
+
+/* The dashboard's own atmosphere: faint blue light from the top left and a
+   trace of grain, so the navy reads as depth rather than flat fill. */
+.dash-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.03;
+  mix-blend-mode: overlay;
+  background-repeat: repeat;
+  background-size: 140px 140px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>");
+}
+
+/* The header strip: glass, one hairline, nothing taller than it needs. */
+.dash-header {
+  background: linear-gradient(180deg, rgba(9, 15, 36, 0.86) 0%, rgba(9, 15, 36, 0.62) 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(60, 85, 155, 0.22);
+}
+
+/* Header controls and other square icon buttons. */
+.dash-icon-btn {
+  transition: transform 200ms ease, background-color 200ms ease, border-color 200ms ease, color 200ms ease;
+}
+.dash-icon-btn:hover {
+  background-color: rgba(63, 159, 255, 0.1);
+  border-color: rgba(120, 175, 255, 0.45);
+  color: #fff;
+}
+
+/* "Online" — a slow breath, not a blink. */
+/* The element this goes on must be positioned by its own classes: setting
+   position here would outrank the `absolute` Tailwind puts on it. */
+.dot-online::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 9999px;
+  border: 1px solid rgba(34, 197, 94, 0.55);
+  animation: dotOnline 2.6s ease-out infinite;
+}
+@keyframes dotOnline {
+  0%   { opacity: 0.85; transform: scale(0.65); }
+  70%  { opacity: 0;    transform: scale(1.5); }
+  100% { opacity: 0;    transform: scale(1.5); }
+}
+
+/* Mobile navigation drawer. */
+@keyframes drawerIn  { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+@keyframes backdropIn { from { opacity: 0; } to { opacity: 1; } }
+.dash-drawer   { animation: drawerIn 280ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.dash-backdrop { animation: backdropIn 220ms ease both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-tile, .dash-hover, .dash-icon-btn { transition: none; }
+  .dash-tile:hover, .dash-hover:hover, .dash-icon-btn:hover { transform: none; }
+  .dot-online::after { animation: none; opacity: 0; }
+  .dash-drawer, .dash-backdrop { animation-duration: 1ms; }
+}
+
+/* ── A row that scrolls sideways on its own ────────────────────────────────
+   The category filters are wider than a phone. Left alone they showed a
+   scrollbar and a chip sliced in half at the right edge, which reads as
+   "this is cut off" rather than "there is more". No scrollbar, and the right
+   edge fades out while there is still something to scroll to. */
+.scroll-row {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scroll-row::-webkit-scrollbar { display: none; }
+
+/* Only while more content remains; the class comes off at the end of the
+   scroll so the last chip is never left half-faded. */
+.scroll-row--more {
+  -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 44px), transparent 100%);
+          mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 44px), transparent 100%);
+}
+
+/* A panel that arrives from the bottom of the screen. Paired with
+   .dash-backdrop, which fades the ground behind it. */
+@keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.sheet-up { animation: sheetUp 280ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .sheet-up { animation-duration: 1ms; }
+}

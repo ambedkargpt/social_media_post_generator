@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Card, { CardTitle } from './Card';
 import PillDropdown from './PillDropdown';
+import useChartScale from './useChartScale';
 import { useI18n } from '../../i18n/index.jsx';
 import { addDays, formatAxisDate, sameDay, startOfDay } from '../../utils/dashboardDates';
 
@@ -20,7 +21,9 @@ function buildData(posts, anchor, days, lang) {
   return result;
 }
 
-const W = 520, H = 230, PAD_L = 36, PAD_R = 18, PAD_T = 18, PAD_B = 36;
+// Tighter than it was on every side: the plot, not the padding, is what the
+// card is for. The bottom keeps enough room for one row of date labels.
+const W = 520, H = 200, PAD_L = 36, PAD_R = 16, PAD_T = 14, PAD_B = 32;
 
 function toPoints(data, MAX) {
   const step = (W - PAD_L - PAD_R) / (data.length - 1);
@@ -56,11 +59,18 @@ function catmullRomPath(pts) {
 export default function SearchActivityChart({ posts = [], anchor = new Date() }) {
   const { t, lang } = useI18n();
   const [days, setDays] = useState(7);
+  // Axis type is sized against how far the viewBox is stretched, so a label
+  // is the same size on a phone as on a wide desktop card.
+  const [plotRef, scale] = useChartScale(W);
+  const yFont = (10 * scale).toFixed(1);
+  const xFont = (11 * scale).toFixed(1);
 
   const data   = buildData(posts, anchor, days, lang);
   const total  = data.reduce((sum, p) => sum + p.v, 0);
   const maxVal = Math.max(...data.map((p) => p.v), 1);
-  const MAX    = Math.ceil(maxVal * 1.3) || 5;
+  // Just enough headroom to keep the peak off the top edge. It was a third of
+  // the scale, which pressed the whole line into the lower half of the card.
+  const MAX    = Math.max(maxVal + 1, Math.ceil(maxVal * 1.12));
   const yTicks = [...new Set([0.25, 0.5, 0.75, 1].map((f) => Math.round(MAX * f)))].filter((v) => v > 0);
 
   const pts  = toPoints(data, MAX);
@@ -74,7 +84,14 @@ export default function SearchActivityChart({ posts = [], anchor = new Date() })
   return (
     <Card>
       <div className="flex items-center justify-between gap-3">
-        <CardTitle>{t(TITLE_KEY[days])}</CardTitle>
+        <div className="min-w-0">
+          <CardTitle>{t(TITLE_KEY[days])}</CardTitle>
+          {/* The one number the card is about, said once in words. */}
+          <p className="mt-1 text-[12px] text-[#7a86a8]">
+            <span className="font-count font-bold tabular-nums text-[#6aa8ff]">{total}</span>{' '}
+            {t('chart.postsInRange')}
+          </p>
+        </div>
         <PillDropdown
           value={days}
           onChange={setDays}
@@ -88,8 +105,8 @@ export default function SearchActivityChart({ posts = [], anchor = new Date() })
           {t(posts.length === 0 ? 'charts.noPosts' : 'chart.noneInPeriod')}
         </p>
       ) : (
-        <div className="mt-4 w-full overflow-hidden">
-          <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-[220px]">
+        <div ref={plotRef} className="mt-3 w-full overflow-hidden">
+          <svg viewBox={`0 0 ${W} ${H}`} className="h-[172px] w-full sm:h-[196px]" role="img">
             <defs>
               <linearGradient id="searchLine" x1="0" x2="1" y1="0" y2="0">
                 <stop offset="0%"   stopColor="#3f9fff" />
@@ -105,25 +122,39 @@ export default function SearchActivityChart({ posts = [], anchor = new Date() })
               const y = PAD_T + (1 - tick / MAX) * (H - PAD_T - PAD_B);
               return (
                 <g key={tick}>
-                  <line x1={PAD_L} x2={W - PAD_R} y1={y} y2={y} stroke="rgba(60,85,155,0.18)" strokeDasharray="3 4" />
-                  <text x={PAD_L - 10} y={y + 3} fontSize="10" fill="#5a6789" textAnchor="end" style={{ fontFamily: 'Count, Anybody, monospace' }}>{tick}</text>
+                  <line x1={PAD_L} x2={W - PAD_R} y1={y} y2={y} stroke="rgba(60,85,155,0.14)" strokeDasharray="2 5" />
+                  <text x={PAD_L - 7} y={y + Number(yFont) / 3} fontSize={yFont} fill="#5a6789" textAnchor="end" style={{ fontFamily: 'Count, Anybody, monospace' }}>{tick}</text>
                 </g>
               );
             })}
+            {/* The zero line is solid: it is the floor the area sits on. */}
+            <line x1={PAD_L} x2={W - PAD_R} y1={H - PAD_B} y2={H - PAD_B} stroke="rgba(60,85,155,0.3)" />
 
             <path d={area} fill="url(#searchArea)" />
-            <path d={line} fill="none" stroke="url(#searchLine)" strokeWidth="2.4" strokeLinecap="round" />
+            <path d={line} fill="none" stroke="url(#searchLine)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
 
-            {pts.map((p, i) => (
-              <g key={i}>
-                {days <= 14 && (
-                  <circle cx={p.x} cy={p.y} r="4.5" fill="#0b1331" stroke="url(#searchLine)" strokeWidth="2" />
-                )}
-                {(pts.length - 1 - i) % labelEvery === 0 && (
-                  <text x={p.x} y={H - 12} fontSize="11" fill="#6b7a9f" textAnchor="middle" style={{ fontFamily: 'Inter, sans-serif' }}>{p.d}</text>
-                )}
-              </g>
-            ))}
+            {pts.map((p, i) => {
+              // The last day is where the eye should land: it is the day the
+              // range was counted to.
+              const isLast = i === pts.length - 1;
+              return (
+                <g key={i}>
+                  {(days <= 14 || isLast) && (
+                    <>
+                      {isLast && <circle cx={p.x} cy={p.y} r="8" fill="#3f9fff" opacity="0.18" />}
+                      <circle
+                        cx={p.x} cy={p.y} r={isLast ? 5 : 4}
+                        fill="#0b1331" stroke="url(#searchLine)" strokeWidth={isLast ? 2.6 : 2}
+                      />
+                    </>
+                  )}
+                  <title>{`${p.d}: ${p.v}`}</title>
+                  {(pts.length - 1 - i) % labelEvery === 0 && (
+                    <text x={p.x} y={H - 9} fontSize={xFont} fill="#6b7a9f" textAnchor="middle" style={{ fontFamily: 'Inter, sans-serif' }}>{p.d}</text>
+                  )}
+                </g>
+              );
+            })}
           </svg>
         </div>
       )}

@@ -1,82 +1,78 @@
-import { Sparkles, Menu, Landmark } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import LanguageSwitcher from '../LanguageSwitcher';
 import NotificationBell from './NotificationBell';
 import ProfileMenu from './ProfileMenu';
+import { useAuth } from '../../context/AuthContext';
+import { useShell } from '../../layouts/dashboardShellContext';
 import { useI18n } from '../../i18n/index.jsx';
 
-// `leading` replaces the Generate / MP-MLA pills with the page's own header
-// (the dashboard's welcome). Below lg it drops to its own row under the
-// hamburger and the controls, so the greeting never shares a phone-width line.
-export default function Topbar({ user, onMenuOpen, totalPosts, onLogout, leading = null }) {
+/**
+ * The header strip every signed-in working screen shares: the drawer button on
+ * phones, where you are on the left, page controls in the middle, and the
+ * account controls on the right. It sticks to the top of the scrolling area on
+ * glass, so the controls stay reachable without taking a band of the screen.
+ *
+ * @param {object}    p
+ * @param {object}    p.user        – name, email and party for the avatar menu
+ * @param {number}    p.totalPosts  – the count the notification bell reads
+ * @param {string}    p.title       – the page's name, on the left
+ * @param {JSX.Element} p.icon      – small mark beside the title, desktop only
+ * @param {JSX.Element} p.right     – page-specific controls, before the account ones
+ */
+export default function Topbar({ user, totalPosts, title, icon = null, right = null }) {
   const { t } = useI18n();
+  const { openMenu } = useShell();
+  const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
-  const name  = user?.name  ?? '—';
-  const email = user?.email ?? '';
-  const party = user?.party ?? '';
+
+  // Pages that do not load their own copy of the user still get a filled-in
+  // avatar menu, because the session already holds one.
+  const name  = user?.name  ?? currentUser?.username ?? '—';
+  const email = user?.email ?? currentUser?.email ?? currentUser?.phone ?? '';
+  const party = user?.party ?? currentUser?.political_party ?? '';
   const initial = (name?.[0] ?? 'A').toUpperCase();
 
-  return (
-    <div
-      className={
-        leading
-          ? 'flex flex-wrap items-center justify-between gap-4 pt-6 pb-5 lg:flex-nowrap lg:items-start'
-          : 'flex items-center justify-between gap-4 pt-7 pb-6'
-      }
-    >
-      {/* Hamburger — mobile only */}
-      <button
-        type="button"
-        onClick={onMenuOpen}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#1e3260]/60 text-[#5a7a9e] transition hover:text-white lg:hidden"
-        aria-label={t('common.openMenu')}
-      >
-        <Menu size={17} strokeWidth={1.8} />
-      </button>
+  async function handleLogout() {
+    await logout();
+    // The landing page, not the login form: signing out is leaving, and being
+    // dropped straight onto a form reads as "sign in again" rather than "done".
+    navigate('/', { replace: true });
+  }
 
-      {leading ? (
-        <div className="order-last w-full min-w-0 lg:order-none lg:w-auto lg:flex-1">{leading}</div>
-      ) : (
-      /* Generate CTA + MP/MLA lookup (centered visually) */
-      <div className="flex-1 flex items-center gap-3">
+  return (
+    <header className="dash-header sticky top-0 z-30 -mx-4 mb-5 px-4 sm:-mx-6 sm:px-6 md:-mx-10 md:px-10">
+      <div className="flex h-14 items-center gap-3 md:h-16">
+        {/* Hamburger — phones and tablets */}
         <button
           type="button"
-          onClick={() => navigate('/generate')}
-          className="inline-flex items-center gap-2.5 rounded-full btn-gradient px-6 py-3 text-[15px] font-semibold text-white shadow-[0_8px_28px_rgba(17,122,255,0.4)]"
+          onClick={openMenu}
+          className="dash-icon-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#1e3260]/70 text-[#8b9ac0] lg:hidden"
+          aria-label={t('common.openMenu')}
         >
-          <Sparkles size={17} strokeWidth={2.1} />
-          {t('dash.generate')}
+          <Menu size={17} strokeWidth={1.9} />
         </button>
 
-        {/* Not built yet — a dimmed outline pill with a Soon badge, same
-            not-navigable treatment the sidebar already uses for this. */}
-        <div
-          title={`${t('dash.reviewMpMla')} — ${t('nav.comingSoonSuffix')}`}
-          aria-disabled="true"
-          className="hidden sm:inline-flex cursor-not-allowed items-center gap-2.5 rounded-full border border-[#1e3260]/70 px-6 py-3 text-[15px] font-semibold text-[#4d587a]"
-        >
-          <Landmark size={17} strokeWidth={2.1} />
-          {t('dash.reviewMpMla')}
-          <span className="rounded-full bg-[#141d3a] px-2 py-0.5 font-count text-[10px] uppercase tracking-wider text-[#5a6e9a]">
-            {t('nav.soonBadge')}
+        <div className="flex min-w-0 items-center gap-2.5">
+          {icon}
+          <span className="truncate font-display text-[14.5px] font-semibold tracking-tight text-white">
+            {title ?? t('nav.dashboard')}
           </span>
         </div>
-      </div>
-      )}
 
-      {/* language + notifications + user */}
-      <div className={`flex items-center gap-4 ${leading ? 'ml-auto lg:pt-1' : ''}`}>
-        <LanguageSwitcher />
-        <NotificationBell totalPosts={totalPosts} />
-
-        <ProfileMenu
-          name={name}
-          email={email}
-          initial={initial}
-          party={party}
-          onLogout={onLogout}
-        />
+        <div className="ml-auto flex items-center gap-2 sm:gap-3">
+          {right}
+          <LanguageSwitcher />
+          <NotificationBell totalPosts={totalPosts} />
+          <ProfileMenu
+            name={name}
+            email={email}
+            initial={initial}
+            party={party}
+            onLogout={handleLogout}
+          />
+        </div>
       </div>
-    </div>
+    </header>
   );
 }

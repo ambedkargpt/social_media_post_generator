@@ -1,0 +1,22 @@
+{
+  "name": "dalitdastak",
+  "channel_url": "https://www.youtube.com/@dalitdastak/videos",
+  "lookback_days": 3,
+  "max_videos_per_run": 6,
+  "max_consecutive_transcript_failures": 4,
+  "tenant_slug": "general",
+  "source_name": "Dalit Dastak",
+  "channel_slug": "dalitdastak",
+  "transcripts_dir": "outputs/transcripts/dalitdastak",
+  "consolidated_txt_path": "outputs/transcripts/dalitdastak/dalitdastak_all_transcripts.txt",
+  "processed_json_path": "outputs/transcripts/dalitdastak/processed.json",
+  "master_transcript_path": "data/dalitdastak_all_transcripts.txt",
+  "video_summaries_path": "data/video_summaries_dalitdastak.json",
+  "generated_news_path": "outputs/generated_news_dalitdastak.json",
+  "generated_news_legacy_path": "outputs/generated_news_legacy_dalitdastak.json",
+  "rebuild_rag": false,
+  "rebuild_semrag": false,
+  "run_summarizer": true,
+  "run_news_generator": true,
+  "run_news_publish": true
+}

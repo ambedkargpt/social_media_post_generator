@@ -17,13 +17,13 @@ const DISPLAY_MAP = {
 
 const DISPLAY_ORDER = Object.keys(DISPLAY_MAP);
 
+// Three tints, not six. These are metadata — what the generator was told —
+// so they should read as one set. Six saturated colours made a row of chips
+// that looked like categories the product does not actually have.
 const TINTS = [
-  'bg-[#12224d]/80 text-[#6aa8ff] border-[#2a4a8a]/60',
-  'bg-[#0f2a3d]/80 text-[#6ad6ff] border-[#1d4a66]/60',
-  'bg-[#231738]/80 text-[#b18aff] border-[#4a3375]/60',
-  'bg-[#0e2e2d]/80 text-[#5bdbc4] border-[#1c4a48]/60',
-  'bg-[#2e2614]/80 text-[#ffc94a] border-[#5a4a1a]/60',
-  'bg-[#3a1a2a]/80 text-[#ff80b5] border-[#6a2a46]/60',
+  'bg-[#12224d]/70 text-[#8fbcff] border-[#2a4a8a]/50',
+  'bg-[#1b2447]/70 text-[#a6b4dc] border-[#334268]/50',
+  'bg-[#1d1b3d]/70 text-[#b0a6e8] border-[#3a3468]/50',
 ];
 
 export default function PreferencesCard({ answers = [] }) {
@@ -69,20 +69,26 @@ export default function PreferencesCard({ answers = [] }) {
     <Card className="h-full">
       <CardTitle>{t('prefcard.title')}</CardTitle>
 
-      <dl className="mt-5 space-y-4">
+      {/* Label and value in two columns from sm up, stacked below it. Right
+          aligning the value used to leave a long Hindi answer wrapping into a
+          narrow ragged block on a phone. */}
+      <dl className="mt-4 divide-y divide-[#1a254a]/45">
         {rows.map(([k, v]) => (
-          <div key={k} className="flex items-center justify-between gap-4">
-            <dt className="text-[13px] text-[#8b94b8]">{k}</dt>
-            <dd className="text-right text-[13px] font-medium text-white">{v}</dd>
+          <div
+            key={k}
+            className="grid gap-x-4 gap-y-0.5 py-2.5 sm:grid-cols-[minmax(108px,0.36fr)_1fr] sm:items-baseline"
+          >
+            <dt className="text-[12px] text-[#7a86a8] sm:text-[12.5px]">{k}</dt>
+            <dd className="text-[13px] font-medium leading-snug text-white">{v}</dd>
           </div>
         ))}
       </dl>
 
-      <div className="mt-6 h-px w-full bg-gradient-to-r from-transparent via-[#2a3566]/60 to-transparent" />
+      <div className="mt-4 h-px w-full bg-gradient-to-r from-transparent via-[#2a3566]/60 to-transparent" />
 
-      <div className="mt-5">
-        <div className="text-[13px] text-[#8b94b8]">{t('prefcard.allValues')}</div>
-        <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-4">
+        <div className="dash-eyebrow">{t('prefcard.allValues')}</div>
+        <div className="mt-2.5 flex flex-wrap gap-2">
           {tags.map((tag, i) => (
             <span
               key={tag + i}

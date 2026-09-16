@@ -360,6 +360,7 @@ def run_news_publish(context: PipelineContext) -> StageResult:
         current_file=context.channel.generated_news_path,
         legacy_file=context.channel.generated_news_legacy_path,
         tenant=tenant,
+        source_name=context.channel.source_name,
     )
     return StageResult(
         "news_publish",

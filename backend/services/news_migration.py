@@ -154,6 +154,7 @@ def load_and_dedupe_news(
     *,
     tenant: Any = None,
     tags: list[str] | None = None,
+    source_name: str | None = None,
 ) -> tuple[list[dict[str, Any]], MigrationStats]:
     # A new channel has no legacy archive until items are first evicted, and a
     # channel can be published before either file exists. Treat both as empty
@@ -179,7 +180,10 @@ def load_and_dedupe_news(
     tenant_kwargs = {
         "tenant_id": tenant.tenant_id,
         "tenant_slug": tenant.slug,
-        "source_name": tenant.source_name,
+        # The channel's own name when it has one. A tenant with a single
+        # channel reads the same either way; the general tenant has two, and
+        # its name alone would file every Dalit Dastak story under Ravish Kumar.
+        "source_name": source_name or tenant.source_name,
         "tags": tags,
     }
 
@@ -220,8 +224,11 @@ def migrate_news(
     *,
     tenant: Any = None,
     tags: list[str] | None = None,
+    source_name: str | None = None,
 ) -> MigrationStats:
-    deduped, stats = load_and_dedupe_news(current_file, legacy_file, tenant=tenant, tags=tags)
+    deduped, stats = load_and_dedupe_news(
+        current_file, legacy_file, tenant=tenant, tags=tags, source_name=source_name
+    )
     existing_ids = {
         d.get("news_id")
         for d in repo.collection.find({"news_id": {"$regex": r"^news_\d+$"}}, {"news_id": 1})

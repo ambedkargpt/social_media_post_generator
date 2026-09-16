@@ -44,6 +44,11 @@ class ChannelConfig:
     max_consecutive_transcript_failures: int | None = None
     # Tenant this channel publishes into (see backend/tenants.py).
     tenant_slug: str = "general"
+    # What a published story says it came from. The tenant's own name by
+    # default, which is right while a tenant has one channel; the general
+    # tenant now carries two, and every Dalit Dastak story would otherwise be
+    # filed under Ravish Kumar.
+    source_name: str | None = None
     # "single" = one news item per video (default).
     # "multi"  = split each video into several stories (live/press conferences).
     news_mode: str = "single"

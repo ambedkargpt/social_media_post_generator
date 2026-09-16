@@ -84,7 +84,11 @@ function ServiceCard({ service }) {
   return (
     <div
       onMouseMove={handleCardMove}
-      className="liquid-glass group relative flex h-[480px] w-full flex-col overflow-hidden rounded-2xl p-7"
+      /* min-h, not h: the card was pinned to 480px with overflow hidden, so a
+         longer description — or a Hindi one, which the type scale sets larger
+         — pushed the "coming soon" line out through the bottom edge. The
+         carousel stretches every card to the tallest, so they still line up. */
+      className="liquid-glass group relative flex min-h-[480px] w-full flex-1 flex-col overflow-hidden rounded-2xl p-7"
     >
       {/* cursor spotlight */}
       <div
@@ -115,8 +119,13 @@ function ServiceCard({ service }) {
       </div>
 
       {/* ── Title & description ── */}
-      <p className="relative mt-5 text-[26px] font-semibold text-white">{title}</p>
-      <p className="relative mt-2 text-[19px] leading-relaxed text-[#8aabcc]">{sub}</p>
+      {/* The service's place in the set, so the four read as one product
+          ecosystem rather than four loose cards. */}
+      <p className="card-index relative mt-5 font-count text-[11px] font-semibold">
+        {String(SERVICES.findIndex((s) => s.id === id) + 1).padStart(2, '0')}
+      </p>
+      <p className="relative mt-1.5 text-[26px] font-semibold text-white">{title}</p>
+      <p className="relative mt-2 text-[clamp(15px,4vw,19px)] leading-relaxed text-[#8aabcc]">{sub}</p>
 
       {/* ── Divider ── */}
       <div className="relative my-5 h-px w-full rounded-full bg-[#1e3260]/70" />
@@ -241,7 +250,7 @@ function DesktopCarousel() {
   const activeService = ((trackIdx % SERVICES.length) + SERVICES.length) % SERVICES.length;
 
   return (
-    <div className="mt-14">
+    <div className="mt-8 sm:mt-14">
       {/* Viewport + side buttons */}
       <div className="relative" style={{ width: VIEWPORT_W, margin: '0 auto' }}>
         {/* Left button */}
@@ -261,7 +270,7 @@ function DesktopCarousel() {
             }}
           >
             {TRACK.map((service, i) => (
-              <div key={i} style={{ flexShrink: 0, width: CARD_W }}>
+              <div key={i} style={{ flexShrink: 0, width: CARD_W, display: 'flex' }}>
                 <ServiceCard service={service} />
               </div>
             ))}
@@ -311,7 +320,7 @@ function MobileCarousel() {
     <div className="mt-10 px-6">
       <div
         key={activeIdx}
-        className="mx-auto max-w-[360px]"
+        className="mx-auto flex max-w-[360px]"
         style={{ animation: 'makerJumpIn 0.22s ease-out both' }}
       >
         <ServiceCard service={service} />
@@ -355,12 +364,12 @@ export default function KnowledgeSection() {
       <div className="relative mx-auto max-w-[1440px] px-6">
         <SectionLabel>{t('landing.ourServices')}</SectionLabel>
 
-        <h2 className="mx-auto mt-8 max-w-[820px] text-center font-display text-[46px] font-bold leading-[1.05] text-white md:text-[62px]">
+        <h2 className="mx-auto mt-8 max-w-[820px] text-center font-display text-[clamp(30px,8vw,46px)] font-bold leading-[1.05] text-white md:text-[62px]">
           {t('know.headPre')}{' '}
           <span className="gradient-text-blue italic">{t('landing.creatorJourney')}</span>
         </h2>
 
-        <p className="mx-auto mt-6 max-w-[760px] text-center text-[22px] leading-9 text-[#bfcfe8] md:text-[24px]">
+        <p className="mx-auto mt-6 max-w-[760px] text-center text-[clamp(16px,4.3vw,22px)] leading-9 text-[#bfcfe8] md:text-[24px]">
           {t('know.sub')}
         </p>
       </div>

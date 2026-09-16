@@ -1,0 +1,74 @@
+import { useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+
+import Sidebar from '../components/dashboard/Sidebar';
+import { useAuth } from '../context/AuthContext';
+import { ShellContext } from './dashboardShellContext';
+
+/**
+ * The frame every signed-in working screen sits in: the navigation on the
+ * left, one scrolling column on the right, and the dashboard's atmosphere
+ * behind both.
+ *
+ * Post history, preferences and profile used to each be their own full page
+ * with a "back to dashboard" button, so moving between them meant going back
+ * to the dashboard first. They share this shell now, and the sidebar is always
+ * there to move sideways with.
+ */
+
+// Which nav item to light up, by route. The ids are the Sidebar's own.
+const ACTIVE_BY_PATH = {
+  '/dashboard': 'dashboard',
+  '/generate': 'generate',
+  '/posts': 'searches',
+  '/preferences': 'prefs',
+  '/profile-setup': 'profile',
+  '/bheembot': 'bheembot',
+};
+
+export default function DashboardShell({ children, background, active: activeProp }) {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const active = activeProp ?? ACTIVE_BY_PATH[pathname] ?? '';
+  const ctx = useMemo(() => ({ openMenu: () => setMobileOpen(true) }), []);
+
+  async function handleLogout() {
+    await logout();
+    // The landing page, not the login form: signing out is leaving, and being
+    // dropped straight onto a form reads as "sign in again" rather than "done".
+    navigate('/', { replace: true });
+  }
+
+  return (
+    <ShellContext.Provider value={ctx}>
+      <div
+        className="flex h-screen overflow-hidden text-[#e5e7eb]"
+        style={{ background: background ?? 'radial-gradient(1200px 700px at 20% 0%, #0d1636 0%, #070b1c 55%, #05081a 100%)' }}
+      >
+        <Sidebar
+          active={active}
+          onSelect={(id) => { if (id === 'dashboard') navigate('/dashboard'); }}
+          mobileOpen={mobileOpen}
+          onMobileClose={() => setMobileOpen(false)}
+          onLogout={handleLogout}
+        />
+
+        {/* While the drawer is open the page behind it must not scroll. This
+            is the scrolling element, so the lock goes here rather than on
+            body. */}
+        <div className={`relative flex-1 min-w-0 overflow-x-hidden ${mobileOpen ? 'overflow-y-hidden' : 'overflow-y-auto'}`}>
+          {/* Atmosphere: two slow pools of colour and a trace of grain, so the
+              navy reads as depth instead of flat fill. All of it decorative. */}
+          <div className="pointer-events-none fixed top-0 right-0 h-[420px] w-[420px] rounded-full bg-[#3f9fff]/10 blur-[130px]" />
+          <div className="pointer-events-none fixed bottom-0 left-[22%] h-[360px] w-[360px] rounded-full bg-[#7b5cff]/10 blur-[130px]" />
+          <div className="dash-grain" aria-hidden="true" />
+
+          {children}
+        </div>
+      </div>
+    </ShellContext.Provider>
+  );
+}

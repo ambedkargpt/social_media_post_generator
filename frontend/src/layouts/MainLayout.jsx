@@ -36,19 +36,28 @@ export default function MainLayout({ children }) {
         for fixed descendants — keeping them outside avoids that trap.
       */}
       <Navbar />
-      {/* Stacked directly below Navbar — mobile navbar is now 72px, md+ is 80px (no scroll-pills row) */}
-      <MilestoneBanner
-        className="fixed inset-x-0 top-[72px] z-30 md:top-20"
-        onHide={() => setBannerVisible(false)}
-      />
-      {/* Padding = navbar height + banner (48px) when visible */}
+      {/* Film grain over the whole page. Barely visible on its own; it stops
+          the large flat navy areas from banding and gives the dark ground a
+          printed texture. */}
+      <div className="grain-overlay" aria-hidden="true" />
+      {/* Padding = navbar height, plus the banner from md where it is pinned. */}
       <main
         className={
           bannerVisible
-            ? 'relative min-h-screen overflow-x-hidden bg-[#05081a] pt-[120px] text-white transition-all duration-300 md:pt-32'
+            ? 'relative min-h-screen overflow-x-hidden bg-[#05081a] pt-[72px] text-white transition-all duration-300 md:pt-32'
             : 'relative min-h-screen overflow-x-hidden bg-[#05081a] pt-[72px] text-white transition-all duration-300 md:pt-20'
         }
       >
+        {/* In the flow on a phone, pinned from md.
+            The banner's sentence needs three lines at 360px, and pinned under
+            the navbar that is ~96px of a 640px screen covered for the whole
+            visit: it sat over section headings on every scroll. In the flow it
+            scrolls away after it has been read. From md it is one line and
+            stays under the navbar exactly as before. */}
+        <MilestoneBanner
+          className="relative z-30 md:fixed md:inset-x-0 md:top-20"
+          onHide={() => setBannerVisible(false)}
+        />
         <div className="relative z-10">{children}</div>
         <Footer />
       </main>

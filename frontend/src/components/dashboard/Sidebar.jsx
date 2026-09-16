@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LayoutGrid,
@@ -14,6 +14,7 @@ import {
   Sparkles,
   ChevronRight,
 } from 'lucide-react';
+import logoSrc from '../../assets/images/logo-animation.png';
 import { useI18n } from '../../i18n/index.jsx';
 
 // Generating a post is the product's primary action, so it leads the nav and is
@@ -57,25 +58,46 @@ function SidebarContent({ active, onSelect, onClose, onLogout }) {
   const navigate = useNavigate();
   return (
     <>
-      {/* brand */}
-      <div className="flex items-center justify-between px-6 pt-7 pb-9">
+      {/* The masthead. It used to say "Dashboard" — a wordmark for the page
+          you were already on, above a nav item of the same name. This is the
+          product's own mark, and it is the one place the brand is stated on a
+          signed-in screen. */}
+      <div className="flex items-center gap-2.5 px-5 pt-5 pb-5 lg:pt-6">
         <button
           type="button"
           onClick={() => { navigate('/dashboard'); onClose?.(); }}
-          className="flex items-center gap-2.5 transition-opacity hover:opacity-85"
+          className="flex min-w-0 flex-1 items-center gap-2.5 text-left transition-opacity hover:opacity-85"
+          aria-label={t('nav.dashboard')}
         >
-          <span className="font-display text-[16px] font-semibold tracking-tight gradient-text-blue">
-            {t('nav.dashboard')}
+          <span
+            className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#3f7fd8]/45"
+            style={{
+              background: 'radial-gradient(70% 70% at 50% 35%, rgba(45,111,255,0.3) 0%, rgba(8,14,36,0.9) 70%)',
+              boxShadow: 'inset 0 1px 0 rgba(160,205,255,0.22), 0 0 16px rgba(63,159,255,0.2)',
+            }}
+          >
+            <img
+              src={logoSrc}
+              alt=""
+              className="h-[27px] w-[27px] object-contain"
+              style={{ filter: 'brightness(1.7) saturate(1.25)' }}
+            />
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate font-display text-[16px] font-bold leading-none tracking-tight">
+              <span className="text-white">{t('brand.ambedkar')}</span>
+              <span className="gradient-text-cyan">GPT</span>
+            </span>
           </span>
         </button>
         {onClose && (
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-[#5a7a9e] transition hover:text-white lg:hidden"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[#5a7a9e] transition hover:text-white lg:hidden"
             aria-label={t('side.closeMenu')}
           >
-            <X size={16} strokeWidth={1.8} />
+            <X size={17} strokeWidth={1.8} />
           </button>
         )}
       </div>
@@ -89,8 +111,13 @@ function SidebarContent({ active, onSelect, onClose, onLogout }) {
           className="group mb-3 flex w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-[14px] font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110"
           style={{
             background: 'linear-gradient(135deg, #1a5fff 0%, #3f9fff 100%)',
-            boxShadow: '0 6px 22px rgba(26,95,255,0.38)',
+            // On the services page this button is where you already are, so it
+            // wears the active ring instead of a second nav row saying so.
+            boxShadow: active === PRIMARY.id
+              ? '0 0 0 2px rgba(150,200,255,0.55), 0 6px 22px rgba(26,95,255,0.45)'
+              : '0 6px 22px rgba(26,95,255,0.38)',
           }}
+          aria-current={active === PRIMARY.id ? 'page' : undefined}
         >
           <PRIMARY.Icon size={17} strokeWidth={2} />
           <span>{t(PRIMARY.labelKey)}</span>
@@ -115,7 +142,7 @@ function SidebarContent({ active, onSelect, onClose, onLogout }) {
               >
                 <IconComp size={17} strokeWidth={1.8} />
                 <span>{t(item.labelKey)}</span>
-                <span className="ml-auto rounded-full bg-[#141d3a] px-1.5 py-0.5 font-count text-[9.5px] uppercase tracking-wider text-[#5a6e9a]">
+                <span className="ml-auto rounded-full bg-[#141d3a] px-1.5 py-0.5 font-count text-[11px] uppercase tracking-wider text-[#5a6e9a]">
                   {t('nav.soonBadge')}
                 </span>
               </div>
@@ -187,6 +214,19 @@ function SidebarContent({ active, onSelect, onClose, onLogout }) {
 }
 
 export default function Sidebar({ active = 'dashboard', onSelect, mobileOpen = false, onMobileClose, onLogout }) {
+  // Escape closes the drawer, and the first item in it takes focus when it
+  // opens, so the drawer can be operated without a pointer.
+  const drawerRef = useRef(null);
+  useEffect(() => {
+    if (!mobileOpen) return undefined;
+    function onKey(e) {
+      if (e.key === 'Escape') onMobileClose?.();
+    }
+    document.addEventListener('keydown', onKey);
+    drawerRef.current?.querySelector('button')?.focus();
+    return () => document.removeEventListener('keydown', onKey);
+  }, [mobileOpen, onMobileClose]);
+
   return (
     <>
       {/* Desktop sidebar */}
@@ -197,15 +237,19 @@ export default function Sidebar({ active = 'dashboard', onSelect, mobileOpen = f
         <SidebarContent active={active} onSelect={onSelect} onLogout={onLogout} />
       </aside>
 
-      {/* Mobile overlay */}
+      {/* Mobile drawer. The backdrop carries the dim and the blur itself —
+          before, the page behind was blurred and the drawer took half the
+          screen, which read as the page having broken rather than a panel
+          having opened. */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
           <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="dash-backdrop absolute inset-0 bg-[#03060f]/78 backdrop-blur-[3px]"
             onClick={onMobileClose}
           />
           <aside
-            className="absolute left-0 top-0 flex h-full w-[260px] flex-col border-r border-[#141d3a]/70"
+            ref={drawerRef}
+            className="dash-drawer absolute left-0 top-0 flex h-full w-[min(82vw,320px)] flex-col border-r border-[#243665]/80 shadow-[16px_0_48px_rgba(0,0,0,0.55)]"
             style={{ background: 'linear-gradient(180deg,#0a1024 0%,#070b1c 100%)' }}
           >
             <SidebarContent active={active} onSelect={onSelect} onClose={onMobileClose} onLogout={onLogout} />

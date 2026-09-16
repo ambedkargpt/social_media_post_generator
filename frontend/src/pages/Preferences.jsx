@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check, Save, Home, ArrowUp, Loader2 } from 'lucide-react';
-import logoSrc from '../assets/images/logo-animation.png';
+import { Check, Save, Home, ArrowUp, Loader2, SlidersHorizontal } from 'lucide-react';
+import DashboardShell from '../layouts/DashboardShell';
+import Topbar from '../components/dashboard/Topbar';
 import { useAuth } from '../context/AuthContext';
 import { saveProfileAnswers, getProfileAnswers } from '../api/profile';
 import { getPositionQuestions, getQuestions } from '../api/questions';
@@ -243,64 +244,41 @@ export default function Preferences() {
   const totalCount    = shownIds.length || 1;
 
   return (
-    <div
-      className="min-h-screen text-[#e5e7eb]"
-      style={{ background: 'radial-gradient(1200px 800px at 50% -10%, #0d1636 0%, #070b1c 60%, #05081a 100%)' }}
-    >
-      {/* ambient glows */}
-      <div className="pointer-events-none fixed left-0 top-0 h-[500px] w-[500px] rounded-full bg-[#2563eb]/8 blur-[140px]" />
-      <div className="pointer-events-none fixed bottom-0 right-0 h-[420px] w-[420px] rounded-full bg-[#7b5cff]/8 blur-[140px]" />
-
-      {/* ── Sticky header ── */}
-      <header className="sticky top-0 z-20 border-b border-[#141d3a]/70 bg-[#070b1c]/80 backdrop-blur-md">
-        <div className="flex w-full items-center gap-5 px-8 py-5 md:px-12">
-          {/* Left: brand */}
-          <div className="flex items-center gap-2.5">
-            <img src={logoSrc} alt="AmbedkarGPT" className="h-8 w-8 object-contain drop-shadow-[0_0_10px_rgba(63,159,255,0.5)]" />
-            <span className="font-display text-[17px] font-bold text-white">
-              Ambedkar<span className="gradient-text-cyan">GPT</span>
-            </span>
-          </div>
-
-          {/* Back button */}
-          <button
-            type="button"
-            onClick={() => navigate('/dashboard')}
-            className="inline-flex items-center gap-2 rounded-full border border-[#1e3260]/70 px-4 py-2 text-[13px] font-medium text-[#6b78a0] transition hover:border-[#3a6bc4]/60 hover:text-white"
-          >
-            <ArrowLeft size={14} strokeWidth={2} />
-            {t('nav.dashboard')}
-          </button>
-
-          {/* Right: progress tracker */}
-          <div className="ml-auto flex items-center gap-4">
-            <span className="hidden text-[13px] text-[#6b78a0] sm:block">
-              <span className="font-count font-bold text-white">{answeredCount}</span>
-              <span> / {totalCount} {t('prefs.answeredWord')}</span>
-            </span>
-            <div className="hidden h-1.5 w-28 overflow-hidden rounded-full bg-[#0f1a3a] sm:block">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-[#2563eb] to-[#3f9fff] transition-all duration-500"
-                style={{ width: `${(answeredCount / totalCount) * 100}%` }}
-              />
+    <DashboardShell active="prefs">
+      {/* The brand and the back-to-dashboard button that used to head this page
+          are both in the sidebar now, which is always on screen. The answered
+          count stays: it belongs to this page. */}
+      <div className="relative px-4 sm:px-6 md:px-10">
+        <Topbar
+          title={t('prefs.pageTitle')}
+          icon={<SlidersHorizontal size={15} strokeWidth={2} className="hidden shrink-0 text-[#4f7fd4] lg:block" />}
+          right={
+            <div className="mr-1 hidden items-center gap-3 sm:flex">
+              <span className="text-[12.5px] text-[#6b78a0]">
+                <span className="font-count font-bold text-white">{answeredCount}</span>
+                <span> / {totalCount} {t('prefs.answeredWord')}</span>
+              </span>
+              <div className="h-1.5 w-24 overflow-hidden rounded-full bg-[#0f1a3a]">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[#2563eb] to-[#3f9fff] transition-all duration-500"
+                  style={{ width: `${(answeredCount / totalCount) * 100}%` }}
+                />
+              </div>
             </div>
-          </div>
-        </div>
-      </header>
+          }
+        />
 
-      <div className="relative mx-auto max-w-[780px] px-5 pb-28 pt-8 md:px-8">
+        <div className="relative mx-auto max-w-[780px] pb-28 pt-2">
 
-        {/* ── Page hero ── */}
-        <div className="mb-10 flex items-start gap-4">
-          <img src={logoSrc} alt="AmbedkarGPT" className="mt-1 h-12 w-12 shrink-0 object-contain drop-shadow-[0_0_16px_rgba(63,159,255,0.5)]" />
-          <div>
-            <h1 className="font-display text-[36px] font-bold leading-none text-white md:text-[44px]">
-              {t('prefs.pageTitle')}
-            </h1>
-            <p className="mt-2 text-[14px] text-[#7a90b8]">
-              {t('prefs.helpUs')}
-            </p>
-          </div>
+        {/* ── Page hero ── The logo that used to sit beside this heading is in
+            the sidebar now, so the heading stands on its own. */}
+        <div className="mb-9">
+          <h1 className="font-display text-[30px] font-bold leading-tight text-white md:text-[40px]">
+            {t('prefs.pageTitle')}
+          </h1>
+          <p className="mt-2 text-[14px] text-[#7a90b8]">
+            {t('prefs.helpUs')}
+          </p>
         </div>
 
         {/* ── Compulsory questions ── */}
@@ -380,7 +358,7 @@ export default function Preferences() {
           <button
             type="button"
             onClick={handleReset}
-            className="text-[12.5px] text-[#6b78a0] underline underline-offset-2 transition hover:text-white"
+            className="inline-flex min-h-9 items-center text-[12.5px] text-[#6b78a0] underline underline-offset-2 transition hover:text-white"
           >
             {t('prefs.reset')}
           </button>
@@ -403,6 +381,7 @@ export default function Preferences() {
               {saving ? t('common.saving') : saved ? t('prefs.savedShort') : t('prefs.savePrefs')}
             </button>
           </div>
+        </div>
         </div>
       </div>
 
@@ -438,6 +417,6 @@ export default function Preferences() {
           </div>
         </div>
       )}
-    </div>
+    </DashboardShell>
   );
 }

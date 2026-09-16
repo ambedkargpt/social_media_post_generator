@@ -76,7 +76,18 @@ export default function Footer() {
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(63,159,255,0.45),transparent)]" />
       <div className="pointer-events-none absolute -top-40 left-1/2 h-72 w-[65%] -translate-x-1/2 rounded-full bg-[#2d7dfb]/10 blur-[120px]" />
 
-      <div className="relative mx-auto max-w-[1280px] px-6 py-14 md:py-16">
+      {/* The brand set once, very large and outlined, sitting behind the
+          columns. Editorial rather than decorative: it names the place you
+          have arrived at as you reach the end of the page. */}
+      <span
+        className="bg-word hidden sm:block"
+        style={{ fontSize: 'clamp(40px, 8.5vw, 112px)', bottom: '10px', opacity: 0.45 }}
+        aria-hidden="true"
+      >
+        AMBEDKARGPT
+      </span>
+
+      <div className="relative mx-auto max-w-[1280px] px-5 py-12 sm:px-6 sm:py-14 md:py-16">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr] lg:gap-14">
 
           {/* Brand */}
@@ -116,7 +127,7 @@ export default function Footer() {
                     aria-label={label}
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#2a4375]/70 text-[#aec0de] transition hover:-translate-y-0.5 hover:border-[#4a78c8]/90 hover:text-white hover:shadow-[0_0_16px_rgba(63,159,255,0.35)]"
+                    className="icon-btn flex h-10 w-10 items-center justify-center rounded-lg border border-[#2a4375]/70 bg-[#0b1430]/60 text-[#aec0de] hover:text-white sm:h-9 sm:w-9"
                   >
                     <Icon width={14} height={14} />
                   </a>

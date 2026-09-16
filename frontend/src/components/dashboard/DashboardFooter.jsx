@@ -12,7 +12,8 @@ export default function DashboardFooter() {
   const { t } = useI18n();
   const [legal, setLegal] = useState(null);
 
-  const linkClass = 'text-[12.5px] text-[#8b94b8] transition hover:text-white';
+  // min-h-9: these were 21px tall, which is under the size a thumb can hit.
+  const linkClass = 'inline-flex min-h-9 items-center text-[12.5px] text-[#8b94b8] transition hover:text-white';
 
   return (
     <footer className="mt-8 border-t border-[#1a254a]/50 pt-5 pb-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
