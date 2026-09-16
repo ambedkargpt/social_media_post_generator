@@ -4,9 +4,12 @@ import {
   ArrowLeft, Search, Filter, Sparkles,
   Copy, Check, RefreshCw, ChevronDown, FileText, Star, Radio,
   ArrowUpDown, List, LayoutGrid, ArrowLeftRight, Users, Globe,
+  CalendarDays, Clock, ChevronRight, X as XIcon,
 } from 'lucide-react';
 
 import PreferencesPanel from '../components/generate/PreferencesPanel';
+import DevSourceTag from '../components/DevSourceTag';
+import ScrollRow from '../components/ui/ScrollRow';
 import PostContent from '../components/generate/PostContent';
 import logoSrc from '../assets/images/logo-animation.png';
 import { useAuth } from '../context/AuthContext';
@@ -246,6 +249,8 @@ export default function SocialMediaPostGenerator() {
   const [page,            setPage]            = useState(1);
   const [tenants,         setTenants]         = useState([]);
   const [newsSection,     setNewsSection]     = useState('party'); // 'party' | 'opposition' | 'general'
+  const [toneOpen,        setToneOpen]        = useState(false);   // phones: the tone row starts closed
+  const [articleOpen,     setArticleOpen]     = useState(false);   // phones: the article starts as a preview
   const [filterOpen,      setFilterOpen]      = useState(false);
   const [view,            setView]            = useState('feed'); // 'feed' | 'preview' | 'generated'
   const [generating,      setGenerating]      = useState(false);
@@ -429,6 +434,26 @@ export default function SocialMediaPostGenerator() {
     : newsSection === 'opposition' ? oppositionArticles
     : generalArticles;
 
+  // The three feeds, described once. Phones show them as a chip row and wider
+  // screens as the three cards; both read this and both call chooseSection.
+  const sectionTabs = [
+    { id: 'party', Icon: FileText, label: t('gen.partyNews'),
+      sub: t('gen.partyNewsSub', { party: partyLabel(activeParty?.name ?? '', lang) }),
+      count: partyArticles.length },
+    { id: 'opposition', Icon: Users, label: t('gen.oppositionNews'),
+      sub: t('gen.oppositionNewsSub'), count: oppositionArticles.length },
+    { id: 'general', Icon: Globe, label: t('gen.generalNews'),
+      sub: t('gen.generalNewsSub'), count: generalArticles.length },
+  ];
+
+  function chooseSection(id) {
+    setNewsSection(id);
+    setPage(1);
+    // Neither general nor opposition has press conferences, so carrying that
+    // filter across from the party tab would show an empty section.
+    if (id === 'general' || id === 'opposition') setTypeFilter('all');
+  }
+
   // Accent for the section currently on screen; falls back to the party colour
   // when no party is set, so the heading is never unstyled.
   const theme = SECTION_THEME[activeParty ? newsSection : 'party'] ?? SECTION_THEME.party;
@@ -567,7 +592,16 @@ export default function SocialMediaPostGenerator() {
       .catch(() => {});
   }, [topStory, currentUser?.id]);
 
+  // Escape closes the preferences sheet, like every other overlay here.
+  useEffect(() => {
+    if (!showMobilePrefs) return undefined;
+    const onKey = (e) => { if (e.key === 'Escape') setShowMobilePrefs(false); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [showMobilePrefs]);
+
   function handlePreview(article) {
+    setArticleOpen(false);
     setSelectedArticle(article);
     setGeneratedPost('');
     setSelectedPostId(null);
@@ -917,7 +951,7 @@ export default function SocialMediaPostGenerator() {
       >
 
         {/* Search + filter */}
-        <header className="flex items-center gap-3 px-6 pb-3 pt-4 md:px-8">
+        <header className="flex flex-wrap items-center gap-2.5 px-4 pb-3 pt-4 sm:flex-nowrap sm:gap-3 sm:px-6 md:px-8">
           <button
             type="button"
             onClick={() => navigate('/generate')}
@@ -926,7 +960,7 @@ export default function SocialMediaPostGenerator() {
             <ArrowLeft size={12} strokeWidth={2} />
           </button>
 
-          <div className="relative flex-1">
+          <div className="relative order-last w-full sm:order-none sm:w-auto sm:flex-1">
             <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6b78a0]" strokeWidth={2} />
             <input
               type="text"
@@ -937,7 +971,7 @@ export default function SocialMediaPostGenerator() {
             />
           </div>
 
-          <div ref={filterRef} className="relative">
+          <div ref={filterRef} className="relative ml-auto sm:ml-0">
             <button
               type="button"
               onClick={() => { setFilterOpen((p) => !p); setView('feed'); }}
@@ -1021,15 +1055,27 @@ export default function SocialMediaPostGenerator() {
         </header>
 
         {/* ── Mobile tone selector (left sidebar is hidden on mobile) ── */}
-        <div className="mx-6 mb-3 lg:hidden md:mx-8">
-          <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
-            <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#6aa8ff]">{t('gen.tone')}</span>
+        <div className="mb-3 px-4 lg:hidden sm:px-6 md:px-8">
+          {/* Collapsed to the tone in force. Open, it is the same chip row as
+              before; closed it is one line, so a control most visits never
+              touch no longer stands between the filters and the headlines. */}
+          <button
+            type="button"
+            onClick={() => setToneOpen((o) => !o)}
+            aria-expanded={toneOpen}
+            className="inline-flex h-9 items-center gap-2 rounded-full border border-[#1e3260]/70 bg-[#0a1130]/60 px-3.5 text-[12px] font-medium text-[#8b94b8] transition hover:border-[#3a6bc4]/60 hover:text-white"
+          >
+            <span className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#6aa8ff]">{t('gen.tone')}</span>
+            <span className="text-white">{toneLabel(tone, lang)}</span>
+            <ChevronDown size={13} strokeWidth={2} className={`transition-transform duration-200 ${toneOpen ? 'rotate-180' : ''}`} />
+          </button>
+          <ScrollRow className={`-mx-4 gap-2 px-4 sm:-mx-6 sm:px-6 md:-mx-8 md:px-8 ${toneOpen ? 'mt-2' : 'hidden'}`}>
             {TONES.map((tn) => (
               <button
                 key={tn}
                 type="button"
                 onClick={() => setTone(tn)}
-                className={`shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10.5px] font-medium transition ${
+                className={`h-9 shrink-0 whitespace-nowrap rounded-full border px-4 text-[12.5px] font-medium transition ${
                   tone === tn
                     ? 'border-[#3f9fff]/60 bg-[#0d1a3a] text-[#3f9fff]'
                     : 'border-[#1e3260]/60 bg-[#0a1130]/60 text-[#6b78a0] hover:text-white'
@@ -1038,12 +1084,12 @@ export default function SocialMediaPostGenerator() {
                 {toneLabel(tn, lang)}
               </button>
             ))}
-          </div>
+          </ScrollRow>
         </div>
 
         {/* ── Feed view ── */}
         {view === 'feed' && (
-          <div className="flex-1 overflow-y-auto px-6 pb-10 md:px-8">
+          <div className="flex-1 overflow-y-auto px-4 pb-10 sm:px-6 md:px-8">
             {/* Three news sections: chosen party, opposition (BJP, empty
                 until it is scraped), and general (neutral) news. Underlined
                 tabs rather than pills, and each section carries its own
@@ -1080,11 +1126,14 @@ export default function SocialMediaPostGenerator() {
                     </span>
 
                     <div className="min-w-0 flex-1">
-                      <h2 className="truncate font-display text-[21px] font-bold tracking-tight text-white">
+                      {/* Wraps on a phone, where truncating turned the party's
+                          name into "India…". Ellipsis only once there is a
+                          column to run out of. */}
+                      <h2 className="font-display text-[19px] font-bold leading-snug tracking-tight text-white sm:truncate sm:text-[21px]">
                         {partyLabel(activeParty.name, lang)}
                       </h2>
                       {tags.length > 0 && (
-                        <p className="mt-0.5 truncate text-[13px] text-[#8b94b8]">
+                        <p className="mt-0.5 text-[12.5px] leading-snug text-[#8b94b8] sm:truncate sm:text-[13px]">
                           {tags.join('  ·  ')}
                         </p>
                       )}
@@ -1095,10 +1144,12 @@ export default function SocialMediaPostGenerator() {
                     <button
                       type="button"
                       onClick={() => navigate('/profile-setup')}
-                      className="inline-flex shrink-0 items-center gap-2 rounded-full border border-[#1e3260]/70 bg-[#0d1531]/80 px-4 py-2.5 text-[12.5px] font-medium text-[#a3b0d4] transition hover:border-[#3a6bc4]/60 hover:text-white"
+                      aria-label={t('gen.changeParty')}
+                      className="inline-flex h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-full border border-[#1e3260]/70 bg-[#0d1531]/80 text-[12.5px] font-medium text-[#a3b0d4] transition hover:border-[#3a6bc4]/60 hover:text-white sm:h-auto sm:w-auto sm:px-4 sm:py-2.5"
                     >
-                      <ArrowLeftRight size={13} strokeWidth={2} />
-                      {t('gen.changeParty')}
+                      <ArrowLeftRight size={13} strokeWidth={2} className="hidden sm:block" />
+                      <ChevronDown size={16} strokeWidth={2} className="sm:hidden" />
+                      <span className="hidden sm:inline">{t('gen.changeParty')}</span>
                     </button>
                   </div>
                 );
@@ -1106,30 +1157,44 @@ export default function SocialMediaPostGenerator() {
               {/* Section chooser. Cards rather than a tab strip: each one
                   now carries a count and a line saying what is in it, which a
                   tab has no room for, and the three read as siblings. */}
-              <div className="mb-6 grid gap-3 sm:grid-cols-3">
-                {[
-                  { id: 'party',      Icon: FileText, label: t('gen.partyNews'),
-                    sub: t('gen.partyNewsSub', { party: partyLabel(activeParty.name, lang) }),
-                    count: partyArticles.length },
-                  { id: 'opposition', Icon: Users,    label: t('gen.oppositionNews'),
-                    sub: t('gen.oppositionNewsSub'), count: oppositionArticles.length },
-                  { id: 'general',    Icon: Globe,    label: t('gen.generalNews'),
-                    sub: t('gen.generalNewsSub'),    count: generalArticles.length },
-                ].map((s) => {
+              {/* Phones: one scrolling row of chips. Three stacked cards with
+                  a description each pushed the headlines most of a screen
+                  down, and on a phone the description is not what picks the
+                  feed — the name and the count are. */}
+              <ScrollRow className="-mx-4 mb-4 gap-2 px-4 sm:hidden">
+                {sectionTabs.map((s) => {
                   const active = newsSection === s.id;
                   const tint = SECTION_THEME[s.id].accent;
                   return (
                     <button
                       key={s.id}
                       type="button"
-                      onClick={() => {
-                        setNewsSection(s.id);
-                        setPage(1);
-                        // Neither general nor opposition has press conferences,
-                        // so carrying that filter across from the party tab
-                        // would show an empty section and look broken.
-                        if (s.id === 'general' || s.id === 'opposition') setTypeFilter('all');
+                      onClick={() => chooseSection(s.id)}
+                      aria-pressed={active}
+                      className="inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-4 text-[12.5px] transition"
+                      style={{
+                        borderColor: active ? tint : 'rgba(30,38,54,0.9)',
+                        backgroundColor: active ? `${tint}18` : '#0b101c',
+                        color: active ? tint : '#8b94b8',
+                        fontWeight: active ? 600 : 500,
                       }}
+                    >
+                      {s.label}
+                      <span className="font-count text-[11px] opacity-70">{s.count}</span>
+                    </button>
+                  );
+                })}
+              </ScrollRow>
+
+              <div className="mb-6 hidden gap-3 sm:grid sm:grid-cols-3">
+                {sectionTabs.map((s) => {
+                  const active = newsSection === s.id;
+                  const tint = SECTION_THEME[s.id].accent;
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => chooseSection(s.id)}
                       aria-pressed={active}
                       className="flex items-start gap-3 rounded-2xl border px-4 py-3.5 text-left transition duration-150"
                       style={{
@@ -1247,13 +1312,13 @@ export default function SocialMediaPostGenerator() {
                   centred title leaves nowhere for them to sit. The accent bar
                   sits above the title, which is what a left-aligned block
                   wants. */}
-              <div className="mb-6 mt-1 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+              <div className="mb-4 mt-1 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 sm:mb-6">
                 <div className="min-w-0">
                   <span
                     className="mb-3 block h-[3px] w-14 rounded-full"
                     style={{ backgroundColor: theme.accent, boxShadow: `0 0 12px ${theme.accent}88` }}
                   />
-                  <h3 className="font-display text-[30px] font-bold leading-tight tracking-tight text-white md:text-[34px]">
+                  <h3 className="font-display text-[clamp(25px,7vw,30px)] font-bold leading-tight tracking-tight text-white md:text-[34px]">
                     {t('gen.headlines')}
                   </h3>
                   <p className="mt-1.5 text-[14px] text-[#7d8aa6]">
@@ -1261,7 +1326,7 @@ export default function SocialMediaPostGenerator() {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2.5">
                   {/* Counts the whole filtered feed, not the current page: it
                       answers "how much is here", which paging should not change. */}
                   <span className="whitespace-nowrap font-count text-[13px] text-[#7d8aa6]">
@@ -1424,8 +1489,12 @@ export default function SocialMediaPostGenerator() {
                       onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${cardAccent}70`; e.currentTarget.style.borderLeftColor = cardAccent; }}
                       onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(30,38,54,0.8)'; e.currentTarget.style.borderLeftColor = cardAccent; }}
                     >
-                      {/* Header row: NEWS ARTICLE label · category tag */}
-                      <div className="mb-3 flex items-center justify-between gap-3">
+                      {/* Header row: NEWS ARTICLE label · category tag.
+                          Wraps: "Bharatiya Janata Party" beside the type and
+                          the category is wider than a phone card, and clipping
+                          a party's name to "BHARATIYA JANATA PA…" is worse
+                          than giving it a second line. */}
+                      <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
                         <span
                           className="inline-flex items-center gap-1.5 font-count text-[11px] font-semibold uppercase tracking-[0.18em]"
                           style={{ color: (CONTENT_TYPES[article.contentType] ?? CONTENT_TYPES.news).color }}
@@ -1447,6 +1516,7 @@ export default function SocialMediaPostGenerator() {
                         >
                           {article.category}
                         </span>
+                        <DevSourceTag source={article.source} />
                       </div>
 
                       <p className={`font-hindi font-bold leading-[1.6] pt-0.5 text-white ${
@@ -1537,9 +1607,22 @@ export default function SocialMediaPostGenerator() {
         )}
 
         {/* ── Preview view ── */}
-        {view === 'preview' && selectedArticle && (
-          <div className="flex-1 overflow-y-auto px-6 pb-10 md:px-8">
-            <div className="mb-5 flex items-center gap-3">
+        {view === 'preview' && selectedArticle && (() => {
+          const hasSecondPara = Boolean(
+            selectedArticle.summary
+            && selectedArticle.content
+            && selectedArticle.content !== selectedArticle.summary
+          );
+          // Whether opening the article would actually show anything more. A
+          // five-line preview covers a short summary entirely, and a toggle
+          // that reveals nothing is worse than no toggle at all.
+          const articleHasMore = hasSecondPara || (selectedArticle.summary || '').length > 200;
+          const words = `${selectedArticle.summary || ''} ${hasSecondPara ? selectedArticle.content : ''}`
+            .trim().split(/[\s।]+/).filter(Boolean).length;
+          const readingMinutes = Math.max(1, Math.round(words / 200));
+          return (
+          <div className="flex-1 overflow-y-auto px-4 pb-10 sm:px-6 md:px-8">
+            <div className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-2">
               <button
                 type="button"
                 onClick={() => setView('feed')}
@@ -1551,25 +1634,60 @@ export default function SocialMediaPostGenerator() {
               <span className="inline-block rounded-full border border-[#1e3a6e]/60 bg-[#0d1840]/60 px-2.5 py-0.5 font-count text-[10px] uppercase tracking-widest text-[#6aa8ff]">
                 {selectedArticle.category}
               </span>
+              <DevSourceTag source={selectedArticle.source} />
             </div>
 
-            <div className="rounded-2xl border border-[#1e3260]/60 bg-[#0a1130]/70 p-7 md:p-8">
-              <h2 className="font-hindi text-[24px] font-bold leading-[1.55] pt-0.5 text-white md:text-[28px]">
+            <div className="rounded-2xl border border-[#1e3260]/60 bg-[#0a1130]/70 p-5 sm:p-7 md:p-8">
+              <h2 className="font-hindi text-[clamp(22px,5.9vw,26px)] font-bold leading-[1.45] pt-0.5 text-white sm:leading-[1.55] md:text-[28px]">
                 {selectedArticle.title}
               </h2>
               {/* Prefer the fuller summary over the one-line description, and keep
                   Devanagari at a larger size — it needs more height than Latin
                   to stay legible. */}
-              <p className="font-hindi mt-5 text-[19px] leading-[2] text-[#e6eefb] md:text-[21px]">
+              <p className={`font-hindi mt-5 text-[17.5px] leading-[1.85] text-[#e6eefb] sm:text-[19px] sm:leading-[2] md:text-[21px] ${
+                articleOpen ? '' : 'line-clamp-5 lg:line-clamp-none'
+              }`}>
                 {selectedArticle.summary || selectedArticle.content}
               </p>
-              {selectedArticle.summary
-                && selectedArticle.content
-                && selectedArticle.content !== selectedArticle.summary && (
-                <p className="font-hindi mt-5 border-t border-[#1e3260]/50 pt-5 text-[17px] leading-[1.95] text-[#c3d3ee] md:text-[18px]">
+              {hasSecondPara && (
+                <p className={`font-hindi mt-5 border-t border-[#1e3260]/50 pt-5 text-[17px] leading-[1.95] text-[#c3d3ee] md:text-[18px] ${
+                  articleOpen ? '' : 'hidden lg:block'
+                }`}>
                   {selectedArticle.content}
                 </p>
               )}
+
+              {/* Phones only: the whole story is a tap away, and generating a
+                  post never required reading it first. */}
+              {articleHasMore && (
+                <button
+                  type="button"
+                  onClick={() => setArticleOpen((o) => !o)}
+                  aria-expanded={articleOpen}
+                  className="mt-4 inline-flex h-9 items-center gap-1.5 text-[13.5px] font-semibold text-[#6aa8ff] transition hover:text-white lg:hidden"
+                >
+                  {t(articleOpen ? 'gen.showLess' : 'gen.readFull')}
+                  <ChevronDown size={14} strokeWidth={2.2} className={`transition-transform duration-200 ${articleOpen ? 'rotate-180' : ''}`} />
+                </button>
+              )}
+
+              {/* Date · kind · how long it takes to read. */}
+              <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-[#1e3260]/50 pt-4 text-[12.5px] text-[#7d89ad]">
+                {formatNewsDate(selectedArticle.date) && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <CalendarDays size={13} strokeWidth={2} />
+                    {formatNewsDate(selectedArticle.date)}
+                  </span>
+                )}
+                <span className="inline-flex items-center gap-1.5">
+                  <FileText size={13} strokeWidth={2} />
+                  {t(selectedArticle.contentType === 'press_conference' ? 'gen.pressConference' : 'gen.newsArticle')}
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Clock size={13} strokeWidth={2} />
+                  {t('gen.minRead', { n: readingMinutes })}
+                </span>
+              </div>
             </div>
 
             {/* Platform selector */}
@@ -1581,7 +1699,7 @@ export default function SocialMediaPostGenerator() {
                     key={p.id}
                     type="button"
                     onClick={() => setPlatform(p.id)}
-                    className="flex flex-col items-center gap-1 rounded-xl border py-2.5 text-center transition"
+                    className="flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl border py-2.5 text-center transition sm:gap-1"
                     style={{
                       borderColor: platform === p.id ? p.color : 'rgba(30,50,100,0.5)',
                       backgroundColor: platform === p.id ? `${p.color}18` : 'rgba(10,17,48,0.6)',
@@ -1635,16 +1753,41 @@ export default function SocialMediaPostGenerator() {
                 <div className="flex items-center gap-2">
                   <Sparkles size={13} strokeWidth={2} className="text-[#6aa8ff]" />
                   <span className="text-[13px] font-semibold text-white">{t('gen.postPreferences')}</span>
-                  <span className="text-[11px] text-[#6b78a0]">· tune the AI voice</span>
+                  <span className="text-[11px] text-[#6b78a0]">{t('gen.tuneVoice')}</span>
                 </div>
-                <ChevronDown
-                  size={14}
-                  strokeWidth={2}
-                  className={`shrink-0 text-[#6b78a0] transition-transform duration-200 ${showMobilePrefs ? 'rotate-180' : ''}`}
-                />
+                <ChevronRight size={14} strokeWidth={2} className="shrink-0 text-[#6b78a0]" />
               </button>
-              {showMobilePrefs && prefQuestions.length > 0 && (
-                <div className="mt-2 space-y-3 rounded-xl border border-[#1e3260]/50 bg-[#07101f] p-4">
+            </div>
+
+            {/* The preferences arrive as a sheet from the bottom rather than
+                pushing the rest of the page down: they are a detour from the
+                story, not part of reading it. */}
+            {showMobilePrefs && prefQuestions.length > 0 && (
+              <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label={t('gen.postPreferences')}>
+                <div
+                  className="dash-backdrop absolute inset-0 bg-[#03060f]/78 backdrop-blur-[3px]"
+                  onClick={() => setShowMobilePrefs(false)}
+                />
+                <div className="sheet-up absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-2xl border-t border-[#1e3260]/70 bg-[#07101f] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
+                  <span className="mx-auto mb-3 block h-1 w-10 rounded-full bg-[#2a3a66]" aria-hidden="true" />
+                  <div className="mb-4 flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="flex items-center gap-2 text-[15px] font-semibold text-white">
+                        <Sparkles size={15} strokeWidth={2} className="text-[#6aa8ff]" />
+                        {t('gen.postPreferences')}
+                      </p>
+                      <p className="mt-0.5 text-[12.5px] text-[#7d89ad]">{t('gen.tuneVoice')}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowMobilePrefs(false)}
+                      aria-label={t('common.close')}
+                      className="dash-icon-btn flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-[#8b94b8]"
+                    >
+                      <XIcon size={17} strokeWidth={2} />
+                    </button>
+                  </div>
+                <div className="space-y-3 pb-2">
                   {prefQuestions.map((q, i) => {
                     const labels = {
                       profile_user_role: 'Your role',
@@ -1677,29 +1820,43 @@ export default function SocialMediaPostGenerator() {
                     );
                   })}
                 </div>
-              )}
-            </div>
 
-            <button
-              type="button"
-              onClick={handleGenerate}
-              disabled={atDailyLimit}
-              className={`mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-[14px] font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 ${atDailyLimit ? '' : 'btn-gradient shadow-[0_6px_24px_rgba(17,122,255,0.35)]'}`}
-              style={{ background: atDailyLimit ? 'rgba(30,50,100,0.4)' : undefined }}
-              title={atDailyLimit ? `Come back in ${quotaCountdown}` : undefined}
-            >
-              {atDailyLimit ? (
-                <>⏳ Come back in {quotaCountdown}</>
-              ) : (
-                <><Sparkles size={15} strokeWidth={2} /> {t('gen.generatePost')}</>
-              )}
-            </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowMobilePrefs(false)}
+                    className="mt-4 inline-flex h-12 w-full items-center justify-center rounded-xl btn-gradient text-[14px] font-semibold text-white"
+                  >
+                    {t('gen.applyPrefs')}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Sticky on a phone so the action never scrolls out of reach while
+                you read; in the flow from lg up, where it always was. */}
+            <div className="sticky bottom-0 z-20 -mx-4 mt-3 border-t border-[#1e3260]/50 bg-[#050a18]/85 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-md sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
+              <button
+                type="button"
+                onClick={handleGenerate}
+                disabled={atDailyLimit}
+                className={`inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl text-[14px] font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 lg:h-auto lg:py-3.5 ${atDailyLimit ? '' : 'btn-gradient shadow-[0_6px_24px_rgba(17,122,255,0.35)]'}`}
+                style={{ background: atDailyLimit ? 'rgba(30,50,100,0.4)' : undefined }}
+                title={atDailyLimit ? `Come back in ${quotaCountdown}` : undefined}
+              >
+                {atDailyLimit ? (
+                  <>⏳ Come back in {quotaCountdown}</>
+                ) : (
+                  <><Sparkles size={15} strokeWidth={2} /> {t('gen.generatePost')}</>
+                )}
+              </button>
+            </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* ── Generated post view ── */}
         {view === 'generated' && (
-          <div className="flex-1 overflow-y-auto px-6 pb-10 md:px-8">
+          <div className="flex-1 overflow-y-auto px-4 pb-10 sm:px-6 md:px-8">
             {/* Header: back + title on left, actions on right.
                 Mobile: back/actions are icon-only to prevent overflow. */}
             <div className="mb-4 flex items-center gap-2">
