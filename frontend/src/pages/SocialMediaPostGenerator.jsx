@@ -51,7 +51,9 @@ function useCountdown(resetAt) {
 const PLATFORMS = [
   { id: 'twitter',   label: 'Twitter / X',  short: '𝕏',   limit: 280,  color: '#1d9bf0' },
   { id: 'instagram', label: 'Instagram',     short: 'IG',  limit: 2200, color: '#e1306c' },
-  { id: 'linkedin',  label: 'LinkedIn',      short: 'in',  limit: 3000, color: '#0a66c2' },
+  // Reddit's self-post body limit really is 40,000 — the counter says so
+  // rather than a rounder number that would be a guess.
+  { id: 'reddit',    label: 'Reddit',        short: 'r/',  limit: 40000, color: '#ff4500' },
   { id: 'whatsapp',  label: 'WhatsApp',      short: 'WA',  limit: 5000, color: '#25d366' },
 ];
 
