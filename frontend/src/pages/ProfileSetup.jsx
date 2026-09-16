@@ -8,6 +8,8 @@ import { POLITICAL_PARTIES } from '../utils/politicalParties';
 import { ROLE_GROUPS, roleLabel, groupForId, rolesInGroup } from '../utils/partyRoles';
 import { INDIAN_STATES, CITIES_BY_STATE } from '../utils/indianStatesCities';
 import PhoneField  from '../components/PhoneField';
+import DashboardShell from '../layouts/DashboardShell';
+import DrawerButton from '../components/dashboard/DrawerButton';
 import logoSrc     from '../assets/images/logo-animation.png';
 import ambedkarSrc from '../assets/images/qna-ambedkar.png';
 import { useI18n } from '../i18n/index.jsx';
@@ -168,7 +170,7 @@ export default function ProfileSetup() {
     curtainGo(nextRoute, { replace: true });
   }
 
-  return (
+  const page = (
     <div
       className="flex min-h-screen flex-col"
       style={{ background: 'linear-gradient(160deg,#0d1535 0%,#080e22 100%)' }}
@@ -208,6 +210,10 @@ export default function ProfileSetup() {
           </>
         ) : (
           <>
+            {/* The brand that used to sit here is in the sidebar now. On a
+                phone the sidebar is a drawer, and this page is reached from
+                it, so the way back into it belongs here. */}
+            <DrawerButton />
             <button
               type="button"
               onClick={handleSkip}
@@ -217,49 +223,35 @@ export default function ProfileSetup() {
               <ArrowLeft size={15} strokeWidth={2} />
               <span className="hidden sm:inline">{t('common.back')}</span>
             </button>
-            <button
-              type="button"
-              onClick={handleSkip}
-              className="flex items-center gap-2.5 transition-opacity hover:opacity-85"
-              aria-label={t('nav.backToDashboard')}
-            >
-              <img src={logoSrc} alt="" className="h-9 w-9 object-contain drop-shadow-[0_0_12px_rgba(63,159,255,0.5)]" />
-              <span className="font-display text-[20px] font-bold leading-none tracking-tight">
-                <span className="text-white">{t('brand.ambedkar')}</span>
-                <span className="gradient-text-cyan">GPT</span>
-              </span>
-            </button>
           </>
         )}
       </header>
 
       {/* Main
-          Two columns from lg up: portrait left, form right. Stacked, the
-          portrait was a small image floating above a card with a lot of empty
-          space either side of it, and giving it a column of its own is what
-          lets it be large enough to read as a portrait rather than a thumbnail. */}
-      <main className="relative z-10 flex flex-1 items-center justify-center px-6 pb-12 pt-6">
-        <div className="grid w-full max-w-[1140px] items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,480px)] lg:gap-16">
+          One column: the portrait sits over the form rather than beside it, so
+          the fields get the width the picture used to take. */}
+      <main className="relative z-10 flex flex-1 flex-col items-center px-4 pb-12 pt-4 sm:px-6">
+        <div className="flex w-full min-w-0 max-w-[820px] flex-col items-center">
 
-          {/* Left: portrait */}
-          <div className="relative flex items-center justify-center">
+          {/* Portrait */}
+          <div className="relative mb-7 flex items-center justify-center">
             <div
-              className="absolute h-[340px] w-[340px] rounded-full blur-[80px] lg:h-[540px] lg:w-[540px] lg:blur-[100px]"
+              className="absolute h-[260px] w-[260px] rounded-full blur-[80px] sm:h-[340px] sm:w-[340px]"
               style={{ background: 'radial-gradient(circle, rgba(63,159,255,0.22) 0%, rgba(123,92,255,0.10) 55%, transparent 75%)' }}
             />
             <img
               src={ambedkarSrc}
               alt="Dr. B.R. Ambedkar"
-              className="relative z-10 w-[230px] object-contain drop-shadow-[0_20px_56px_rgba(0,0,0,0.6)] sm:w-[300px] lg:w-[460px]"
+              className="relative z-10 w-[190px] object-contain drop-shadow-[0_20px_56px_rgba(0,0,0,0.6)] sm:w-[240px]"
             />
           </div>
 
-          {/* Right: form */}
+          {/* Form */}
           <div className="flex w-full flex-col items-center">
 
         {/* Card */}
         <div
-          className="w-full max-w-[480px] rounded-2xl p-8"
+          className="w-full min-w-0 max-w-[820px] rounded-2xl p-5 sm:p-8 md:p-10"
           style={{
             background: 'rgba(10,17,40,0.7)',
             border: '1px solid rgba(30,50,96,0.6)',
@@ -287,25 +279,30 @@ export default function ProfileSetup() {
           )}
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
-            <FieldInput
-              icon={User}
-              label={t('profile.fullNameLabel')}
-              placeholder="e.g. Rajesh Kumar"
-              value={fullName}
-              onChange={(e) => { setFullName(e.target.value); setErrors((p) => ({ ...p, fullName: '' })); }}
-              error={errors.fullName}
-              maxLength={100}
-            />
-            <FieldInput
-              icon={AtSign}
-              label={t('profile.usernameLabel')}
-              placeholder="your_handle"
-              value={username}
-              onChange={(e) => { setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')); setErrors((p) => ({ ...p, username: '' })); }}
-              error={errors.username}
-              hint={t('profile.usernameHint')}
-              maxLength={50}
-            />
+            {/* Name and handle share a row on the wider card: they are the
+                two halves of who you are here, and one per line left most of
+                the field empty. Stacked below sm. */}
+            <div className="grid items-start gap-4 sm:grid-cols-2">
+              <FieldInput
+                icon={User}
+                label={t('profile.fullNameLabel')}
+                placeholder="e.g. Rajesh Kumar"
+                value={fullName}
+                onChange={(e) => { setFullName(e.target.value); setErrors((p) => ({ ...p, fullName: '' })); }}
+                error={errors.fullName}
+                maxLength={100}
+              />
+              <FieldInput
+                icon={AtSign}
+                label={t('profile.usernameLabel')}
+                placeholder="your_handle"
+                value={username}
+                onChange={(e) => { setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')); setErrors((p) => ({ ...p, username: '' })); }}
+                error={errors.username}
+                hint={t('profile.usernameHint')}
+                maxLength={50}
+              />
+            </div>
 
             {/* Whichever contact method the signup path didn't collect.
                 Optional — filling it in is a convenience, not a gate. */}
@@ -593,4 +590,9 @@ export default function ProfileSetup() {
       </main>
     </div>
   );
+
+  // Editing, reached from the sidebar, keeps the sidebar. Onboarding does not:
+  // a new account has nowhere to navigate to yet, and an exit there would
+  // strand the sign-up half done.
+  return isOnboarding ? page : <DashboardShell active="profile">{page}</DashboardShell>;
 }

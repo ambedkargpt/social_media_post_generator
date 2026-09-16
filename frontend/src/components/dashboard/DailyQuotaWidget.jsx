@@ -35,7 +35,7 @@ export default function DailyQuotaWidget({ quota, loading }) {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-[#141d3a]/70 bg-[#070b1c]/60 p-5 space-y-3">
+      <div className="dash-panel space-y-3 p-4 sm:p-5">
         <div className="h-3 w-28 animate-pulse rounded bg-[#1e3260]/60" />
         <div className="h-2 w-full animate-pulse rounded-full bg-[#1e3260]/40" />
         <div className="h-2 w-3/4 animate-pulse rounded-full bg-[#1e3260]/30" />
@@ -60,27 +60,29 @@ export default function DailyQuotaWidget({ quota, loading }) {
   const milestonePct  = Math.min((total_streak_posts / MILESTONE) * 100, 100);
 
   return (
-    <div className="rounded-2xl border border-[#141d3a]/70 bg-[#070b1c]/60 p-5 space-y-5">
+    <div className="dash-panel space-y-4 p-4 sm:p-5">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#3f9fff] to-[#7b5cff]">
             <Zap size={13} strokeWidth={2.2} className="text-white" />
           </span>
-          <h3 className="font-display text-[14px] font-semibold text-white">{t('quota.dailyPosts')}</h3>
+          <h3 className="font-display text-[15px] font-semibold text-white">{t('quota.dailyPosts')}</h3>
         </div>
         {/* Streak badge */}
         {streak_days > 0 && (
           <div
-            className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold"
+            className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 font-count text-[11.5px] font-bold tabular-nums"
             style={{
-              background: streak_days >= 7 ? 'linear-gradient(90deg,#ff6b35,#f59e0b)' : 'rgba(245,158,11,0.15)',
+              background: streak_days >= 7 ? 'linear-gradient(90deg,#ff6b35,#f59e0b)' : 'rgba(245,158,11,0.13)',
               color: streak_days >= 7 ? 'white' : '#f59e0b',
-              border: streak_days >= 7 ? 'none' : '1px solid rgba(245,158,11,0.35)',
+              border: streak_days >= 7 ? 'none' : '1px solid rgba(245,158,11,0.32)',
+              boxShadow: streak_days >= 7 ? '0 0 16px rgba(245,158,11,0.35)' : 'none',
             }}
           >
-            🔥 {streak_days} day{streak_days !== 1 ? 's' : ''}
+            <Flame size={12} strokeWidth={2.4} />
+            {streak_days} day{streak_days !== 1 ? 's' : ''}
           </div>
         )}
       </div>
@@ -105,18 +107,24 @@ export default function DailyQuotaWidget({ quota, loading }) {
         </div>
       )}
 
-      {/* Daily bar */}
+      {/* Today's goal */}
       <div>
-        <div className="mb-1.5 flex items-center justify-between text-[11.5px]">
+        <div className="mb-2 flex items-baseline justify-between gap-3">
+          <span className="dash-eyebrow">{t('quota.todayGoal')}</span>
+          <span className="font-count text-[13.5px] font-bold tabular-nums text-white">
+            {daily_used} <span className="text-[#6f7fa8]">/ {DAILY_LIMIT}</span>
+          </span>
+        </div>
+        <div className="mb-1.5 flex items-center justify-between gap-3 text-[11.5px]">
           <span className="text-[#8b94b8]">
             {atLimit ? t('quota.limitReached') : t('quota.publishedToday', { done: daily_used, total: DAILY_LIMIT })}
           </span>
-          <span className={`font-semibold ${atLimit ? 'text-red-400' : 'text-[#6aa8ff]'}`}>
+          <span className={`shrink-0 font-semibold ${atLimit ? 'text-red-400' : 'text-[#6aa8ff]'}`}>
             {atLimit ? t('quota.zeroLeft') : t('quota.left', { n: daily_remaining })}
           </span>
         </div>
 
-        <div className="h-2.5 w-full overflow-hidden rounded-full bg-[#1e3260]/50">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-[#1e3260]/50">
           <div
             className="h-full rounded-full transition-all duration-700"
             style={{
@@ -129,10 +137,8 @@ export default function DailyQuotaWidget({ quota, loading }) {
           />
         </div>
 
-        {/* Pip markers */}
-        <div className="mt-1 flex justify-between font-count text-[9.5px] text-[#3a4e70]">
-          {[...Array(DAILY_LIMIT + 1)].map((_, i) => <span key={i}>{i}</span>)}
-        </div>
+        {/* The 0–5 pip row that used to sit here was 9.5px type saying what
+            the count above it already says in full size. */}
       </div>
 
       {/* Countdown at limit */}
@@ -144,14 +150,15 @@ export default function DailyQuotaWidget({ quota, loading }) {
       )}
 
       {/* Milestone streak progress */}
-      <div className="border-t border-[#141d3a]/70 pt-4">
-        <div className="mb-1.5 flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <Trophy size={12} strokeWidth={2} className="text-amber-400" />
-            <span className="text-[11.5px] text-[#8b94b8]">{t('quota.milestone')}</span>
-          </div>
-          <span className="text-[11.5px] font-semibold text-amber-400">
-            {total_streak_posts} / {MILESTONE} → ₹2,000
+      <div className="border-t border-[#1a254a]/60 pt-4">
+        <div className="mb-2 flex items-baseline justify-between gap-3">
+          <span className="dash-eyebrow inline-flex items-center gap-1.5">
+            <Trophy size={11} strokeWidth={2.2} className="text-amber-400" />
+            {t('quota.milestone')}
+          </span>
+          <span className="font-count text-[13.5px] font-bold tabular-nums text-white">
+            {total_streak_posts} <span className="text-[#6f7fa8]">/ {MILESTONE}</span>
+            <span className="ml-2 rounded-md bg-amber-400/12 px-1.5 py-0.5 text-[12px] text-amber-300">₹2,000</span>
           </span>
         </div>
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#1e3260]/50">
@@ -164,7 +171,7 @@ export default function DailyQuotaWidget({ quota, loading }) {
             }}
           />
         </div>
-        <p className="mt-1.5 text-[10.5px] text-[#3a4e70]">
+        <p className="mt-2 text-[11.5px] leading-snug text-[#6b78a0]">
           {t('quota.streakNote')}
         </p>
       </div>

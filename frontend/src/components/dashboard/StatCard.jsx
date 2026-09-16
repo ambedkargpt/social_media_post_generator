@@ -1,61 +1,41 @@
-import { TrendingUp } from 'lucide-react';
-import { useI18n } from '../../i18n/index.jsx';
-
 /**
- * Top-of-dashboard metric tile.
+ * One activity number.
+ *
+ * The number is the point, so it carries the weight: a quiet label above, the
+ * value large below it, and the icon held in a tinted square rather than a
+ * filled gradient chip. The accent colour appears three times only — the hair
+ * line along the top, the icon, and the icon's ground — so the tile stays navy
+ * and four of these in a row read as a set instead of four coloured cards.
  *
  * @param {object} p
- * @param {string} p.label        – title above value (e.g. "Total Searches")
- * @param {string} p.value        – the big number (formatted, e.g. "1,234")
- * @param {string} p.delta        – change string (e.g. "+12.5%")
- * @param {string} p.deltaLabel   – suffix (e.g. "vs last month")
- * @param {JSX.Element} p.icon    – lucide icon element
- * @param {string} p.iconGradient – tailwind gradient classes for the icon pill
+ * @param {string} p.label   – what is being counted
+ * @param {string} p.value   – the number, already formatted
+ * @param {JSX.Element} p.icon – lucide icon element
+ * @param {string} p.accent  – hex accent for this metric
  */
-export default function StatCard({ label, value, delta, deltaLabel, icon, iconGradient }) {
-  const { t } = useI18n();
-  const positive = !delta?.startsWith('-');
-
+export default function StatCard({ label, value, icon, accent = '#3f9fff' }) {
   return (
-    <div
-      className="relative overflow-hidden rounded-2xl border px-5 py-5 transition-all duration-200 hover:-translate-y-0.5"
-      style={{
-        background: 'linear-gradient(180deg, rgba(16,25,55,0.85) 0%, rgba(10,16,38,0.85) 100%)',
-        borderColor: 'rgba(60,85,155,0.22)',
-      }}
-    >
-      {/* ambient corner glow */}
-      <div
-        className="pointer-events-none absolute -top-10 -right-10 h-24 w-24 rounded-full opacity-40 blur-2xl"
-        style={{ background: 'radial-gradient(circle, rgba(79,107,255,0.35) 0%, transparent 70%)' }}
+    <div className="dash-tile dash-hover px-4 py-3.5">
+      {/* The accent as a hairline rather than a wash, so the tile stays navy. */}
+      <span
+        className="pointer-events-none absolute inset-x-0 top-0 h-px"
+        style={{ background: `linear-gradient(90deg, transparent, ${accent}b3, transparent)` }}
       />
 
-      <div className="flex items-start justify-between">
-        <div className="text-[12px] font-medium leading-snug text-[#8b94b8] max-w-[110px]">
-          {label}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-[11.5px] font-medium leading-snug text-[#8b94b8]">{label}</div>
+          <div className="mt-2 font-count text-[26px] font-bold leading-none tabular-nums text-white sm:text-[30px]">
+            {value}
+          </div>
         </div>
-        <div
-          className={`flex h-8 w-8 items-center justify-center rounded-lg text-white shadow-[0_6px_16px_rgba(0,0,0,0.35)] ${iconGradient}`}
+        <span
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+          style={{ backgroundColor: `${accent}1f`, color: accent, boxShadow: `inset 0 0 0 1px ${accent}2e` }}
         >
           {icon}
-        </div>
+        </span>
       </div>
-
-      <div className="mt-3.5 font-count text-[28px] font-bold leading-none text-white tabular-nums">
-        {value}
-      </div>
-
-      {delta && (
-        <div
-          className={`mt-2.5 inline-flex items-center gap-1 font-count text-[11px] font-semibold ${
-            positive ? 'text-[#22c55e]' : 'text-[#ef4444]'
-          }`}
-        >
-          <TrendingUp size={11} strokeWidth={2.4} className={positive ? '' : 'rotate-180'} />
-          {delta}
-          <span className="font-medium text-[#6b78a0]"> {deltaLabel ?? t('stat.vsLastMonth')}</span>
-        </div>
-      )}
     </div>
   );
 }

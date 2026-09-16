@@ -1,16 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Send, SlidersHorizontal, Bot, Sparkles, Music, ChevronRight, ChevronDown, Calendar } from 'lucide-react';
+import { FileText, Send, SlidersHorizontal, Bot, Sparkles, Music, ChevronRight, ChevronDown, Calendar, LayoutGrid } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
 import { getPosts, getDailyQuota } from '../api/posts';
 import { getProfileAnswers } from '../api/profile';
 import MilestoneBanner from '../components/MilestoneBanner';
 import DailyQuotaWidget from '../components/dashboard/DailyQuotaWidget';
+import RevealOnScroll from '../components/ui/RevealOnScroll';
 
-import Sidebar              from '../components/dashboard/Sidebar';
+import DashboardShell       from '../layouts/DashboardShell';
 import Topbar               from '../components/dashboard/Topbar';
 import TopStoryCarousel     from '../components/dashboard/TopStoryCarousel';
+import { SectionHeading }   from '../components/dashboard/Card';
 import StatCard             from '../components/dashboard/StatCard';
 import SearchActivityChart  from '../components/dashboard/SearchActivityChart';
 import DailyActivityChart   from '../components/dashboard/DailyActivityChart';
@@ -28,12 +30,17 @@ import {
   formatFullDate, fromInputValue, sameDay, startOfDay, toInputValue, weekdayShort,
 } from '../utils/dashboardDates';
 
+// The three ways into generation, in the order they are worth trying.
+const QUICK_ACTIONS = [
+  { labelKey: 'dash.socialPost',  descKey: 'dash.socialPostDesc',  Icon: Sparkles, route: '/generate/social-media', accent: '#3f9fff' },
+  { labelKey: 'dash.musicStudio', descKey: 'dash.musicStudioDesc', Icon: Music,    route: '/generate/music',        accent: '#7b5cff' },
+  { labelKey: 'dash.bheembot',    descKey: 'dash.bheembotDesc',    Icon: Bot,      route: '/bheembot',              accent: '#22c55e' },
+];
+
 export default function Dashboard() {
-  const { currentUser, logout } = useAuth();
+  const { currentUser } = useAuth();
   const { t, lang } = useI18n();
   const navigate = useNavigate();
-  const [active, setActive] = useState('dashboard');
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const [posts,            setPosts]           = useState([]);
   const [profileAnswers,   setProfileAnswers]  = useState([]);
@@ -61,11 +68,6 @@ export default function Dashboard() {
     getDailyQuota().then(setQuota).catch(() => {}).finally(() => setQuotaLoading(false));
   }, [currentUser?.id]);
 
-  async function handleLogout() {
-    await logout();
-    navigate('/login', { replace: true });
-  }
-
   // The native picker, opened from the pill. showPicker() is missing in older
   // browsers and throws without a user gesture; focusing the input is the
   // fallback there.
@@ -83,13 +85,6 @@ export default function Dashboard() {
   const dateLabel = `${
     sameDay(anchorDate, new Date()) ? t('dash.today') : weekdayShort(anchorDate, lang)
   }, ${formatFullDate(anchorDate, lang)}`;
-
-  function handleNavSelect(id) {
-    setActive(id);
-    if (id === 'profile') {
-      document.getElementById('profile-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }
 
   // Resolved from the full party list, not the offered one, so an account
   // carrying a party we no longer offer still shows its own mark.
@@ -118,301 +113,259 @@ export default function Dashboard() {
 
   const first = displayName.split('_')[0];
 
-  // ── Welcome ── Handed to the Topbar, so the greeting and the language,
-  // notification and profile controls share one header row.
-  const welcome = (
-    <div className="min-w-0">
-      <h1 className="flex flex-wrap items-center gap-x-3 gap-y-2 font-display text-[28px] md:text-[32px] font-bold leading-tight tracking-tight">
-        <span>
-          <span className="text-white">{t('dash.welcomeBack')} </span>
-          <span className="gradient-text-blue">{first}</span>
-        </span>
-        {/* The party mark. The disc stays 52px; the logo fills it to
-            48px, leaving a 2px white rim rather than the 6px of padding
-            it had. These symbols are drawn on their own coloured circle,
-            so a wide white ring around them just makes the mark smaller
-            for no gain. Source files are 250px square, so this is well
-            inside their resolution on a 2x screen. */}
-        {welcomeLogo && (
-          <span
-            className="inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-white shadow-[0_0_0_1px_rgba(63,159,255,0.35),0_4px_16px_rgba(0,0,0,0.35)]"
-            title={currentUser?.political_party || ''}
-          >
-            <img
-              src={welcomeLogo}
-              alt={currentUser?.political_party || 'Party'}
-              className="h-[48px] w-[48px] object-contain"
-              onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
-            />
-          </span>
-        )}
-      </h1>
-      <p className="mt-1.5 text-[15px] text-[#9aa5c4] md:text-[16px]">
-        {t('dash.subtitle')}
-      </p>
+  // The date pill. It belongs to the activity numbers and the charts under
+  // them, so it rides in that section's heading; below sm the heading wraps and
+  // it takes its own line rather than squeezing the label.
+  const datePill = (
+    <div className="relative shrink-0">
+      <button
+        type="button"
+        onClick={openDatePicker}
+        aria-label={t('dash.pickDate')}
+        className="dash-icon-btn inline-flex items-center gap-2 rounded-lg border border-[#1e3260]/70 bg-[#0d1531]/70 px-3 py-2 text-[12.5px] font-medium text-white/90"
+      >
+        <Calendar size={14} strokeWidth={2} className="text-[#6f8fce]" />
+        {dateLabel}
+        <ChevronDown size={13} strokeWidth={2} className="text-[#6b78a0]" />
+      </button>
+      <input
+        ref={dateInputRef}
+        type="date"
+        tabIndex={-1}
+        aria-hidden="true"
+        max={toInputValue(new Date())}
+        value={toInputValue(anchorDate)}
+        onChange={(e) => {
+          const picked = fromInputValue(e.target.value);
+          if (picked) setAnchorDate(picked);
+        }}
+        className="pointer-events-none absolute inset-0 h-full w-full opacity-0"
+        style={{ colorScheme: 'dark' }}
+      />
     </div>
   );
 
   return (
-    <div
-      className="flex h-screen overflow-hidden text-[#e5e7eb]"
-      style={{ background: 'radial-gradient(1200px 700px at 20% 0%, #0d1636 0%, #070b1c 55%, #05081a 100%)' }}
-    >
-      <Sidebar
-        active={active}
-        onSelect={handleNavSelect}
-        mobileOpen={mobileSidebarOpen}
-        onMobileClose={() => setMobileSidebarOpen(false)}
-        onLogout={handleLogout}
-      />
+    <DashboardShell active="dashboard">
+      <MilestoneBanner totalPosts={quota?.total_streak_posts} />
 
-      <div className="relative flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
-        <MilestoneBanner totalPosts={quota?.total_streak_posts} />
-        <div className="px-6 md:px-10">
-        <div className="pointer-events-none fixed top-0 right-0 h-[420px] w-[420px] rounded-full bg-[#3f9fff]/10 blur-[130px]" />
-        <div className="pointer-events-none fixed bottom-0 left-[22%] h-[360px] w-[360px] rounded-full bg-[#7b5cff]/10 blur-[130px]" />
-
+      <div className="relative px-4 sm:px-6 md:px-10">
         {/* totalPosts comes from the same source the milestone banner counts
             from, so the bell and the banner cannot disagree. */}
         <Topbar
           user={topbarUser}
-          onMenuOpen={() => setMobileSidebarOpen(true)}
           totalPosts={quota?.total_streak_posts ?? totalPosts}
-          onLogout={handleLogout}
-          leading={welcome}
+          title={t('nav.dashboard')}
+          icon={<LayoutGrid size={16} strokeWidth={2} className="hidden shrink-0 text-[#4f7fd4] lg:block" />}
         />
+
+        {/* ── Welcome ── The party mark leads, then the greeting on one line.
+            The disc stays 52px and the logo fills it to 48px: these symbols are
+            drawn on their own coloured circle, so a wide white ring around them
+            just makes the mark smaller for no gain. */}
+        <div className="mb-7 flex items-center gap-4">
+          {welcomeLogo && (
+            <span
+              className="relative inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-white shadow-[0_0_0_2px_rgba(63,159,255,0.45),0_0_26px_rgba(63,159,255,0.28)]"
+              title={currentUser?.political_party || ''}
+            >
+              <img
+                src={welcomeLogo}
+                alt={currentUser?.political_party || 'Party'}
+                className="h-[48px] w-[48px] object-contain"
+                onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
+              />
+              <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-[2.5px] border-[#070b1c] bg-[#22c55e]" />
+            </span>
+          )}
+          <div className="min-w-0">
+            <h1 className="font-display text-[26px] font-bold leading-tight tracking-tight sm:text-[28px] md:text-[32px]">
+              <span className="text-white">{t('dash.welcomeBack')} </span>
+              <span className="gradient-text-blue">{first}</span>
+            </h1>
+            <p className="mt-1.5 text-[15px] leading-snug text-[#9aa5c4] md:text-[16.5px]">
+              {t('dash.subtitle')}
+            </p>
+          </div>
+        </div>
 
         {/* ── Today's top story ── The primary action: the latest party,
             opposition and general story in turn, with Generate Post. */}
         <TopStoryCarousel />
 
-        {/* ── Activity ── The date pill sets the day both charts end on. The
-            input sits invisibly under the button so the browser anchors its
-            calendar to the pill. */}
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-display text-[18px] font-semibold tracking-tight text-white">{t('dash.activity')}</h2>
-          <div className="relative shrink-0">
-            <button
-              type="button"
-              onClick={openDatePicker}
-              aria-label={t('dash.pickDate')}
-              className="inline-flex items-center gap-2.5 rounded-xl border border-[#1e3260]/70 bg-[#0d1531]/80 px-4 py-2.5 text-[13px] font-medium text-white/90 transition hover:border-[#3a6bc4]/60 hover:text-white"
-            >
-              <Calendar size={15} strokeWidth={2} className="text-[#a3b0d4]" />
-              {dateLabel}
-              <ChevronDown size={14} strokeWidth={2} className="text-[#6b78a0]" />
-            </button>
-            <input
-              ref={dateInputRef}
-              type="date"
-              tabIndex={-1}
-              aria-hidden="true"
-              max={toInputValue(new Date())}
-              value={toInputValue(anchorDate)}
-              onChange={(e) => {
-                const picked = fromInputValue(e.target.value);
-                if (picked) setAnchorDate(picked);
-              }}
-              className="pointer-events-none absolute inset-0 h-full w-full opacity-0"
-              style={{ colorScheme: 'dark' }}
-            />
-          </div>
-        </div>
+        {/* ── Activity ── The four numbers, and the date they are counted to. */}
+        <RevealOnScroll delayMs={40} yOffset={15}>
+          <section className="mt-8">
+            <SectionHeading label={t('dash.activity')} right={datePill} />
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+              <StatCard
+                label={t('dash.postsGenerated')}
+                value={dataLoading ? '…' : String(totalPosts)}
+                icon={<FileText size={15} strokeWidth={2} />}
+                accent="#3f9fff"
+              />
+              <StatCard
+                label={t('dash.publishedPosts')}
+                value={dataLoading ? '…' : String(publishedPosts)}
+                icon={<Send size={15} strokeWidth={2} />}
+                accent="#a855f7"
+              />
+              <StatCard
+                label={t('dash.draftPosts')}
+                value={dataLoading ? '…' : String(draftPosts)}
+                icon={<FileText size={15} strokeWidth={2} />}
+                accent="#22c55e"
+              />
+              <StatCard
+                label={t('dash.preferencesSet')}
+                value={dataLoading ? '…' : String(prefsAnswered)}
+                icon={<SlidersHorizontal size={15} strokeWidth={2} />}
+                accent="#ffb056"
+              />
+            </div>
+          </section>
+        </RevealOnScroll>
 
-        {/* ── Stat cards ── */}
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard
-            label={t('dash.postsGenerated')}
-            value={dataLoading ? '…' : String(totalPosts)}
-            delta={null}
-            icon={<FileText size={15} strokeWidth={2} />}
-            iconGradient="bg-gradient-to-br from-[#3f9fff] to-[#2664d6]"
-          />
-          <StatCard
-            label={t('dash.publishedPosts')}
-            value={dataLoading ? '…' : String(publishedPosts)}
-            delta={null}
-            icon={<Send size={15} strokeWidth={2} />}
-            iconGradient="bg-gradient-to-br from-[#a855f7] to-[#7b3fd4]"
-          />
-          <StatCard
-            label={t('dash.draftPosts')}
-            value={dataLoading ? '…' : String(draftPosts)}
-            delta={null}
-            icon={<FileText size={15} strokeWidth={2} />}
-            iconGradient="bg-gradient-to-br from-[#22c55e] to-[#16a34a]"
-          />
-          <StatCard
-            label={t('dash.preferencesSet')}
-            value={dataLoading ? '…' : String(prefsAnswered)}
-            delta={null}
-            icon={<SlidersHorizontal size={15} strokeWidth={2} />}
-            iconGradient="bg-gradient-to-br from-[#ffb056] to-[#ff7a2d]"
-          />
-        </div>
-
-        {/* ── Charts row ── */}
-        <div className="mt-5 grid gap-5 grid-cols-1 lg:grid-cols-2">
-          <SearchActivityChart posts={posts} anchor={anchorDate} />
-          <DailyActivityChart posts={posts} anchor={anchorDate} />
-        </div>
+        {/* ── Analytics ── */}
+        <RevealOnScroll delayMs={40} yOffset={15}>
+          <section className="mt-8">
+            <SectionHeading label={t('dash.secAnalytics')} />
+            <div className="grid gap-4 lg:grid-cols-2">
+              <SearchActivityChart posts={posts} anchor={anchorDate} />
+              <DailyActivityChart posts={posts} anchor={anchorDate} />
+            </div>
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <CategoriesPieChart posts={posts} />
+              <ImageGenerationCard postCount={totalPosts} />
+            </div>
+          </section>
+        </RevealOnScroll>
 
         {/* ── Quick actions ──
-            The Topbar's Generate button routes to an intermediate services page,
-            which was the only way in. These surface the destinations directly.
-            Below the analytics now: the top story card is the dashboard's main
-            way into post generation. */}
-        <div className="mt-5 grid gap-4 grid-cols-1 sm:grid-cols-3">
-          {[
-            {
-              label: t('dash.socialPost'),
-              desc: t('dash.socialPostDesc'),
-              Icon: Sparkles,
-              route: '/generate/social-media',
-              accent: '#3f9fff',
-            },
-            {
-              label: t('dash.musicStudio'),
-              desc: t('dash.musicStudioDesc'),
-              Icon: Music,
-              route: '/generate/music',
-              accent: '#7b5cff',
-            },
-            {
-              label: t('dash.bheembot'),
-              desc: t('dash.bheembotDesc'),
-              Icon: Bot,
-              route: '/bheembot',
-              accent: '#22c55e',
-            },
-          ].map(({ label, desc, Icon, route, accent }) => (
-            <button
-              key={label}
-              type="button"
-              onClick={() => navigate(route)}
-              className="group flex items-center gap-3.5 rounded-2xl border p-4 text-left transition-all duration-200 hover:-translate-y-0.5"
-              style={{
-                borderColor: 'rgba(30,50,96,0.7)',
-                background: 'linear-gradient(135deg, rgba(13,21,49,0.9) 0%, rgba(10,17,48,0.6) 100%)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = `${accent}66`;
-                e.currentTarget.style.boxShadow = `0 10px 30px ${accent}22`;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(30,50,96,0.7)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
-            >
-              <span
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-                style={{ backgroundColor: `${accent}1f`, color: accent }}
-              >
-                <Icon size={19} strokeWidth={2} />
-              </span>
-              <span className="min-w-0">
-                <span className="block font-display text-[15px] font-semibold text-white">{label}</span>
-                <span className="mt-0.5 block truncate text-[12.5px] text-[#8b94b8]">{desc}</span>
-              </span>
-              <ChevronRight
-                size={16}
-                strokeWidth={2}
-                className="ml-auto shrink-0 text-[#3f6aaa] transition-transform duration-200 group-hover:translate-x-0.5"
-                style={{ color: accent }}
-              />
-            </button>
-          ))}
-        </div>
+            The header's Generate button used to be the only way in. These
+            surface the destinations directly, below the analytics: the top
+            story card is the dashboard's main way into post generation. */}
+        <RevealOnScroll delayMs={40} yOffset={15}>
+          <section className="mt-8">
+            <SectionHeading label={t('dash.secQuickActions')} />
+            <div className="grid gap-3 sm:gap-4 sm:grid-cols-3">
+              {QUICK_ACTIONS.map(({ labelKey, descKey, Icon, route, accent }) => (
+                <button
+                  key={labelKey}
+                  type="button"
+                  onClick={() => navigate(route)}
+                  className="dash-tile dash-hover group flex items-center gap-3.5 p-4 text-left"
+                >
+                  <span
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                    style={{ backgroundColor: `${accent}1f`, color: accent, boxShadow: `inset 0 0 0 1px ${accent}2e` }}
+                  >
+                    <Icon size={18} strokeWidth={2} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block font-display text-[14.5px] font-semibold text-white">{t(labelKey)}</span>
+                    <span className="mt-0.5 block text-[12px] leading-snug text-[#8b94b8]">{t(descKey)}</span>
+                  </span>
+                  <ChevronRight
+                    size={16}
+                    strokeWidth={2}
+                    className="cta-arrow ml-auto shrink-0"
+                    style={{ color: accent }}
+                  />
+                </button>
+              ))}
+            </div>
+          </section>
+        </RevealOnScroll>
 
-        {/* ── Categories pie + image generation ── */}
-        <div className="mt-5 grid gap-5 grid-cols-1 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <CategoriesPieChart posts={posts} />
-          </div>
-          <ImageGenerationCard postCount={totalPosts} />
-        </div>
+        {/* ── Account ── Who you are, what you are allowed today, and the
+            preferences every generated post is written against. */}
+        <RevealOnScroll delayMs={40} yOffset={15}>
+          <section id="profile-section" className="mt-8 scroll-mt-24">
+            <SectionHeading label={t('dash.secAccount')} />
+            <div className="grid gap-4 lg:grid-cols-3">
+              <div className="flex flex-col gap-4">
+                <ProfileCard user={profileUser} />
+                <DailyQuotaWidget quota={quota} loading={quotaLoading} />
+              </div>
+              <div className="lg:col-span-2">
+                <PreferencesCard answers={profileAnswers} />
+              </div>
+            </div>
+          </section>
+        </RevealOnScroll>
 
-        {/* ── Profile + Quota + Preferences ── */}
-        <div id="profile-section" className="mt-5 grid gap-5 grid-cols-1 lg:grid-cols-3 scroll-mt-6">
-          <div className="flex flex-col gap-5">
-            <ProfileCard user={profileUser} />
-            <DailyQuotaWidget quota={quota} loading={quotaLoading} />
-          </div>
-          <div className="lg:col-span-2">
-            <PreferencesCard answers={profileAnswers} />
-          </div>
-        </div>
+        {/* ── Recent content ── */}
+        <RevealOnScroll delayMs={40} yOffset={15}>
+          <section className="mt-8">
+            <SectionHeading label={t('dash.secRecent')} />
+            <div className="grid gap-4">
+              <RecentSearchesTable posts={posts} loading={dataLoading} />
+              <SavedPromptsGrid posts={posts.filter((p) => p.status === 'published')} />
+            </div>
+          </section>
+        </RevealOnScroll>
 
-        {/* ── Recent posts ── */}
-        <div className="mt-5">
-          <RecentSearchesTable posts={posts} loading={dataLoading} />
-        </div>
+        {/* ── BheemBot + Achievements ── Both carry their own titles, so this
+            row is left without a section marker. */}
+        <RevealOnScroll delayMs={40} yOffset={15}>
+          <section className="mt-8 grid gap-4 lg:grid-cols-3">
+            <div className="dash-panel relative flex flex-col overflow-hidden p-4 sm:p-5">
+              <div className="pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full bg-[#2d6fff]/18 blur-2xl" />
+              <div className="pointer-events-none absolute -bottom-10 -left-10 h-24 w-24 rounded-full bg-[#22c55e]/10 blur-2xl" />
 
-        {/* ── Published posts ── */}
-        <div className="mt-5">
-          <SavedPromptsGrid posts={posts.filter((p) => p.status === 'published')} />
-        </div>
-
-        {/* ── BheemBot + Achievements row ── */}
-        <div className="mt-5 grid gap-5 grid-cols-1 lg:grid-cols-3">
-          {/* BheemBot card */}
-          <div
-            className="relative overflow-hidden rounded-2xl border border-[#1e3260]/60 p-5"
-            style={{ background: 'linear-gradient(135deg, #070f24 0%, #0d1a3e 100%)' }}
-          >
-            {/* Background glow */}
-            <div className="pointer-events-none absolute -top-8 -right-8 h-32 w-32 rounded-full bg-[#2d6fff]/20 blur-2xl" />
-            <div className="pointer-events-none absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-[#7b5cff]/15 blur-2xl" />
-
-            <div className="relative">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#2d6fff] to-[#7b5cff] shadow-[0_0_18px_rgba(79,107,255,0.4)]">
-                  <Bot size={18} strokeWidth={2} className="text-white" />
-                </div>
-                <div>
-                  <h3 className="font-display text-[15px] font-semibold text-white">{t('bot.title')}</h3>
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e] shadow-[0_0_5px_rgba(34,197,94,0.7)]" />
-                    <span className="text-[11px] text-[#22c55e]">{t('dash.online')}</span>
+              {/* flex-1 + mt-auto on the button: beside the achievements grid
+                  this card is stretched to the row's height, and without it
+                  the bottom half was empty. */}
+              <div className="relative flex flex-1 flex-col">
+                <div className="mb-3 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#2d6fff] to-[#7b5cff] shadow-[0_0_18px_rgba(79,107,255,0.4)]">
+                    <Bot size={18} strokeWidth={2} className="text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-display text-[15px] font-semibold text-white">{t('bot.title')}</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="dot-online relative h-1.5 w-1.5 rounded-full bg-[#22c55e]" />
+                      <span className="text-[11px] text-[#22c55e]">{t('dash.online')}</span>
+                    </div>
                   </div>
                 </div>
+
+                <p className="mb-4 text-[12.5px] leading-relaxed text-[#8b94b8]">
+                  {t('dash.bheembotDesc')}
+                </p>
+
+                <div className="mb-4 flex flex-wrap gap-1.5">
+                  {['bot.tagConstitution', 'bot.tagJustice', 'bot.tagWritings'].map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full border border-[#1e3260]/60 bg-[#0a1428]/70 px-2.5 py-1 text-[10.5px] text-[#7f92b8]"
+                    >
+                      {t(tag)}
+                    </span>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => navigate('/bheembot')}
+                  className="group mt-auto inline-flex w-fit items-center gap-2 rounded-xl btn-gradient px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_8px_22px_rgba(45,111,255,0.32)]"
+                >
+                  <Sparkles size={13} strokeWidth={2} />
+                  {t('dash.openChat')}
+                </button>
               </div>
-
-              <p className="text-[12.5px] leading-relaxed text-[#7a98bc] mb-4">
-                {t('dash.bheembotDesc')}
-              </p>
-
-              <div className="flex flex-wrap gap-1.5 mb-4">
-                {['bot.tagConstitution', 'bot.tagJustice', 'bot.tagWritings'].map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full border border-[#1e3260]/60 bg-[#0a1428] px-2.5 py-0.5 text-[10.5px] text-[#5a7a9e]"
-                  >
-                    {t(tag)}
-                  </span>
-                ))}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => navigate('/bheembot')}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#2d6fff] px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_0_18px_rgba(45,111,255,0.35)] transition hover:bg-[#3d7fff] hover:-translate-y-0.5"
-              >
-                <Sparkles size={13} strokeWidth={2} />
-                {t('dash.openChat')}
-              </button>
             </div>
-          </div>
 
-          {/* Achievements — takes remaining 2 cols */}
-          <div className="lg:col-span-2">
-            <AchievementsGrid totalPosts={totalPosts} prefsAnswered={prefsAnswered} />
-          </div>
-        </div>
+            {/* Achievements — takes remaining 2 cols */}
+            <div className="lg:col-span-2">
+              <AchievementsGrid totalPosts={totalPosts} prefsAnswered={prefsAnswered} />
+            </div>
+          </section>
+        </RevealOnScroll>
 
         <DashboardFooter />
-        </div>{/* end px wrapper */}
-      </div>
-    </div>
+      </div>{/* end px wrapper */}
+    </DashboardShell>
   );
 }
