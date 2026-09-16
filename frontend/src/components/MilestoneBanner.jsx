@@ -40,10 +40,14 @@ export default function MilestoneBanner({ totalPosts, className = '', onHide }) 
         style={{ backgroundImage: 'repeating-linear-gradient(90deg, transparent 0px, transparent 20px, rgba(255,255,255,0.15) 20px, rgba(255,255,255,0.15) 21px)' }}
       />
 
-      <div className="relative flex min-h-[48px] items-center gap-3 px-4 py-2.5 md:px-6">
-        <Trophy size={16} strokeWidth={2} className="shrink-0 text-amber-900/80" />
+      {/* Three parts on a phone: a fixed icon, the text taking the rest and
+          wrapping, and a close button with its own touch area. The text used
+          to be centred between two small children, which on a 360px screen
+          left it a narrow column that broke into three cramped lines. */}
+      <div className="relative flex min-h-[48px] items-center gap-2.5 px-4 py-2.5 sm:gap-3 md:px-6">
+        <Trophy size={16} strokeWidth={2} className="mt-px shrink-0 self-start text-amber-900/80 sm:mt-0 sm:self-center" />
 
-        <p className="flex-1 text-center text-[12px] font-semibold leading-snug text-amber-950 md:text-[13px]">
+        <p className="min-w-0 flex-1 text-left text-[12px] font-semibold leading-[1.45] text-amber-950 sm:text-center sm:leading-snug md:text-[13px]">
           {t('banner.createPre')}{' '}
           <span className="font-black">{t('banner.postsCount', { n: MILESTONE })}</span>{' '}
           {t('banner.andEarn')}{' '}
@@ -72,7 +76,7 @@ export default function MilestoneBanner({ totalPosts, className = '', onHide }) 
           type="button"
           onClick={dismiss}
           aria-label="Dismiss banner"
-          className="shrink-0 rounded-full p-1 text-amber-900/60 transition hover:bg-amber-900/15 hover:text-amber-950"
+          className="-mr-1.5 flex h-9 w-9 shrink-0 items-center justify-center self-start rounded-full text-amber-900/60 transition hover:bg-amber-900/15 hover:text-amber-950 sm:-mr-1 sm:h-7 sm:w-7 sm:self-center"
         >
           <X size={14} strokeWidth={2.5} />
         </button>

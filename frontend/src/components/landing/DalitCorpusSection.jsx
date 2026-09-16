@@ -29,7 +29,11 @@ export default function DalitCorpusSection() {
   const [contactType, setContactType] = useState(null);
 
   return (
-    <section id="ambedkarverse" className="relative pb-8 pt-0 md:pb-10">
+    <section id="ambedkarverse" className="relative overflow-hidden pb-8 pt-0 md:pb-10">
+      {/* The word the section is about, set once behind the heading as
+          outlined type. Hidden on phones, where it would sit under the text
+          rather than behind it. */}
+      <span className="bg-word top-16 hidden sm:block" aria-hidden="true">CORPUS</span>
       <div className="pointer-events-none absolute inset-x-0 -top-28 -bottom-28">
         <div className="absolute left-[10%] top-[20%] h-[420px] w-[420px] rounded-full bg-[#2d7dfb]/9 blur-[130px]" />
         <div className="absolute right-[5%] bottom-[10%] h-[360px] w-[360px] rounded-full bg-[#1a3fa0]/7 blur-[130px]" />
@@ -40,18 +44,18 @@ export default function DalitCorpusSection() {
           <SectionLabel size="lg">{t('landing.dalitCorpus')}</SectionLabel>
         </div>
 
-        <h2 className="mx-auto mt-8 max-w-[900px] text-center font-display text-[52px] font-bold leading-[1.05] text-white md:text-[72px]">
+        <h2 className="mx-auto mt-8 max-w-[900px] text-center font-display text-[clamp(31px,8.4vw,52px)] font-bold leading-[1.05] text-white md:text-[72px]">
           {t('corpus.headPre')}{' '}
           <span className="italic gradient-text-blue">{t('landing.theMovement')}</span>
         </h2>
 
-        <p className="mx-auto mt-6 max-w-[760px] text-center text-[22px] leading-9 text-[#bfcfe8] md:text-[24px]">
+        <p className="mx-auto mt-6 max-w-[760px] text-center text-[clamp(16px,4.3vw,22px)] leading-9 text-[#bfcfe8] md:text-[24px]">
           {t('corpus.tagline')}
         </p>
 
         <div
           onMouseMove={handleCardMove}
-          className="group relative mt-10 overflow-hidden rounded-2xl border border-[#2a3d66]/60 bg-[#0c1e48]"
+          className="card-premium group relative mt-10 overflow-hidden rounded-2xl"
         >
           {/* cursor spotlight */}
           <div
@@ -66,8 +70,9 @@ export default function DalitCorpusSection() {
           <div className="relative z-10 grid md:grid-cols-[1.4fr_0.6fr]">
 
             {/* ── Col 1: Dalit Corpus ── */}
-            <div className="border-b border-[#1a2d55]/50 p-8 md:border-b-0 md:border-r md:p-10">
-              <h3 className="font-display text-[26px] font-semibold text-white md:text-[31px]">
+            <div className="border-b border-[#1a2d55]/50 p-5 sm:p-8 md:border-b-0 md:border-r md:p-10">
+              <p className="card-index font-count text-[11px] font-semibold">01</p>
+              <h3 className="mt-1.5 font-display text-[26px] font-semibold text-white md:text-[31px]">
                 {t(CORPUS.question)}
               </h3>
               {CORPUS.intro.map((para) => (
@@ -88,25 +93,28 @@ export default function DalitCorpusSection() {
                 ))}
               </ul>
 
-              <h4 className="mt-7 font-display text-[19px] font-semibold text-white md:text-[20px]">
+              <p className="card-index mt-7 font-count text-[11px] font-semibold">02</p>
+              <h4 className="mt-1.5 font-display text-[19px] font-semibold text-white md:text-[20px]">
                 {t('landing.whyWeNeedIt')}
               </h4>
               <p className="mt-3 text-[17px] leading-[1.95] text-[#cddcf5] md:text-[18px]">
                 {t(CORPUS.whyWeNeedIt)}
               </p>
 
-              <div className="mt-7 flex items-center justify-between gap-4">
+              {/* Stacked below sm: at 360px these two labels cannot share a
+                  row without breaking inside the buttons. */}
+              <div className="mt-6 flex flex-col gap-3 sm:mt-7 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                 <button
                   type="button"
                   onClick={() => setContactType('contribute')}
-                  className="btn-gradient inline-flex h-14 flex-1 items-center justify-center gap-2 rounded-xl px-7 font-count text-[17px] font-semibold text-white"
+                  className="btn-gradient inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl px-5 font-count text-[15px] font-semibold text-white sm:h-14 sm:w-auto sm:flex-1 sm:px-7 sm:text-[17px]"
                 >
                   {t('landing.contributeCorpus')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setContactType('buy')}
-                  className="btn-outline-blue inline-flex h-14 flex-1 items-center justify-center gap-2 rounded-xl px-7 font-count text-[17px] font-medium text-white"
+                  className="btn-outline-blue inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl px-5 font-count text-[15px] font-medium text-white sm:h-14 sm:w-auto sm:flex-1 sm:px-7 sm:text-[17px]"
                 >
                   {t('landing.buyCorpus')}
                 </button>

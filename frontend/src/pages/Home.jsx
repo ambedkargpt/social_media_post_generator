@@ -36,6 +36,11 @@ export default function Home({ splashDone = true }) {
 
       <TrustedByStrip />
 
+      {/* Seams, not rules: a hairline that fades at both ends with a wide soft
+          glow above it, so one section reads into the next instead of stacking
+          as separate blocks. */}
+      <div className="section-seam" aria-hidden="true" />
+
       <RevealOnScroll delayMs={60}>
         <FourIdeasSection />
       </RevealOnScroll>
@@ -48,7 +53,11 @@ export default function Home({ splashDone = true }) {
         <DalitHistoryMakers />
       </RevealOnScroll>
 
-      <KnowledgeSection />
+      <div className="section-seam" aria-hidden="true" />
+
+      <RevealOnScroll delayMs={60}>
+        <KnowledgeSection />
+      </RevealOnScroll>
 
       <RevealOnScroll delayMs={60}>
         <UseCasesGrid />
@@ -57,6 +66,8 @@ export default function Home({ splashDone = true }) {
       <RevealOnScroll delayMs={60}>
         <TeamSection />
       </RevealOnScroll>
+
+      <div className="section-seam" aria-hidden="true" />
 
       <RevealOnScroll delayMs={60}>
         <ContactSection />

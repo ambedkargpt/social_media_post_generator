@@ -5,20 +5,20 @@ export default function SectionLabel({ children, size = 'md' }) {
   return (
     <div className="flex justify-center">
       <div
-        className={`relative inline-flex items-center gap-4 rounded-full border border-[#4f8fff]/50 bg-[#071228] shadow-[0_0_48px_rgba(63,159,255,0.35),inset_0_0_24px_rgba(63,159,255,0.08)] backdrop-blur-sm ${
-          isLg ? 'px-12 py-5' : 'px-11 py-4.5'
+        className={`pill-premium relative inline-flex max-w-full items-center gap-2 rounded-full sm:gap-4 ${
+          isLg ? 'px-5 py-2.5 sm:px-12 sm:py-5' : 'px-4 py-2 sm:px-11 sm:py-4.5'
         }`}
       >
         {/* inner top-edge highlight */}
         <span className="pointer-events-none absolute inset-x-6 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(100,180,255,0.6),transparent)]" />
 
-        <span className="sparkle-twinkle inline-flex">
+        <span className="sparkle-twinkle inline-flex shrink-0 scale-[0.62] sm:scale-100">
           <Sparkle size={isLg ? 28 : 26} color="#4fb4ff" />
         </span>
 
         <span
-          className={`font-bold tracking-wide ${
-            isLg ? 'text-[28px]' : 'text-[26px]'
+          className={`whitespace-nowrap font-bold tracking-wide ${
+            isLg ? 'text-[17px] sm:text-[28px]' : 'text-[16px] sm:text-[26px]'
           }`}
           style={{
             background: 'linear-gradient(90deg, #a8d0ff 0%, #4fb4ff 50%, #a8d0ff 100%)',
@@ -30,7 +30,7 @@ export default function SectionLabel({ children, size = 'md' }) {
           {children}
         </span>
 
-        <span className="sparkle-twinkle-delay inline-flex">
+        <span className="sparkle-twinkle-delay inline-flex shrink-0 scale-[0.62] sm:scale-100">
           <Sparkle size={isLg ? 28 : 26} color="#4fb4ff" />
         </span>
       </div>

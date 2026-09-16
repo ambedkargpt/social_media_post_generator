@@ -140,7 +140,9 @@ export default function ContactSection() {
   }
 
   return (
-    <section id="contact" className="relative py-8 md:py-10">
+    <section id="contact" className="relative overflow-hidden py-8 md:py-10">
+      {/* Closing word of the page, behind the manifesto. */}
+      <span className="bg-word top-24 hidden sm:block" aria-hidden="true">MOVEMENT</span>
       {/* Ambient glow — extends upward to blend with TeamSection above */}
       <div className="pointer-events-none absolute inset-x-0 -top-28 -bottom-0">
         <div className="absolute left-1/2 top-0 h-[500px] w-[800px] -translate-x-1/2 rounded-full bg-[#3f78ff]/9 blur-[150px]" />
@@ -151,7 +153,7 @@ export default function ContactSection() {
         {/* ══════════ Top: Work With Us CTA strip ══════════ */}
         <SectionLabel>{t('landing.connectWithUs')}</SectionLabel>
 
-        <h2 className="mx-auto mt-8 max-w-[820px] text-center font-display text-[44px] font-bold leading-[1.1] text-white md:text-[54px]">
+        <h2 className="mx-auto mt-8 max-w-[820px] text-center font-display text-[clamp(29px,7.8vw,44px)] font-bold leading-[1.1] text-white md:text-[54px]">
           {t('landing.contactHeadPre')}{' '}
           <span className="italic gradient-text-blue">{t('landing.contactHeadEm')}</span>{' '}
           {t('landing.contactHeadPost')}
@@ -161,20 +163,20 @@ export default function ContactSection() {
           <button
             type="button"
             onClick={() => document.getElementById('contact-form').scrollIntoView({ behavior: 'smooth', block: 'start' })}
-            className="btn-gradient inline-flex h-12 items-center gap-2 rounded-full px-7 text-[14px] font-semibold text-white"
+            className="btn-gradient group inline-flex h-13 items-center gap-2.5 rounded-full px-8 text-[15px] font-semibold text-white transition duration-200 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_16px_40px_rgba(17,122,255,0.45)]"
           >
             {t('landing.joinTeam')}
-            <UserPlus size={15} strokeWidth={2.2} />
+            <UserPlus size={16} strokeWidth={2.2} className="cta-arrow" />
           </button>
         </div>
 
         {/* subtle divider with center glow */}
-        <div className="relative mx-auto mt-20 h-px w-full max-w-[980px] bg-[#1a2c55]/50">
+        <div className="relative mx-auto mt-10 sm:mt-20 h-px w-full max-w-[980px] bg-[#1a2c55]/50">
           <span className="absolute left-1/2 top-1/2 h-[2px] w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[linear-gradient(90deg,transparent,rgba(63,159,255,0.75),transparent)]" />
         </div>
 
         {/* ══════════ Bottom: Connect + form ══════════ */}
-        <div className="mt-16 grid items-stretch gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
+        <div className="mt-9 sm:mt-16 grid items-stretch gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
           {/* Left column: copy + channels + dotted map */}
           <div className="flex flex-col">
             <h3 className="font-display text-[42px] font-bold leading-[1.05] text-white md:text-[52px]">

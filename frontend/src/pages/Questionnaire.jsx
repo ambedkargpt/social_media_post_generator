@@ -1,15 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCurtain } from '../context/CurtainContext';
 import { ArrowLeft, ArrowRight, BookmarkCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { saveProfileAnswers } from '../api/profile';
-import { getQuestions } from '../api/questions';
+import { getPositionQuestions } from '../api/questions';
+import { groupForId, roleLabel, rolesInGroup } from '../utils/partyRoles';
+import { levelLabel } from '../utils/displayLabel';
 import logoSrc     from '../assets/images/logo-animation.png';
 import ambedkarSrc from '../assets/images/qna-ambedkar.png';
 import { useI18n } from '../i18n/index.jsx';
 
-const STORAGE_KEY = 'ambedkargpt_questionnaire';
+// Onboarding asks the five questions written for the user's party and the
+// level of their position in it: the same set the Preferences page shows and
+// the post generator reads. It used to ask seven general profile questions;
+// those are now only on the Preferences page.
+//
+// A new storage key, because the old one held progress through those seven
+// questions. A step index restored against five questions pointed past the
+// end of the list and left the page on its loading spinner.
+const STORAGE_KEY = 'ambedkargpt_position_questionnaire';
+
+// Mirrors question_party() in backend/pipeline/position_questions.py.
+const HAS_POSITION_SET = /indian national congress|\(inc\)|bahujan samaj|\(bsp\)/i;
 
 function useSlideAnim(index, direction) {
   const [display, setDisplay]   = useState(index);
@@ -38,113 +51,26 @@ const ANIM_STYLES = {
   'enter-left':  { opacity: 0, transform: 'translateX(-52px)' },
 };
 
-export default function Questionnaire() {
+function readSaved(positionId) {
+  try {
+    const s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+    // Progress only counts for the position it was made against.
+    return s.positionId === positionId ? s : {};
+  } catch {
+    return {};
+  }
+}
+
+function Shell({ children }) {
   const { t } = useI18n();
-  const navigate = useNavigate();
-  const { go: curtainGo } = useCurtain();
-  const { currentUser } = useAuth();
-
-  const [questions, setQuestions] = useState([]);
-  const [loadingQ,  setLoadingQ]  = useState(true);
-  const [fetchErr,  setFetchErr]  = useState(false);
-
-  useEffect(() => {
-    getQuestions(7)
-      .then((data) => {
-        setQuestions(data.map((q) => ({
-          id:       q.question_id,
-          question: q.question_text,
-          options:  q.options,
-        })));
-      })
-      .catch(() => setFetchErr(true))
-      .finally(() => setLoadingQ(false));
-  }, []);
-
-  const saved = (() => {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch { return {}; }
-  })();
-
-  const [step, setStep]       = useState(saved.step ?? 0);
-  const [answers, setAnswers] = useState(saved.answers ?? {});
-  const [direction, setDir]   = useState('next');
-  const { display, animate, animating } = useSlideAnim(step, direction);
-
-  const total    = questions.length;
-  const question = questions[display];
-  const progress = total ? Math.round((step / total) * 100) : 0;
-  const selected = question ? answers[question.id] : undefined;
-  const isLast   = total > 0 && step === total - 1;
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, answers }));
-  }, [step, answers]);
-
-  function select(opt) {
-    setAnswers((prev) => ({ ...prev, [question.id]: opt }));
-  }
-
-  function goNext() {
-    if (!selected || animating) return;
-    if (isLast) { finish(); return; }
-    setDir('next');
-    setStep((s) => s + 1);
-  }
-
-  function goBack() {
-    if (step === 0 || animating) return;
-    setDir('back');
-    setStep((s) => s - 1);
-  }
-
-  function saveAndContinue() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, answers }));
-    const redirect = sessionStorage.getItem('auth_redirect') || '/dashboard';
-    sessionStorage.removeItem('auth_redirect');
-    navigate(redirect);
-  }
-
-  function finish() {
-    localStorage.removeItem(STORAGE_KEY);
-    // Save answers to backend; fire-and-forget so the user isn't blocked
-    if (currentUser?.id) {
-      saveProfileAnswers(currentUser.id, answers).catch(() => {});
-    }
-    const redirect = sessionStorage.getItem('auth_redirect') || '/dashboard';
-    sessionStorage.removeItem('auth_redirect');
-    curtainGo(redirect, { replace: true });
-  }
-
-  if (loadingQ || fetchErr || !question) {
-    return (
-      <div
-        className="flex min-h-screen flex-col items-center justify-center"
-        style={{ background: 'linear-gradient(160deg,#0d1535 0%,#080e22 100%)' }}
-      >
-        {fetchErr ? (
-          <p className="font-count text-[14px] text-[#e55555]">
-            {t('questionnaire.loadFailed')}
-          </p>
-        ) : (
-          <div className="flex flex-col items-center gap-4">
-            <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#1e3260] border-t-[#3f9fff]" />
-            <p className="font-count text-[13px] text-[#5a6e9a]">{t('quest.loading')}</p>
-          </div>
-        )}
-      </div>
-    );
-  }
-
   return (
     <div
       className="flex min-h-screen flex-col"
       style={{ background: 'linear-gradient(160deg,#0d1535 0%,#080e22 100%)' }}
     >
-      {/* Ambient glows */}
       <div className="pointer-events-none fixed -left-48 -top-48 h-[500px] w-[500px] rounded-full bg-[#1e4fb5]/15 blur-[130px]" />
       <div className="pointer-events-none fixed bottom-0 right-0 h-[400px] w-[400px] rounded-full bg-[#3f9fff]/10 blur-[120px]" />
 
-      {/* ── Top nav bar ── */}
       <header className="relative z-10 flex items-center px-8 pt-7 md:px-14">
         <div className="flex items-center gap-2.5">
           <img src={logoSrc} alt="AmbedkarGPT" className="h-9 w-9 object-contain drop-shadow-[0_0_12px_rgba(63,159,255,0.5)]" />
@@ -155,9 +81,7 @@ export default function Questionnaire() {
         </div>
       </header>
 
-      {/* ── Main content ── */}
       <main className="relative z-10 flex flex-1 flex-col items-center px-6 pb-10 pt-8 md:px-14">
-        {/* Ambedkar image with glow */}
         <div className="relative flex items-center justify-center">
           <div
             className="absolute h-[260px] w-[260px] rounded-full blur-[60px]"
@@ -169,108 +93,275 @@ export default function Questionnaire() {
             className="relative z-10 w-[180px] object-contain drop-shadow-[0_12px_40px_rgba(0,0,0,0.55)] md:w-[210px]"
           />
         </div>
-
-        {/* Progress bar */}
-        <div className="mt-8 w-full max-w-[760px]">
-          <div className="h-[3px] w-full overflow-hidden rounded-full bg-[#1a2c55]">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-[#3f9fff] to-[#7b5cff]"
-              style={{
-                width: `${Math.max(progress, 3)}%`,
-                transition: 'width 500ms cubic-bezier(0.4,0,0.2,1)',
-                boxShadow: '0 0 10px rgba(63,159,255,0.55)',
-              }}
-            />
-          </div>
-          <div className="mt-2.5 flex items-center justify-between font-count text-[12px] text-[#5a6e9a]">
-            <span>Question {step + 1} of {total}</span>
-            <span>{progress}% Complete</span>
-          </div>
-        </div>
-
-        {/* Animated question + options */}
-        <div
-          className="w-full max-w-[760px]"
-          style={{
-            ...ANIM_STYLES[animate],
-            transition: 'opacity 350ms ease, transform 350ms cubic-bezier(0.4,0,0.2,1)',
-          }}
-        >
-          <h2 className="font-display mt-8 text-[24px] font-semibold leading-snug text-white md:text-[28px]">
-            {question.question}
-          </h2>
-
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 md:grid-cols-3">
-            {question.options.map((opt) => {
-              const isSelected = selected === opt;
-              return (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => select(opt)}
-                  className="font-count rounded-xl border px-5 py-4 text-left text-[13.5px] font-medium transition-all duration-200"
-                  style={{
-                    backgroundColor: isSelected ? 'rgba(20,50,110,0.6)'   : 'rgba(255,255,255,0.03)',
-                    borderColor:     isSelected ? 'rgba(63,159,255,0.65)' : 'rgba(40,65,120,0.55)',
-                    color:           isSelected ? '#d6eaff'               : '#8fa5cc',
-                    boxShadow:       isSelected ? '0 0 14px rgba(63,159,255,0.18)' : 'none',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isSelected) {
-                      e.currentTarget.style.borderColor = 'rgba(63,159,255,0.35)';
-                      e.currentTarget.style.color = '#b0c5e8';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isSelected) {
-                      e.currentTarget.style.borderColor = 'rgba(40,65,120,0.55)';
-                      e.currentTarget.style.color = '#8fa5cc';
-                    }
-                  }}
-                >
-                  {opt}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ── Bottom navigation ── */}
-        <div className="mt-10 flex w-full max-w-[760px] items-center justify-between gap-4">
-          <button
-            type="button"
-            onClick={goBack}
-            disabled={step === 0 || animating}
-            className="inline-flex h-10 items-center gap-2 rounded-full border border-[#1e3260]/70 px-5 text-[13px] font-medium text-[#6b80a8] transition-all hover:border-[#3a6bc4]/60 hover:text-white disabled:pointer-events-none disabled:opacity-25"
-          >
-            <ArrowLeft size={14} strokeWidth={2} />
-            Back
-          </button>
-
-          <button
-            type="button"
-            onClick={saveAndContinue}
-            className="inline-flex h-10 items-center gap-2 rounded-full border border-[#1e3260]/60 px-5 text-[13px] font-medium text-[#6b80a8] transition-all hover:border-[#3a6bc4]/50 hover:text-[#a0bade]"
-          >
-            <BookmarkCheck size={14} strokeWidth={1.8} />
-            Save and Continue Later
-          </button>
-
-          <button
-            type="button"
-            onClick={goNext}
-            disabled={!selected || animating}
-            className="inline-flex h-10 items-center gap-2 rounded-full px-6 text-[13px] font-semibold text-white transition-all duration-200 hover:brightness-110 disabled:pointer-events-none disabled:opacity-35"
-            style={{
-              background: selected ? 'linear-gradient(90deg,#0a7dff,#3a9fff)' : 'rgba(30,50,100,0.4)',
-              boxShadow:  selected ? '0 4px 20px rgba(17,122,255,0.35)'       : 'none',
-            }}
-          >
-            {isLast ? 'Finish' : 'Next'}
-            <ArrowRight size={14} strokeWidth={2} />
-          </button>
-        </div>
+        {children}
       </main>
     </div>
+  );
+}
+
+function Spinner() {
+  const { t } = useI18n();
+  return (
+    <div
+      className="flex min-h-screen flex-col items-center justify-center gap-4"
+      style={{ background: 'linear-gradient(160deg,#0d1535 0%,#080e22 100%)' }}
+    >
+      <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#1e3260] border-t-[#3f9fff]" />
+      <p className="font-count text-[13px] text-[#5a6e9a]">{t('quest.loading')}</p>
+    </div>
+  );
+}
+
+export default function Questionnaire() {
+  const { t, lang } = useI18n();
+  const navigate = useNavigate();
+  const { go: curtainGo } = useCurtain();
+  const { currentUser } = useAuth();
+
+  const party = currentUser?.political_party || '';
+  const positionId = currentUser?.party_position || '';
+  const group = groupForId(positionId);
+  const partyHasSet = HAS_POSITION_SET.test(party);
+  const role = rolesInGroup(group).find((r) => r.id === positionId);
+
+  const leftRef = useRef(false);
+  function leave() {
+    if (leftRef.current) return;
+    leftRef.current = true;
+    const redirect = sessionStorage.getItem('auth_redirect') || '/dashboard';
+    sessionStorage.removeItem('auth_redirect');
+    curtainGo(redirect, { replace: true });
+  }
+
+  // Nothing to ask: either no questions are written for this party, or no
+  // position is on the account. Party and position are both asked for at
+  // sign-up, so onboarding does not ask for a role a second time; someone who
+  // skipped it sets it on the profile screen, and the Preferences page points
+  // them there.
+  useEffect(() => {
+    if (currentUser && (!partyHasSet || !group)) {
+      try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+      leave();
+    }
+  }, [currentUser, partyHasSet, group]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── The five questions ──
+  const [questions, setQuestions] = useState([]);
+  const [loadingQ,  setLoadingQ]  = useState(false);
+  const [fetchErr,  setFetchErr]  = useState(false);
+
+  useEffect(() => {
+    if (!partyHasSet || !group) {
+      setQuestions([]);
+      return undefined;
+    }
+    let cancelled = false;
+    setLoadingQ(true);
+    setFetchErr(false);
+    getPositionQuestions(party, group)
+      .then((rows) => {
+        if (cancelled) return;
+        if (!rows.length) { leave(); return; }
+        // The English option is what gets saved and validated; the Hindi at the
+        // same index is only what gets drawn.
+        setQuestions(rows.map((q) => ({
+          id: q.question_id,
+          text: q.question_text,
+          textHi: q.question_text_hi,
+          options: (q.options ?? []).map((opt, i) => ({ value: opt, hi: q.options_hi?.[i] || '' })),
+        })));
+      })
+      .catch(() => { if (!cancelled) setFetchErr(true); })
+      .finally(() => { if (!cancelled) setLoadingQ(false); });
+    return () => { cancelled = true; };
+  }, [party, group, partyHasSet]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const saved = useMemo(() => readSaved(positionId), [positionId]);
+  const [step, setStep]       = useState(saved.step ?? 0);
+  const [answers, setAnswers] = useState(saved.answers ?? {});
+  const [direction, setDir]   = useState('next');
+
+  const total    = questions.length;
+  const safeStep = total ? Math.min(step, total - 1) : 0;
+  const { display, animate, animating } = useSlideAnim(safeStep, direction);
+  const question = questions[Math.min(display, Math.max(total - 1, 0))];
+  const progress = total ? Math.round((safeStep / total) * 100) : 0;
+  const selected = question ? answers[question.id] : undefined;
+  const isLast   = total > 0 && safeStep === total - 1;
+
+  useEffect(() => {
+    if (!positionId) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ positionId, step: safeStep, answers }));
+    } catch { /* ignore */ }
+  }, [positionId, safeStep, answers]);
+
+  function select(value) {
+    setAnswers((prev) => ({ ...prev, [question.id]: value }));
+  }
+
+  function goNext() {
+    if (!selected || animating) return;
+    if (isLast) { finish(); return; }
+    setDir('next');
+    setStep(safeStep + 1);
+  }
+
+  function goBack() {
+    if (safeStep === 0 || animating) return;
+    setDir('back');
+    setStep(safeStep - 1);
+  }
+
+  function saveAndContinue() {
+    const redirect = sessionStorage.getItem('auth_redirect') || '/dashboard';
+    sessionStorage.removeItem('auth_redirect');
+    navigate(redirect);
+  }
+
+  function finish() {
+    try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+    // Only the set on screen is sent.
+    const shown = new Set(questions.map((q) => q.id));
+    const toSave = Object.fromEntries(Object.entries(answers).filter(([id, v]) => shown.has(id) && v));
+    if (currentUser?.id && Object.keys(toSave).length) {
+      saveProfileAnswers(currentUser.id, toSave).catch(() => {});
+    }
+    leave();
+  }
+
+  // ── Render ──
+  if (!currentUser || !partyHasSet || !group) return <Spinner />;
+
+  if (fetchErr) {
+    return (
+      <Shell>
+        <div className="mt-8 flex w-full max-w-[600px] flex-col items-center gap-5 text-center">
+          <p className="font-count text-[14px] text-[#e55555]">{t('questionnaire.loadFailed')}</p>
+          <button
+            type="button"
+            onClick={leave}
+            className="inline-flex h-10 items-center rounded-full border border-[#1e3260]/60 px-5 text-[13px] font-medium text-[#6b80a8] transition-all hover:border-[#3a6bc4]/50 hover:text-[#a0bade]"
+          >
+            {t('quest.skipForNow')}
+          </button>
+        </div>
+      </Shell>
+    );
+  }
+
+  if (loadingQ || !question) return <Spinner />;
+
+  // Position names exist only in English (partyRoles has no Hindi), so a Hindi
+  // page shows the level alone rather than a line in two scripts.
+  const roleName = role && lang !== 'hi' ? roleLabel(role, party) : '';
+
+  return (
+    <Shell>
+      {/* Progress bar */}
+      <div className="mt-8 w-full max-w-[760px]">
+        <div className="h-[3px] w-full overflow-hidden rounded-full bg-[#1a2c55]">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-[#3f9fff] to-[#7b5cff]"
+            style={{
+              width: `${Math.max(progress, 3)}%`,
+              transition: 'width 500ms cubic-bezier(0.4,0,0.2,1)',
+              boxShadow: '0 0 10px rgba(63,159,255,0.55)',
+            }}
+          />
+        </div>
+        <div className="mt-2.5 flex items-center justify-between font-count text-[12px] text-[#5a6e9a]">
+          <span>{t('quest.progress', { n: safeStep + 1, total })}</span>
+          <span>{t('quest.percent', { pct: progress })}</span>
+        </div>
+      </div>
+
+      {/* Animated question + options */}
+      <div
+        className="w-full max-w-[760px]"
+        style={{
+          ...ANIM_STYLES[animate],
+          transition: 'opacity 350ms ease, transform 350ms cubic-bezier(0.4,0,0.2,1)',
+        }}
+      >
+        <p className="mt-7 text-[11.5px] font-semibold uppercase tracking-[0.12em] text-[#5f8fd8]">
+          {levelLabel(group, lang)}{roleName ? ` · ${roleName}` : ''}
+        </p>
+        <h2 className="font-display mt-2 text-[24px] font-semibold leading-snug text-white md:text-[28px]">
+          {lang === 'hi' && question.textHi ? question.textHi : question.text}
+        </h2>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          {question.options.map((opt) => {
+            const isSelected = selected === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => select(opt.value)}
+                aria-pressed={isSelected}
+                className="font-count rounded-xl border px-5 py-4 text-left text-[13.5px] font-medium leading-snug transition-all duration-200"
+                style={{
+                  backgroundColor: isSelected ? 'rgba(20,50,110,0.6)'   : 'rgba(255,255,255,0.03)',
+                  borderColor:     isSelected ? 'rgba(63,159,255,0.65)' : 'rgba(40,65,120,0.55)',
+                  color:           isSelected ? '#d6eaff'               : '#8fa5cc',
+                  boxShadow:       isSelected ? '0 0 14px rgba(63,159,255,0.18)' : 'none',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSelected) {
+                    e.currentTarget.style.borderColor = 'rgba(63,159,255,0.35)';
+                    e.currentTarget.style.color = '#b0c5e8';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSelected) {
+                    e.currentTarget.style.borderColor = 'rgba(40,65,120,0.55)';
+                    e.currentTarget.style.color = '#8fa5cc';
+                  }
+                }}
+              >
+                {lang === 'hi' && opt.hi ? opt.hi : opt.value}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Bottom navigation */}
+      <div className="mt-10 flex w-full max-w-[760px] flex-wrap items-center justify-between gap-4">
+        <button
+          type="button"
+          onClick={goBack}
+          disabled={safeStep === 0 || animating}
+          className="inline-flex h-10 items-center gap-2 rounded-full border border-[#1e3260]/70 px-5 text-[13px] font-medium text-[#6b80a8] transition-all hover:border-[#3a6bc4]/60 hover:text-white disabled:pointer-events-none disabled:opacity-25"
+        >
+          <ArrowLeft size={14} strokeWidth={2} />
+          {t('common.back')}
+        </button>
+
+        <button
+          type="button"
+          onClick={saveAndContinue}
+          className="inline-flex h-10 items-center gap-2 rounded-full border border-[#1e3260]/60 px-5 text-[13px] font-medium text-[#6b80a8] transition-all hover:border-[#3a6bc4]/50 hover:text-[#a0bade]"
+        >
+          <BookmarkCheck size={14} strokeWidth={1.8} />
+          {t('quest.saveLater')}
+        </button>
+
+        <button
+          type="button"
+          onClick={goNext}
+          disabled={!selected || animating}
+          className="inline-flex h-10 items-center gap-2 rounded-full px-6 text-[13px] font-semibold text-white transition-all duration-200 hover:brightness-110 disabled:pointer-events-none disabled:opacity-35"
+          style={{
+            background: selected ? 'linear-gradient(90deg,#0a7dff,#3a9fff)' : 'rgba(30,50,100,0.4)',
+            boxShadow:  selected ? '0 4px 20px rgba(17,122,255,0.35)'       : 'none',
+          }}
+        >
+          {isLast ? t('quest.finish') : t('common.next')}
+          <ArrowRight size={14} strokeWidth={2} />
+        </button>
+      </div>
+    </Shell>
   );
 }

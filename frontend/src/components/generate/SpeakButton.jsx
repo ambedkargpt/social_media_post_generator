@@ -109,7 +109,7 @@ export default function SpeakButton({ content, lang = 'hi', className = '', comp
           compact
             // Sits in the history card's action row, which is h-7 with 12px
             // icons; the default size would tower over the buttons beside it.
-            ? 'flex h-7 items-center justify-center gap-1 rounded-lg border border-[#1e3260]/60 px-1.5 text-[#6b78a0] transition hover:border-[#3f9fff]/50 hover:text-[#3f9fff] disabled:cursor-not-allowed disabled:opacity-50 sm:px-2.5'
+            ? 'flex h-9 min-w-9 items-center justify-center gap-1 rounded-lg border border-[#1e3260]/60 px-1.5 text-[#6b78a0] transition hover:border-[#3f9fff]/50 hover:text-[#3f9fff] disabled:cursor-not-allowed disabled:opacity-50 sm:h-7 sm:min-w-0 sm:px-2.5'
             : 'flex items-center gap-2 rounded-lg border border-[#1e3a6e] bg-[#0d1840] px-3 py-2 text-[13px] font-medium text-white transition hover:border-[#3f9fff]/60 hover:bg-[#0f2050] disabled:cursor-not-allowed disabled:opacity-50'
         }
         style={compact && speaking ? { borderColor: 'rgba(255,138,138,0.45)', color: '#ff8a8a' } : {}}

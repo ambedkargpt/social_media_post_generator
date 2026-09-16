@@ -151,7 +151,7 @@ export default function HeroSection({ splashDone = true }) {
 
           {/* Badge */}
           <div
-            className="mb-7 inline-flex items-center gap-3 rounded-full border border-[#3a5e94] bg-[#0f1d3b]/75 px-7 py-3 text-[18px] text-[#d3e4ff] shadow-[0_0_24px_rgba(43,126,255,0.22)]"
+            className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#3a5e94] bg-[#0f1d3b]/75 px-4 py-2 text-[13px] text-[#d3e4ff] shadow-[0_0_24px_rgba(43,126,255,0.22)] sm:mb-7 sm:gap-3 sm:px-7 sm:py-3 sm:text-[18px]"
             style={fadeUp(0)}
           >
             <Sparkle size={16} color="#4fb4ff" />
@@ -159,13 +159,21 @@ export default function HeroSection({ splashDone = true }) {
           </div>
 
           {/* Headline — slow word-by-word */}
-          <h1 className="mt-1 font-display max-w-[900px] text-[46px] font-bold leading-[1.18] tracking-tight text-white md:text-[60px]">
+          {/* The halo sits behind the words so the headline reads as lifting
+              off the background rather than printed flat on it. */}
+          <div className="relative">
+            <span className="heading-halo" aria-hidden="true" />
+          {/* clamp rather than a mobile font size: it grows with the screen up
+              to the 46px this design already used, so every width from 320px
+              to the md breakpoint gets a size that fits, and md upward is
+              untouched. */}
+          <h1 className="relative mt-1 font-display max-w-[900px] text-[clamp(31px,8.6vw,46px)] font-bold leading-[1.16] tracking-tight text-white md:text-[60px] md:leading-[1.18]">
             {WORDS.map((item, i) => {
               if (!item) return <br key={i} />;
               return (
                 <span
                   key={i}
-                  className={item.cyan ? "gradient-text-cyan italic" : undefined}
+                  className={item.cyan ? "gradient-text-cyan ai-emphasis italic" : undefined}
                   style={{
                     display: "inline-block",
                     marginRight: "0.26em",
@@ -180,39 +188,39 @@ export default function HeroSection({ splashDone = true }) {
               );
             })}
           </h1>
+          </div>
 
           {/* Sub-copy */}
           <p
-            className="font-count mt-6 max-w-[700px] text-[22px] leading-8 text-[#b7c6e1] md:text-[24px] md:leading-9"
+            className="font-count mt-5 max-w-[700px] text-[clamp(16px,4.3vw,22px)] leading-[1.6] text-[#b7c6e1] sm:mt-6 sm:leading-8 md:text-[24px] md:leading-9"
             style={fadeUp(1050)}
           >
             {t('landing.heroSub')}
           </p>
 
           {/* CTA */}
-          <div className="mt-auto flex flex-wrap items-center gap-4" style={fadeUp(1300)}>
+          {/* Stacked on a phone, where the two labels cannot share a line
+              without wrapping inside the buttons. */}
+          <div className="mt-8 flex w-full flex-col items-stretch gap-3 sm:mt-auto sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:gap-4" style={fadeUp(1300)}>
             <button
               type="button"
               onClick={handleBheemBot}
-              className="btn-gradient inline-flex h-14 items-center gap-2 rounded-xl px-6 font-count text-[17px] font-semibold text-white sm:px-9 sm:text-[20px] md:h-15 md:text-[22px]"
+              className="btn-gradient group inline-flex h-13 w-full items-center justify-center gap-2 rounded-xl px-6 font-count text-[16px] font-semibold text-white transition duration-200 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_14px_38px_rgba(17,122,255,0.42)] sm:h-14 sm:w-auto sm:justify-start sm:px-9 sm:text-[20px] md:h-15 md:text-[22px]"
             >
               {t('bot.title')}
-              <ArrowRight size={19} strokeWidth={2.2} className="shrink-0" />
+              <ArrowRight size={19} strokeWidth={2.2} className="cta-arrow shrink-0" />
             </button>
 
             <button
               type="button"
               onClick={handleBuildNarrative}
-              className="btn-glass-violet group inline-flex h-14 items-center gap-2 rounded-xl px-6 font-count text-[17px] font-semibold text-white sm:px-9 sm:text-[20px] md:h-15 md:text-[22px]"
+              className="btn-glass-violet group inline-flex h-13 w-full items-center justify-center gap-2 rounded-xl px-6 font-count text-[16px] font-semibold text-white transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(90,80,220,0.32)] sm:h-14 sm:w-auto sm:justify-start sm:px-9 sm:text-[20px] md:h-15 md:text-[22px]"
             >
               {t('landing.buildNarrative')}
-              <ArrowRight
-                size={19}
-                strokeWidth={2.2}
-                className="shrink-0 transition-transform group-hover:translate-x-1"
-              />
+              <ArrowRight size={19} strokeWidth={2.2} className="cta-arrow shrink-0" />
             </button>
           </div>
+
         </div>
 
         {/* RIGHT: image */}

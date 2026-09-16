@@ -33,7 +33,7 @@ function PosterFrame({ image, alt, banner, showBanner, imagePosition = 'object-c
             {/* darken strip behind the wordmark */}
             <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/55 to-transparent" />
             <div className="pointer-events-none absolute inset-x-0 top-5 flex justify-center">
-              <span className="font-display text-[40px] font-black italic tracking-[0.06em] text-white drop-shadow-[0_3px_10px_rgba(0,0,0,0.75)]">
+              <span className="font-display text-[clamp(27px,7.4vw,40px)] font-black italic tracking-[0.06em] text-white drop-shadow-[0_3px_10px_rgba(0,0,0,0.75)]">
                 {banner}
               </span>
             </div>
@@ -71,7 +71,7 @@ export default function MissionStatement({
         {label}
       </span>
 
-      <h2 className="mt-6 font-display text-[48px] font-bold leading-[1.03] tracking-tight text-white md:text-[60px]">
+      <h2 className="mt-6 font-display text-[clamp(30px,8.2vw,48px)] font-bold leading-[1.03] tracking-tight text-white md:text-[60px]">
         {titlePrimary}
         <br />
         <span className="italic gradient-text-blue">{titleAccent}</span>
@@ -111,7 +111,7 @@ export default function MissionStatement({
         <div className="absolute left-[5%] top-1/3 h-[320px] w-[400px] rounded-full bg-[#1a3fa0]/7 blur-[130px]" />
       </div>
 
-      <div className="mx-auto grid max-w-[1180px] items-start gap-12 px-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] md:gap-14">
+      <div className="mx-auto grid max-w-[1180px] items-start gap-7 sm:gap-12 px-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] md:gap-14">
         {imageFirst ? (
           <>
             {imageBlock}

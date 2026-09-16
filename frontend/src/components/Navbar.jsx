@@ -113,7 +113,7 @@ export default function Navbar() {
       ref={headerRef}
       className="fixed inset-x-0 top-0 z-40 border-b border-[#1a2c55]/40 bg-[rgba(6,10,24,0.55)] backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.35)]"
     >
-      <div className="mx-auto flex h-[72px] w-full max-w-[1440px] items-center justify-between px-6 md:h-[80px] md:px-10">
+      <div className="mx-auto flex h-[72px] w-full max-w-[1440px] items-center justify-between gap-2 px-4 sm:px-6 md:h-[80px] md:gap-3 md:px-10">
 
         {/* ── Logo ─────────────────────────────── */}
         <Link
@@ -126,7 +126,7 @@ export default function Navbar() {
           <img
             src={logoSrc}
             alt="AmbedkarGPT"
-            className="h-10 w-10 object-contain drop-shadow-[0_0_16px_rgba(63,159,255,0.65)] md:h-12 md:w-12"
+            className="logo-pulse h-10 w-10 object-contain md:h-12 md:w-12"
           />
           <span className="font-display text-[18px] font-bold leading-none tracking-tight md:text-[24px]">
             <span className="hidden text-white sm:inline">{t('brand.ambedkar')}</span>
@@ -164,7 +164,7 @@ export default function Navbar() {
             onClick={() => setMenuOpen((o) => !o)}
             aria-label={menuOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={menuOpen}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/5 text-white/70 transition hover:border-white/30 hover:text-white lg:hidden"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/5 text-white/70 transition hover:border-white/30 hover:text-white sm:h-8 sm:w-8 lg:hidden"
           >
             {menuOpen
               ? <X    size={16} strokeWidth={1.8} />
@@ -176,13 +176,13 @@ export default function Navbar() {
 
           <Link
             to="/login"
-            className="inline-flex h-9 shrink-0 items-center justify-center whitespace-nowrap rounded-lg border border-[#3f9fff]/50 bg-[#3f9fff]/10 px-4 font-count text-[13px] font-semibold text-[#7fc8ff] shadow-[0_0_14px_rgba(63,159,255,0.15)] transition hover:border-[#3f9fff]/80 hover:bg-[#3f9fff]/20 hover:text-white hover:shadow-[0_0_20px_rgba(63,159,255,0.3)] md:h-10 md:px-5 md:text-[13.5px]"
+            className="hidden h-9 shrink-0 items-center justify-center whitespace-nowrap rounded-lg border border-[#3f9fff]/50 bg-[#3f9fff]/10 px-4 font-count text-[13px] font-semibold text-[#7fc8ff] shadow-[0_0_14px_rgba(63,159,255,0.15)] transition hover:border-[#3f9fff]/80 hover:bg-[#3f9fff]/20 hover:text-white hover:shadow-[0_0_20px_rgba(63,159,255,0.3)] sm:inline-flex md:h-10 md:px-5 md:text-[13.5px]"
           >
             {t('nav.login')}
           </Link>
           <Link
             to="/signup"
-            className="inline-flex h-8 shrink-0 items-center justify-center whitespace-nowrap rounded-lg bg-linear-to-r from-[#0a7dff] to-[#3a9fff] px-3.5 font-count text-[11.5px] font-semibold text-white shadow-[0_4px_14px_rgba(17,122,255,0.4)] transition hover:-translate-y-0.5 hover:brightness-110 md:h-10 md:px-5 md:text-[13px] md:shadow-[0_6px_24px_rgba(17,122,255,0.45)]"
+            className="inline-flex h-9 shrink-0 items-center justify-center whitespace-nowrap rounded-lg bg-linear-to-r from-[#0a7dff] to-[#3a9fff] px-4 font-count text-[12.5px] font-semibold text-white shadow-[0_4px_14px_rgba(17,122,255,0.4)] transition hover:-translate-y-0.5 hover:brightness-110 sm:h-8 sm:px-3.5 sm:text-[11.5px] md:h-10 md:px-5 md:text-[13px] md:shadow-[0_6px_24px_rgba(17,122,255,0.45)]"
           >
             {t('nav.getStarted')}
           </Link>
@@ -217,6 +217,17 @@ export default function Navbar() {
                 </button>
               );
             })}
+
+            {/* Log in lives here below sm, where the bar has room for one CTA
+                only. From sm upward it is back in the bar and this is hidden,
+                so nothing is lost at any width. */}
+            <Link
+              to="/login"
+              onClick={() => setMenuOpen(false)}
+              className="mt-1 flex w-full items-center gap-3 rounded-xl border border-[#3f9fff]/40 bg-[#3f9fff]/10 px-4 py-3 text-left font-count text-[12px] font-semibold tracking-[0.14em] text-[#7fc8ff] sm:hidden"
+            >
+              {t('nav.login')}
+            </Link>
           </nav>
         </div>
       )}

@@ -154,7 +154,7 @@ function DesktopCarousel() {
   const activeMarker = ((trackIdx % MAKERS.length) + MAKERS.length) % MAKERS.length;
 
   return (
-    <div className="mt-14">
+    <div className="mt-8 sm:mt-14">
       {/* Viewport + side buttons */}
       <div className="relative" style={{ width: VIEWPORT_W, margin: '0 auto' }}>
         {/* Left button — sits outside the left edge, vertically centred on the cards */}
@@ -298,12 +298,12 @@ export default function DalitHistoryMakers() {
       <div className="mx-auto max-w-[1440px] px-6">
         <SectionLabel>{t('makers.label')}</SectionLabel>
 
-        <h2 className="mx-auto mt-8 max-w-[900px] text-center font-display text-[52px] font-bold leading-[1.05] text-white md:text-[72px]">
+        <h2 className="mx-auto mt-8 max-w-[900px] text-center font-display text-[clamp(31px,8.4vw,52px)] font-bold leading-[1.05] text-white md:text-[72px]">
           {t('makers.headA')}{' '}
           <span className="italic gradient-text-blue">{t('makers.headEm')}</span>
         </h2>
 
-        <p className="mx-auto mt-6 max-w-[760px] text-center text-[22px] leading-9 text-[#bfcfe8] md:text-[24px]">
+        <p className="mx-auto mt-6 max-w-[760px] text-center text-[clamp(16px,4.3vw,22px)] leading-9 text-[#bfcfe8] md:text-[24px]">
           {t('makers.sub')}
         </p>
       </div>

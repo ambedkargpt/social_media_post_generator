@@ -42,7 +42,7 @@ function UseCaseCard({ icon: Icon, id }) {
           </h3>
         </div>
         <div className="mt-3 h-px w-12 rounded-full bg-[#2a4375]/60" />
-        <p className="mt-4 flex-1 text-[19px] leading-8 text-[#bfcfe8] md:text-[20px]">
+        <p className="mt-4 flex-1 text-[clamp(15px,4vw,19px)] leading-8 text-[#bfcfe8] md:text-[20px]">
           {t(`uc.${id}.body`)}
         </p>
       </div>
@@ -62,20 +62,20 @@ export default function UseCasesGrid() {
       <div className="relative mx-auto max-w-[1440px] px-6">
         <SectionLabel>{t('uc.label')}</SectionLabel>
 
-        <h2 className="mx-auto mt-8 max-w-[900px] text-center font-display text-[38px] font-bold leading-[1.2] text-white md:text-[52px]">
+        <h2 className="mx-auto mt-8 max-w-[900px] text-center font-display text-[clamp(26px,7.2vw,38px)] font-bold leading-[1.2] text-white md:text-[52px]">
           {t('uc.headA')}{" "}
           <span className="italic gradient-text-blue">{t('uc.headEm1')}</span>
           {" "}{t('uc.headMid')}{" "}
           <span className="italic gradient-text-blue">{t('uc.headEm2')}</span>
         </h2>
 
-        <StaggerReveal step={100} className="mt-14 grid gap-6 md:grid-cols-2">
+        <StaggerReveal step={100} className="mt-8 sm:mt-14 grid gap-6 md:grid-cols-2">
           {USE_CASES.map((uc) => (
             <UseCaseCard key={uc.id} {...uc} />
           ))}
         </StaggerReveal>
 
-        <div className="mt-14 flex justify-center px-2">
+        <div className="mt-8 sm:mt-14 flex justify-center px-2">
           <button
             type="button"
             onClick={() =>

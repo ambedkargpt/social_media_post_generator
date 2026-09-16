@@ -193,7 +193,7 @@ function DesktopCarousel() {
   const activeMember = ((trackIdx % TEAM.length) + TEAM.length) % TEAM.length;
 
   return (
-    <div className="mt-14">
+    <div className="mt-8 sm:mt-14">
       {/* Viewport + side buttons */}
       <div className="relative" style={{ width: VIEWPORT_W, margin: "0 auto" }}>
         {/* Left button — sits outside the left edge, vertically centred on the cards */}
@@ -329,12 +329,12 @@ export default function TeamSection() {
       <div className="mx-auto max-w-[1440px] px-6">
         <SectionLabel>{t('team.label')}</SectionLabel>
 
-        <h2 className="mx-auto mt-8 max-w-[820px] text-center font-display text-[46px] font-bold leading-[1.05] text-white md:text-[62px]">
+        <h2 className="mx-auto mt-8 max-w-[820px] text-center font-display text-[clamp(30px,8vw,46px)] font-bold leading-[1.05] text-white md:text-[62px]">
           {t('team.headA')}{" "}
           <span className="italic gradient-text-blue">{t('team.headEm')}</span> {t('team.headPost')}
         </h2>
 
-        <p className="mx-auto mt-10 max-w-[720px] text-center text-[22px] leading-9 text-[#bfcfe8] md:text-[24px]">
+        <p className="mx-auto mt-10 max-w-[720px] text-center text-[clamp(16px,4.3vw,22px)] leading-9 text-[#bfcfe8] md:text-[24px]">
           {t('team.sub')}
         </p>
       </div>
