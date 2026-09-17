@@ -1233,6 +1233,73 @@ html { scroll-behavior: smooth; }
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>");
 }
 
+/* ── The light that falls across the signed-in screens ──────────────────────
+ *
+ * A shaft of cool light crossing the navy on the diagonal, the way a window
+ * falls across a dark room. The flat radial the shell used to carry read as
+ * paint rather than depth.
+ *
+ * Built from gradients alone, with no filter: blur(). A blurred fixed element
+ * that size is repainted on every scroll frame, and the stops here are soft
+ * enough that the blur would buy nothing but the cost. Everything is fixed and
+ * pointer-events: none, so none of it moves under the content or catches a
+ * click meant for a card.
+ *
+ * No z-index, deliberately. A negative one would paint the whole thing behind
+ * the page background and show nothing; these sit before the children in the
+ * DOM and the pages wrap themselves in `relative`, which is what keeps content
+ * above them.
+ */
+.dash-beam {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    112deg,
+    transparent 28%,
+    rgba(96, 156, 255, 0.055) 41%,
+    rgba(163, 205, 255, 0.1) 50%,
+    rgba(96, 156, 255, 0.048) 59%,
+    transparent 72%
+  );
+}
+
+/* The brighter core inside the shaft. Narrow and near-white, so the band has
+   an edge to it instead of reading as one flat wash. */
+.dash-beam::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    112deg,
+    transparent 45%,
+    rgba(200, 226, 255, 0.07) 50%,
+    transparent 55%
+  );
+}
+
+/* The pool of colour the shaft appears to come from, up in the top right, and
+   its cooler answer in the lower left. Wide and weak: they are the reason the
+   navy has a direction, not something anyone should be able to point at. */
+.dash-bloom {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(760px 520px at 88% -6%, rgba(72, 132, 255, 0.2) 0%, rgba(7, 11, 28, 0) 62%),
+    radial-gradient(620px 520px at 6% 88%, rgba(108, 92, 255, 0.14) 0%, rgba(7, 11, 28, 0) 64%),
+    radial-gradient(520px 420px at 62% 108%, rgba(56, 160, 220, 0.1) 0%, rgba(7, 11, 28, 0) 60%);
+}
+
+/* Edges a shade deeper than the middle, so the page has a centre. Last of the
+   layers and the weakest. */
+.dash-vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(130% 100% at 50% 40%, rgba(4, 7, 20, 0) 52%, rgba(3, 5, 14, 0.55) 100%);
+}
+
 /* The header strip: glass, one hairline, nothing taller than it needs. */
 .dash-header {
   background: linear-gradient(180deg, rgba(9, 15, 36, 0.86) 0%, rgba(9, 15, 36, 0.62) 100%);

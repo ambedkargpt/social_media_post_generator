@@ -46,7 +46,16 @@ export default function DashboardShell({ children, background, active: activePro
     <ShellContext.Provider value={ctx}>
       <div
         className="flex h-screen overflow-hidden text-[#e5e7eb]"
-        style={{ background: background ?? 'radial-gradient(1200px 700px at 20% 0%, #0d1636 0%, #070b1c 55%, #05081a 100%)' }}
+        style={{
+          background:
+            background ??
+            // The ground the atmosphere sits on. Two wide pools of navy over a
+            // near-black base, rather than one flat radial: the shell frames
+            // every working screen, and a single colour behind all of them read
+            // as unfinished.
+            'radial-gradient(1200px 700px at 18% -4%, #101c46 0%, rgba(7,11,28,0) 58%),' +
+            'linear-gradient(168deg, #0a1030 0%, #070b1f 48%, #04081a 100%)',
+        }}
       >
         <Sidebar
           active={active}
@@ -60,10 +69,12 @@ export default function DashboardShell({ children, background, active: activePro
             is the scrolling element, so the lock goes here rather than on
             body. */}
         <div className={`relative flex-1 min-w-0 overflow-x-hidden ${mobileOpen ? 'overflow-y-hidden' : 'overflow-y-auto'}`}>
-          {/* Atmosphere: two slow pools of colour and a trace of grain, so the
-              navy reads as depth instead of flat fill. All of it decorative. */}
-          <div className="pointer-events-none fixed top-0 right-0 h-[420px] w-[420px] rounded-full bg-[#3f9fff]/10 blur-[130px]" />
-          <div className="pointer-events-none fixed bottom-0 left-[22%] h-[360px] w-[360px] rounded-full bg-[#7b5cff]/10 blur-[130px]" />
+          {/* Atmosphere, in the order it stacks: the pools of colour, the shaft
+              of light crossing them, a deeper edge, and a trace of grain over
+              everything. All of it decorative, none of it clickable. */}
+          <div className="dash-bloom" aria-hidden="true" />
+          <div className="dash-beam" aria-hidden="true" />
+          <div className="dash-vignette" aria-hidden="true" />
           <div className="dash-grain" aria-hidden="true" />
 
           {children}

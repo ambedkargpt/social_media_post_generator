@@ -493,6 +493,8 @@ export default {
   "profcard.postsGenerated": "बनाई गई पोस्ट",
   "profcard.plan": "योजना",
   "profcard.free": "मुफ़्त",
+  "side.collapse": "साइडबार छोटा करें",
+  "side.expand": "साइडबार बड़ा करें",
   "side.closeMenu": "मेन्यू बंद करें",
   "dash.soon": "जल्द",
   "dash.online": "ऑनलाइन",
