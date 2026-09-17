@@ -489,6 +489,8 @@ export default {
   "profcard.postsGenerated": "Posts Generated",
   "profcard.plan": "Plan",
   "profcard.free": "Free",
+  "side.collapse": "Collapse sidebar",
+  "side.expand": "Expand sidebar",
   "side.closeMenu": "Close menu",
   "dash.soon": "SOON",
   "dash.online": "Online",
