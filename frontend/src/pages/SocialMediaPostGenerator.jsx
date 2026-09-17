@@ -1522,7 +1522,9 @@ export default function SocialMediaPostGenerator() {
                       </div>
 
                       <p className={`font-hindi font-bold leading-[1.6] pt-0.5 text-white ${
-                        cardView === 'list' ? 'line-clamp-2 text-[19px]' : 'line-clamp-3 text-[21px]'
+                        cardView === 'list'
+                          ? 'line-clamp-2 text-[clamp(15.5px,1.1vw+11px,19px)]'
+                          : 'line-clamp-3 text-[clamp(16px,1.2vw+11px,21px)]'
                       }`}>
                         {article.title}
                       </p>
@@ -1530,8 +1532,10 @@ export default function SocialMediaPostGenerator() {
                           column that height is the whole cost of scanning the
                           feed, so the list keeps one line of it and the grid,
                           which has two columns to fill, keeps three. */}
-                      <p className={`font-hindi mt-2 flex-1 leading-[1.85] text-[#b9c8e4] ${
-                        cardView === 'list' ? 'line-clamp-1 text-[15px]' : 'mt-3 line-clamp-3 text-[16.5px]'
+                      <p className={`font-hindi mt-2 flex-1 leading-[1.65] text-[#b9c8e4] ${
+                        cardView === 'list'
+                          ? 'line-clamp-1 text-[clamp(13px,0.7vw+10.3px,15px)]'
+                          : 'mt-3 line-clamp-3 text-[clamp(13.5px,0.9vw+10px,16.5px)]'
                       }`}>
                         {truncateText(article.summary || article.content, cardView === 'list' ? 120 : 200)}
                       </p>
@@ -1872,7 +1876,10 @@ export default function SocialMediaPostGenerator() {
                 <span className="hidden text-[12px] font-medium sm:inline">{t('gen.article')}</span>
               </button>
 
-              <h2 className="font-display text-[16px] font-semibold text-white sm:text-[18px]">{t('gen.generatedPost')}</h2>
+              {/* nowrap, and small enough on a phone that it does not need to
+                  wrap: at 16px it broke across two lines and doubled the height
+                  of the whole row. */}
+              <h2 className="font-display whitespace-nowrap text-[13px] font-semibold text-white sm:text-[18px]">{t('gen.generatedPost')}</h2>
 
               {/* Action buttons */}
               <div className="ml-auto flex items-center gap-1 sm:gap-2">
@@ -1885,14 +1892,20 @@ export default function SocialMediaPostGenerator() {
                     lang={showTranslated && translatedPost ? 'en' : 'hi'}
                   />
                 )}
-                {/* Translate — hidden on mobile to save space */}
+                {/* Translate. Icon-only on a phone and labelled from sm up,
+                    which is what regenerate, copy and publish beside it already
+                    do. It used to be removed below sm instead, so the one
+                    control that turns a Hindi post into one the reader can
+                    actually read was missing from the screen most people are
+                    on. An icon costs the same 32px as its neighbours. */}
                 {selectedPostId && !generating && siteLang !== 'hi' && (
                   <button
                     type="button"
                     onClick={showTranslated ? () => setShowTranslated(false) : handleTranslate}
                     disabled={translating}
                     title={showTranslated ? 'Show Hindi' : 'Translate to English'}
-                    className="hidden items-center gap-1.5 rounded-lg border border-[#1e3a6e]/80 bg-[#0d1840]/80 px-3 py-2 text-[12px] font-medium text-[#6aa8ff] transition hover:border-[#3f9fff]/60 hover:text-white disabled:opacity-40 sm:inline-flex"
+                    aria-label={showTranslated ? 'Show Hindi' : 'Translate to English'}
+                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#1e3a6e]/80 bg-[#0d1840]/80 text-[12px] font-medium text-[#6aa8ff] transition hover:border-[#3f9fff]/60 hover:text-white disabled:opacity-40 sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-2"
                   >
                     {translating ? (
                       <RefreshCw size={12} strokeWidth={2} className="animate-spin" />
@@ -1901,7 +1914,9 @@ export default function SocialMediaPostGenerator() {
                         <path d="M5 8l6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6" />
                       </svg>
                     )}
-                    {showTranslated ? 'Show Hindi' : translating ? 'Translating…' : 'Translate'}
+                    <span className="hidden sm:inline">
+                      {showTranslated ? 'Show Hindi' : translating ? 'Translating…' : 'Translate'}
+                    </span>
                   </button>
                 )}
 
@@ -1999,7 +2014,10 @@ export default function SocialMediaPostGenerator() {
                   </div>
                 </div>
                 <div className="border-t border-[#141d3a]/60 pt-4">
-                  <PostContent content={showTranslated && translatedPost ? translatedPost : generatedPost} />
+                  <PostContent
+                    content={showTranslated && translatedPost ? translatedPost : generatedPost}
+                    lang={showTranslated && translatedPost ? 'en' : 'hi'}
+                  />
                 </div>
                 {/* Mock engagement row */}
                 <div className="mt-4 flex items-center gap-5 border-t border-[#141d3a]/60 pt-3 text-[11.5px] text-[#3a4e70]">
@@ -2012,7 +2030,10 @@ export default function SocialMediaPostGenerator() {
             ) : (
               /* ── Styled post text ── */
               <div className="min-h-[260px] rounded-2xl border border-[#1e3260]/60 bg-[#0a1130]/70 p-5">
-                <PostContent content={showTranslated && translatedPost ? translatedPost : generatedPost} />
+                <PostContent
+                    content={showTranslated && translatedPost ? translatedPost : generatedPost}
+                    lang={showTranslated && translatedPost ? 'en' : 'hi'}
+                  />
               </div>
             )}
 
