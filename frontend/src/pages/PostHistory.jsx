@@ -184,7 +184,7 @@ function PostModal({ post, onClose, onCopy, copiedId }) {
 
         {/* body — same renderer as the generator, so it reads identically */}
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-7 md:px-8">
-          <PostContent content={content} />
+          <PostContent content={content} lang={showTranslated && translated ? 'en' : 'hi'} />
         </div>
       </div>
     </div>,
