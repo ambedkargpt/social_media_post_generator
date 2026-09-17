@@ -589,7 +589,54 @@ class PostsService:
         # answers. Empty for a party or position with no question set and for
         # anyone who has not answered, so those prompts are unchanged.
         default_profile["position_preferences"] = self._position_preferences(user_id, user_doc)
+
+        # What relationship this writer wants with the party: whether to defend
+        # it or judge it, what to lead with, how to answer its critics, and what
+        # to do when it is the one at fault. Party alone does not say: two
+        # supporters of the same party can want opposite posts. Empty for a
+        # party with no question set and for anyone who has not answered, so
+        # those prompts are unchanged.
+        default_profile["party_preferences"] = self._party_preferences(user_id, user_doc)
         return default_profile
+
+    def _party_preferences(self, user_id: str, user_doc: dict[str, Any]) -> str:
+        """
+        The writer's answers to the ten questions about their party.
+
+        Unlike the position answers, this never comes back empty for a party
+        with a set. These questions are not asked at sign-up, so a user who has
+        never opened the Preferences page has answered none of them, and leaving
+        the field blank would mean the party shapes nothing until they do. Every
+        unanswered question falls back to the option the Preferences page shows
+        pre-selected, so what the user sees there is what the prompt carries.
+
+        Rendered with each question beside its answer for the same reason the
+        position answers are: "Supportive but willing to criticize" does not say
+        on its own whether it set the overall stance or described how one
+        particular criticism should be answered.
+        """
+        from backend.pipeline.party_questions import (
+            defaults_for,
+            question_ids_for,
+            question_party,
+            render_preferences,
+        )
+        from backend.repositories.questions_repo import QuestionsRepository
+
+        party = question_party(user_doc.get("political_party"))
+        ids = question_ids_for(party)
+        if not ids:
+            return ""
+        rows = self.profile_answers_repo.list_by_user(
+            user_id=user_id, question_ids=ids, limit=len(ids), skip=0
+        )
+        saved = {
+            str(row.get("question_id")): row.get("answer")
+            for row in rows
+            if isinstance(row.get("answer"), str) and row.get("answer").strip()
+        }
+        answers = {**defaults_for(party), **saved}
+        return render_preferences(QuestionsRepository().list_by_ids(ids), answers)
 
     def _position_preferences(self, user_id: str, user_doc: dict[str, Any]) -> str:
         """

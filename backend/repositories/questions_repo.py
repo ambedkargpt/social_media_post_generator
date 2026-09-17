@@ -32,10 +32,17 @@ class QuestionsRepository:
         doc["_id"] = result.inserted_id
         return doc
 
-    def list(self, limit: int = 100, skip: int = 0, exclude_category: Optional[str] = None) -> list[dict]:
+    def list(
+        self,
+        limit: int = 100,
+        skip: int = 0,
+        exclude_categories: Optional[list[str]] = None,
+    ) -> list[dict]:
         # The exclusion is applied in the query, not after it, so a limit still
         # means that many rows of what the caller asked for.
-        query: dict[str, Any] = {"category": {"$ne": exclude_category}} if exclude_category else {}
+        query: dict[str, Any] = (
+            {"category": {"$nin": list(exclude_categories)}} if exclude_categories else {}
+        )
         return list(self.collection.find(query).sort("created_at", -1).skip(skip).limit(limit))
 
     def list_position(self, party: str, group: str, category: str) -> list[dict]:
@@ -43,6 +50,14 @@ class QuestionsRepository:
         return list(
             self.collection.find(
                 {"category": category, "party": party, "position_group": group, "is_active": True}
+            ).sort("display_order", 1)
+        )
+
+    def list_party(self, party: str, category: str) -> list[dict]:
+        """One party's active party-preference questions, in set order."""
+        return list(
+            self.collection.find(
+                {"category": category, "party": party, "is_active": True}
             ).sort("display_order", 1)
         )
 

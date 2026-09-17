@@ -91,6 +91,7 @@ const OPTION_LABELS_HI = {
   "Raw": "बेबाक",
   "Real": "वास्तविक",
   "Reflective": "चिंतनशील",
+  "Reddit": "रेडिट",
   "Regional": "क्षेत्रीय",
   "Secular": "धर्मनिरपेक्ष",
   "Semi-formal": "अर्ध-औपचारिक",

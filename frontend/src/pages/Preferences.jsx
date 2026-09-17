@@ -5,7 +5,7 @@ import DashboardShell from '../layouts/DashboardShell';
 import Topbar from '../components/dashboard/Topbar';
 import { useAuth } from '../context/AuthContext';
 import { saveProfileAnswers, getProfileAnswers } from '../api/profile';
-import { getPositionQuestions, getQuestions } from '../api/questions';
+import { getPartyQuestions, getPositionQuestions, getQuestions } from '../api/questions';
 import { groupForId } from '../utils/partyRoles';
 import { CORE_QUESTION_IDS, labelWithSize } from '../utils/preferenceQuestions';
 import { useI18n } from '../i18n/index.jsx';
@@ -62,15 +62,27 @@ function readLocalPrefs() {
 
 // ─── Question card ────────────────────────────────────────────────────────────
 
-function QuestionCard({ q, num, value, onSelect }) {
+function QuestionCard({ q, num, value, onSelect, compulsoryLabel }) {
   const { lang } = useI18n();
+  const unanswered = q.compulsory && !value;
   return (
-    <div className="rounded-2xl border border-[#1a2d50]/60 bg-[#0e1628] p-6">
+    <div
+      className={`rounded-2xl border bg-[#0e1628] p-6 ${
+        unanswered ? 'border-[#f0a04b]/45' : 'border-[#1a2d50]/60'
+      }`}
+    >
       <div className="mb-4 flex items-start gap-3">
         <span className="mt-0.5 shrink-0 font-count text-[13px] font-bold text-[#3f6bd4]">
           {String(num).padStart(2, '0')}
         </span>
-        <p className="text-[13.5px] font-medium leading-snug text-[#c0cde8]">{lang === 'hi' && q.labelHi ? q.labelHi : questionLabel(q.label, lang)}</p>
+        <p className="text-[13.5px] font-medium leading-snug text-[#c0cde8]">
+          {lang === 'hi' && q.labelHi ? q.labelHi : questionLabel(q.label, lang)}
+          {q.compulsory && compulsoryLabel && (
+            <span className="ml-2 inline-block rounded-full border border-[#f0a04b]/45 bg-[#f0a04b]/10 px-2 py-[2px] align-middle text-[10px] font-semibold text-[#f0b877]">
+              {compulsoryLabel}
+            </span>
+          )}
+        </p>
       </div>
       <div className={q.wide ? 'grid gap-2.5 sm:grid-cols-2' : 'grid grid-cols-2 gap-2.5 sm:grid-cols-3'}>
         {q.options.map((opt) => {
@@ -146,6 +158,46 @@ export default function Preferences() {
   const partyHasPositionSet = /indian national congress|\(inc\)|bahujan samaj|\(bsp\)/i.test(userParty);
   const [positionQuestions, setPositionQuestions] = useState([]);
 
+  // Ten questions about the party itself: what the writer wants said about it,
+  // rather than how someone at their level says it. They depend on the party
+  // alone, so they show for a party member who has not chosen a position yet.
+  const [partyQuestions, setPartyQuestions] = useState([]);
+
+  useEffect(() => {
+    if (!userParty) {
+      setPartyQuestions([]);
+      return undefined;
+    }
+    let cancelled = false;
+    getPartyQuestions(userParty)
+      .then((rows) => {
+        if (cancelled) return;
+        setPartyQuestions(rows.map((q) => ({
+          id: q.question_id,
+          label: q.question_text,
+          labelHi: q.question_text_hi,
+          wide: true,
+          compulsory: Boolean(q.is_compulsory),
+          defaultOption: q.default_option || '',
+          options: (q.options ?? []).map((opt, i) => ({ value: opt, raw: opt, hi: q.options_hi?.[i] || '' })),
+        })));
+        // These ten are not asked at sign-up, so they arrive on this page
+        // already answered. The same option the backend falls back to is
+        // pre-selected here, so the buttons and the generated post agree
+        // before the user has touched anything.
+        //
+        // Existing values win: the merge is defaults first, then whatever is
+        // already in state. That holds whichever way the race runs, because
+        // the saved answers load in their own effect.
+        const seeded = Object.fromEntries(
+          rows.filter((q) => q.default_option).map((q) => [q.question_id, q.default_option]),
+        );
+        setPrefs((p) => ({ ...seeded, ...p }));
+      })
+      .catch(() => { if (!cancelled) setPartyQuestions([]); });
+    return () => { cancelled = true; };
+  }, [userParty]);
+
   useEffect(() => {
     if (!userParty || !positionGroup) {
       setPositionQuestions([]);
@@ -175,7 +227,13 @@ export default function Preferences() {
   useEffect(() => {
     getQuestions(200)
       .then((rows) => {
-        const active = (rows ?? []).filter((q) => q.question_id?.startsWith('profile_'));
+        // is_active is checked here, not only the id prefix. The listing
+        // returns retired questions too, and the eighteen fine-tuning ones were
+        // retired rather than deleted so that answers already given against
+        // them stay valid rows. Without this they would still be drawn.
+        const active = (rows ?? []).filter(
+          (q) => q.question_id?.startsWith('profile_') && q.is_active !== false,
+        );
         const byId = Object.fromEntries(active.map((q) => [q.question_id, q]));
         // Core is the seven the generator's panel shows, in that order, rather
         // than is_required: the database marks fourteen questions required,
@@ -195,18 +253,24 @@ export default function Preferences() {
     getProfileAnswers(currentUser.id)
       .then((rows) => {
         if (!rows?.length) return;
-        const merged = { ...prefs };
-        for (const row of rows) {
-          // Backend normalises short labels to "Label -> Description" on save.
-          // Strip the description so the short label matches the UI option buttons.
-          const raw = row.answer;
-          merged[row.question_id] =
-            typeof raw === 'string' && raw.includes(' -> ')
-              ? raw.split(' -> ')[0].trim()
-              : raw;
-        }
-        setPrefs(merged);
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(merged)); } catch { /* ignore */ }
+        // Functional, not `{ ...prefs }`: this effect runs once and would hold
+        // a stale copy of prefs. The party defaults are seeded from a separate
+        // effect, and with a stale copy whichever landed second would erase the
+        // other's values.
+        setPrefs((p) => {
+          const merged = { ...p };
+          for (const row of rows) {
+            // Backend normalises short labels to "Label -> Description" on save.
+            // Strip the description so the short label matches the UI option buttons.
+            const raw = row.answer;
+            merged[row.question_id] =
+              typeof raw === 'string' && raw.includes(' -> ')
+                ? raw.split(' -> ')[0].trim()
+                : raw;
+          }
+          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(merged)); } catch { /* ignore */ }
+          return merged;
+        });
       })
       .catch(() => {}); // silently fall back to localStorage values already in state
   }, [currentUser?.id]);
@@ -215,8 +279,19 @@ export default function Preferences() {
     setPrefs((p) => ({ ...p, [id]: val }));
   }
 
+  // Compulsory is enforced on this screen because it cannot be enforced in the
+  // API: both parties' sets are active at once, so a required flag there would
+  // hold a BSP user to the INC question they are never shown.
+  const unansweredCompulsory = partyQuestions.filter((q) => q.compulsory && !prefs[q.id]);
+
   async function handleSave() {
     if (!currentUser?.id) return;
+    if (unansweredCompulsory.length) {
+      setSaveError(t('prefs.answerCompulsory'));
+      const el = document.getElementById(`q-${unansweredCompulsory[0].id}`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
     setSaving(true);
     setSaveError('');
     try {
@@ -233,13 +308,19 @@ export default function Preferences() {
   }
 
   function handleReset() {
-    setPrefs({});
+    // The party questions go back to their defaults rather than to nothing.
+    // Blank is not a state they have: every user starts from a full set, and
+    // an empty one would leave the compulsory question unanswerable-looking
+    // and the prompt quietly falling back to the same defaults anyway.
+    setPrefs(Object.fromEntries(
+      partyQuestions.filter((q) => q.defaultOption).map((q) => [q.id, q.defaultOption]),
+    ));
     setSaved(false);
   }
 
   // Counted over the questions on screen. Saved answers for a position the user
   // has since left are still in prefs and would otherwise push this past the total.
-  const shownIds      = [...compulsory, ...positionQuestions, ...optional].map((q) => q.id);
+  const shownIds      = [...compulsory, ...partyQuestions, ...positionQuestions, ...optional].map((q) => q.id);
   const answeredCount = shownIds.filter((id) => prefs[id]).length;
   const totalCount    = shownIds.length || 1;
 
@@ -299,6 +380,42 @@ export default function Preferences() {
           ))}
         </div>
 
+        {/* ── Party questions ── */}
+        {partyQuestions.length > 0 && (
+          <div className="mt-12">
+            <SectionHeader
+              label={t('prefs.partyTitle')}
+              badge={t('prefs.optionalBadge')}
+              description={t('prefs.partyDesc')}
+            />
+            <div className="space-y-4">
+              {partyQuestions.map((q, i) => (
+                <div key={q.id} id={`q-${q.id}`}>
+                  <QuestionCard
+                    q={q}
+                    num={compulsory.length + i + 1}
+                    value={prefs[q.id]}
+                    onSelect={(v) => select(q.id, v)}
+                    compulsoryLabel={t('prefs.compulsory')}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {!userParty && (
+          <div className="mt-12 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#1a2d50]/60 bg-[#0e1628] px-5 py-4">
+            <p className="text-[13px] text-[#8b94b8]">{t('prefs.partyNeedParty')}</p>
+            <button
+              type="button"
+              onClick={() => navigate('/profile-setup')}
+              className="rounded-full border border-[#1e3260]/70 px-4 py-2 text-[12.5px] font-medium text-[#a3b0d4] transition hover:border-[#3a6bc4]/60 hover:text-white"
+            >
+              {t('prefs.partySetParty')}
+            </button>
+          </div>
+        )}
+
         {/* ── Position questions ── */}
         {positionQuestions.length > 0 && (
           <div className="mt-12">
@@ -312,7 +429,7 @@ export default function Preferences() {
                 <QuestionCard
                   key={q.id}
                   q={q}
-                  num={compulsory.length + i + 1}
+                  num={compulsory.length + partyQuestions.length + i + 1}
                   value={prefs[q.id]}
                   onSelect={(v) => select(q.id, v)}
                 />
@@ -333,25 +450,31 @@ export default function Preferences() {
           </div>
         )}
 
-        {/* ── Optional questions ── */}
-        <div className="mt-12">
-          <SectionHeader
-            label={t('prefs.fineTuning')}
-            badge={t('prefs.optionalBadge')}
-            description={t('prefs.optionalDesc')}
-          />
-          <div className="space-y-4">
-            {optional.map((q, i) => (
-              <QuestionCard
-                key={q.id}
-                q={q}
-                num={compulsory.length + positionQuestions.length + i + 1}
-                value={prefs[q.id]}
-                onSelect={(v) => select(q.id, v)}
-              />
-            ))}
+        {/* ── Optional questions ── The eighteen fine-tuning questions were
+            retired when the party set arrived, so this list is empty on a
+            current database and the section does not draw at all. It stays
+            because getQuestions returns whatever is active: bring one back and
+            it appears here again without a code change. */}
+        {optional.length > 0 && (
+          <div className="mt-12">
+            <SectionHeader
+              label={t('prefs.fineTuning')}
+              badge={t('prefs.optionalBadge')}
+              description={t('prefs.optionalDesc')}
+            />
+            <div className="space-y-4">
+              {optional.map((q, i) => (
+                <QuestionCard
+                  key={q.id}
+                  q={q}
+                  num={compulsory.length + partyQuestions.length + positionQuestions.length + i + 1}
+                  value={prefs[q.id]}
+                  onSelect={(v) => select(q.id, v)}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* ── Footer actions ── */}
         <div className="mt-10 flex items-center justify-between">

@@ -38,10 +38,18 @@ class ProfileService:
         # no profile answers behind it. Checking the whole profile set there
         # refused every such save with a 400, and onboarding saves without
         # waiting, so the answers vanished without the user ever seeing an error.
+        # Party questions are excluded for a second reason on top of that one:
+        # both parties' sets are active at once, so a user can only ever answer
+        # half of them. Required there would hold every BSP user to the INC
+        # questions they are never shown. Question 10 is compulsory, and that is
+        # enforced where the user can see it rather than by refusing the save.
+        from backend.pipeline.party_questions import CATEGORY as PARTY_CATEGORY
         from backend.pipeline.position_questions import CATEGORY as POSITION_CATEGORY
 
+        set_categories = {POSITION_CATEGORY, PARTY_CATEGORY}
+
         touches_profile = any(
-            str(question_map[str(qid)].get("category") or "") != POSITION_CATEGORY
+            str(question_map[str(qid)].get("category") or "") not in set_categories
             for qid in answers
             if str(qid) in question_map
         )
@@ -50,7 +58,7 @@ class ProfileService:
             for q in active_questions
             if touches_profile
             and bool(q.get("is_required", False))
-            and str(q.get("category") or "") != POSITION_CATEGORY
+            and str(q.get("category") or "") not in set_categories
         ]
         missing_required = [qid for qid in required_ids if self._is_empty_answer(effective_answers.get(qid))]
         if missing_required:
