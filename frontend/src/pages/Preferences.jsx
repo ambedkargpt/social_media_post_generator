@@ -111,6 +111,39 @@ function QuestionCard({ q, num, value, onSelect, compulsoryLabel }) {
   );
 }
 
+/**
+ * A card's shape while its question is still loading.
+ *
+ * Three sections load from three separate requests, and a section that renders
+ * nothing until its own request lands makes the page arrive in pieces: the
+ * heading sits alone, then questions appear underneath it and push everything
+ * below them down the page. Holding the shape means the page settles once.
+ *
+ * `rows` is how many option buttons the real card will have, so the placeholder
+ * is the height of what replaces it rather than a guess.
+ */
+function QuestionCardSkeleton({ rows = 3 }) {
+  return (
+    <div className="animate-pulse rounded-2xl border border-[#1a2d50]/60 bg-[#0e1628] p-6">
+      <div className="mb-4 flex items-start gap-3">
+        <div className="mt-0.5 h-3.5 w-5 shrink-0 rounded bg-[#1e3260]/70" />
+        <div className="h-3.5 w-3/5 rounded bg-[#1e3260]/70" />
+      </div>
+      <div className="grid gap-2.5 sm:grid-cols-2">
+        {Array.from({ length: rows }, (_, i) => (
+          <div key={i} className="h-[42px] rounded-xl border border-[#1e3260]/40 bg-[#0a1428]/70" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// How many cards to hold space for, per section. The real counts, so the page
+// does not jump when they arrive.
+function Skeletons({ count, rows }) {
+  return Array.from({ length: count }, (_, i) => <QuestionCardSkeleton key={i} rows={rows} />);
+}
+
 function SectionHeader({ label, badge, description }) {
   return (
     <div className="mb-5 flex items-center gap-3">
@@ -152,6 +185,7 @@ export default function Preferences() {
   // different things. Party and position are chosen on the profile screen and
   // read back here from the saved user, which is also what the post generator
   // reads to find the set: answers given against anything else never reach a post.
+  const [reloadKey, setReloadKey] = useState(0);
   const userParty = currentUser?.political_party || '';
   const positionGroup = groupForId(currentUser?.party_position || '');
   // Mirrors question_party() in backend/pipeline/position_questions.py.
@@ -162,6 +196,17 @@ export default function Preferences() {
   // rather than how someone at their level says it. They depend on the party
   // alone, so they show for a party member who has not chosen a position yet.
   const [partyQuestions, setPartyQuestions] = useState([]);
+  // A failed fetch used to be indistinguishable from "this party has no
+  // questions": both left the array empty and the whole section simply was not
+  // drawn, with nothing on screen to say why. Ten questions can go missing
+  // without a trace that way.
+  const [loadError, setLoadError] = useState('');
+  // One flag per request rather than one for the page: the three land at
+  // different times, and a section that has its questions should not wait on
+  // the two that do not.
+  const [loadingCore, setLoadingCore] = useState(true);
+  const [loadingParty, setLoadingParty] = useState(false);
+  const [loadingPosition, setLoadingPosition] = useState(false);
 
   useEffect(() => {
     if (!userParty) {
@@ -169,6 +214,7 @@ export default function Preferences() {
       return undefined;
     }
     let cancelled = false;
+    setLoadingParty(true);
     getPartyQuestions(userParty)
       .then((rows) => {
         if (cancelled) return;
@@ -194,9 +240,10 @@ export default function Preferences() {
         );
         setPrefs((p) => ({ ...seeded, ...p }));
       })
-      .catch(() => { if (!cancelled) setPartyQuestions([]); });
+      .catch(() => { if (!cancelled) { setPartyQuestions([]); setLoadError('party'); } })
+      .finally(() => { if (!cancelled) setLoadingParty(false); });
     return () => { cancelled = true; };
-  }, [userParty]);
+  }, [userParty, reloadKey]);
 
   useEffect(() => {
     if (!userParty || !positionGroup) {
@@ -204,6 +251,7 @@ export default function Preferences() {
       return undefined;
     }
     let cancelled = false;
+    setLoadingPosition(true);
     getPositionQuestions(userParty, positionGroup)
       .then((rows) => {
         if (cancelled) return;
@@ -217,9 +265,10 @@ export default function Preferences() {
           options: (q.options ?? []).map((opt, i) => ({ value: opt, raw: opt, hi: q.options_hi?.[i] || '' })),
         })));
       })
-      .catch(() => { if (!cancelled) setPositionQuestions([]); });
+      .catch(() => { if (!cancelled) { setPositionQuestions([]); setLoadError('position'); } })
+      .finally(() => { if (!cancelled) setLoadingPosition(false); });
     return () => { cancelled = true; };
-  }, [userParty, positionGroup]);
+  }, [userParty, positionGroup, reloadKey]);
 
   // Load the question set first: the answer map is keyed on it, and rendering
   // buttons for a question the database no longer has would let someone save
@@ -241,8 +290,9 @@ export default function Preferences() {
         setCompulsory(CORE_QUESTION_IDS.map((id) => byId[id]).filter(Boolean).map(toUiQuestion));
         setOptional(active.filter((q) => !CORE_QUESTION_IDS.includes(q.question_id)).map(toUiQuestion));
       })
-      .catch(() => {});
-  }, []);
+      .catch(() => setLoadError('core'))
+      .finally(() => setLoadingCore(false));
+  }, [reloadKey]);
   const [saved, setSaved]       = useState(false);
   const [saving, setSaving]     = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -323,6 +373,7 @@ export default function Preferences() {
   const shownIds      = [...compulsory, ...partyQuestions, ...positionQuestions, ...optional].map((q) => q.id);
   const answeredCount = shownIds.filter((id) => prefs[id]).length;
   const totalCount    = shownIds.length || 1;
+  const stillLoading  = loadingCore || loadingParty || loadingPosition;
 
   return (
     <DashboardShell active="prefs">
@@ -335,9 +386,17 @@ export default function Preferences() {
           icon={<SlidersHorizontal size={15} strokeWidth={2} className="hidden shrink-0 text-[#4f7fd4] lg:block" />}
           right={
             <div className="mr-1 hidden items-center gap-3 sm:flex">
+              {/* "0 / 1 answered" while the questions are still in flight is
+                  not a smaller number, it is a wrong one. */}
               <span className="text-[12.5px] text-[#6b78a0]">
-                <span className="font-count font-bold text-white">{answeredCount}</span>
-                <span> / {totalCount} {t('prefs.answeredWord')}</span>
+                {stillLoading ? (
+                  <span className="inline-block h-3 w-16 animate-pulse rounded bg-[#1e3260]/70 align-middle" />
+                ) : (
+                  <>
+                    <span className="font-count font-bold text-white">{answeredCount}</span>
+                    <span> / {totalCount} {t('prefs.answeredWord')}</span>
+                  </>
+                )}
               </span>
               <div className="h-1.5 w-24 overflow-hidden rounded-full bg-[#0f1a3a]">
                 <div
@@ -369,19 +428,34 @@ export default function Preferences() {
           description={t('prefs.coreDesc')}
         />
         <div className="space-y-4">
-          {compulsory.map((q, i) => (
-            <QuestionCard
-              key={q.id}
-              q={q}
-              num={i + 1}
-              value={prefs[q.id]}
-              onSelect={(v) => select(q.id, v)}
-            />
-          ))}
+          {loadingCore && !compulsory.length
+            ? <Skeletons count={CORE_QUESTION_IDS.length} rows={6} />
+            : compulsory.map((q, i) => (
+              <QuestionCard
+                key={q.id}
+                q={q}
+                num={i + 1}
+                value={prefs[q.id]}
+                onSelect={(v) => select(q.id, v)}
+              />
+            ))}
         </div>
 
+        {loadError && (
+          <div className="mt-12 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#e55555]/35 bg-[#1a0f18] px-5 py-4">
+            <p className="text-[13px] text-[#e59a9a]">{t('questionnaire.loadFailed')}</p>
+            <button
+              type="button"
+              onClick={() => { setLoadError(''); setReloadKey((k) => k + 1); }}
+              className="rounded-full border border-[#e55555]/40 px-4 py-2 text-[12.5px] font-medium text-[#e5b5b5] transition hover:border-[#e55555]/70 hover:text-white"
+            >
+              {t('common.retry')}
+            </button>
+          </div>
+        )}
+
         {/* ── Party questions ── */}
-        {partyQuestions.length > 0 && (
+        {(loadingParty || partyQuestions.length > 0) && (
           <div className="mt-12">
             <SectionHeader
               label={t('prefs.partyTitle')}
@@ -389,6 +463,7 @@ export default function Preferences() {
               description={t('prefs.partyDesc')}
             />
             <div className="space-y-4">
+              {loadingParty && !partyQuestions.length && <Skeletons count={10} rows={5} />}
               {partyQuestions.map((q, i) => (
                 <div key={q.id} id={`q-${q.id}`}>
                   <QuestionCard
@@ -403,7 +478,7 @@ export default function Preferences() {
             </div>
           </div>
         )}
-        {!userParty && (
+        {!userParty && !loadingCore && (
           <div className="mt-12 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#1a2d50]/60 bg-[#0e1628] px-5 py-4">
             <p className="text-[13px] text-[#8b94b8]">{t('prefs.partyNeedParty')}</p>
             <button
@@ -417,7 +492,7 @@ export default function Preferences() {
         )}
 
         {/* ── Position questions ── */}
-        {positionQuestions.length > 0 && (
+        {(loadingPosition || positionQuestions.length > 0) && (
           <div className="mt-12">
             <SectionHeader
               label={t('prefs.positionTitle')}
@@ -425,6 +500,7 @@ export default function Preferences() {
               description={t('prefs.positionDesc')}
             />
             <div className="space-y-4">
+              {loadingPosition && !positionQuestions.length && <Skeletons count={5} rows={5} />}
               {positionQuestions.map((q, i) => (
                 <QuestionCard
                   key={q.id}
