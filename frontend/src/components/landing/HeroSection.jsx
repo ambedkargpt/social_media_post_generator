@@ -107,13 +107,48 @@ export default function HeroSection({ splashDone = true }) {
       {/* Glows + squiggle */}
       <div className="pointer-events-none absolute inset-x-0 top-0 -bottom-32">
         <div className="absolute inset-x-0 top-0 h-[480px] bg-[radial-gradient(circle_at_50%_0%,rgba(41,108,255,0.16),transparent_55%)]" />
-        <div className="absolute -left-24 -top-16 h-[460px] w-[460px] rounded-full bg-[#2d7dfb]/22 blur-[130px]" />
-        <div className="absolute -right-24 top-0 h-[460px] w-[460px] rounded-full bg-[#1d66de]/22 blur-[120px]" />
-        <div className="absolute left-1/2 top-[58%] h-[520px] w-[720px] -translate-x-1/2 rounded-full bg-[#1e4fb5]/20 blur-[120px]" />
-        <div className="absolute bottom-0 left-1/2 h-[260px] w-[800px] -translate-x-1/2 rounded-full bg-[#1a3fa0]/15 blur-[120px]" />
+        <div className="hidden md:block absolute -left-24 -top-16 h-[460px] w-[460px] rounded-full bg-[#2d7dfb]/22 blur-[130px]" />
+        <div className="hidden md:block absolute -right-24 top-0 h-[460px] w-[460px] rounded-full bg-[#1d66de]/22 blur-[120px]" />
+        <div className="hidden md:block absolute left-1/2 top-[58%] h-[520px] w-[720px] -translate-x-1/2 rounded-full bg-[#1e4fb5]/20 blur-[120px]" />
+        <div className="hidden md:block absolute bottom-0 left-1/2 h-[260px] w-[800px] -translate-x-1/2 rounded-full bg-[#1a3fa0]/15 blur-[120px]" />
         <div
           className="absolute inset-0 bg-cover bg-center opacity-15"
           style={{ backgroundImage: `url(${squiggleSrc})` }}
+        />
+      </div>
+
+      {/* ── The portrait, on phones ──
+          Below md the right-hand column is not rendered, so the one face the
+          product is named for was missing from the screen most visitors see.
+          It comes back here as part of the background rather than as a column:
+          anchored to the right edge, behind the text, and masked so it has
+          dissolved into the navy well before it reaches the headline.
+
+          Absolute on purpose. In the flow it would push the heading and both
+          buttons down a screen-height, and the hero's whole job on a phone is
+          to get the buttons above the fold. */}
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-[72%] overflow-hidden md:hidden" aria-hidden="true">
+        <img
+          src={ambedkarPortrait}
+          alt=""
+          loading="eager"
+          decoding="async"
+          className="h-full w-full object-cover"
+          style={{
+            // A crop window left of centre, which puts the face itself over
+            // toward the right edge and away from the text.
+            objectPosition: "28% 22%",
+            opacity: 0.26,
+            // Two masks at once: out to the left, where the headline and the
+            // paragraph sit, and out at the bottom so it does not end on a
+            // hard horizontal edge above the buttons.
+            maskImage:
+              "linear-gradient(to left, #000 8%, rgba(0,0,0,0.6) 45%, transparent 88%), linear-gradient(to top, transparent 4%, #000 34%)",
+            maskComposite: "intersect",
+            WebkitMaskImage:
+              "linear-gradient(to left, #000 8%, rgba(0,0,0,0.6) 45%, transparent 88%), linear-gradient(to top, transparent 4%, #000 34%)",
+            WebkitMaskComposite: "source-in",
+          }}
         />
       </div>
 

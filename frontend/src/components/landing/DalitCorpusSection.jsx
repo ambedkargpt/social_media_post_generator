@@ -35,8 +35,8 @@ export default function DalitCorpusSection() {
           rather than behind it. */}
       <span className="bg-word top-16 hidden sm:block" aria-hidden="true">CORPUS</span>
       <div className="pointer-events-none absolute inset-x-0 -top-28 -bottom-28">
-        <div className="absolute left-[10%] top-[20%] h-[420px] w-[420px] rounded-full bg-[#2d7dfb]/9 blur-[130px]" />
-        <div className="absolute right-[5%] bottom-[10%] h-[360px] w-[360px] rounded-full bg-[#1a3fa0]/7 blur-[130px]" />
+        <div className="hidden md:block absolute left-[10%] top-[20%] h-[420px] w-[420px] rounded-full bg-[#2d7dfb]/9 blur-[130px]" />
+        <div className="hidden md:block absolute right-[5%] bottom-[10%] h-[360px] w-[360px] rounded-full bg-[#1a3fa0]/7 blur-[130px]" />
       </div>
 
       <div className="relative mx-auto max-w-[1440px] px-6">

@@ -324,8 +324,8 @@ export default function TeamSection() {
     <section id="charity" className="relative py-8 md:py-10">
       {/* Ambient glow — bottom glow bleeds into ContactSection */}
       <div className="pointer-events-none absolute inset-x-0 -top-28 -bottom-28">
-        <div className="absolute left-1/4 top-1/4 h-[420px] w-[600px] rounded-full bg-[#1e4fb5]/8 blur-[150px]" />
-        <div className="absolute right-1/4 bottom-0 h-[360px] w-[500px] rounded-full bg-[#2d6fff]/8 blur-[140px]" />
+        <div className="hidden md:block absolute left-1/4 top-1/4 h-[420px] w-[600px] rounded-full bg-[#1e4fb5]/8 blur-[150px]" />
+        <div className="hidden md:block absolute right-1/4 bottom-0 h-[360px] w-[500px] rounded-full bg-[#2d6fff]/8 blur-[140px]" />
       </div>
 
       <div className="mx-auto max-w-[1440px] px-6">
