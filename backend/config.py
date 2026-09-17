@@ -341,9 +341,11 @@ def get_settings() -> Settings:
     smtp_port = int(os.getenv("SMTP_PORT") or "587")
     smtp_user = (os.getenv("SMTP_USER") or "").strip()
     smtp_password = os.getenv("SMTP_PASSWORD") or ""
-    # Where contact form submissions land.
+    # Where contact form submissions land. The fallback is the project's own
+    # inbox, not a maintainer's personal address: this is what a deployment
+    # that forgets to set CONTACT_RECIPIENT_EMAIL will actually use.
     contact_recipient_email = (
-        os.getenv("CONTACT_RECIPIENT_EMAIL") or "krishprakash1232@gmail.com"
+        os.getenv("CONTACT_RECIPIENT_EMAIL") or "ambedkargpt@gmail.com"
     ).strip()
     # The envelope sender. Many providers reject a From they do not own, so this
     # defaults to the authenticated user rather than to the visitor's address.
