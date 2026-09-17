@@ -3,7 +3,7 @@
 Two questions this answers:
 
 1. Which model writes our posts, and how is it configured?
-2. What do we tell it about the user — and how do the questions change with the user's role?
+2. What do we tell it about the user — and how do the questions change with the user's party and role?
 
 Everything below is what the code does today, not a plan.
 
@@ -51,35 +51,87 @@ Recommended (not done yet): move to the explicit names `deepseek-flash` /
 
 ## 2. What we send with every post
 
-The prompt carries a JSON payload. Inside it, `user_profile` is a **27-field
+The prompt carries a JSON payload. Inside it, `user_profile` is a **29-field
 object**:
 
 | Source | Fields |
 |---|---|
-| The user's answers | **25** core preference questions (`profile_*`) |
+| The user's answers | **25** profile fields (`profile_*`). Only **7** of these are still asked; the other 18 come from the default profile — see below |
 | The user record | `political_party` — the party name, stated plainly |
 | The user record | `party_position` — **not** the raw id. `"district_president"` tells the model nothing, so it is converted to a block of writing guidance |
+| The user's answers | `party_preferences` — the **10** questions about the party itself (see §3) |
 | The user's answers | `position_preferences` — the **5** questions for their party *and* role (see §3) |
 
-So **30 answers reach the model on every generate**: 25 core + 5 role-specific.
+So **22 answers reach the model on every generate**: 7 core + 10 party + 5 role.
 
 **Unanswered questions are not blank.** We start from a default profile and
-write the user's answers over it, so the model always sees a complete 27-field
-object. A user who has answered nothing still inherits the defaults — which are
+write the user's answers over it, so the model always sees a complete object. A
+user who has answered nothing still inherits the defaults — which are
 opinionated (`tone: "Fierce, uncompromising, urgent"`). Worth reviewing before
 onboarding at scale.
+
+**The 18 fine-tuning questions were retired, not deleted.** `language`,
+`target_platform`, `formality_level`, `caste_identity` and fourteen others are
+no longer asked: they are `is_active: false` in the database and no screen draws
+them. Their `PROFILE_FIELDS` entries stay, so the default value still reaches
+the prompt and answers users gave before the change are still read back. To
+stop them reaching the prompt at all, remove them from
+`backend/pipeline/profiles.py` as well.
 
 Preferences changed in the panel take priority over saved answers, and a `tone`
 sent with the request overrides the profile's tone.
 
 ---
 
-## 3. The questions change with the role
+## 3. The questions change with the party and the role
 
-This is the part that is easy to miss.
+This is the part that is easy to miss. There are three sets, and only the first
+is the same for everyone.
 
-**Core questions — 25, the same for everyone.** Tone, audience, language,
-platform, length, perspective and so on. Category `profile`.
+**Core questions — 7, the same for everyone.** Role, tone, audience, primary
+focus, perspective, length, call to action. Category `profile`, ids
+`profile_<field>`.
+
+**Party questions — 20 in the database, 10 per user.** Category `party`, ids
+`party_<inc|bsp>_q<n>`.
+
+The ten questions are worded identically for both parties; only the five answer
+options change, because the vocabulary does. A Congress supporter chooses
+between constitutional and governance framings, a BSP supporter between Bahujan
+representation and caste. They ask what the writer wants *said about* their
+party: what to lead with when it is in the news, how hard to back a position
+they agree with, how to answer its critics, what to do when the party is the one
+at fault, how to use its history, and the overall attitude toward it.
+
+**These are not asked at sign-up.** Onboarding asks only the five position
+questions. The ten party questions arrive on the Preferences page **already
+answered**, on a default set defined in `DEFAULT_NUMBERS`, and the user changes
+whichever do not sound like them. The same defaults back the prompt: an
+unanswered question falls back to its default in `_party_preferences`, so a user
+who never opens the page still generates with a full, coherent set, and what the
+page shows is always what the prompt carries.
+
+Each party's defaults read as one writer rather than ten unrelated picks:
+supportive of the party and assertive in voice, arguing in the party's own
+vocabulary, fact-based on a contested claim, and willing to acknowledge a mistake
+with context. Question 10 is deliberately **"Supportive but willing to
+criticize"** and not "Strongly supportive" — an unconditional defence is a
+position a user should have to choose, not one they are handed.
+
+**Question 10 is marked compulsory** — the overall attitude. Two supporters of
+the same party can want opposite posts, and it is the only question that
+separates them: one wants an unconditional defence, the other an evidence-led
+analysis that concedes a fault when the material shows one. Because it always
+has a default it is never actually blank; the flag draws the badge on the card
+so the user knows which answer carries the most weight. It is *not* flagged
+`is_required` in the database, because the batch save checks every active
+required question at once and both parties' sets are active — a BSP user would
+be held to the INC question they are never shown.
+
+**A party change needs no migration.** Answers to the old party's set stay in
+the database under their own ids, and nothing reads them: the generator resolves
+the current party and fetches only that party's ten. Change back and the old
+answers are live again.
 
 **Position questions — 70 in the database, 5 per user.** Category `position`.
 
@@ -93,7 +145,9 @@ Frontal wing · Elected office**
 Question ids follow `pos_<party>_<group>_q<n>`, e.g. `pos_inc_national_q1`.
 
 At generation time we resolve the user's party and role group, fetch **only
-those 5 ids**, and ignore the other 65. A state leader and a booth worker in the
+those 5 ids**, and ignore the other 65. These are the five sign-up asks. The
+party questions need no role, so a member who never chose a position still has
+all ten. A state leader and a booth worker in the
 same party are asked five different questions and give the model five different
 instructions.
 
@@ -107,15 +161,51 @@ not say which question it answered.
 
 ### Current coverage
 
-| Party | Position question set |
-|---|---|
-| Indian National Congress | ✅ 35 questions (7 groups × 5) |
-| Bahujan Samaj Party | ✅ 35 questions (7 groups × 5) |
-| Samajwadi Party | ❌ none yet |
+| Party | Party set | Position set |
+|---|---|---|
+| Indian National Congress | ✅ 10 | ✅ 35 (7 groups × 5) |
+| Bahujan Samaj Party | ✅ 10 | ✅ 35 (7 groups × 5) |
+| Samajwadi Party | ❌ none yet | ❌ none yet |
 
 A Samajwadi user — or any party without a set — gets an empty
-`position_preferences` and their prompt is exactly what it was before this
-feature existed. Nothing breaks; the role simply does not shape the post yet.
+`party_preferences` and an empty `position_preferences`, and their prompt is
+exactly what it was before these features existed. Nothing breaks; the party and
+the role simply do not shape the post yet.
+
+### Existing accounts are caught up once
+
+An account created before `LAUNCHED_AT` in `party_questions.py` never saw these
+questions. `GET /questions/pending` reports what such an account still owes, and
+`ProtectedRoute` sends it to `/questionnaire` once per browser session to answer
+them. The check sits in `ProtectedRoute` rather than in the login screen because
+there are five ways into a session — password, OTP, Google, password reset, and
+returning with a live token — and only that component is on all five.
+
+| Account | Asked on arrival |
+|---|---|
+| Created before `LAUNCHED_AT`, nothing answered | 10 party + 5 position |
+| Created before, position already answered | 10 party |
+| Created after (a fresh sign-up) | 5 position only |
+| Anything already answered | nothing |
+
+"Pending" means *none of* a set is answered, not "has a gap". Someone who
+answered two of the ten has seen the questionnaire and stopped, and the other
+eight already fall back to their defaults — sending them back on every sign-in
+would be a nag. Leaving early now saves what has been answered, which it did not
+before.
+
+Moving `LAUNCHED_AT` forward re-prompts every user who already answered. Move it
+only when a genuinely new set ships, and to that ship date.
+
+### Seeding
+
+```
+python -m backend.scripts.seed_position_questions --apply
+python -m backend.scripts.seed_party_questions --apply
+```
+
+Both are idempotent and additive. `seed_party_questions` also retires the 18
+fine-tuning profile questions; pass `--keep-fine-tuning` to seed without that.
 
 ---
 
@@ -125,6 +215,8 @@ feature existed. Nothing breaks; the role simply does not shape the post yet.
 |---|---|
 | Model in production | DeepSeek **V4.1 Flash** (all four paths) |
 | Post generation | thinking **off**, temp 0.7, max 24k tokens |
-| Questions in the database | 95 active — 25 core + 70 position |
-| Questions per generation | 30 — 25 core + 5 for the user's party and role |
-| Parties with role questions | INC, BSP |
+| Questions in the database | 97 active — 7 core + 20 party + 70 position |
+| Asked at sign-up | 5 — the position questions only |
+| Editable on Preferences | 22 — 7 core + 10 party (pre-answered) + 5 for their role |
+| Per generation | the same 22, plus 18 retired fields from the default profile |
+| Parties with party & role questions | INC, BSP |

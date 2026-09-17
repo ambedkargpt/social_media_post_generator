@@ -28,6 +28,13 @@ class QuestionUpdateRequest(BaseModel):
     version: Optional[int] = None
 
 
+class PendingSetsResponse(BaseModel):
+    """Which question sets this user has a set for and has answered none of."""
+
+    party: bool = False
+    position: bool = False
+
+
 class QuestionResponse(BaseModel):
     id: str
     question_id: str
@@ -40,12 +47,21 @@ class QuestionResponse(BaseModel):
     version: int
     created_at: datetime
     updated_at: datetime
-    # Position questions only, absent on profile questions. Which party and
-    # position group the question belongs to, its place in that set of five,
-    # and its Hindi. options_hi runs parallel to options: the English option is
-    # what gets saved, the Hindi at the same index is what gets shown.
+    # Position and party questions only, absent on profile questions. Which
+    # party the question belongs to, which position group (position questions
+    # only), its place in that set, and its Hindi. options_hi runs parallel to
+    # options: the English option is what gets saved, the Hindi at the same
+    # index is what gets shown.
     party: Optional[str] = None
     position_group: Optional[str] = None
     display_order: Optional[int] = None
     question_text_hi: Optional[str] = None
     options_hi: list[str] = Field(default_factory=list)
+    # Separate from is_required, which the batch save enforces across every
+    # active question at once and so cannot be used for a question only half
+    # the users are ever shown. This one only marks the question in the UI.
+    is_compulsory: bool = False
+    # Party questions only. The option to show selected before the user has
+    # chosen one, and the same option the prompt falls back to, so the screen
+    # and the generated post never disagree.
+    default_option: Optional[str] = None

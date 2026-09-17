@@ -5,10 +5,16 @@ from __future__ import annotations
 
 from fastapi import HTTPException, status
 
+from backend.pipeline.party_questions import CATEGORY as PARTY_CATEGORY
 from backend.pipeline.position_questions import CATEGORY as POSITION_CATEGORY
 from backend.pipeline.position_questions import question_party
 from backend.repositories.questions_repo import QuestionsRepository
-from backend.schemas.questions import QuestionCreateRequest, QuestionResponse, QuestionUpdateRequest
+from backend.schemas.questions import (
+    PendingSetsResponse,
+    QuestionCreateRequest,
+    QuestionResponse,
+    QuestionUpdateRequest,
+)
 
 
 class QuestionsService:
@@ -22,13 +28,28 @@ class QuestionsService:
         return self._to_response(doc)
 
     def list(self, limit: int = 100, skip: int = 0) -> list[QuestionResponse]:
-        # Position questions are served by list_position, one party and group at
-        # a time. Left in this listing they would reach every caller that asks
-        # for "the questions": onboarding takes the first 7 and the generator's
-        # panel the first 25, and both would start showing someone another
-        # party's questions in place of their own profile.
-        docs = self.repo.list(limit=limit, skip=skip, exclude_category=POSITION_CATEGORY)
+        # Position and party questions are served by list_position and
+        # list_party, one party at a time. Left in this listing they would reach
+        # every caller that asks for "the questions": onboarding takes the first
+        # 7 and the generator's panel the first 25, and both would start showing
+        # someone another party's questions in place of their own profile.
+        docs = self.repo.list(
+            limit=limit, skip=skip, exclude_categories=[POSITION_CATEGORY, PARTY_CATEGORY]
+        )
         return [self._to_response(doc) for doc in docs]
+
+    def list_party(self, party_name: str) -> list[QuestionResponse]:
+        """
+        The ten party-preference questions for this party, in order.
+
+        Empty rather than an error for a party with no set, because that is an
+        ordinary state: a Samajwadi user, or someone who has not chosen a party
+        yet, simply has none.
+        """
+        party = question_party(party_name)
+        if not party:
+            return []
+        return [self._to_response(doc) for doc in self.repo.list_party(party, PARTY_CATEGORY)]
 
     def list_position(self, party_name: str, group: str) -> list[QuestionResponse]:
         """
@@ -44,6 +65,64 @@ class QuestionsService:
             return []
         docs = self.repo.list_position(party, group, POSITION_CATEGORY)
         return [self._to_response(doc) for doc in docs]
+
+    def pending_sets(self, user_id: str) -> PendingSetsResponse:
+        """
+        Which new question sets this user has never answered.
+
+        Answered *none of* a set, not "has a gap in it". Someone who answered
+        two of the ten has seen the questionnaire and chosen to stop; sending
+        them back every time they sign in would be a nag, and the eight they
+        skipped already fall back to their defaults.
+
+        The party set is only pending for an account that predates it. A newer
+        account answered the position questions at sign-up and starts from the
+        defaults, so asking again would put the fifteen-question sign-up back
+        that the defaults exist to avoid.
+        """
+        from bson import ObjectId
+
+        from backend.db.mongo import db
+        from backend.pipeline.party_questions import LAUNCHED_AT
+        from backend.pipeline.party_questions import question_ids_for as party_ids
+        from backend.pipeline.position_questions import group_for_position
+        from backend.pipeline.position_questions import question_ids_for as position_ids
+        from backend.repositories.profile_answers_repo import ProfileAnswersRepository
+
+        try:
+            user = db["users"].find_one({"_id": ObjectId(user_id)}) or {}
+        except Exception:
+            return PendingSetsResponse()
+
+        party = question_party(user.get("political_party"))
+        if not party:
+            return PendingSetsResponse()
+
+        answers_repo = ProfileAnswersRepository()
+
+        def answered_none(ids: list[str]) -> bool:
+            if not ids:
+                return False
+            rows = answers_repo.list_by_user(
+                user_id=user_id, question_ids=ids, limit=len(ids), skip=0
+            )
+            return not any(
+                isinstance(r.get("answer"), str) and r["answer"].strip() for r in rows
+            )
+
+        created = user.get("created_at")
+        if created is not None and created.tzinfo is None:
+            from datetime import timezone as _tz
+
+            created = created.replace(tzinfo=_tz.utc)
+        predates_party_set = created is None or created < LAUNCHED_AT
+
+        return PendingSetsResponse(
+            party=predates_party_set and answered_none(party_ids(party)),
+            position=answered_none(
+                position_ids(party, group_for_position(user.get("party_position")))
+            ),
+        )
 
     def get(self, question_id: str) -> QuestionResponse:
         doc = self.repo.get_by_question_id(question_id)
@@ -75,4 +154,6 @@ class QuestionsService:
             display_order=doc.get("display_order"),
             question_text_hi=doc.get("question_text_hi"),
             options_hi=doc.get("options_hi") or [],
+            is_compulsory=bool(doc.get("is_compulsory", False)),
+            default_option=doc.get("default_option"),
         )

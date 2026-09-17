@@ -1,7 +1,12 @@
 from fastapi import APIRouter, Depends, Query
 
 from backend.core.dependencies import get_current_user_id
-from backend.schemas.questions import QuestionCreateRequest, QuestionResponse, QuestionUpdateRequest
+from backend.schemas.questions import (
+    PendingSetsResponse,
+    QuestionCreateRequest,
+    QuestionResponse,
+    QuestionUpdateRequest,
+)
 from backend.services.questions_service import QuestionsService
 
 
@@ -30,6 +35,20 @@ def list_position_questions(
     group: str = Query(..., description="Position group, e.g. District or Frontal wing."),
 ) -> list[QuestionResponse]:
     return service.list_position(party_name=party, group=group)
+
+
+# Declared before /{question_id} for the same reason /position is.
+@router.get("/party", response_model=list[QuestionResponse])
+def list_party_questions(
+    party: str = Query(..., description="Party name as stored on the user."),
+) -> list[QuestionResponse]:
+    return service.list_party(party_name=party)
+
+
+# Declared before /{question_id} for the same reason /position is.
+@router.get("/pending", response_model=PendingSetsResponse)
+def pending_question_sets(user_id: str = Depends(get_current_user_id)) -> PendingSetsResponse:
+    return service.pending_sets(user_id)
 
 
 @router.get("/{question_id}", response_model=QuestionResponse)
