@@ -12,8 +12,37 @@
  *  4. Twinkling stars     — sparse sparkle accents scattered down the page
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Sparkle from './Sparkle';
+
+/**
+ * How many of each layer a phone gets.
+ *
+ * Every orb is a 500-750px element under a 150-190px blur. The browser has to
+ * keep a texture the size of the element plus roughly three blur radii on each
+ * side, so one orb is about six megabytes of GPU memory and the full set is
+ * near a hundred. A desktop GPU absorbs that. A phone does not: it evicts
+ * layers and re-rasterises them as they scroll back in, which is exactly the
+ * stutter you feel going past a heavy section.
+ *
+ * So a narrow screen gets a handful. The page still has ambient light and
+ * colour, from four orbs instead of seventeen.
+ */
+const MOBILE = { bgOrbs: 4, accentOrbs: 1, particles: 14, sparkles: 3 };
+
+// Matches Tailwind's lg, which is where the layout stops being a phone layout.
+function useNarrow() {
+  const [narrow, setNarrow] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 1023px)');
+    const onChange = (e) => setNarrow(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  return narrow;
+}
 
 // ── Drifting orb definitions ───────────────────────────────────────────────────
 // left/top are percentages of the background element (= full page height)
@@ -95,6 +124,12 @@ export default function LandingBackground() {
   const bgLayerRef = useRef(null);
   const accentLayerRef = useRef(null);
   const particleLayerRef = useRef(null);
+  const narrow = useNarrow();
+
+  const bgOrbs     = narrow ? BG_ORBS.slice(0, MOBILE.bgOrbs)         : BG_ORBS;
+  const accentOrbs = narrow ? ACCENT_ORBS.slice(0, MOBILE.accentOrbs) : ACCENT_ORBS;
+  const particles  = narrow ? PARTICLES.slice(0, MOBILE.particles)    : PARTICLES;
+  const sparkles   = narrow ? SPARKLES.slice(0, MOBILE.sparkles)      : SPARKLES;
 
   // Parallax — background layers drift at different speeds as the page scrolls
   useEffect(() => {
@@ -121,7 +156,7 @@ export default function LandingBackground() {
 
       {/* ── 2a. Drifting orbs — background layer (slow parallax) ── */}
       <div ref={bgLayerRef} className="absolute inset-0 will-change-transform">
-        {BG_ORBS.map((orb, i) => (
+        {bgOrbs.map((orb, i) => (
           <div
             key={i}
             className="lbg-orb absolute rounded-full"
@@ -133,7 +168,6 @@ export default function LandingBackground() {
               background: orb.color,
               filter: `blur(${orb.blur}px)`,
               animation: `${orb.anim} ${orb.dur}s ease-in-out ${orb.delay ?? 0}s infinite`,
-              willChange: 'transform',
             }}
           />
         ))}
@@ -141,7 +175,7 @@ export default function LandingBackground() {
 
       {/* ── 2b. Accent orbs — foreground layer (faster parallax) ── */}
       <div ref={accentLayerRef} className="absolute inset-0 will-change-transform">
-        {ACCENT_ORBS.map((orb, i) => (
+        {accentOrbs.map((orb, i) => (
           <div
             key={i}
             className="lbg-orb absolute rounded-full"
@@ -153,7 +187,6 @@ export default function LandingBackground() {
               background: orb.color,
               filter: `blur(${orb.blur}px)`,
               animation: `${orb.anim} ${orb.dur}s ease-in-out ${orb.delay ?? 0}s infinite`,
-              willChange: 'transform',
             }}
           />
         ))}
@@ -161,7 +194,7 @@ export default function LandingBackground() {
 
       {/* ── 3. Floating particles (medium parallax) ── */}
       <div ref={particleLayerRef} className="absolute inset-0 will-change-transform">
-        {PARTICLES.map((p, i) => (
+        {particles.map((p, i) => (
           <div
             key={i}
             className="lbg-particle absolute rounded-full"
@@ -173,7 +206,6 @@ export default function LandingBackground() {
               background: 'rgba(100, 170, 255, 0.7)',
               boxShadow: `0 0 ${p.size * 3}px ${p.size * 1.5}px rgba(79, 148, 255, 0.3)`,
               animation: `${FLOAT_ANIMS[i % 4]} ${p.dur}s ease-in-out ${p.delay}s infinite`,
-              willChange: 'transform, opacity',
             }}
           />
         ))}
@@ -192,7 +224,7 @@ export default function LandingBackground() {
       </div>
 
       {/* ── 5. Twinkling stars ── */}
-      {SPARKLES.map((s, i) => (
+      {sparkles.map((s, i) => (
         <Sparkle
           key={i}
           size={s.size}

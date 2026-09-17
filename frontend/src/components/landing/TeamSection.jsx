@@ -86,6 +86,7 @@ function TeamCard({ member }) {
         src={member.photo}
         alt={t(`team.${member.id}`)}
         loading="lazy"
+        decoding="async"
         className="relative h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
         style={{ objectPosition: member.position || "50% 25%", filter: "saturate(1.05) contrast(1.02)" }}
       />
@@ -274,6 +275,7 @@ function MobileCarousel() {
             src={member.photo}
             alt={t(`team.${member.id}`)}
             loading="lazy"
+            decoding="async"
             className="relative h-full w-full object-cover"
             style={{ objectPosition: member.position || "50% 25%", filter: "saturate(1.05) contrast(1.02)" }}
           />

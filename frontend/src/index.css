@@ -850,8 +850,23 @@ html { scroll-behavior: smooth; }
   70%      { transform: translate(7px,  -6px); opacity: 0.85; }
 }
 
-/* Aurora sweep — slow diagonal gradient band drifting across the page */
+/* Aurora sweep — slow diagonal gradient band drifting across the page.
+ *
+ * The drift is a transform on an oversized child, not an animated
+ * background-position. background-position is a paint property: animating it
+ * repainted a gradient the size of the whole page on every frame, for the life
+ * of the page, whether or not anything was on screen. A transform is handled by
+ * the compositor and costs nothing per frame.
+ */
 .lbg-aurora {
+  overflow: hidden;
+  mix-blend-mode: screen;
+}
+.lbg-aurora::before {
+  content: "";
+  position: absolute;
+  /* Oversized so the band can travel without its edges ever entering view. */
+  inset: -25% -25%;
   background: linear-gradient(115deg,
     transparent 25%,
     rgba(63,159,255,0.05) 42%,
@@ -859,17 +874,15 @@ html { scroll-behavior: smooth; }
     rgba(63,224,255,0.04) 62%,
     transparent 80%
   );
-  background-size: 200% 200%;
   animation: lbg-aurora-drift 55s ease-in-out infinite alternate;
-  mix-blend-mode: screen;
 }
 @keyframes lbg-aurora-drift {
-  0%   { background-position: 0% 20%; }
-  100% { background-position: 100% 80%; }
+  0%   { transform: translate3d(-6%, -3%, 0); }
+  100% { transform: translate3d(6%, 3%, 0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lbg-grad-layer, .lbg-orb, .lbg-particle, .lbg-aurora { animation: none !important; }
+  .lbg-grad-layer, .lbg-orb, .lbg-particle, .lbg-aurora, .lbg-aurora::before { animation: none !important; }
 }
 
 /* Edge rails — glowing nodes that occupy the wide gutters on ultra-wide

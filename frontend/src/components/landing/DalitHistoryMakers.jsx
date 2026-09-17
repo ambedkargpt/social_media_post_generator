@@ -51,6 +51,7 @@ function MakerCard({ maker }) {
         src={maker.image}
         alt={t(`makers.${maker.id}.name`)}
         loading="lazy"
+        decoding="async"
         className="relative h-full w-full object-cover object-top transition duration-700 group-hover:scale-[1.04]"
         style={{ filter: 'saturate(1.05) contrast(1.02)' }}
       />
@@ -235,6 +236,7 @@ function MobileCarousel() {
             src={maker.image}
             alt={t(`makers.${maker.id}.name`)}
             loading="lazy"
+            decoding="async"
             className="relative h-full w-full object-cover object-top"
             style={{ filter: 'saturate(1.05) contrast(1.02)' }}
           />
