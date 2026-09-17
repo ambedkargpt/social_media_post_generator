@@ -145,8 +145,8 @@ export default function ContactSection() {
       <span className="bg-word top-24 hidden sm:block" aria-hidden="true">MOVEMENT</span>
       {/* Ambient glow — extends upward to blend with TeamSection above */}
       <div className="pointer-events-none absolute inset-x-0 -top-28 -bottom-0">
-        <div className="absolute left-1/2 top-0 h-[500px] w-[800px] -translate-x-1/2 rounded-full bg-[#3f78ff]/9 blur-[150px]" />
-        <div className="absolute left-[20%] top-[40%] h-[320px] w-[400px] rounded-full bg-[#1a3fa0]/7 blur-[130px]" />
+        <div className="hidden md:block absolute left-1/2 top-0 h-[500px] w-[800px] -translate-x-1/2 rounded-full bg-[#3f78ff]/9 blur-[150px]" />
+        <div className="hidden md:block absolute left-[20%] top-[40%] h-[320px] w-[400px] rounded-full bg-[#1a3fa0]/7 blur-[130px]" />
       </div>
 
       <div className="relative mx-auto max-w-[1440px] px-6">
