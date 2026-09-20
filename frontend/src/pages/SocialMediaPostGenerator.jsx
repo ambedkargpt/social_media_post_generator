@@ -15,7 +15,7 @@ import logoSrc from '../assets/images/logo-animation.png';
 import { useAuth } from '../context/AuthContext';
 import { getNews, getNewsById, getTenants } from '../api/news';
 import { adaptNews, resolveTenantForUser } from '../utils/newsTenants';
-import { generatePostForNews, regeneratePostFromSnapshot, translatePost, updatePost, getDailyQuota } from '../api/posts';
+import { generatePostForNews, regeneratePostFromSnapshot, translatePost, updatePost, getDailyQuota, togglePostVersion } from '../api/posts';
 import { getQuestions } from '../api/questions';
 import { getProfileAnswers, saveProfileAnswers } from '../api/profile';
 import { CORE_QUESTION_IDS } from '../utils/preferenceQuestions';
@@ -285,6 +285,13 @@ export default function SocialMediaPostGenerator() {
   const [typeOpen,        setTypeOpen]        = useState(false);
   const [cardView,        setCardView]        = useState(() => readLocal(VIEW_KEY, 'grid'));
   const [refinementNote,  setRefinementNote]  = useState('');
+  const [refineHint,      setRefineHint]      = useState('');
+  // A post gets one refinement. Until it is published both versions are kept,
+  // and the user picks which one goes out.
+  const [refinedAt,       setRefinedAt]       = useState(null);
+  const [hasOtherVersion, setHasOtherVersion] = useState(false);
+  const [refinedIsLive,   setRefinedIsLive]   = useState(true);
+  const [switchingVersion, setSwitchingVersion] = useState(false);
   const [copiedHashtags,  setCopiedHashtags]  = useState(false);
   const [showMobilePrefs, setShowMobilePrefs] = useState(false);
   const filterRef = useRef(null);
@@ -607,6 +614,9 @@ export default function SocialMediaPostGenerator() {
     setSelectedArticle(article);
     setGeneratedPost('');
     setSelectedPostId(null);
+    setRefinementNote('');
+    setRefineHint('');
+    applyVersionState(null);
     setView('preview');
   }
 
@@ -638,6 +648,8 @@ export default function SocialMediaPostGenerator() {
       setSelectedPostId(response?.post?.id || null);
       setPostStatus('draft');
       setRefinementNote('');
+      setRefineHint('');
+      applyVersionState(response?.post);
       setTranslatedPost(response?.post?.translations?.[siteLang] || '');
       setShowTranslated(false);
     } catch (err) {
@@ -676,6 +688,13 @@ export default function SocialMediaPostGenerator() {
     if (!selectedArticle) return;
     // If there's no saved post ID (e.g. previous generation failed), do a fresh generate instead
     if (!selectedPostId) { handleGenerate(); return; }
+    // The note is the whole basis of a refinement: it is what the user wants
+    // different, and without it the request is identical to the generation it
+    // came from. The server refuses a blank one, so stop here rather than
+    // spending a round trip to be told.
+    if (!refinementNote.trim()) { setRefineHint(t('gen.refineNeedsNote')); return; }
+    if (refinedAt) { setRefineHint(t('gen.refineAlreadyUsed')); return; }
+    setRefineHint('');
     setGeneratedPost('');
     setTranslatedPost('');
     setShowTranslated(false);
@@ -694,15 +713,45 @@ export default function SocialMediaPostGenerator() {
       setSelectedPostId(response?.post?.id || selectedPostId);
       setPostStatus('draft');
       setRefinementNote('');
+      applyVersionState(response?.post);
       setTranslatedPost(response?.post?.translations?.[siteLang] || '');
       setShowTranslated(false);
     } catch (err) {
       console.error('Regenerate failed:', err);
-      setGeneratedPost('Could not regenerate post right now. Please try again.');
+      const detail = err?.response?.data?.detail;
+      const reason = typeof detail === 'string' ? detail : detail?.message;
+      setGeneratedPost(reason ? `⚠️ ${reason}` : t('gen.regenerateFailed'));
+      if (detail?.error === 'already_refined') setRefinedAt(new Date().toISOString());
     } finally {
       clearInterval(timer);
       setGenerating(false);
     }
+  }
+
+  // Switch between the refinement and the text it replaced. Both are kept
+  // until the post is published, when whichever was not published is dropped.
+  async function handleToggleVersion() {
+    if (!selectedPostId || !hasOtherVersion || switchingVersion) return;
+    setSwitchingVersion(true);
+    try {
+      const post = await togglePostVersion(selectedPostId);
+      setGeneratedPost(post?.content || '');
+      applyVersionState(post);
+      // The other version has its own translation, so the one on screen no
+      // longer belongs to the text being shown.
+      setTranslatedPost(post?.translations?.[siteLang] || '');
+      setShowTranslated(false);
+    } catch (err) {
+      console.error('Version switch failed:', err);
+    } finally {
+      setSwitchingVersion(false);
+    }
+  }
+
+  function applyVersionState(post) {
+    setRefinedAt(post?.refined_at || null);
+    setHasOtherVersion(Boolean(post?.previous_content));
+    setRefinedIsLive(post?.refined_is_live !== false);
   }
 
   async function handleTranslate() {
@@ -1924,8 +1973,21 @@ export default function SocialMediaPostGenerator() {
                 <button
                   type="button"
                   onClick={handleRegenerate}
-                  disabled={generating}
-                  title={t('gen.regenerate')}
+                  // Needs the note, but only once a post exists: with no saved
+                  // post this button is the retry for a generation that failed,
+                  // and that path must stay clickable.
+                  disabled={
+                    generating
+                    || Boolean(refinedAt)
+                    || (Boolean(selectedPostId) && !refinementNote.trim())
+                  }
+                  title={
+                    refinedAt
+                      ? t('gen.refineAlreadyUsed')
+                      : selectedPostId && !refinementNote.trim()
+                        ? t('gen.refineNeedsNote')
+                        : t('gen.regenerate')
+                  }
                   className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#1e3260]/70 bg-[#0d1531]/60 text-[#8b94b8] transition hover:border-[#3f9fff]/60 hover:text-white disabled:opacity-40 sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-2"
                 >
                   <RefreshCw size={12} strokeWidth={2} className={generating ? 'animate-spin' : ''} />
@@ -2037,17 +2099,40 @@ export default function SocialMediaPostGenerator() {
               </div>
             )}
 
+            {/* Version switch — only while both the refinement and the text it
+                replaced are still on the post, which is until it is published. */}
+            {!generating && !translating && selectedPostId && hasOtherVersion && (
+              <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-[#1e3260]/50 bg-[#0a1130]/60 px-3 py-2.5">
+                <span className="text-[11.5px] text-[#8b94b8]">
+                  {refinedIsLive ? t('gen.versionRefined') : t('gen.versionOriginal')}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleToggleVersion}
+                  disabled={switchingVersion}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#1e3260]/70 bg-[#0d1531]/60 px-2.5 py-1.5 text-[11.5px] font-medium text-[#8b94b8] transition hover:border-[#3f9fff]/60 hover:text-white disabled:opacity-40"
+                >
+                  <RefreshCw size={11} strokeWidth={2} className={switchingVersion ? 'animate-spin' : ''} />
+                  {refinedIsLive ? t('gen.showOriginal') : t('gen.showRefined')}
+                </button>
+                <span className="text-[10.5px] text-[#3a4e70]">{t('gen.versionHint')}</span>
+              </div>
+            )}
+
             {/* Refinement note */}
-            {!generating && !translating && generatedPost && (
+            {!generating && !translating && generatedPost && selectedPostId && !refinedAt && (
               <div className="mt-3">
                 <input
                   type="text"
                   value={refinementNote}
-                  onChange={(e) => setRefinementNote(e.target.value)}
+                  onChange={(e) => { setRefinementNote(e.target.value); if (refineHint) setRefineHint(''); }}
                   onKeyDown={(e) => e.key === 'Enter' && refinementNote.trim() && handleRegenerate()}
                   placeholder={t('gen.refinementPlaceholder')}
                   className="w-full rounded-xl border border-[#1e3260]/50 bg-[#0a1130]/60 px-4 py-2.5 text-[12.5px] text-white placeholder-[#3a4e70] outline-none transition focus:border-[#3f9fff]/50 focus:shadow-[0_0_0_3px_rgba(63,159,255,0.1)]"
                 />
+                {refineHint && (
+                  <p className="mt-1.5 text-[11.5px] text-[#fbbf24]">{refineHint}</p>
+                )}
               </div>
             )}
 

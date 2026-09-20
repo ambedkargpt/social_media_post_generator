@@ -11,12 +11,13 @@ import {
   Languages,
   X,
   Maximize2,
+  RefreshCw,
 } from "lucide-react";
 import SpeakButton from "../components/generate/SpeakButton";
 import DashboardShell from "../layouts/DashboardShell";
 import Topbar from "../components/dashboard/Topbar";
 import { useAuth } from "../context/AuthContext";
-import { getPosts, updatePost, deletePost, translatePost } from "../api/posts";
+import { getPosts, updatePost, deletePost, translatePost, togglePostVersion } from "../api/posts";
 import PostContent from "../components/generate/PostContent";
 import { useI18n } from "../i18n/index.jsx";
 
@@ -192,7 +193,7 @@ function PostModal({ post, onClose, onCopy, copiedId }) {
   );
 }
 
-function PostCard({ post, onOpen, onCopy, onPublish, onArchive, copiedId }) {
+function PostCard({ post, onOpen, onCopy, onPublish, onArchive, onToggleVersion, copiedId }) {
   const { t } = useI18n();
   const [translating, setTranslating] = useState(false);
   const [translated, setTranslated] = useState("");
@@ -285,6 +286,24 @@ function PostCard({ post, onOpen, onCopy, onPublish, onArchive, copiedId }) {
               {translating ? "…" : showTranslated ? "हिंदी" : "EN"}
             </span>
           </button>
+
+          {/* Switch version — a refined draft keeps both texts until it is
+              published, and publishing takes whichever one is showing. Without
+              this the choice would only exist on the generator screen, so a
+              draft published from here could not be switched. */}
+          {post.status === "draft" && post.previous_content && (
+            <button
+              type="button"
+              onClick={() => onToggleVersion(post.id)}
+              title={post.refined_is_live === false ? t('gen.showRefined') : t('gen.showOriginal')}
+              className="flex h-7 items-center justify-center gap-1 rounded-lg border border-[#1e3260]/60 px-1.5 text-[#6b78a0] transition hover:border-[#3f9fff]/50 hover:text-[#3f9fff] sm:px-2.5"
+            >
+              <RefreshCw size={12} strokeWidth={2} />
+              <span className="hidden text-[11px] font-medium sm:inline">
+                {post.refined_is_live === false ? t('gen.showRefined') : t('gen.showOriginal')}
+              </span>
+            </button>
+          )}
 
           {/* Publish */}
           {post.status === "draft" && (
@@ -430,6 +449,15 @@ export default function PostHistory() {
     }
   }
 
+  async function handleToggleVersion(id) {
+    try {
+      const updated = await togglePostVersion(id);
+      setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, ...updated } : p)));
+    } catch {
+      /* ignore */
+    }
+  }
+
   async function handleArchive(id) {
     try {
       await deletePost(id);
@@ -567,6 +595,7 @@ export default function PostHistory() {
                 onCopy={handleCopy}
                 onPublish={handlePublish}
                 onArchive={handleArchive}
+                onToggleVersion={handleToggleVersion}
                 copiedId={copiedId}
               />
             ))}

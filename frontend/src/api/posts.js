@@ -27,10 +27,21 @@ export async function generatePostForNews({ userId, newsId, tone, temperature, l
   return data;
 }
 
-// POST /posts/:id/regenerate — rerun LLM only using stored retrieval snapshot
+// POST /posts/:id/regenerate — rerun LLM only using stored retrieval snapshot.
+// refinementNote is required: it is the only thing that makes the refinement a
+// different request from the generation it came from, so the server rejects a
+// blank one. Allowed once per post.
 export async function regeneratePostFromSnapshot(postId, { temperature, language, profileOverrides, refinementNote } = {}) {
-  const payload = { temperature, language, profile_overrides: profileOverrides, refinement_note: refinementNote || undefined };
+  const payload = { temperature, language, profile_overrides: profileOverrides, refinement_note: refinementNote };
   const { data } = await client.post(`/posts/${postId}/regenerate`, payload);
+  return data;
+}
+
+// POST /posts/:id/toggle-version — switch a refined post between the refined
+// text and the one it replaced, so the user can publish either. Free: no model
+// call. Only available until the post is published, when the other is dropped.
+export async function togglePostVersion(postId) {
+  const { data } = await client.post(`/posts/${postId}/toggle-version`);
   return data;
 }
 
