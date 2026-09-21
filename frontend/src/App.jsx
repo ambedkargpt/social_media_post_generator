@@ -14,7 +14,6 @@ import Home       from './pages/Home';
 // blank screen for seconds.
 const About = lazy(() => import('./pages/About'));
 const Solutions = lazy(() => import('./pages/Solutions'));
-const Pricing = lazy(() => import('./pages/Pricing'));
 const Resources = lazy(() => import('./pages/Resources'));
 const Contact = lazy(() => import('./pages/Contact'));
 const Login = lazy(() => import('./pages/Login'));
@@ -120,7 +119,6 @@ export default function App() {
             <Route path="/"          element={<Home splashDone={splashDone} />} />
             <Route path="/about"     element={<About />} />
             <Route path="/solutions" element={<Solutions />} />
-            <Route path="/pricing"   element={<Pricing />} />
             <Route path="/resources" element={<Resources />} />
             <Route path="/contact"   element={<Contact />} />
             <Route path="/login"     element={<Login />} />
