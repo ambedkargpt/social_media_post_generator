@@ -766,7 +766,9 @@ class PostsService:
         # supporters of the same party can want opposite posts. Empty for a
         # party with no question set and for anyone who has not answered, so
         # those prompts are unchanged.
-        party_prose, party_answers = self._party_preferences(user_id, user_doc)
+        party_prose, party_answers = self._party_preferences(
+            user_id, user_doc, overrides=profile_overrides
+        )
         default_profile["party_preferences"] = party_prose
 
         raw_settings = {
@@ -778,7 +780,10 @@ class PostsService:
         return default_profile, raw_settings
 
     def _party_preferences(
-        self, user_id: str, user_doc: dict[str, Any]
+        self,
+        user_id: str,
+        user_doc: dict[str, Any],
+        overrides: dict[str, str] | None = None,
     ) -> tuple[str, dict[str, str]]:
         """
         The writer's answers to the ten questions about their party.
@@ -815,7 +820,18 @@ class PostsService:
             for row in rows
             if isinstance(row.get("answer"), str) and row.get("answer").strip()
         }
-        answers = {**defaults_for(party), **saved}
+        # The generator's side panel can change these for one post without
+        # saving them, the same way it already does for tone and length. They
+        # arrive in profile_overrides alongside the profile_* keys and are
+        # picked out by id here, because the profile loop above only keeps keys
+        # that name a PROFILE_FIELDS entry and would drop every one of these.
+        wanted = set(ids)
+        panel = {
+            qid: value
+            for qid, value in (overrides or {}).items()
+            if qid in wanted and isinstance(value, str) and value.strip()
+        }
+        answers = {**defaults_for(party), **saved, **panel}
         return render_preferences(QuestionsRepository().list_by_ids(ids), answers), answers
 
     def _position_preferences(

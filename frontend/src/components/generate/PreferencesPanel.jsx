@@ -17,7 +17,16 @@ const META_KEYS = {
   profile_call_to_action:          'qmeta.cta',
 };
 
+// Party questions are party_<inc|bsp>_q<n>, and the label comes from the
+// number alone: the ten are worded identically for both parties, only the
+// options differ. Their own question text is a full sentence, too long for a
+// label in a sidebar this narrow, so it becomes the hint underneath instead.
+const PARTY_Q = /^party_(?:inc|bsp)_q(\d{1,2})$/;
+
 function getMeta(questionId, questionText, t, lang) {
+  const party = PARTY_Q.exec(questionId);
+  if (party) return { label: t(`qmeta.partyQ${party[1]}`), hint: questionText };
+
   const key = META_KEYS[questionId];
   if (!key) return { label: questionLabel(questionText, lang), hint: '' };
   return { label: t(`${key}.label`), hint: t(`${key}.hint`) };

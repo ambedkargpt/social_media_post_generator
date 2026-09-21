@@ -17,7 +17,7 @@ import { useAuth } from '../context/AuthContext';
 import { getNews, getNewsById, getTenants } from '../api/news';
 import { adaptNews, resolveTenantForUser } from '../utils/newsTenants';
 import { generatePostForNews, regeneratePostFromSnapshot, translatePost, updatePost, getDailyQuota, togglePostVersion } from '../api/posts';
-import { getQuestions } from '../api/questions';
+import { getPartyQuestions, getQuestions } from '../api/questions';
 import { getProfileAnswers, saveProfileAnswers } from '../api/profile';
 import { CORE_QUESTION_IDS } from '../utils/preferenceQuestions';
 import { getSiteLanguage, SITE_LANGUAGES } from '../utils/siteLanguage';
@@ -99,8 +99,17 @@ function getPageItems(current, total) {
   return items;
 }
 
-// Preference questions shown in the right panel, in display order
-const PREF_QUESTION_IDS = CORE_QUESTION_IDS;
+// The only profile question the side panel still carries.
+//
+// It used to show all seven core questions, but six of them describe who the
+// writer is — their role, their audience, their perspective — and those do not
+// change from one post to the next. Setting them per post was work with no
+// answer. Length does change post to post, so it stays, and the ten party
+// questions take the rest of the panel: those are the ones worth reaching for
+// when a particular story needs a different stance.
+//
+// The seven are still on the Preferences page, where a profile belongs.
+const PREF_QUESTION_IDS = ['profile_content_length'];
 
 // adaptNews and resolveTenantForUser live in utils/newsTenants, shared with the
 // dashboard's top-story card so both read the same party and story shape.
@@ -368,10 +377,25 @@ export default function SocialMediaPostGenerator() {
     Promise.all([
       getQuestions(25),
       getProfileAnswers(currentUser.id).catch(() => []),
-    ]).then(([allQs, saved]) => {
-      // Keep only the 7 preferred questions, in defined display order
+      getPartyQuestions(currentUser.political_party || '').catch(() => []),
+    ]).then(([allQs, saved, partyQs]) => {
       const qMap = Object.fromEntries(allQs.map((q) => [q.question_id, q]));
-      const qs = PREF_QUESTION_IDS.map((id) => qMap[id]).filter(Boolean);
+      // Length first, then the party set in its own order. The party list is
+      // empty for a party with no questions written for it, and the panel then
+      // shows length alone rather than breaking.
+      const qs = [
+        ...PREF_QUESTION_IDS.map((id) => qMap[id]).filter(Boolean),
+        // question_text is localised here rather than in the panel, so the
+        // panel keeps taking one string per question.
+        // The question text is localised, the options are not. The option
+        // string IS the stored answer and the backend matches on the English
+        // one, so showing options_hi here would send Hindi where the defaults,
+        // the saved answers and the validation all speak English.
+        ...partyQs.map((q) => ({
+          ...q,
+          question_text: siteLang === 'hi' && q.question_text_hi ? q.question_text_hi : q.question_text,
+        })),
+      ];
       setPrefQuestions(qs);
 
       // Build a { question_id: answer } map from the saved answers array
@@ -385,7 +409,10 @@ export default function SocialMediaPostGenerator() {
       setPreferences(initial);
       setSavedPrefs(initial);
     }).catch(() => {});
-  }, [currentUser?.id]);
+    // Re-runs on a language switch, so the party questions come back in the
+    // language now on screen, and on a party change, so they come back as the
+    // new party's set rather than the old one's.
+  }, [currentUser?.id, currentUser?.political_party, siteLang]);
 
   // Resize drag refs
   const resizing  = useRef(false);
@@ -2070,6 +2097,26 @@ export default function SocialMediaPostGenerator() {
                     <p className="mt-1 font-count text-[11px] text-[#3a4e70]">{genSeconds}s elapsed</p>
                   )}
                 </div>
+                {generating && (
+                  /* The server sends nothing until the whole post is written, so
+                     there is no real percentage to show. The bar is honest about
+                     that: it eases toward 94% and stops, and only the arriving
+                     post ends it. A bar that marched to 100% and then sat there
+                     would be claiming something we do not know. */
+                  <div
+                    className="h-1 w-full max-w-[260px] overflow-hidden rounded-full bg-[#14224a]"
+                    role="progressbar"
+                    aria-label="Generating your post"
+                  >
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-[#2563eb] to-[#7b5cff]"
+                      style={{
+                        width: `${Math.min(94, 100 * (1 - Math.exp(-genSeconds / 9))).toFixed(1)}%`,
+                        transition: 'width 1s linear',
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             ) : postView === 'preview' ? (
               /* ── Mock social card preview ── */
