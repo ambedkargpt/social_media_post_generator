@@ -102,6 +102,23 @@ def ensure_phase3_indexes() -> None:
         name="idx_posts_user_published_status",
         partialFilterExpression={"status": "published"},
     )
+    # One generated post per user per story per day. Unique rather than a read
+    # before the write, so two requests arriving together cannot both pass the
+    # check and insert. Partial on origin: posts written before this rule have
+    # no origin field, so they are outside the index and never collide.
+    _safe_create_index(posts,
+        [("user_id", ASCENDING), ("news_id", ASCENDING), ("created_day", ASCENDING)],
+        name="uq_posts_user_news_day",
+        unique=True,
+        partialFilterExpression={"origin": "generate"},
+    )
+    # Backs the all-time settings check. Not unique: the only way two posts
+    # could race onto one fingerprint is within a single day, which the index
+    # above already refuses.
+    _safe_create_index(posts,
+        [("user_id", ASCENDING), ("news_id", ASCENDING), ("fingerprints", ASCENDING)],
+        name="idx_posts_user_news_fingerprints",
+    )
 
     streaks = db["user_streaks"]
     _safe_create_index(streaks, "user_id", unique=True, name="uq_streak_user_id")

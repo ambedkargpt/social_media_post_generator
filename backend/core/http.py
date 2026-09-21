@@ -49,6 +49,33 @@ def _validation_detail(errors: list[dict]) -> str:
     return detail
 
 
+def _json_safe_errors(errors: list[dict]) -> list[dict]:
+    """
+    Pydantic's error list, with the parts JSONResponse cannot encode removed.
+
+    When a field validator raises a plain ValueError, Pydantic v2 puts the
+    exception *object* in the error's `ctx` under "error". Returning that
+    straight to JSONResponse fails to serialise, the 422 handler raises inside
+    itself, and the outer middleware turns the whole thing into a 500 -- so a
+    validator written to explain a bad field produced "Internal server error."
+    instead. Constraint failures such as min_length were unaffected, because
+    their ctx holds plain numbers, which is why this stayed hidden.
+    """
+    safe: list[dict] = []
+    for err in errors:
+        row = dict(err)
+        ctx = row.get("ctx")
+        if isinstance(ctx, dict):
+            # Only what cannot be encoded is replaced, so the numbers and
+            # strings machine callers already read come back unchanged.
+            row["ctx"] = {
+                k: v if isinstance(v, (str, int, float, bool, type(None))) else str(v)
+                for k, v in ctx.items()
+            }
+        safe.append(row)
+    return safe
+
+
 @dataclass
 class ApiError:
     detail: str
@@ -106,9 +133,17 @@ def register_http_layer(app: FastAPI) -> None:
     @app.exception_handler(StarletteHTTPException)
     async def _http_exc_handler(request: Request, exc: StarletteHTTPException):
         request_id = getattr(request.state, "request_id", str(uuid.uuid4()))
+        # A structured detail is passed through as JSON rather than stringified.
+        # Several refusals raise a dict -- the daily publish limit sends its
+        # reset time, the per-story rules send which rule fired and the post
+        # that already exists -- and str() turned each of those into a Python
+        # repr, so every caller reading detail.message or detail.error got
+        # undefined and fell back to hardcoded English. Plain string details
+        # are unchanged.
+        detail = exc.detail if isinstance(exc.detail, (dict, list)) else str(exc.detail)
         return JSONResponse(
             status_code=exc.status_code,
-            content={"detail": str(exc.detail), "request_id": request_id},
+            content={"detail": detail, "request_id": request_id},
             headers={"X-Request-Id": request_id},
         )
 
@@ -119,7 +154,7 @@ def register_http_layer(app: FastAPI) -> None:
             status_code=422,
             content={
                 "detail": _validation_detail(exc.errors()),
-                "errors": exc.errors(),
+                "errors": _json_safe_errors(exc.errors()),
                 "request_id": request_id,
             },
             headers={"X-Request-Id": request_id},

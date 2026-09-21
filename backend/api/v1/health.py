@@ -34,6 +34,23 @@ def _index_checks() -> tuple[dict, bool]:
             indexes_ok = False
             break
     checks["indexes_ready"] = indexes_ok
+
+    # Named separately because this one is load-bearing and its creation is
+    # allowed to fail quietly: _safe_create_index swallows an OperationFailure
+    # as a warning. Without this index the one-post-per-story-per-day rule
+    # degrades from enforced to merely checked, and two requests arriving
+    # together can both write. Reported so it fails loudly here instead.
+    if indexes_ok:
+        try:
+            posts_indexes = db["posts"].index_information()
+            checks["posts_daily_uniqueness_enforced"] = (
+                "uq_posts_user_news_day" in posts_indexes
+            )
+        except Exception:
+            checks["posts_daily_uniqueness_enforced"] = False
+        if not checks["posts_daily_uniqueness_enforced"]:
+            indexes_ok = False
+
     return checks, indexes_ok
 
 

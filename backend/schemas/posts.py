@@ -42,6 +42,14 @@ class PostResponse(BaseModel):
     published_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
+    # The superseded text, present only between a refine and a publish. While
+    # it is set the user can switch between the two and publish either; the one
+    # not published is dropped.
+    previous_content: Optional[str] = None
+    refined_at: Optional[datetime] = None
+    # True when `content` is the refinement, False when it is the text the
+    # refinement replaced. Only meaningful while previous_content is set.
+    refined_is_live: Optional[bool] = None
 
 
 class RetrievedChunkReference(BaseModel):
@@ -68,7 +76,18 @@ class PostRegenerateRequest(BaseModel):
     temperature: Optional[float] = Field(default=None, ge=0.0, le=2.0)
     language: Optional[str] = None
     profile_overrides: Optional[dict[str, str]] = None
-    refinement_note: Optional[str] = None  # "make it more aggressive", "add Periyar reference", etc.
+    # Required, because it is the only thing that makes a refinement a different
+    # request from the generation it came from: without it the two would be the
+    # same inputs and so the same fingerprint. "make it more aggressive", "add
+    # a Periyar reference", etc.
+    refinement_note: str = Field(min_length=1)
+
+    @field_validator("refinement_note")
+    @classmethod
+    def note_not_blank(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("Tell us what should be different before regenerating.")
+        return v.strip()
 
 
 class PostGenerateResponse(BaseModel):

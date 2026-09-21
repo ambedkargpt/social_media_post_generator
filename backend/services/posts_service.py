@@ -10,13 +10,15 @@ from bson import ObjectId
 from fastapi import HTTPException, status
 from openai import OpenAI
 from openai import RateLimitError as OpenAIRateLimitError
+from pymongo.errors import DuplicateKeyError
 
 from backend.core.config import settings
 from backend.db.mongo import db
 from backend.repositories.news_repo import NewsRepository
-from backend.repositories.posts_repo import PostsRepository
+from backend.repositories.posts_repo import PostsRepository, today_day_key
 from backend.repositories.profile_answers_repo import ProfileAnswersRepository
 from backend.repositories.streak_repo import StreakRepository
+from backend.services.generation_fingerprint import build_fingerprint
 from backend.schemas.posts import (
     DAILY_POST_LIMIT,
     MILESTONE_TARGET,
@@ -133,6 +135,10 @@ class PostsService:
                 )
             # Update streak
             self.streak_repo.on_publish(user_id)
+            # The user has committed to whichever version was live, so the other
+            # one goes. Only after the publish is allowed: dropping it before
+            # would lose a version to a request that then failed on the quota.
+            self.repo.drop_unpublished_version(post_id)
         elif "status" in updates and updates["status"] is not None:
             self._validate_status_transition(existing["status"], updates["status"])
 
@@ -191,7 +197,29 @@ class PostsService:
         )
 
         query_text = self._query_from_article(article)
-        profile = self._profile_for_user(user_id, tone=tone, profile_overrides=profile_overrides)
+        profile, raw_settings = self._profile_for_user(
+            user_id, tone=tone, profile_overrides=profile_overrides
+        )
+
+        # Both refusals happen here, before retrieval, research and the model
+        # call. Checking after would spend a paid generation of about thirteen
+        # seconds only to throw the result away.
+        fingerprint, fingerprint_input = build_fingerprint(
+            news_id=news_id,
+            user_id=user_id,
+            profile=profile,
+            party_position_id=raw_settings["party_position_id"],
+            party_answers=raw_settings["party_answers"],
+            position_answers=raw_settings["position_answers"],
+        )
+        created_day = today_day_key()
+        self._refuse_duplicate_generation(
+            user_id=user_id,
+            news_id=news_id,
+            created_day=created_day,
+            fingerprint=fingerprint,
+        )
+
         tenant = article.get("tenant_slug") or "general"
         embedder, store, context_by_title = self._rag_stack(tenant)
         retrieved_chunks = self._retrieve_chunks(query_text, embedder, store, tenant=tenant)
@@ -264,21 +292,78 @@ class PostsService:
             research=brief.as_meta() if brief else None,
             validation=validation.as_meta() if validation else None,
         )
-        doc = self.repo.create(
-            {
-                "user_id": user_id,
-                "news_id": news_id,
-                "content": post_text,
-                "hashtags": [],
-                "status": "draft",
-                "generation_meta": generation_meta,
-            }
-        )
+        generation_meta["fingerprint"] = fingerprint
+        generation_meta["fingerprint_input"] = fingerprint_input
+        try:
+            doc = self.repo.create(
+                {
+                    "user_id": user_id,
+                    "news_id": news_id,
+                    "content": post_text,
+                    "hashtags": [],
+                    "status": "draft",
+                    "generation_meta": generation_meta,
+                    "origin": "generate",
+                    "created_day": created_day,
+                    "fingerprint": fingerprint,
+                }
+            )
+        except DuplicateKeyError:
+            # A second request for the same story got here first while this one
+            # was with the model. The index is the arbiter, not the check above.
+            raise self._duplicate_day_error(created_day)
         return PostGenerateResponse(
             post=self._to_response(doc),
             references=references,
             retrieval_snapshot_id=snapshot_id,
             retrieval_reused=False,
+        )
+
+    def _refuse_duplicate_generation(
+        self, *, user_id: str, news_id: str, created_day: str, fingerprint: str
+    ) -> None:
+        """
+        The two rules that limit how often one story can be written.
+
+        Checked in this order because the messages are not equally useful: a
+        user who has already written this story today can do nothing about it
+        except come back tomorrow, so telling them to change a setting first
+        would send them to fiddle with preferences that will not help.
+        """
+        if self.repo.find_same_day(user_id, news_id, created_day):
+            raise self._duplicate_day_error(created_day)
+
+        existing = self.repo.find_by_fingerprint(user_id, news_id, fingerprint)
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={
+                    "error": "duplicate_settings",
+                    "message": (
+                        "You have already written this story with these exact "
+                        "settings. Change your tone, platform or any preference "
+                        "to write a different post."
+                    ),
+                    "existing_post_id": str(existing["_id"]),
+                    "existing_created_day": existing.get("created_day"),
+                },
+            )
+
+    def _duplicate_day_error(self, created_day: str) -> HTTPException:
+        next_midnight = (datetime.now(timezone.utc) + timedelta(days=1)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        return HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "error": "duplicate_news_today",
+                "message": (
+                    "You have already created a post for this story today. "
+                    "Pick another story, or come back tomorrow."
+                ),
+                "created_day": created_day,
+                "reset_at": next_midnight.isoformat(),
+            },
         )
 
     def regenerate_from_snapshot(
@@ -294,6 +379,21 @@ class PostsService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found.")
         if str(source_doc["user_id"]) != current_user_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot regenerate another user's post.")
+
+        # One refinement per post. Checked here as well as in the write, which
+        # is where two clicks arriving together are actually settled -- this is
+        # the cheap refusal that saves the model call.
+        if source_doc.get("refined_at"):
+            raise self._already_refined_error()
+        # Refining after publishing would rewrite what already went out.
+        if source_doc.get("status") == "published":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={
+                    "error": "already_published",
+                    "message": "This post has been published and can no longer be changed.",
+                },
+            )
 
         meta = source_doc.get("generation_meta") or {}
         retrieval_snapshot = meta.get("retrieval_snapshot") or {}
@@ -314,7 +414,7 @@ class PostsService:
 
         profile = meta.get("profile_used")
         if not isinstance(profile, dict) or not profile:
-            profile = self._profile_for_user(current_user_id, tone=None)
+            profile, _ = self._profile_for_user(current_user_id, tone=None)
         # Apply any panel overrides on top of the stored profile
         if payload.profile_overrides:
             for qid, value in payload.profile_overrides.items():
@@ -361,22 +461,80 @@ class PostsService:
             research=prior_research or None,
         )
         generation_meta["regenerated_from_post_id"] = str(source_doc["_id"])
-        doc = self.repo.create(
-            {
-                "user_id": str(source_doc["user_id"]),
-                "news_id": str(source_doc["news_id"]),
-                "content": post_text,
-                "hashtags": source_doc.get("hashtags", []),
-                "status": "draft",
-                "generation_meta": generation_meta,
-            }
+
+        # Built from the settings the parent generation recorded, plus the note.
+        # So the refinement differs from its parent by exactly the thing the
+        # user typed -- which is the whole reason the note is required.
+        stored_input = meta.get("fingerprint_input") or {}
+        fingerprint, fingerprint_input = build_fingerprint(
+            news_id=news_id,
+            user_id=current_user_id,
+            profile=profile,
+            party_position_id=stored_input.get("party_position") or "",
+            party_answers=stored_input.get("party_answers") or {},
+            position_answers=stored_input.get("position_answers") or {},
+            refinement_note=payload.refinement_note,
         )
+        generation_meta["fingerprint"] = fingerprint
+        generation_meta["fingerprint_input"] = fingerprint_input
+        generation_meta["refinement_note"] = payload.refinement_note
+
+        # Replaces the text on the post that was already there rather than
+        # adding a second one: one story on one day is one post, and a
+        # refinement is that post rewritten, not another of them.
+        doc = self.repo.refine_in_place(
+            source_post_id,
+            content=post_text,
+            fingerprint=fingerprint,
+            generation_meta=generation_meta,
+        )
+        if not doc:
+            raise self._already_refined_error()
         return PostGenerateResponse(
             post=self._to_response(doc),
             references=references,
             retrieval_snapshot_id=snapshot_id,
             retrieval_reused=True,
         )
+
+    def _already_refined_error(self) -> HTTPException:
+        return HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "error": "already_refined",
+                "message": (
+                    "This post has already been refined once. You can switch "
+                    "between the two versions and publish either."
+                ),
+            },
+        )
+
+    def swap_post_versions(self, *, post_id: str, current_user_id: str) -> PostResponse:
+        """
+        Switch which of a refined post's two versions is the live one.
+
+        Both are kept until the post is published, so the user can read them
+        side by side and pick. Costs nothing -- no model call, no new document.
+        """
+        self._ensure_object_id(post_id, "post_id")
+        existing = self.repo.get_by_id(post_id)
+        if not existing:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found.")
+        if str(existing["user_id"]) != current_user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cannot change another user's post.",
+            )
+        doc = self.repo.swap_versions(post_id)
+        if not doc:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={
+                    "error": "no_other_version",
+                    "message": "This post has only one version.",
+                },
+            )
+        return self._to_response(doc)
 
     def get_daily_quota(self, *, user_id: str) -> DailyQuotaResponse:
         self._ensure_object_id(user_id, "user_id")
@@ -537,7 +695,18 @@ class PostsService:
         *,
         tone: str | None,
         profile_overrides: dict[str, str] | None = None,
-    ) -> dict[str, Any]:
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        """
+        The profile the model is given, and the raw values behind it.
+
+        Two returns because they serve opposite purposes. The profile carries
+        rendered prose -- a guidance paragraph for the position, question text
+        beside each preference answer -- which is what makes it readable to the
+        model and useless as an identity: an edit to a question's wording would
+        change it without the user having changed anything. The second dict is
+        the same settings as stored ids and answers, and that is what gets
+        hashed.
+        """
         default_profile = dict(get_user_profiles()[0])
         # Fetch only the known profile question IDs — avoids scanning 500 rows per request
         known_qids = [f"profile_{f}" for f in PROFILE_FIELDS]
@@ -588,7 +757,8 @@ class PostsService:
         # How this writer wants to write from their position, in their own
         # answers. Empty for a party or position with no question set and for
         # anyone who has not answered, so those prompts are unchanged.
-        default_profile["position_preferences"] = self._position_preferences(user_id, user_doc)
+        position_prose, position_answers = self._position_preferences(user_id, user_doc)
+        default_profile["position_preferences"] = position_prose
 
         # What relationship this writer wants with the party: whether to defend
         # it or judge it, what to lead with, how to answer its critics, and what
@@ -596,10 +766,20 @@ class PostsService:
         # supporters of the same party can want opposite posts. Empty for a
         # party with no question set and for anyone who has not answered, so
         # those prompts are unchanged.
-        default_profile["party_preferences"] = self._party_preferences(user_id, user_doc)
-        return default_profile
+        party_prose, party_answers = self._party_preferences(user_id, user_doc)
+        default_profile["party_preferences"] = party_prose
 
-    def _party_preferences(self, user_id: str, user_doc: dict[str, Any]) -> str:
+        raw_settings = {
+            # The stored id, not the guidance paragraph the profile carries.
+            "party_position_id": str(user_doc.get("party_position") or "").strip(),
+            "party_answers": party_answers,
+            "position_answers": position_answers,
+        }
+        return default_profile, raw_settings
+
+    def _party_preferences(
+        self, user_id: str, user_doc: dict[str, Any]
+    ) -> tuple[str, dict[str, str]]:
         """
         The writer's answers to the ten questions about their party.
 
@@ -626,7 +806,7 @@ class PostsService:
         party = question_party(user_doc.get("political_party"))
         ids = question_ids_for(party)
         if not ids:
-            return ""
+            return "", {}
         rows = self.profile_answers_repo.list_by_user(
             user_id=user_id, question_ids=ids, limit=len(ids), skip=0
         )
@@ -636,9 +816,11 @@ class PostsService:
             if isinstance(row.get("answer"), str) and row.get("answer").strip()
         }
         answers = {**defaults_for(party), **saved}
-        return render_preferences(QuestionsRepository().list_by_ids(ids), answers)
+        return render_preferences(QuestionsRepository().list_by_ids(ids), answers), answers
 
-    def _position_preferences(self, user_id: str, user_doc: dict[str, Any]) -> str:
+    def _position_preferences(
+        self, user_id: str, user_doc: dict[str, Any]
+    ) -> tuple[str, dict[str, str]]:
         """
         The writer's answers to the five questions for their party and position.
 
@@ -661,14 +843,14 @@ class PostsService:
             group_for_position(user_doc.get("party_position")),
         )
         if not ids:
-            return ""
+            return "", {}
         rows = self.profile_answers_repo.list_by_user(
             user_id=user_id, question_ids=ids, limit=len(ids), skip=0
         )
         answers = {str(row.get("question_id")): row.get("answer") for row in rows}
         if not answers:
-            return ""
-        return render_preferences(QuestionsRepository().list_by_ids(ids), answers)
+            return "", {}
+        return render_preferences(QuestionsRepository().list_by_ids(ids), answers), answers
 
     def _rag_stack(self, tenant: str) -> tuple[Any, Any, Any]:
         """
@@ -1211,4 +1393,7 @@ class PostsService:
             published_at=doc.get("published_at"),
             created_at=doc["created_at"],
             updated_at=doc["updated_at"],
+            previous_content=doc.get("previous_content"),
+            refined_at=doc.get("refined_at"),
+            refined_is_live=doc.get("refined_is_live"),
         )
