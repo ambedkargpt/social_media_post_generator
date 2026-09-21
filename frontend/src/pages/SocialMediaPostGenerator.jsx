@@ -5,6 +5,7 @@ import {
   Copy, Check, RefreshCw, ChevronDown, FileText, Star, Radio,
   ArrowUpDown, List, LayoutGrid, ArrowLeftRight, Users, Globe,
   CalendarDays, Clock, ChevronRight, X as XIcon,
+  MessageCircle, Repeat2, Heart, Share, Flame, AlertTriangle,
 } from 'lucide-react';
 
 import PreferencesPanel from '../components/generate/PreferencesPanel';
@@ -15,8 +16,8 @@ import logoSrc from '../assets/images/logo-animation.png';
 import { useAuth } from '../context/AuthContext';
 import { getNews, getNewsById, getTenants } from '../api/news';
 import { adaptNews, resolveTenantForUser } from '../utils/newsTenants';
-import { generatePostForNews, regeneratePostFromSnapshot, translatePost, updatePost, getDailyQuota } from '../api/posts';
-import { getQuestions } from '../api/questions';
+import { generatePostForNews, regeneratePostFromSnapshot, translatePost, updatePost, getDailyQuota, togglePostVersion } from '../api/posts';
+import { getPartyQuestions, getQuestions } from '../api/questions';
 import { getProfileAnswers, saveProfileAnswers } from '../api/profile';
 import { CORE_QUESTION_IDS } from '../utils/preferenceQuestions';
 import { getSiteLanguage, SITE_LANGUAGES } from '../utils/siteLanguage';
@@ -98,8 +99,17 @@ function getPageItems(current, total) {
   return items;
 }
 
-// Preference questions shown in the right panel, in display order
-const PREF_QUESTION_IDS = CORE_QUESTION_IDS;
+// The only profile question the side panel still carries.
+//
+// It used to show all seven core questions, but six of them describe who the
+// writer is — their role, their audience, their perspective — and those do not
+// change from one post to the next. Setting them per post was work with no
+// answer. Length does change post to post, so it stays, and the ten party
+// questions take the rest of the panel: those are the ones worth reaching for
+// when a particular story needs a different stance.
+//
+// The seven are still on the Preferences page, where a profile belongs.
+const PREF_QUESTION_IDS = ['profile_content_length'];
 
 // adaptNews and resolveTenantForUser live in utils/newsTenants, shared with the
 // dashboard's top-story card so both read the same party and story shape.
@@ -258,6 +268,11 @@ export default function SocialMediaPostGenerator() {
   const [generating,      setGenerating]      = useState(false);
   const [genSeconds,      setGenSeconds]      = useState(0);
   const [generatedPost,   setGeneratedPost]   = useState('');
+  // A refusal used to be written into generatedPost behind a warning emoji, so
+  // the message was then laid out as if it were a post, in the post's own type
+  // and line height. This says which of the two the string holds, and the
+  // render gives an error its own frame.
+  const [postFailed,      setPostFailed]      = useState(false);
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [selectedPostId,  setSelectedPostId]  = useState(null);
   const [copied,          setCopied]          = useState(false);
@@ -285,6 +300,13 @@ export default function SocialMediaPostGenerator() {
   const [typeOpen,        setTypeOpen]        = useState(false);
   const [cardView,        setCardView]        = useState(() => readLocal(VIEW_KEY, 'grid'));
   const [refinementNote,  setRefinementNote]  = useState('');
+  const [refineHint,      setRefineHint]      = useState('');
+  // A post gets one refinement. Until it is published both versions are kept,
+  // and the user picks which one goes out.
+  const [refinedAt,       setRefinedAt]       = useState(null);
+  const [hasOtherVersion, setHasOtherVersion] = useState(false);
+  const [refinedIsLive,   setRefinedIsLive]   = useState(true);
+  const [switchingVersion, setSwitchingVersion] = useState(false);
   const [copiedHashtags,  setCopiedHashtags]  = useState(false);
   const [showMobilePrefs, setShowMobilePrefs] = useState(false);
   const filterRef = useRef(null);
@@ -355,10 +377,25 @@ export default function SocialMediaPostGenerator() {
     Promise.all([
       getQuestions(25),
       getProfileAnswers(currentUser.id).catch(() => []),
-    ]).then(([allQs, saved]) => {
-      // Keep only the 7 preferred questions, in defined display order
+      getPartyQuestions(currentUser.political_party || '').catch(() => []),
+    ]).then(([allQs, saved, partyQs]) => {
       const qMap = Object.fromEntries(allQs.map((q) => [q.question_id, q]));
-      const qs = PREF_QUESTION_IDS.map((id) => qMap[id]).filter(Boolean);
+      // Length first, then the party set in its own order. The party list is
+      // empty for a party with no questions written for it, and the panel then
+      // shows length alone rather than breaking.
+      const qs = [
+        ...PREF_QUESTION_IDS.map((id) => qMap[id]).filter(Boolean),
+        // question_text is localised here rather than in the panel, so the
+        // panel keeps taking one string per question.
+        // The question text is localised, the options are not. The option
+        // string IS the stored answer and the backend matches on the English
+        // one, so showing options_hi here would send Hindi where the defaults,
+        // the saved answers and the validation all speak English.
+        ...partyQs.map((q) => ({
+          ...q,
+          question_text: siteLang === 'hi' && q.question_text_hi ? q.question_text_hi : q.question_text,
+        })),
+      ];
       setPrefQuestions(qs);
 
       // Build a { question_id: answer } map from the saved answers array
@@ -372,7 +409,10 @@ export default function SocialMediaPostGenerator() {
       setPreferences(initial);
       setSavedPrefs(initial);
     }).catch(() => {});
-  }, [currentUser?.id]);
+    // Re-runs on a language switch, so the party questions come back in the
+    // language now on screen, and on a party change, so they come back as the
+    // new party's set rather than the old one's.
+  }, [currentUser?.id, currentUser?.political_party, siteLang]);
 
   // Resize drag refs
   const resizing  = useRef(false);
@@ -607,6 +647,9 @@ export default function SocialMediaPostGenerator() {
     setSelectedArticle(article);
     setGeneratedPost('');
     setSelectedPostId(null);
+    setRefinementNote('');
+    setRefineHint('');
+    applyVersionState(null);
     setView('preview');
   }
 
@@ -635,9 +678,12 @@ export default function SocialMediaPostGenerator() {
       const content = response?.post?.content || '';
       if (!content.trim()) throw new Error('empty_content');
       setGeneratedPost(content);
+      setPostFailed(false);
       setSelectedPostId(response?.post?.id || null);
       setPostStatus('draft');
       setRefinementNote('');
+      setRefineHint('');
+      applyVersionState(response?.post);
       setTranslatedPost(response?.post?.translations?.[siteLang] || '');
       setShowTranslated(false);
     } catch (err) {
@@ -645,7 +691,8 @@ export default function SocialMediaPostGenerator() {
       if (err?.response?.status === 429) {
         const detail = err.response.data?.detail;
         const msg = detail?.message ?? "You've reached your 5 posts/day limit. Come back tomorrow!";
-        setGeneratedPost(`⚠️ ${msg}`);
+        setGeneratedPost(msg);
+        setPostFailed(true);
         // Refresh quota so the UI reflects the limit
         getDailyQuota().then(setQuota).catch(() => {});
       } else {
@@ -660,11 +707,11 @@ export default function SocialMediaPostGenerator() {
         const reason = typeof detail === 'string' ? detail : detail?.message;
         setGeneratedPost(
           reason
-            ? `⚠️ ${reason}`
-            : `Could not generate post right now. Please try again.${
-                err?.response?.status ? ` (error ${err.response.status})` : ''
-              }`,
+            || `Could not generate post right now. Please try again.${
+              err?.response?.status ? ` (error ${err.response.status})` : ''
+            }`,
         );
+        setPostFailed(true);
       }
     } finally {
       clearInterval(timer);
@@ -676,6 +723,13 @@ export default function SocialMediaPostGenerator() {
     if (!selectedArticle) return;
     // If there's no saved post ID (e.g. previous generation failed), do a fresh generate instead
     if (!selectedPostId) { handleGenerate(); return; }
+    // The note is the whole basis of a refinement: it is what the user wants
+    // different, and without it the request is identical to the generation it
+    // came from. The server refuses a blank one, so stop here rather than
+    // spending a round trip to be told.
+    if (!refinementNote.trim()) { setRefineHint(t('gen.refineNeedsNote')); return; }
+    if (refinedAt) { setRefineHint(t('gen.refineAlreadyUsed')); return; }
+    setRefineHint('');
     setGeneratedPost('');
     setTranslatedPost('');
     setShowTranslated(false);
@@ -691,18 +745,50 @@ export default function SocialMediaPostGenerator() {
       const content = response?.post?.content || '';
       if (!content.trim()) throw new Error('empty_content');
       setGeneratedPost(content);
+      setPostFailed(false);
       setSelectedPostId(response?.post?.id || selectedPostId);
       setPostStatus('draft');
       setRefinementNote('');
+      applyVersionState(response?.post);
       setTranslatedPost(response?.post?.translations?.[siteLang] || '');
       setShowTranslated(false);
     } catch (err) {
       console.error('Regenerate failed:', err);
-      setGeneratedPost('Could not regenerate post right now. Please try again.');
+      const detail = err?.response?.data?.detail;
+      const reason = typeof detail === 'string' ? detail : detail?.message;
+      setGeneratedPost(reason || t('gen.regenerateFailed'));
+      setPostFailed(true);
+      if (detail?.error === 'already_refined') setRefinedAt(new Date().toISOString());
     } finally {
       clearInterval(timer);
       setGenerating(false);
     }
+  }
+
+  // Switch between the refinement and the text it replaced. Both are kept
+  // until the post is published, when whichever was not published is dropped.
+  async function handleToggleVersion() {
+    if (!selectedPostId || !hasOtherVersion || switchingVersion) return;
+    setSwitchingVersion(true);
+    try {
+      const post = await togglePostVersion(selectedPostId);
+      setGeneratedPost(post?.content || '');
+      applyVersionState(post);
+      // The other version has its own translation, so the one on screen no
+      // longer belongs to the text being shown.
+      setTranslatedPost(post?.translations?.[siteLang] || '');
+      setShowTranslated(false);
+    } catch (err) {
+      console.error('Version switch failed:', err);
+    } finally {
+      setSwitchingVersion(false);
+    }
+  }
+
+  function applyVersionState(post) {
+    setRefinedAt(post?.refined_at || null);
+    setHasOtherVersion(Boolean(post?.previous_content));
+    setRefinedIsLive(post?.refined_is_live !== false);
   }
 
   async function handleTranslate() {
@@ -1522,7 +1608,9 @@ export default function SocialMediaPostGenerator() {
                       </div>
 
                       <p className={`font-hindi font-bold leading-[1.6] pt-0.5 text-white ${
-                        cardView === 'list' ? 'line-clamp-2 text-[19px]' : 'line-clamp-3 text-[21px]'
+                        cardView === 'list'
+                          ? 'line-clamp-2 text-[clamp(15.5px,1.1vw+11px,19px)]'
+                          : 'line-clamp-3 text-[clamp(16px,1.2vw+11px,21px)]'
                       }`}>
                         {article.title}
                       </p>
@@ -1530,8 +1618,10 @@ export default function SocialMediaPostGenerator() {
                           column that height is the whole cost of scanning the
                           feed, so the list keeps one line of it and the grid,
                           which has two columns to fill, keeps three. */}
-                      <p className={`font-hindi mt-2 flex-1 leading-[1.85] text-[#b9c8e4] ${
-                        cardView === 'list' ? 'line-clamp-1 text-[15px]' : 'mt-3 line-clamp-3 text-[16.5px]'
+                      <p className={`font-hindi mt-2 flex-1 leading-[1.65] text-[#b9c8e4] ${
+                        cardView === 'list'
+                          ? 'line-clamp-1 text-[clamp(13px,0.7vw+10.3px,15px)]'
+                          : 'mt-3 line-clamp-3 text-[clamp(13.5px,0.9vw+10px,16.5px)]'
                       }`}>
                         {truncateText(article.summary || article.content, cardView === 'list' ? 120 : 200)}
                       </p>
@@ -1728,8 +1818,9 @@ export default function SocialMediaPostGenerator() {
                       : `${quota.daily_used} of ${quota.daily_limit ?? 5} published today`}
                   </span>
                   {quota.streak_days > 0 && (
-                    <span className="ml-2 text-[11px] font-semibold text-amber-400">
-                      🔥 {quota.streak_days}-day streak
+                    <span className="ml-2 inline-flex items-center gap-1 text-[11px] font-semibold text-amber-400">
+                      <Flame size={12} strokeWidth={2} />
+                      {quota.streak_days}-day streak
                     </span>
                   )}
                 </div>
@@ -1872,7 +1963,10 @@ export default function SocialMediaPostGenerator() {
                 <span className="hidden text-[12px] font-medium sm:inline">{t('gen.article')}</span>
               </button>
 
-              <h2 className="font-display text-[16px] font-semibold text-white sm:text-[18px]">{t('gen.generatedPost')}</h2>
+              {/* nowrap, and small enough on a phone that it does not need to
+                  wrap: at 16px it broke across two lines and doubled the height
+                  of the whole row. */}
+              <h2 className="font-display whitespace-nowrap text-[13px] font-semibold text-white sm:text-[18px]">{t('gen.generatedPost')}</h2>
 
               {/* Action buttons */}
               <div className="ml-auto flex items-center gap-1 sm:gap-2">
@@ -1885,14 +1979,20 @@ export default function SocialMediaPostGenerator() {
                     lang={showTranslated && translatedPost ? 'en' : 'hi'}
                   />
                 )}
-                {/* Translate — hidden on mobile to save space */}
+                {/* Translate. Icon-only on a phone and labelled from sm up,
+                    which is what regenerate, copy and publish beside it already
+                    do. It used to be removed below sm instead, so the one
+                    control that turns a Hindi post into one the reader can
+                    actually read was missing from the screen most people are
+                    on. An icon costs the same 32px as its neighbours. */}
                 {selectedPostId && !generating && siteLang !== 'hi' && (
                   <button
                     type="button"
                     onClick={showTranslated ? () => setShowTranslated(false) : handleTranslate}
                     disabled={translating}
                     title={showTranslated ? 'Show Hindi' : 'Translate to English'}
-                    className="hidden items-center gap-1.5 rounded-lg border border-[#1e3a6e]/80 bg-[#0d1840]/80 px-3 py-2 text-[12px] font-medium text-[#6aa8ff] transition hover:border-[#3f9fff]/60 hover:text-white disabled:opacity-40 sm:inline-flex"
+                    aria-label={showTranslated ? 'Show Hindi' : 'Translate to English'}
+                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#1e3a6e]/80 bg-[#0d1840]/80 text-[12px] font-medium text-[#6aa8ff] transition hover:border-[#3f9fff]/60 hover:text-white disabled:opacity-40 sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-2"
                   >
                     {translating ? (
                       <RefreshCw size={12} strokeWidth={2} className="animate-spin" />
@@ -1901,7 +2001,9 @@ export default function SocialMediaPostGenerator() {
                         <path d="M5 8l6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6" />
                       </svg>
                     )}
-                    {showTranslated ? 'Show Hindi' : translating ? 'Translating…' : 'Translate'}
+                    <span className="hidden sm:inline">
+                      {showTranslated ? 'Show Hindi' : translating ? 'Translating…' : 'Translate'}
+                    </span>
                   </button>
                 )}
 
@@ -1909,8 +2011,21 @@ export default function SocialMediaPostGenerator() {
                 <button
                   type="button"
                   onClick={handleRegenerate}
-                  disabled={generating}
-                  title={t('gen.regenerate')}
+                  // Needs the note, but only once a post exists: with no saved
+                  // post this button is the retry for a generation that failed,
+                  // and that path must stay clickable.
+                  disabled={
+                    generating
+                    || Boolean(refinedAt)
+                    || (Boolean(selectedPostId) && !refinementNote.trim())
+                  }
+                  title={
+                    refinedAt
+                      ? t('gen.refineAlreadyUsed')
+                      : selectedPostId && !refinementNote.trim()
+                        ? t('gen.refineNeedsNote')
+                        : t('gen.regenerate')
+                  }
                   className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#1e3260]/70 bg-[#0d1531]/60 text-[#8b94b8] transition hover:border-[#3f9fff]/60 hover:text-white disabled:opacity-40 sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-2"
                 >
                   <RefreshCw size={12} strokeWidth={2} className={generating ? 'animate-spin' : ''} />
@@ -1982,6 +2097,26 @@ export default function SocialMediaPostGenerator() {
                     <p className="mt-1 font-count text-[11px] text-[#3a4e70]">{genSeconds}s elapsed</p>
                   )}
                 </div>
+                {generating && (
+                  /* The server sends nothing until the whole post is written, so
+                     there is no real percentage to show. The bar is honest about
+                     that: it eases toward 94% and stops, and only the arriving
+                     post ends it. A bar that marched to 100% and then sat there
+                     would be claiming something we do not know. */
+                  <div
+                    className="h-1 w-full max-w-[260px] overflow-hidden rounded-full bg-[#14224a]"
+                    role="progressbar"
+                    aria-label="Generating your post"
+                  >
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-[#2563eb] to-[#7b5cff]"
+                      style={{
+                        width: `${Math.min(94, 100 * (1 - Math.exp(-genSeconds / 9))).toFixed(1)}%`,
+                        transition: 'width 1s linear',
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             ) : postView === 'preview' ? (
               /* ── Mock social card preview ── */
@@ -1999,34 +2134,73 @@ export default function SocialMediaPostGenerator() {
                   </div>
                 </div>
                 <div className="border-t border-[#141d3a]/60 pt-4">
-                  <PostContent content={showTranslated && translatedPost ? translatedPost : generatedPost} />
+                  <PostContent
+                    content={showTranslated && translatedPost ? translatedPost : generatedPost}
+                    lang={showTranslated && translatedPost ? 'en' : 'hi'}
+                  />
                 </div>
                 {/* Mock engagement row */}
+                {/* Drawn icons, because this row is pretending to be a real
+                    social card and the real ones do not use emoji. Emoji also
+                    render in whatever style the reader's platform ships, which
+                    is the one thing a mock of someone else's UI cannot afford. */}
                 <div className="mt-4 flex items-center gap-5 border-t border-[#141d3a]/60 pt-3 text-[11.5px] text-[#3a4e70]">
-                  <span>💬 Reply</span>
-                  <span>🔁 Repost</span>
-                  <span>❤️ Like</span>
-                  <span>📤 Share</span>
+                  <span className="inline-flex items-center gap-1.5"><MessageCircle size={13} strokeWidth={1.8} />Reply</span>
+                  <span className="inline-flex items-center gap-1.5"><Repeat2 size={14} strokeWidth={1.8} />Repost</span>
+                  <span className="inline-flex items-center gap-1.5"><Heart size={13} strokeWidth={1.8} />Like</span>
+                  <span className="inline-flex items-center gap-1.5"><Share size={13} strokeWidth={1.8} />Share</span>
                 </div>
+              </div>
+            ) : postFailed ? (
+              /* ── The generator refused, and said why ── */
+              <div className="flex min-h-[260px] items-start gap-3 rounded-2xl border border-[#e0a04b]/35 bg-[#1a1206]/60 p-5">
+                <AlertTriangle size={18} strokeWidth={1.9} className="mt-0.5 shrink-0 text-[#f0b877]" />
+                <p className="text-[14px] leading-relaxed text-[#f0d9b8]">{generatedPost}</p>
               </div>
             ) : (
               /* ── Styled post text ── */
               <div className="min-h-[260px] rounded-2xl border border-[#1e3260]/60 bg-[#0a1130]/70 p-5">
-                <PostContent content={showTranslated && translatedPost ? translatedPost : generatedPost} />
+                <PostContent
+                    content={showTranslated && translatedPost ? translatedPost : generatedPost}
+                    lang={showTranslated && translatedPost ? 'en' : 'hi'}
+                  />
+              </div>
+            )}
+
+            {/* Version switch — only while both the refinement and the text it
+                replaced are still on the post, which is until it is published. */}
+            {!generating && !translating && selectedPostId && hasOtherVersion && (
+              <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-[#1e3260]/50 bg-[#0a1130]/60 px-3 py-2.5">
+                <span className="text-[11.5px] text-[#8b94b8]">
+                  {refinedIsLive ? t('gen.versionRefined') : t('gen.versionOriginal')}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleToggleVersion}
+                  disabled={switchingVersion}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#1e3260]/70 bg-[#0d1531]/60 px-2.5 py-1.5 text-[11.5px] font-medium text-[#8b94b8] transition hover:border-[#3f9fff]/60 hover:text-white disabled:opacity-40"
+                >
+                  <RefreshCw size={11} strokeWidth={2} className={switchingVersion ? 'animate-spin' : ''} />
+                  {refinedIsLive ? t('gen.showOriginal') : t('gen.showRefined')}
+                </button>
+                <span className="text-[10.5px] text-[#3a4e70]">{t('gen.versionHint')}</span>
               </div>
             )}
 
             {/* Refinement note */}
-            {!generating && !translating && generatedPost && (
+            {!generating && !translating && generatedPost && selectedPostId && !refinedAt && (
               <div className="mt-3">
                 <input
                   type="text"
                   value={refinementNote}
-                  onChange={(e) => setRefinementNote(e.target.value)}
+                  onChange={(e) => { setRefinementNote(e.target.value); if (refineHint) setRefineHint(''); }}
                   onKeyDown={(e) => e.key === 'Enter' && refinementNote.trim() && handleRegenerate()}
                   placeholder={t('gen.refinementPlaceholder')}
                   className="w-full rounded-xl border border-[#1e3260]/50 bg-[#0a1130]/60 px-4 py-2.5 text-[12.5px] text-white placeholder-[#3a4e70] outline-none transition focus:border-[#3f9fff]/50 focus:shadow-[0_0_0_3px_rgba(63,159,255,0.1)]"
                 />
+                {refineHint && (
+                  <p className="mt-1.5 text-[11.5px] text-[#fbbf24]">{refineHint}</p>
+                )}
               </div>
             )}
 

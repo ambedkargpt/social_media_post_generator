@@ -69,6 +69,15 @@ def translate_post(
     )
 
 
+@router.post("/{post_id}/toggle-version", response_model=PostResponse)
+def toggle_post_version(
+    post_id: str,
+    current_user_id: str = Depends(get_current_user_id),
+) -> PostResponse:
+    """Switch a refined post between its two versions, so either can be published."""
+    return service.swap_post_versions(post_id=post_id, current_user_id=current_user_id)
+
+
 @router.post("/{post_id}/regenerate", response_model=PostGenerateResponse)
 def regenerate_post(
     post_id: str,

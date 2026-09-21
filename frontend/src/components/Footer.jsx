@@ -12,7 +12,6 @@ const PRODUCT_LINKS = [
   { key: "foot.generatePosts", to: "/generate/social-media" },
   { key: "foot.bheembot", to: "/bheembot" },
   { key: "foot.useCases", to: "/#bheem" },
-  { key: "foot.pricing", to: "/pricing" },
   { key: "foot.solutions", to: "/solutions" },
 ];
 

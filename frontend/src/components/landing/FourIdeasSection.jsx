@@ -1,12 +1,20 @@
+import { Handshake, Landmark, ScrollText } from 'lucide-react';
+
 import SectionLabel from './SectionLabel';
 import { useI18n } from '../../i18n/index.jsx';
 
 // Keyed rather than literal: the card copy is translated at render, so the
 // array carries identity and the dictionary carries the words.
+//
+// Drawn icons rather than emoji. Emoji are rendered by the reader's own
+// platform, so the same card is a flat Twemoji on one phone and a glossy
+// Apple glyph on another, at a weight and palette this page never chose. These
+// are stroked at the same width as every other icon in the product and take
+// the accent colour, so the row reads as part of the design.
 const IDEAS = [
-  { emoji: '🤝', id: 'unite' },
-  { emoji: '📜', id: 'const' },
-  { emoji: '🇮🇳', id: 'country' },
+  { Icon: Handshake, id: 'unite' },
+  { Icon: ScrollText, id: 'const' },
+  { Icon: Landmark, id: 'country' },
 ];
 
 export default function FourIdeasSection() {
@@ -28,19 +36,27 @@ export default function FourIdeasSection() {
         </div>
 
         <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-3">
-          {IDEAS.map(({ emoji, id }) => (
+          {IDEAS.map((idea) => (
             <div
-              key={id}
+              key={idea.id}
               className="liquid-glass hover-lift flex flex-col rounded-2xl p-7 md:p-8"
             >
-              <span className="text-[52px] leading-none">{emoji}</span>
+              {/* The icon sits on its own tile rather than loose on the card,
+                  which gives the three cards a shared anchor at the same size
+                  whatever the glyph inside happens to be. */}
+              <span
+                className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#3f9fff]/25"
+                style={{ background: 'linear-gradient(145deg, rgba(63,159,255,0.18), rgba(123,92,255,0.10))' }}
+              >
+                <idea.Icon size={26} strokeWidth={1.6} className="text-[#7fc0ff]" aria-hidden="true" />
+              </span>
 
               <p className="mt-6 whitespace-pre-line font-display text-[20px] font-bold leading-tight text-white md:text-[22px]">
-                {t(`ideas.${id}.title`)}
+                {t(`ideas.${idea.id}.title`)}
               </p>
 
               <p className="mt-3 text-[clamp(15px,4vw,19px)] leading-relaxed text-[#9ab8d8] md:text-[21px]">
-                {t(`ideas.${id}.body`)}
+                {t(`ideas.${idea.id}.body`)}
               </p>
             </div>
           ))}
