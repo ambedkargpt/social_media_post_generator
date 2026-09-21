@@ -166,14 +166,51 @@ function ServiceCard({ service }) {
 
 // Triple-clone so the track is always deep enough to loop seamlessly
 const TRACK      = [...SERVICES, ...SERVICES, ...SERVICES];
-const CARD_W     = 360;
 const GAP        = 24;
-const STEP       = CARD_W + GAP;           // px per card slot
-const VIEWPORT_W = 3 * CARD_W + 2 * GAP;   // show 3 cards
+// The width a card wants. How many actually fit is measured, not assumed.
+const CARD_TARGET = 360;
 const AUTO_MS    = 3000;
+
+/**
+ * How many cards fit in the measured width, and how wide each one is.
+ *
+ * This used to be three 360px cards in a hard 1128px box, with the arrows
+ * pinned 64px outside it. That needs 1256px of screen. Below it the arrows
+ * simply left the viewport, and the box itself overflowed the page: at 800px
+ * wide, or at 100% on a 1280px screen zoomed to 150%, the carousel was cut off
+ * at both edges with no way to reach the controls.
+ *
+ * Browser zoom is the same thing as a narrower screen as far as CSS is
+ * concerned, which is why zooming in reproduced it exactly.
+ */
+function layoutFor(width) {
+  if (!width) return { visible: 3, cardW: CARD_TARGET, step: CARD_TARGET + GAP };
+  const visible = Math.max(1, Math.min(3, Math.floor((width + GAP) / (CARD_TARGET + GAP))));
+  const cardW = (width - GAP * (visible - 1)) / visible;
+  return { visible, cardW, step: cardW + GAP };
+}
 const SLIDE_EASE = 'transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
 
 function DesktopCarousel() {
+  // Measured rather than assumed, so the carousel fits whatever width it is
+  // given. A callback ref backed by state, because the element is present from
+  // the first render but its width is not known until layout.
+  const [viewportEl, setViewportEl] = useState(null);
+  const viewportRef = useCallback((el) => setViewportEl(el), []);
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    if (!viewportEl || typeof ResizeObserver === 'undefined') return undefined;
+    // observe() delivers the current size straight away, so there is no need to
+    // measure once by hand first. Without a ResizeObserver at all, width stays
+    // 0 and layoutFor falls back to the three fixed cards it used to draw.
+    const ro = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width));
+    ro.observe(viewportEl);
+    return () => ro.disconnect();
+  }, [viewportEl]);
+
+  const { cardW, step } = layoutFor(width);
+
   // Start in the middle copy so we can go left or right without hitting the edge
   const [trackIdx, setTrackIdx] = useState(SERVICES.length);
   const [animated, setAnimated] = useState(true);
@@ -251,34 +288,34 @@ function DesktopCarousel() {
 
   return (
     <div className="mt-8 sm:mt-14">
-      {/* Viewport + side buttons */}
-      <div className="relative" style={{ width: VIEWPORT_W, margin: '0 auto' }}>
-        {/* Left button */}
-        <div className="absolute top-1/2 -translate-y-1/2" style={{ left: -64 }}>
+      {/* The gutters are padding rather than negative offsets, so the buttons
+          are inside the element's own box and cannot leave the screen however
+          narrow it gets. 56px holds a 44px button with room either side. */}
+      <div className="relative mx-auto w-full max-w-[1256px] px-12 lg:px-14">
+        <div className="absolute left-0 top-1/2 z-10 -translate-y-1/2 pl-1 lg:pl-1.5">
           <NavButton onClick={goPrev} direction="left" label="Previous" />
         </div>
 
         {/* Clipped viewport */}
-        <div style={{ overflow: 'hidden' }}>
+        <div ref={viewportRef} style={{ overflow: 'hidden' }}>
           <div
             onTransitionEnd={onTransitionEnd}
             style={{
               display:    'flex',
               gap:        GAP,
-              transform:  `translateX(${-(trackIdx * STEP)}px)`,
+              transform:  `translateX(${-(trackIdx * step)}px)`,
               transition: animated ? SLIDE_EASE : 'none',
             }}
           >
             {TRACK.map((service, i) => (
-              <div key={i} style={{ flexShrink: 0, width: CARD_W, display: 'flex' }}>
+              <div key={i} style={{ flexShrink: 0, width: cardW, display: 'flex' }}>
                 <ServiceCard service={service} />
               </div>
             ))}
           </div>
         </div>
 
-        {/* Right button */}
-        <div className="absolute top-1/2 -translate-y-1/2" style={{ right: -64 }}>
+        <div className="absolute right-0 top-1/2 z-10 -translate-y-1/2 pr-1 lg:pr-1.5">
           <NavButton onClick={goNext} direction="right" label="Next" />
         </div>
       </div>
