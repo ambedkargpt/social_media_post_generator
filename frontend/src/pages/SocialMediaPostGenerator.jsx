@@ -5,6 +5,7 @@ import {
   Copy, Check, RefreshCw, ChevronDown, FileText, Star, Radio,
   ArrowUpDown, List, LayoutGrid, ArrowLeftRight, Users, Globe,
   CalendarDays, Clock, ChevronRight, X as XIcon,
+  MessageCircle, Repeat2, Heart, Share, Flame, AlertTriangle,
 } from 'lucide-react';
 
 import PreferencesPanel from '../components/generate/PreferencesPanel';
@@ -258,6 +259,11 @@ export default function SocialMediaPostGenerator() {
   const [generating,      setGenerating]      = useState(false);
   const [genSeconds,      setGenSeconds]      = useState(0);
   const [generatedPost,   setGeneratedPost]   = useState('');
+  // A refusal used to be written into generatedPost behind a warning emoji, so
+  // the message was then laid out as if it were a post, in the post's own type
+  // and line height. This says which of the two the string holds, and the
+  // render gives an error its own frame.
+  const [postFailed,      setPostFailed]      = useState(false);
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [selectedPostId,  setSelectedPostId]  = useState(null);
   const [copied,          setCopied]          = useState(false);
@@ -635,6 +641,7 @@ export default function SocialMediaPostGenerator() {
       const content = response?.post?.content || '';
       if (!content.trim()) throw new Error('empty_content');
       setGeneratedPost(content);
+      setPostFailed(false);
       setSelectedPostId(response?.post?.id || null);
       setPostStatus('draft');
       setRefinementNote('');
@@ -645,7 +652,8 @@ export default function SocialMediaPostGenerator() {
       if (err?.response?.status === 429) {
         const detail = err.response.data?.detail;
         const msg = detail?.message ?? "You've reached your 5 posts/day limit. Come back tomorrow!";
-        setGeneratedPost(`⚠️ ${msg}`);
+        setGeneratedPost(msg);
+        setPostFailed(true);
         // Refresh quota so the UI reflects the limit
         getDailyQuota().then(setQuota).catch(() => {});
       } else {
@@ -660,11 +668,11 @@ export default function SocialMediaPostGenerator() {
         const reason = typeof detail === 'string' ? detail : detail?.message;
         setGeneratedPost(
           reason
-            ? `⚠️ ${reason}`
-            : `Could not generate post right now. Please try again.${
-                err?.response?.status ? ` (error ${err.response.status})` : ''
-              }`,
+            || `Could not generate post right now. Please try again.${
+              err?.response?.status ? ` (error ${err.response.status})` : ''
+            }`,
         );
+        setPostFailed(true);
       }
     } finally {
       clearInterval(timer);
@@ -691,6 +699,7 @@ export default function SocialMediaPostGenerator() {
       const content = response?.post?.content || '';
       if (!content.trim()) throw new Error('empty_content');
       setGeneratedPost(content);
+      setPostFailed(false);
       setSelectedPostId(response?.post?.id || selectedPostId);
       setPostStatus('draft');
       setRefinementNote('');
@@ -699,6 +708,7 @@ export default function SocialMediaPostGenerator() {
     } catch (err) {
       console.error('Regenerate failed:', err);
       setGeneratedPost('Could not regenerate post right now. Please try again.');
+      setPostFailed(true);
     } finally {
       clearInterval(timer);
       setGenerating(false);
@@ -1732,8 +1742,9 @@ export default function SocialMediaPostGenerator() {
                       : `${quota.daily_used} of ${quota.daily_limit ?? 5} published today`}
                   </span>
                   {quota.streak_days > 0 && (
-                    <span className="ml-2 text-[11px] font-semibold text-amber-400">
-                      🔥 {quota.streak_days}-day streak
+                    <span className="ml-2 inline-flex items-center gap-1 text-[11px] font-semibold text-amber-400">
+                      <Flame size={12} strokeWidth={2} />
+                      {quota.streak_days}-day streak
                     </span>
                   )}
                 </div>
@@ -2020,12 +2031,22 @@ export default function SocialMediaPostGenerator() {
                   />
                 </div>
                 {/* Mock engagement row */}
+                {/* Drawn icons, because this row is pretending to be a real
+                    social card and the real ones do not use emoji. Emoji also
+                    render in whatever style the reader's platform ships, which
+                    is the one thing a mock of someone else's UI cannot afford. */}
                 <div className="mt-4 flex items-center gap-5 border-t border-[#141d3a]/60 pt-3 text-[11.5px] text-[#3a4e70]">
-                  <span>💬 Reply</span>
-                  <span>🔁 Repost</span>
-                  <span>❤️ Like</span>
-                  <span>📤 Share</span>
+                  <span className="inline-flex items-center gap-1.5"><MessageCircle size={13} strokeWidth={1.8} />Reply</span>
+                  <span className="inline-flex items-center gap-1.5"><Repeat2 size={14} strokeWidth={1.8} />Repost</span>
+                  <span className="inline-flex items-center gap-1.5"><Heart size={13} strokeWidth={1.8} />Like</span>
+                  <span className="inline-flex items-center gap-1.5"><Share size={13} strokeWidth={1.8} />Share</span>
                 </div>
+              </div>
+            ) : postFailed ? (
+              /* ── The generator refused, and said why ── */
+              <div className="flex min-h-[260px] items-start gap-3 rounded-2xl border border-[#e0a04b]/35 bg-[#1a1206]/60 p-5">
+                <AlertTriangle size={18} strokeWidth={1.9} className="mt-0.5 shrink-0 text-[#f0b877]" />
+                <p className="text-[14px] leading-relaxed text-[#f0d9b8]">{generatedPost}</p>
               </div>
             ) : (
               /* ── Styled post text ── */
