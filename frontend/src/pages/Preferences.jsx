@@ -189,8 +189,12 @@ export default function Preferences() {
   const [reloadKey, setReloadKey] = useState(0);
   const userParty = currentUser?.political_party || '';
   const positionGroup = groupForId(currentUser?.party_position || '');
-  // Mirrors question_party() in backend/pipeline/position_questions.py.
-  const partyHasPositionSet = /indian national congress|\(inc\)|bahujan samaj|\(bsp\)/i.test(userParty);
+  // Mirrors question_party() in backend/pipeline/position_questions.py, and
+  // has to be kept in step with it by hand — a party added there and not here
+  // gets its questions but never the prompt telling the writer to set a
+  // position first, so the set stays invisible to anyone who has not.
+  const partyHasPositionSet =
+    /indian national congress|\(inc\)|bahujan samaj|\(bsp\)|samajwadi|\(sp\)/i.test(userParty);
   const [positionQuestions, setPositionQuestions] = useState([]);
 
   // Ten questions about the party itself: what the writer wants said about it,
