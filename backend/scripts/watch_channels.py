@@ -91,6 +91,28 @@ def log(message: str) -> None:
 # the same on both, and survives a hard kill — a crashed holder simply stops
 # updating it and the next watcher takes over.
 
+def _process_alive(pid: int) -> bool:
+    """
+    Whether a process with this id is still running.
+
+    os.kill with signal 0 asks without sending anything, and works on Windows
+    too: a live id returns, a dead one raises. A live process owned by someone
+    else raises PermissionError on POSIX, which is still alive and must not be
+    read as gone.
+    """
+    if not pid:
+        return False
+    if pid == os.getpid():
+        return True
+    try:
+        os.kill(pid, 0)
+    except PermissionError:
+        return True
+    except OSError:
+        return False
+    return True
+
+
 def _read_lock() -> dict | None:
     try:
         return json.loads(LOCK_PATH.read_text(encoding="utf-8"))
@@ -101,12 +123,22 @@ def _read_lock() -> dict | None:
 def claim_lock() -> bool:
     held = _read_lock()
     if held:
+        pid = int(held.get("pid") or 0)
         age = time.time() - float(held.get("heartbeat", 0))
-        if age < LOCK_STALE_SECONDS and held.get("pid") != os.getpid():
-            log(f"another run holds the lock (pid {held.get('pid')}, {int(age)}s ago) - standing down")
+        fresh = age < LOCK_STALE_SECONDS
+
+        # Both have to say the lock is held. The heartbeat alone left a run that
+        # was killed mid-fetch blocking every tick for the rest of the staleness
+        # window - half an hour of doing nothing because the holder could not
+        # run its own cleanup. Liveness alone is not enough either: process ids
+        # are reused, and an unrelated program inheriting one would look like a
+        # holder forever.
+        if pid != os.getpid() and fresh and _process_alive(pid):
+            log(f"another run holds the lock (pid {pid}, {int(age)}s ago) - standing down")
             return False
-        if age >= LOCK_STALE_SECONDS:
-            log(f"taking over a lock last touched {int(age)}s ago")
+        if pid != os.getpid():
+            why = "stale" if not fresh else f"pid {pid} is gone"
+            log(f"taking over the lock ({why}, last touched {int(age)}s ago)")
     touch_lock()
     return True
 
@@ -345,7 +377,10 @@ def main(argv: list[str] | None = None) -> int:
     names = channel_names(args.channels or None)
 
     if not args.dry_run and not claim_lock():
-        return 1
+        # Not a failure. Standing down is what should happen when a run is
+        # already going, and a non-zero exit here made every such tick show up
+        # as a failed task in the scheduler's history.
+        return 0
     try:
         if args.once or args.dry_run:
             tick(names, max_attempts=args.max_attempts, dry_run=args.dry_run)
