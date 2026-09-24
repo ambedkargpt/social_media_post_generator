@@ -113,6 +113,26 @@ jobs:
             --function-name ambedkargpt-api
           echo "Lambda updated successfully."
 
+      # The channel watcher runs from this same image with a different CMD
+      # (backend.worker.watch_handler.handler). Updating it here is what keeps
+      # the two from drifting — a watcher on a months-old image would be
+      # reading channel configs that no longer match the pipeline's.
+      #
+      # Skipped rather than failed when the function does not exist, so this
+      # workflow keeps working before the watcher has been created.
+      # See backend/deploy/README.md.
+      - name: Update watcher Lambda (if it exists)
+        run: |
+          if aws lambda get-function --function-name ambedkargpt-watch >/dev/null 2>&1; then
+            aws lambda update-function-code \
+              --function-name ambedkargpt-watch \
+              --image-uri "${IMAGE_URI}:${{ github.sha }}"
+            aws lambda wait function-updated --function-name ambedkargpt-watch
+            echo "Watcher Lambda updated."
+          else
+            echo "ambedkargpt-watch does not exist yet - skipping."
+          fi
+
       # Optional smoke test — hits the health endpoint and checks for HTTP 200.
       # LAMBDA_FUNCTION_URL is stored as a GitHub *Variable* (not a Secret)
       # because it is not sensitive. Set it under Settings → Variables → Actions.
