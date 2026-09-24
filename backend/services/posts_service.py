@@ -182,8 +182,13 @@ class PostsService:
         if already:
             return already
 
+        # Exempt from the cap here for the same reason as on the ordinary
+        # publish path: a test account has to be able to reach this screen more
+        # than five times in a day. Everything else still applies, Reddit's own
+        # refusals included.
+        unrestricted = self._is_test_account(user_id)
         first_publish = existing.get("status") != "published"
-        if first_publish and self.repo.count_published_today(user_id) >= DAILY_POST_LIMIT:
+        if first_publish and not unrestricted and self.repo.count_published_today(user_id) >= DAILY_POST_LIMIT:
             next_midnight = (datetime.now(timezone.utc) + timedelta(days=1)).replace(
                 hour=0, minute=0, second=0, microsecond=0
             )
@@ -228,10 +233,17 @@ class PostsService:
         # try_publish_atomic stamps published_at and guards the quota; the
         # status is a separate write, the same way the ordinary publish path
         # sets it after that check.
-        if first_publish and self.repo.try_publish_atomic(post_id, user_id, DAILY_POST_LIMIT):
-            self.repo.update(post_id, {"status": "published"})
-            self.streak_repo.on_publish(user_id)
-            self.repo.drop_unpublished_version(post_id)
+        if first_publish:
+            if unrestricted:
+                # No quota to claim, so published_at is stamped directly.
+                self.repo.set_published_at(post_id)
+                claimed = True
+            else:
+                claimed = self.repo.try_publish_atomic(post_id, user_id, DAILY_POST_LIMIT)
+            if claimed:
+                self.repo.update(post_id, {"status": "published"})
+                self.streak_repo.on_publish(user_id)
+                self.repo.drop_unpublished_version(post_id)
 
         return publication
 
