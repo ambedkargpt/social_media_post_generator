@@ -89,6 +89,15 @@ def ensure_phase2_indexes() -> None:
     answers.create_index([("user_id", ASCENDING), ("question_id", ASCENDING)], unique=True, name="uq_answers_user_question")
     answers.create_index([("answered_at", DESCENDING)], name="idx_answers_answered_at")
 
+    # Connected accounts. Unique per (user, provider): a user has one Reddit
+    # account here, and reconnecting replaces it rather than stacking rows.
+    integrations = db["user_integrations"]
+    integrations.create_index(
+        [("user_id", ASCENDING), ("provider", ASCENDING)],
+        unique=True,
+        name="uq_integrations_user_provider",
+    )
+
 
 def ensure_phase3_indexes() -> None:
     posts = db["posts"]

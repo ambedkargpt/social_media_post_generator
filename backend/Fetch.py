@@ -182,6 +182,56 @@ def _publish_meta_from_ytdlp(info: dict) -> dict:
     return out
 
 
+def _proxy_url() -> str:
+    """
+    The outbound proxy for YouTube requests, or "" when none is configured.
+
+    YouTube rate-limits and blocks by IP, and a datacentre IP is the worst
+    case: yt-dlp returns zero videos from AWS ranges — the note is already in
+    requirements-worker.txt — and the transcript endpoint refuses far sooner
+    than it does from a home connection. Neither has an appeal or a
+    Retry-After; the only remedy is to ask from a different address.
+
+        YOUTUBE_PROXY_URL=http://user:pass@host:port
+
+    Unset, everything below is a no-op and requests go out directly, which is
+    what a laptop wants and what this has always done.
+    """
+    return (os.getenv("YOUTUBE_PROXY_URL") or "").strip()
+
+
+def _transcript_api() -> "YouTubeTranscriptApi":
+    """
+    The transcript client, routed through a proxy when one is configured.
+
+    Webshare is handled separately from a plain URL because its residential
+    pool rotates per request: the library takes the account rather than one
+    address, and retries on a fresh IP when it is blocked. A single proxy URL
+    cannot do that, so a block there is final.
+
+        YOUTUBE_PROXY_WEBSHARE_USERNAME=…
+        YOUTUBE_PROXY_WEBSHARE_PASSWORD=…
+    """
+    webshare_user = (os.getenv("YOUTUBE_PROXY_WEBSHARE_USERNAME") or "").strip()
+    webshare_pass = (os.getenv("YOUTUBE_PROXY_WEBSHARE_PASSWORD") or "").strip()
+    if webshare_user and webshare_pass:
+        from youtube_transcript_api.proxies import WebshareProxyConfig
+
+        return YouTubeTranscriptApi(
+            proxy_config=WebshareProxyConfig(
+                proxy_username=webshare_user, proxy_password=webshare_pass
+            )
+        )
+
+    url = _proxy_url()
+    if url:
+        from youtube_transcript_api.proxies import GenericProxyConfig
+
+        return YouTubeTranscriptApi(proxy_config=GenericProxyConfig(http_url=url, https_url=url))
+
+    return YouTubeTranscriptApi()
+
+
 def _ytdlp_auth_opts() -> dict:
     """
     Cookie options for yt-dlp, or an empty dict when none are configured.
@@ -207,6 +257,13 @@ def _ytdlp_auth_opts() -> dict:
     client = (os.getenv("YTDLP_PLAYER_CLIENT") or "android").strip()
     if client and client.lower() != "default":
         opts["extractor_args"] = {"youtube": {"player_client": [client]}}
+
+    # Before the cookie branches below, which return early: a proxy is about
+    # where the request comes from and a cookie is about who is asking, so
+    # configuring one must never drop the other.
+    proxy = _proxy_url()
+    if proxy:
+        opts["proxy"] = proxy
 
     browser = (os.getenv("YTDLP_COOKIES_FROM_BROWSER") or "").strip()
     if browser:
@@ -400,7 +457,7 @@ def fetch_transcript_with_reason(video_id: str) -> tuple[str | None, str]:
     """
     try:
         transcript = (
-            YouTubeTranscriptApi()
+            _transcript_api()
             .fetch(video_id, languages=["hi", "en"])
             .to_raw_data()
         )

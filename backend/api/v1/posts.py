@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from backend.core.dependencies import get_current_user_id
+from backend.schemas.integrations import PublicationResponse, PublishToRedditRequest
 from backend.schemas.auth import MessageResponse
 from backend.schemas.posts import (
     DailyQuotaResponse,
@@ -131,6 +132,22 @@ def update_post(post_id: str, payload: PostUpdateRequest, current_user_id: str =
     if _owner_id(existing) != current_user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot update another user's post.")
     return service.update(post_id, payload, current_user_id=current_user_id)
+
+
+@router.post("/{post_id}/publish/reddit", response_model=PublicationResponse)
+def publish_post_to_reddit(
+    post_id: str,
+    payload: PublishToRedditRequest,
+    current_user_id: str = Depends(get_current_user_id),
+) -> PublicationResponse:
+    """Post this to our subreddit under the user's own connected account."""
+    existing = service.get(post_id)
+    if _owner_id(existing) != current_user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot publish another user's post.")
+    publication = service.publish_to_reddit(
+        post_id, current_user_id, title=payload.title, body=payload.body
+    )
+    return PublicationResponse(**publication)
 
 
 @router.delete("/{post_id}", response_model=MessageResponse)

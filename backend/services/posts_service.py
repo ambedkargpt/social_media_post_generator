@@ -147,6 +147,80 @@ class PostsService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found.")
         return self._to_response(doc)
 
+    def publish_to_reddit(self, post_id: str, user_id: str, title: str, body: str) -> dict:
+        """
+        Put this post on our subreddit, under the user's own Reddit account.
+
+        Order matters. The quota is checked first, because a post that Reddit
+        accepts has already cost the user one of their five and we cannot take
+        it back. Reddit is called next. Only once it succeeds is the post
+        marked published — a failed submit must not spend the quota.
+        """
+        from backend.services.reddit_service import RedditError, RedditNotConnected, RedditService
+
+        existing = self.repo.get_by_id(post_id)
+        if not existing:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found.")
+
+        # Already there. Returned rather than posted again, so a double tap or
+        # a retried request cannot put the same story on the subreddit twice.
+        already = self.repo.find_publication(post_id, "reddit")
+        if already:
+            return already
+
+        first_publish = existing.get("status") != "published"
+        if first_publish and self.repo.count_published_today(user_id) >= DAILY_POST_LIMIT:
+            next_midnight = (datetime.now(timezone.utc) + timedelta(days=1)).replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail={
+                    "error": "daily_limit_reached",
+                    "message": f"You've used all {DAILY_POST_LIMIT} posts for today. Come back tomorrow!",
+                    "reset_at": next_midnight.isoformat(),
+                },
+            )
+
+        try:
+            result = RedditService().submit(user_id=user_id, title=title, body=body)
+        except RedditNotConnected as exc:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={"error": exc.code, "message": str(exc)},
+            ) from exc
+        except RedditError as exc:
+            # Reddit's refusals are the user's to act on — waiting out a rate
+            # limit, or an account too new to post — so its own wording is
+            # passed through rather than flattened into "something went wrong".
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail={"error": exc.code, "message": str(exc)},
+            ) from exc
+
+        publication = {
+            "platform": "reddit",
+            "url": result.get("url") or "",
+            "remote_id": result.get("fullname") or result.get("post_id") or "",
+            "subreddit": result.get("subreddit") or "",
+            "posted_at": datetime.now(timezone.utc),
+        }
+        self.repo.add_publication(post_id, publication)
+
+        # It really is published now, so the status and the streak follow. If
+        # the atomic check loses a race the post still stands on Reddit and is
+        # recorded above; it simply does not double-count against the quota.
+        #
+        # try_publish_atomic stamps published_at and guards the quota; the
+        # status is a separate write, the same way the ordinary publish path
+        # sets it after that check.
+        if first_publish and self.repo.try_publish_atomic(post_id, user_id, DAILY_POST_LIMIT):
+            self.repo.update(post_id, {"status": "published"})
+            self.streak_repo.on_publish(user_id)
+            self.repo.drop_unpublished_version(post_id)
+
+        return publication
+
     def archive(self, post_id: str) -> dict:
         self._ensure_object_id(post_id, "post_id")
         archived = self.repo.archive(post_id)

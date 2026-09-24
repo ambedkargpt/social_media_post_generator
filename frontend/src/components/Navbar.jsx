@@ -8,10 +8,11 @@ import { useI18n } from '../i18n/index.jsx';
 
 // action: 'scroll' (default) | 'bheembot' | 'dashboard' | 'section:<id>'
 const navItems = [
-  { key: 'nav.homeCaps',    sectionId: 'home' },
-  { key: 'nav.aboutCaps',   sectionId: 'about' },
-  { key: 'nav.bheemCaps',   sectionId: 'bheem',   action: 'bheembot' },
-  { key: 'nav.contactCaps', sectionId: 'contact' },
+  { key: 'nav.homeCaps',     sectionId: 'home' },
+  { key: 'nav.corpusCaps',   sectionId: 'ambedkarverse' },
+  { key: 'nav.servicesCaps', sectionId: 'services' },
+  { key: 'nav.bheemCaps',    sectionId: 'bheem',   action: 'bheembot' },
+  { key: 'nav.contactCaps',  sectionId: 'contact' },
 ];
 
 export default function Navbar() {

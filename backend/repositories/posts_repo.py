@@ -270,6 +270,31 @@ class PostsRepository:
             return False
         return True
 
+    def add_publication(self, post_id: str, publication: dict[str, Any]) -> Optional[dict]:
+        """
+        Record that this post actually reached a platform.
+
+        Separate from `status: published`, which is the user saying they are
+        done with a draft. This is the evidence — where it went and the link
+        that proves it — and it is what a verifiable milestone should count.
+        """
+        self.collection.update_one(
+            {"_id": ObjectId(post_id)},
+            {
+                "$push": {"publications": publication},
+                "$set": {"updated_at": datetime.now(timezone.utc)},
+            },
+        )
+        return self.get_by_id(post_id)
+
+    def find_publication(self, post_id: str, platform: str) -> Optional[dict]:
+        """An existing publication on that platform, so we never post twice."""
+        doc = self.get_by_id(post_id)
+        for entry in (doc or {}).get("publications") or []:
+            if entry.get("platform") == platform:
+                return entry
+        return None
+
     def count_all_time(self, user_id: str) -> int:
         """Total posts ever created by user (for milestone tracking)."""
         return self.collection.count_documents({"user_id": ObjectId(user_id)})

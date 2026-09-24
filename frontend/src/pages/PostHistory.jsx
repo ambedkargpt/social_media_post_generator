@@ -14,10 +14,11 @@ import {
   RefreshCw,
 } from "lucide-react";
 import SpeakButton from "../components/generate/SpeakButton";
+import PublishSheet from "../components/publish/PublishSheet";
 import DashboardShell from "../layouts/DashboardShell";
 import Topbar from "../components/dashboard/Topbar";
 import { useAuth } from "../context/AuthContext";
-import { getPosts, updatePost, deletePost, translatePost, togglePostVersion } from "../api/posts";
+import { getPosts, deletePost, translatePost, togglePostVersion } from "../api/posts";
 import PostContent from "../components/generate/PostContent";
 import { useI18n } from "../i18n/index.jsx";
 
@@ -409,6 +410,8 @@ export default function PostHistory() {
   const { currentUser } = useAuth();
 
   const [posts, setPosts] = useState([]);
+  // The post whose destination is being chosen, or null.
+  const [publishing, setPublishing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -432,21 +435,17 @@ export default function PostHistory() {
     setTimeout(() => setCopied(null), 1800);
   }
 
-  async function handlePublish(id) {
-    try {
-      const updated = await updatePost(id, { status: "published" });
-      setPosts((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, ...updated } : p)),
-      );
-    } catch (err) {
-      if (err?.response?.status === 429) {
-        const detail = err.response?.data?.detail;
-        alert(
-          detail?.message ??
-            "You've used all 5 posts for today. Come back tomorrow!",
-        );
-      }
-    }
+  // Publishing means choosing a destination. The sheet does the posting and
+  // the status change together, so "published" stops being a flag the user
+  // set on their own database row and starts meaning the post is somewhere.
+  function handlePublish(id) {
+    setPublishing(posts.find((p) => p.id === id) ?? null);
+  }
+
+  function handlePublished(id) {
+    setPosts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, status: "published" } : p)),
+    );
   }
 
   async function handleToggleVersion(id) {
@@ -612,6 +611,17 @@ export default function PostHistory() {
         )}
         </main>
       </div>
+
+      {publishing && (
+        <PublishSheet
+          post={publishing}
+          onClose={() => setPublishing(null)}
+          onPublished={() => {
+            handlePublished(publishing.id);
+            setPublishing(null);
+          }}
+        />
+      )}
     </DashboardShell>
   );
 }
