@@ -37,6 +37,23 @@ CONFIG_DIR = PROJECT_ROOT / "config" / "channels"
 _ACTIVE_JOB_STATES = ("SUBMITTED", "PENDING", "RUNNABLE", "STARTING", "RUNNING")
 
 
+# One function per client rather than a bare `import boto3` in the handler.
+# boto3 is present in the Lambda runtime and the worker image but not in
+# requirements-api.txt, so a test that patched `boto3.client` had to import a
+# module CI does not install. These are the seam instead.
+
+def _s3():
+    import boto3
+
+    return boto3.client("s3")
+
+
+def _batch():
+    import boto3
+
+    return boto3.client("batch")
+
+
 def _ledger_key() -> str:
     prefix = (os.getenv("S3_STATE_PREFIX") or "state").strip().strip("/")
     return f"{prefix}/watch/ledger.json"
@@ -145,8 +162,6 @@ def pending_by_channel(ledger: dict, max_attempts: int) -> dict[str, list]:
 
 
 def handler(event=None, context=None) -> dict:  # noqa: ARG001 - Lambda signature
-    import boto3
-
     bucket = (os.getenv("S3_BUCKET") or "").strip()
     queue = (os.getenv("BATCH_JOB_QUEUE") or "").strip()
     definition = (os.getenv("BATCH_JOB_DEFINITION") or "").strip()
@@ -159,8 +174,8 @@ def handler(event=None, context=None) -> dict:  # noqa: ARG001 - Lambda signatur
         log.error("not configured: %s", ", ".join(missing))
         return {"ok": False, "error": f"missing {', '.join(missing)}"}
 
-    s3 = boto3.client("s3")
-    batch = boto3.client("batch")
+    s3 = _s3()
+    batch = _batch()
 
     ledger = _load_ledger(s3, bucket)
     pending = pending_by_channel(ledger, max_attempts)

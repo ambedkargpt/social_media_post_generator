@@ -69,8 +69,6 @@ class _FakeBatch:
 @pytest.fixture
 def aws(tmp_path, monkeypatch):
     """The handler wired to fake AWS clients and one channel config."""
-    import boto3
-
     from backend.worker import channel_state, watch_handler
 
     config_dir = tmp_path / "channels"
@@ -92,8 +90,11 @@ def aws(tmp_path, monkeypatch):
     monkeypatch.setenv("BATCH_JOB_QUEUE", "test-queue")
     monkeypatch.setenv("BATCH_JOB_DEFINITION", "test-def")
 
+    # Through the handler's own client seams rather than boto3.client, so this
+    # test does not need boto3 installed - CI has only requirements-api.txt.
     s3, batch = _FakeS3(), _FakeBatch()
-    monkeypatch.setattr(boto3, "client", lambda name, *a, **k: {"s3": s3, "batch": batch}[name])
+    monkeypatch.setattr(watch_handler, "_s3", lambda: s3)
+    monkeypatch.setattr(watch_handler, "_batch", lambda: batch)
 
     # No channel has ingested anything unless a test says so.
     monkeypatch.setattr(channel_state, "read_processed_ids", lambda _name: set())

@@ -59,12 +59,11 @@ def _patch_feed(monkeypatch, watcher, uploads):
 
 
 def _pending(watcher, payload, ledger, monkeypatch, processed, *, max_attempts=3):
-    # load_processed is read through backend.Fetch inside the function, so the
-    # path it builds is what gets patched rather than the import.
-    import backend.Fetch as fetch
-
-    real = fetch.load_processed
-    monkeypatch.setattr(fetch, "load_processed", lambda _p: real(processed))
+    # The watcher builds the processed.json path from the config; point that at
+    # the temporary file. Patching the path rather than the reader keeps the
+    # real parsing under test, and keeps backend.Fetch - and therefore yt-dlp -
+    # out of the test run entirely.
+    monkeypatch.setattr(watcher, "_processed_path", lambda _payload: processed)
     return watcher.pending_uploads(
         "testchannel", payload, ledger, max_attempts, None, {}
     )
@@ -204,15 +203,11 @@ def _run_tick(watcher, tmp_path, monkeypatch, uploads, *, on_run, max_attempts=3
     _write_config(tmp_path, processed)
 
     monkeypatch.setattr(watcher, "ROOT", tmp_path.parent, raising=False)
+    monkeypatch.setattr(watcher, "_processed_path", lambda _payload: processed)
     monkeypatch.setattr(watcher, "feed_ids_for", lambda *a, **k: ["UCtest"])
     monkeypatch.setattr(
         watcher.youtube_feed, "recent_uploads", lambda channel_id, client=None: list(uploads)
     )
-
-    import backend.Fetch as fetch
-
-    real = fetch.load_processed
-    monkeypatch.setattr(fetch, "load_processed", lambda _p: real(processed))
 
     def _pipeline(name):
         on_run(processed)

@@ -50,7 +50,7 @@ from pathlib import Path
 
 import httpx
 
-from backend.pipeline import youtube_feed
+from backend.pipeline import ingested, youtube_feed
 from backend.pipeline.youtube_feed import FeedUnavailable
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -152,6 +152,11 @@ def channel_names(requested: str | None) -> list[str]:
     return ordered + sorted(available - set(ordered))
 
 
+def _processed_path(payload: dict) -> Path:
+    """Where this channel's ingestion record lives, as the config spells it."""
+    return ROOT / "backend" / str(payload.get("processed_json_path") or "")
+
+
 def feed_ids_for(name: str, payload: dict, cache: dict[str, str], client: httpx.Client) -> list[str]:
     """The UC ids to poll for this channel, resolving and caching what is missing."""
     ids: list[str] = []
@@ -175,10 +180,7 @@ def pending_uploads(name: str, payload: dict, ledger: dict, max_attempts: int, c
     it: already ingested, outside the window the pipeline would even look at,
     and already tried more times than it is worth.
     """
-    from backend.Fetch import load_processed
-
-    processed_path = ROOT / "backend" / str(payload.get("processed_json_path") or "")
-    processed_ids, _ = load_processed(processed_path)
+    processed_ids = ingested.ids_from_file(_processed_path(payload))
 
     lookback = payload.get("lookback_days")
     lookback_days = int(lookback) if lookback not in (None, "") else None
@@ -295,9 +297,7 @@ def tick(names: list[str], *, max_attempts: int, dry_run: bool) -> int:
             # Whatever did not arrive gets a strike. A video that did arrive is
             # in processed.json now and will not be offered again, so its
             # entry is dropped rather than left to grow.
-            from backend.Fetch import load_processed
-
-            processed_ids, _ = load_processed(ROOT / "backend" / str(payload.get("processed_json_path") or ""))
+            processed_ids = ingested.ids_from_file(_processed_path(payload))
             seen = ledger.setdefault(name, {})
 
             for upload in attempted_slice(fresh, payload):

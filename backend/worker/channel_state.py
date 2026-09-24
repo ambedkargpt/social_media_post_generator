@@ -171,6 +171,8 @@ def read_processed_ids(name: str) -> set[str]:
         return set()
     import json
 
+    from backend.pipeline import ingested
+
     try:
         body = _client().get_object(
             Bucket=bucket(), Key=f"{_channel_prefix(name)}/processed.json"
@@ -178,12 +180,6 @@ def read_processed_ids(name: str) -> set[str]:
     except Exception:  # noqa: BLE001 - absent on the first run, which is not an error
         return set()
     try:
-        data = json.loads(body)
+        return ingested.ids_from_payload(json.loads(body))
     except ValueError:
         return set()
-    ids: set[str] = set()
-    for item in data if isinstance(data, list) else []:
-        video_id = item.get("id") if isinstance(item, dict) else item
-        if video_id:
-            ids.add(str(video_id))
-    return ids
