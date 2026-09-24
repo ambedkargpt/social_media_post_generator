@@ -881,7 +881,9 @@ class PostsService:
         # How this writer wants to write from their position, in their own
         # answers. Empty for a party or position with no question set and for
         # anyone who has not answered, so those prompts are unchanged.
-        position_prose, position_answers = self._position_preferences(user_id, user_doc)
+        position_prose, position_answers = self._position_preferences(
+            user_id, user_doc, overrides=profile_overrides
+        )
         default_profile["position_preferences"] = position_prose
 
         # What relationship this writer wants with the party: whether to defend
@@ -959,7 +961,10 @@ class PostsService:
         return render_preferences(QuestionsRepository().list_by_ids(ids), answers), answers
 
     def _position_preferences(
-        self, user_id: str, user_doc: dict[str, Any]
+        self,
+        user_id: str,
+        user_doc: dict[str, Any],
+        overrides: dict[str, str] | None = None,
     ) -> tuple[str, dict[str, str]]:
         """
         The writer's answers to the five questions for their party and position.
@@ -987,7 +992,22 @@ class PostsService:
         rows = self.profile_answers_repo.list_by_user(
             user_id=user_id, question_ids=ids, limit=len(ids), skip=0
         )
-        answers = {str(row.get("question_id")): row.get("answer") for row in rows}
+        saved = {str(row.get("question_id")): row.get("answer") for row in rows}
+
+        # The generator's side panel now carries these five as well, and a
+        # control that does not change the post it sits beside is worse than no
+        # control. Read the same way the party answers already are: picked out
+        # of profile_overrides by id, because the profile loop that builds them
+        # only keeps keys naming a PROFILE_FIELDS entry and drops every one of
+        # these. The panel's value wins for this post without being saved.
+        wanted = set(ids)
+        panel = {
+            qid: value
+            for qid, value in (overrides or {}).items()
+            if qid in wanted and isinstance(value, str) and value.strip()
+        }
+
+        answers = {**saved, **panel}
         if not answers:
             return "", {}
         return render_preferences(QuestionsRepository().list_by_ids(ids), answers), answers

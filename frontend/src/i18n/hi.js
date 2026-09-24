@@ -776,6 +776,13 @@ export default {
   "qmeta.partyQ8": "इतिहास का इस्तेमाल",
   "qmeta.partyQ9": "विवाद पर पोस्ट",
   "qmeta.partyQ10": "समग्र रवैया",
+
+  // Position questions: what each of the five is for, at any level.
+  "qmeta.posQ1": "ज़ोर",
+  "qmeta.posQ2": "तरीका",
+  "qmeta.posQ3": "आलोचना",
+  "qmeta.posQ4": "आवाज़",
+  "qmeta.posQ5": "नतीजा",
   "qmeta.length.label": "सामग्री की लंबाई",
   "qmeta.length.hint": "पोस्ट का आकार तय करती है",
   "qmeta.cta.label": "आह्वान",

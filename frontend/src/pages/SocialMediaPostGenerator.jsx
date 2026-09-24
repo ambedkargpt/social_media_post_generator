@@ -18,7 +18,8 @@ import { useAuth } from '../context/AuthContext';
 import { getNews, getNewsById, getTenants } from '../api/news';
 import { adaptNews, resolveTenantForUser } from '../utils/newsTenants';
 import { generatePostForNews, regeneratePostFromSnapshot, translatePost, getDailyQuota, togglePostVersion } from '../api/posts';
-import { getPartyQuestions, getQuestions } from '../api/questions';
+import { getPartyQuestions, getPositionQuestions, getQuestions } from '../api/questions';
+import { groupForId } from '../utils/partyRoles';
 import { getProfileAnswers, saveProfileAnswers } from '../api/profile';
 import { CORE_QUESTION_IDS } from '../utils/preferenceQuestions';
 import { getSiteLanguage, SITE_LANGUAGES } from '../utils/siteLanguage';
@@ -379,7 +380,14 @@ export default function SocialMediaPostGenerator() {
       getQuestions(25),
       getProfileAnswers(currentUser.id).catch(() => []),
       getPartyQuestions(currentUser.political_party || '').catch(() => []),
-    ]).then(([allQs, saved, partyQs]) => {
+      // The five written for this party *and* this level. The group comes from
+      // the stored position, so someone who has not set one gets an empty list
+      // rather than another party's set.
+      getPositionQuestions(
+        currentUser.political_party || '',
+        groupForId(currentUser.party_position || ''),
+      ).catch(() => []),
+    ]).then(([allQs, saved, partyQs, positionQs]) => {
       const qMap = Object.fromEntries(allQs.map((q) => [q.question_id, q]));
       // Length first, then the party set in its own order. The party list is
       // empty for a party with no questions written for it, and the panel then
@@ -393,6 +401,14 @@ export default function SocialMediaPostGenerator() {
         // one, so showing options_hi here would send Hindi where the defaults,
         // the saved answers and the validation all speak English.
         ...partyQs.map((q) => ({
+          ...q,
+          question_text: siteLang === 'hi' && q.question_text_hi ? q.question_text_hi : q.question_text,
+        })),
+        // Position questions last: they are the narrowest of the three, asking
+        // how someone at this level in this party should sound, so they read
+        // as a refinement of the party answers above rather than a separate
+        // subject. Localised the same way and for the same reason.
+        ...positionQs.map((q) => ({
           ...q,
           question_text: siteLang === 'hi' && q.question_text_hi ? q.question_text_hi : q.question_text,
         })),
@@ -413,7 +429,10 @@ export default function SocialMediaPostGenerator() {
     // Re-runs on a language switch, so the party questions come back in the
     // language now on screen, and on a party change, so they come back as the
     // new party's set rather than the old one's.
-  }, [currentUser?.id, currentUser?.political_party, siteLang]);
+    // Position is in here too: the five questions are written per level, so
+    // moving from District to State has to bring the new set rather than leave
+    // the old one on screen.
+  }, [currentUser?.id, currentUser?.political_party, currentUser?.party_position, siteLang]);
 
   // Resize drag refs
   const resizing  = useRef(false);

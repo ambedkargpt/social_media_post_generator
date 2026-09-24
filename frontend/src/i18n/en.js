@@ -770,6 +770,13 @@ export default {
   "qmeta.partyQ8": "Use of history",
   "qmeta.partyQ9": "Controversy",
   "qmeta.partyQ10": "Overall stance",
+
+  // Position questions: what each of the five is for, at any level.
+  "qmeta.posQ1": "Emphasis",
+  "qmeta.posQ2": "Approach",
+  "qmeta.posQ3": "Criticism",
+  "qmeta.posQ4": "Voice",
+  "qmeta.posQ5": "Takeaway",
   "qmeta.length.label": "Content length",
   "qmeta.length.hint": "Controls output size",
   "qmeta.cta.label": "Call to action",
