@@ -88,6 +88,7 @@ class PostsRepository:
         content: str,
         fingerprint: str,
         generation_meta: dict[str, Any] | None,
+        allow_repeat: bool = False,
     ) -> Optional[dict]:
         """
         Replace the post's text with its one allowed refinement.
@@ -96,10 +97,17 @@ class PostsRepository:
         the two and publish either. Returns None when the post has already been
         refined, which is also the guard against two refines racing: the filter
         requires refined_at to be absent, so only the first write can win.
+
+        allow_repeat drops that filter for a test account, which is allowed to
+        refine the same post repeatedly. Each refinement then supersedes the one
+        before it, so previous_content is always the text just replaced.
         """
         now = datetime.now(timezone.utc)
+        criteria: dict[str, Any] = {"_id": ObjectId(post_id)}
+        if not allow_repeat:
+            criteria["refined_at"] = {"$exists": False}
         return self.collection.find_one_and_update(
-            {"_id": ObjectId(post_id), "refined_at": {"$exists": False}},
+            criteria,
             [
                 {
                     "$set": {

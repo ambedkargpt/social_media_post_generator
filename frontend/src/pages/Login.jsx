@@ -11,6 +11,23 @@ import PrimaryButton from '../components/PrimaryButton';
 import GoogleButton  from '../components/GoogleButton';
 import { useI18n } from '../i18n/index.jsx';
 
+// One-click sign-in for the shared team accounts seeded by
+// backend/scripts/seed_test_accounts.py.
+//
+// The password is read from the environment and never written here. Anything in
+// this file is compiled into the bundle every visitor downloads, and these
+// accounts have no limits at all -- committing their password would publish
+// uncapped generation under the project's name to anyone who opened devtools.
+// Set VITE_TEST_PASSWORD in frontend/.env locally, or on a staging deployment,
+// and the block appears; leave it unset, as production should, and it does not
+// render at all.
+const TEST_PASSWORD = import.meta.env.VITE_TEST_PASSWORD || '';
+const TEST_ACCOUNTS = [
+  { email: 'test.cong@ambedkargpt.test', label: 'Congress' },
+  { email: 'test.sp@ambedkargpt.test', label: 'Samajwadi' },
+  { email: 'test.ind@ambedkargpt.test', label: 'No party' },
+];
+
 export default function Login() {
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -202,6 +219,27 @@ export default function Login() {
             {t('auth.signUp')}
           </Link>
         </p>
+
+        {TEST_PASSWORD && (
+          <div className="rounded-xl border px-3 py-2.5" style={{ borderColor: '#2a3566', backgroundColor: 'rgba(10,17,48,0.6)' }}>
+            <p className="text-[11px] font-medium" style={{ color: '#8b94b8' }}>
+              Test accounts — click to fill
+            </p>
+            <div className="mt-1.5 flex flex-col gap-1">
+              {TEST_ACCOUNTS.map((acc) => (
+                <button
+                  key={acc.email}
+                  type="button"
+                  onClick={() => { setMode('email'); setEmail(acc.email); setPassword(TEST_PASSWORD); }}
+                  className="text-left text-[11px] underline underline-offset-2 hover:opacity-80"
+                  style={{ color: '#6b8aff' }}
+                >
+                  {acc.email} · {acc.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </AuthLayout>
   );

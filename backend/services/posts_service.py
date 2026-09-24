@@ -106,6 +106,20 @@ class PostsService:
         if is_publishing:
             self._validate_status_transition(existing["status"], "published")
             user_id = current_user_id or str(existing["user_id"])
+            # A test account publishes as often as the team needs to see what a
+            # published post does, so it skips the cap and the atomic claim on
+            # it -- but still stamps published_at and counts toward the streak,
+            # because those are the behaviour being tested.
+            if self._is_test_account(user_id):
+                self.repo.set_published_at(post_id)
+                self.streak_repo.on_publish(user_id)
+                self.repo.drop_unpublished_version(post_id)
+                doc = self.repo.update(post_id, updates)
+                if not doc:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND, detail="Post not found."
+                    )
+                return self._to_response(doc)
             # ── Atomic daily publish rate limit ─────────────────────────────
             published_today = self.repo.count_published_today(user_id)
             if published_today >= DAILY_POST_LIMIT:
@@ -287,12 +301,19 @@ class PostsService:
             position_answers=raw_settings["position_answers"],
         )
         created_day = today_day_key()
-        self._refuse_duplicate_generation(
-            user_id=user_id,
-            news_id=news_id,
-            created_day=created_day,
-            fingerprint=fingerprint,
-        )
+        # A test account writes the same story as often as the team needs it to.
+        # Its posts are stamped with a different origin, which is what actually
+        # keeps them out: both unique indexes and both checks below are partial
+        # on origin "generate", so skipping the check alone would still leave
+        # the insert to be refused by the index.
+        unrestricted = self._is_test_account(user_id)
+        if not unrestricted:
+            self._refuse_duplicate_generation(
+                user_id=user_id,
+                news_id=news_id,
+                created_day=created_day,
+                fingerprint=fingerprint,
+            )
 
         tenant = article.get("tenant_slug") or "general"
         embedder, store, context_by_title = self._rag_stack(tenant)
@@ -377,7 +398,7 @@ class PostsService:
                     "hashtags": [],
                     "status": "draft",
                     "generation_meta": generation_meta,
-                    "origin": "generate",
+                    "origin": "test" if unrestricted else "generate",
                     "created_day": created_day,
                     "fingerprint": fingerprint,
                 }
@@ -392,6 +413,23 @@ class PostsService:
             retrieval_snapshot_id=snapshot_id,
             retrieval_reused=False,
         )
+
+    def _is_test_account(self, user_id: str) -> bool:
+        """
+        Whether this account is exempt from the limits a real one lives under.
+
+        Seeded by backend/scripts/seed_test_accounts.py so the team can retest a
+        story as often as they need. A flag on the record rather than a list in
+        the code, so an account can be revoked by editing one field instead of
+        shipping a release.
+        """
+        try:
+            user = db["users"].find_one(
+                {"_id": ObjectId(user_id)}, {"is_test_account": 1}
+            )
+        except Exception:
+            return False
+        return bool((user or {}).get("is_test_account"))
 
     def _refuse_duplicate_generation(
         self, *, user_id: str, news_id: str, created_day: str, fingerprint: str
@@ -454,10 +492,9 @@ class PostsService:
         if str(source_doc["user_id"]) != current_user_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot regenerate another user's post.")
 
-        # One refinement per post. Checked here as well as in the write, which
-        # is where two clicks arriving together are actually settled -- this is
-        # the cheap refusal that saves the model call.
-        if source_doc.get("refined_at"):
+        # One refinement per post, except on a test account, which needs to be
+        # able to try a note, read the result, and try a different one.
+        if source_doc.get("refined_at") and not self._is_test_account(current_user_id):
             raise self._already_refined_error()
         # Refining after publishing would rewrite what already went out.
         if source_doc.get("status") == "published":
@@ -561,6 +598,7 @@ class PostsService:
             content=post_text,
             fingerprint=fingerprint,
             generation_meta=generation_meta,
+            allow_repeat=self._is_test_account(current_user_id),
         )
         if not doc:
             raise self._already_refined_error()
