@@ -72,9 +72,17 @@ CHANNEL_ORDER = ("samajwadi", "ravish", "dalitdastak", "congress", "bjp")
 LOCK_STALE_SECONDS = 30 * 60
 
 
+# Launched from Task Scheduler through pythonw there is no console at all, and
+# sys.stdout is None - printing to it raises and would take the watcher down on
+# its first log line. The file is the log that matters anyway; the console is
+# only for someone running this by hand.
 def log(message: str) -> None:
     line = f"{datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S')}Z  {message}"
-    print(line, flush=True)
+    if sys.stdout is not None:
+        try:
+            print(line, flush=True)
+        except (ValueError, OSError):
+            pass
     try:
         LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
         with LOG_PATH.open("a", encoding="utf-8") as fh:
@@ -255,6 +263,12 @@ def attempted_slice(pending: list[youtube_feed.Upload], payload: dict) -> list[y
     return pending[: int(cap)] if cap else list(pending)
 
 
+# Without this the pipeline subprocess opens its own console window on every
+# run, which on a quarter-hourly schedule means a black box appearing on the
+# desktop all day. Only meaningful on Windows; absent elsewhere.
+_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+
+
 def run_channel(name: str) -> dict:
     """The same pipeline invocation that used to be typed by hand."""
     started = time.time()
@@ -265,6 +279,7 @@ def run_channel(name: str) -> dict:
         text=True,
         encoding="utf-8",
         errors="replace",
+        creationflags=_NO_WINDOW,
     )
     if proc.returncode != 0:
         log(f"  {name}: pipeline exited {proc.returncode}")
@@ -372,7 +387,7 @@ def main(argv: list[str] | None = None) -> int:
         try:
             stream.reconfigure(encoding="utf-8", errors="replace")
         except (AttributeError, ValueError):
-            pass
+            pass   # None under pythonw, or already closed
 
     names = channel_names(args.channels or None)
 
