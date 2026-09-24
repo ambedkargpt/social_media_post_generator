@@ -1341,7 +1341,19 @@ def main() -> int:
         sys.argv = [arg for arg in sys.argv if arg != "--legacy-fetch"]
         return legacy_main()
 
-    from run_pipeline import main as orchestrator_main
+    # Imported by package path, not as a bare `run_pipeline`.
+    #
+    # The bare spelling only resolves when backend/ is itself on sys.path, which
+    # is true when this file is run directly from inside that directory and not
+    # when it is run as `python -m backend.Fetch` from the repo root — which is
+    # what auto_rebuild's subprocess does in the container. Every container run
+    # of this path died on ModuleNotFoundError before fetching anything, which
+    # is why the scheduled rebuild had been failing.
+    #
+    # There is no fallback to the bare form because it would never help:
+    # run_pipeline itself imports `backend.config`, so the repo root has to be
+    # on sys.path either way.
+    from backend.run_pipeline import main as orchestrator_main
 
     passthrough_args = sys.argv[1:]
     return orchestrator_main(passthrough_args)
