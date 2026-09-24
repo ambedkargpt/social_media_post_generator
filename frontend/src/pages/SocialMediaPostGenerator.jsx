@@ -10,13 +10,14 @@ import {
 
 import PreferencesPanel from '../components/generate/PreferencesPanel';
 import DevSourceTag from '../components/DevSourceTag';
+import PublishSheet from '../components/publish/PublishSheet';
 import ScrollRow from '../components/ui/ScrollRow';
 import PostContent from '../components/generate/PostContent';
 import logoSrc from '../assets/images/logo-animation.png';
 import { useAuth } from '../context/AuthContext';
 import { getNews, getNewsById, getTenants } from '../api/news';
 import { adaptNews, resolveTenantForUser } from '../utils/newsTenants';
-import { generatePostForNews, regeneratePostFromSnapshot, translatePost, updatePost, getDailyQuota, togglePostVersion } from '../api/posts';
+import { generatePostForNews, regeneratePostFromSnapshot, translatePost, getDailyQuota, togglePostVersion } from '../api/posts';
 import { getPartyQuestions, getQuestions } from '../api/questions';
 import { getProfileAnswers, saveProfileAnswers } from '../api/profile';
 import { CORE_QUESTION_IDS } from '../utils/preferenceQuestions';
@@ -262,6 +263,7 @@ export default function SocialMediaPostGenerator() {
   const [tenants,         setTenants]         = useState([]);
   const [newsSection,     setNewsSection]     = useState('party'); // 'party' | 'opposition' | 'general'
   const [toneOpen,        setToneOpen]        = useState(false);   // phones: the tone row starts closed
+  const [publishSheet,    setPublishSheet]    = useState(null);   // the post whose destination is being chosen
   const [articleOpen,     setArticleOpen]     = useState(false);   // phones: the article starts as a preview
   const [filterOpen,      setFilterOpen]      = useState(false);
   const [view,            setView]            = useState('feed'); // 'feed' | 'preview' | 'generated'
@@ -286,7 +288,6 @@ export default function SocialMediaPostGenerator() {
   const [translating,     setTranslating]     = useState(false);
   const [quota,           setQuota]           = useState(null);
   const [postStatus,      setPostStatus]      = useState('draft');
-  const [publishing,      setPublishing]      = useState(false);
   const [platform,        setPlatform]        = useState('twitter');
   // Always the platform preview. The Post/Preview toggle is gone: a plain-text
   // rendering of the same words told nobody anything the preview did not, and
@@ -823,26 +824,21 @@ export default function SocialMediaPostGenerator() {
     } catch { /* ignore */ }
   }
 
-  async function handlePublish() {
-    if (!selectedPostId || publishing || postStatus === 'published') return;
-    setPublishing(true);
-    try {
-      await updatePost(selectedPostId, { status: 'published' });
-      setPostStatus('published');
-      // Refresh quota so streak + daily count update immediately
-      getDailyQuota().then(setQuota).catch(() => {});
-      // Redirect back to the generator feed after publish
-      navigate('/generate/social-media');
-    } catch (err) {
-      console.error('Publish failed:', err);
-      if (err?.response?.status === 429) {
-        const detail = err.response.data?.detail;
-        alert(detail?.message ?? "You've used all 5 posts for today. Come back tomorrow!");
-        getDailyQuota().then(setQuota).catch(() => {});
-      }
-    } finally {
-      setPublishing(false);
-    }
+  function handlePublish() {
+    if (!selectedPostId || postStatus === 'published') return;
+    setPublishSheet({
+      id: selectedPostId,
+      content: generatedPost,
+      news_id: selectedArticle?._backendId ?? selectedArticle?.id ?? '',
+    });
+  }
+
+  function handlePublished() {
+    setPostStatus('published');
+    setPublishSheet(null);
+    // The quota and the streak moved, so the widgets that read them refresh.
+    getDailyQuota().then(setQuota).catch(() => {});
+    navigate('/generate/social-media');
   }
 
   async function handleCopy() {
@@ -1947,6 +1943,14 @@ export default function SocialMediaPostGenerator() {
           );
         })()}
 
+        {publishSheet && (
+          <PublishSheet
+            post={publishSheet}
+            onClose={() => setPublishSheet(null)}
+            onPublished={handlePublished}
+          />
+        )}
+
         {/* ── Generated post view ── */}
         {view === 'generated' && (
           <div className="flex-1 overflow-y-auto px-4 pb-10 sm:px-6 md:px-8">
@@ -2049,7 +2053,7 @@ export default function SocialMediaPostGenerator() {
                   <button
                     type="button"
                     onClick={handlePublish}
-                    disabled={publishing || postStatus === 'published' || charOverLimit}
+                    disabled={postStatus === 'published' || charOverLimit}
                     title={postStatus === 'published' ? 'Published' : 'Publish'}
                     className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition disabled:cursor-default disabled:opacity-70 sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-2"
                     style={{
@@ -2060,7 +2064,7 @@ export default function SocialMediaPostGenerator() {
                   >
                     <Check size={12} strokeWidth={2.4} />
                     <span className="hidden text-[12px] font-medium sm:inline">
-                      {postStatus === 'published' ? 'Published' : publishing ? 'Publishing…' : 'Publish'}
+                      {postStatus === 'published' ? 'Published' : 'Publish'}
                     </span>
                   </button>
                 )}

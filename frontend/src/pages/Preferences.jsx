@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Check, Save, Home, ArrowUp, Loader2, SlidersHorizontal } from 'lucide-react';
 import DashboardShell from '../layouts/DashboardShell';
 import Topbar from '../components/dashboard/Topbar';
+import ConnectedAccounts from '../components/publish/ConnectedAccounts';
 import { useAuth } from '../context/AuthContext';
 import { saveProfileAnswers, getProfileAnswers } from '../api/profile';
 import { getPartyQuestions, getPositionQuestions, getQuestions } from '../api/questions';
@@ -420,6 +421,8 @@ export default function Preferences() {
             {t('prefs.helpUs')}
           </p>
         </div>
+
+        <ConnectedAccounts />
 
         {/* ── Compulsory questions ── */}
         <SectionHeader

@@ -112,6 +112,20 @@ class Settings:
     mongodb_database: str
     # Auth / security configuration
     jwt_secret: str
+    # ── Publishing to Reddit on the user's own behalf ────────────────────
+    # Each user connects their own Reddit account; the app never posts from
+    # one shared account, which is what a subreddit full of identical
+    # authors would look like — and what Reddit treats as spam.
+    reddit_client_id: str
+    reddit_client_secret: str
+    reddit_redirect_uri: str
+    reddit_user_agent: str
+    reddit_subreddit: str
+    # Fernet key for the refresh tokens we hold on users' behalf.
+    integration_token_key: str
+    # Where to send the browser back to after an OAuth round trip. Reddit
+    # redirects to the API, which then has to hand the user back to the app.
+    frontend_base_url: str
     jwt_algorithm: str
     access_token_expiry_minutes: int
     refresh_token_expiry_days: int
@@ -211,6 +225,15 @@ def get_settings() -> Settings:
     - MONGODB_URI (required for backend MongoDB connection)
     - MONGODB_DATABASE (optional, defaults to ambedkargpt)
     - JWT_SECRET (required for auth token signing)
+    - REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET / REDDIT_REDIRECT_URI
+      (required only to publish to Reddit; absent, the feature reports itself
+      unconfigured rather than failing at submit time)
+    - REDDIT_USER_AGENT (optional, defaults to a descriptive app string)
+    - REDDIT_SUBREDDIT (optional, defaults to "ambedkargpt")
+    - INTEGRATION_TOKEN_KEY (required to publish; Fernet key encrypting the
+      refresh tokens we hold on users' behalf)
+    - FRONTEND_BASE_URL (optional; where an OAuth callback hands the browser
+      back. Defaults to the first CORS_ORIGINS entry)
     - JWT_ALGORITHM (optional, defaults to HS256)
     - ACCESS_TOKEN_EXPIRY_MINUTES (optional, defaults to 30)
     - REFRESH_TOKEN_EXPIRY_DAYS (optional, defaults to 30)
@@ -393,6 +416,27 @@ def get_settings() -> Settings:
     mongodb_uri = (os.getenv("MONGODB_URI") or "").strip()
     mongodb_database = (os.getenv("MONGODB_DATABASE") or "ambedkargpt").strip() or "ambedkargpt"
     jwt_secret = (os.getenv("JWT_SECRET") or "").strip()
+    reddit_client_id = (os.getenv("REDDIT_CLIENT_ID") or "").strip()
+    reddit_client_secret = (os.getenv("REDDIT_CLIENT_SECRET") or "").strip()
+    reddit_redirect_uri = (os.getenv("REDDIT_REDIRECT_URI") or "").strip()
+    # Reddit asks for a descriptive User-Agent and rate-limits generic ones
+    # hard, so this is a real default rather than an empty string.
+    reddit_user_agent = (
+        os.getenv("REDDIT_USER_AGENT")
+        or "web:com.ambedkargpt.app:v1.0 (by /u/ambedkargpt)"
+    ).strip()
+    # Accepts "ambedkargpt", "r/ambedkargpt" or "/r/ambedkargpt/".
+    reddit_subreddit = (
+        (os.getenv("REDDIT_SUBREDDIT") or "ambedkargpt").strip().strip("/").removeprefix("r/")
+    )
+    integration_token_key = (os.getenv("INTEGRATION_TOKEN_KEY") or "").strip()
+    # Falls back to the first CORS origin, which in every deployment so far is
+    # the app itself, so this needs setting only when the two differ.
+    frontend_base_url = (os.getenv("FRONTEND_BASE_URL") or "").strip()
+    if not frontend_base_url:
+        _cors = [o.strip() for o in (os.getenv("CORS_ORIGINS") or "").split(",") if o.strip()]
+        frontend_base_url = next((o for o in _cors if o != "*"), "http://localhost:5173")
+    frontend_base_url = frontend_base_url.rstrip("/")
     jwt_algorithm = (os.getenv("JWT_ALGORITHM") or "HS256").strip() or "HS256"
     access_token_expiry_minutes = int(os.getenv("ACCESS_TOKEN_EXPIRY_MINUTES", "30"))
     refresh_token_expiry_days = int(os.getenv("REFRESH_TOKEN_EXPIRY_DAYS", "30"))
@@ -489,6 +533,13 @@ def get_settings() -> Settings:
         mongodb_uri=mongodb_uri,
         mongodb_database=mongodb_database,
         jwt_secret=jwt_secret,
+        reddit_client_id=reddit_client_id,
+        reddit_client_secret=reddit_client_secret,
+        reddit_redirect_uri=reddit_redirect_uri,
+        reddit_user_agent=reddit_user_agent,
+        reddit_subreddit=reddit_subreddit,
+        integration_token_key=integration_token_key,
+        frontend_base_url=frontend_base_url,
         jwt_algorithm=jwt_algorithm,
         access_token_expiry_minutes=access_token_expiry_minutes,
         refresh_token_expiry_days=refresh_token_expiry_days,

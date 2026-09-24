@@ -8,6 +8,7 @@ Collections cleared:
   - user_profile_answers
   - user_streaks
   - posts
+  - user_integrations   (connected accounts, incl. stored refresh tokens)
 
 Collections left untouched:
   - questions  (platform content, not user data)
@@ -28,6 +29,8 @@ def main() -> None:
         "user_profile_answers",
         "user_streaks",
         "posts",
+        # Tokens we hold on a user's behalf must go when the user does.
+        "user_integrations",
     ]
 
     print("This will permanently delete ALL documents in:")
