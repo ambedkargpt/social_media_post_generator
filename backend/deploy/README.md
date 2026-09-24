@@ -98,56 +98,139 @@ worked through rather than retired unattempted.
 named `watch-*` in any active state. Two containers would race for the same
 `processed.json` and the same transcript budget.
 
-## Creating the watcher Lambda
+## Setting it up
 
-It runs from the **same image as the API** with a different CMD, so there is
-nothing extra to build. `deploy-lambda.yml` updates it alongside the API once it
-exists, and skips it silently before then.
+Do these in order. Step 1 is not optional: the watcher Lambda runs from the API
+image, and until that image is rebuilt it does not contain `watch_handler` at
+all — a function created before it would start and immediately fail on import.
+
+Steps 2 to 4 are copy-paste into **CloudShell** (bottom-left of the console).
+CloudShell already has the CLI and your console identity, so there are no keys
+to create and nothing to install.
+
+### 1. Get the code into the image
+
+`deploy-lambda.yml` builds and pushes only on `main`. The work is on `deploy`,
+so open a PR from `deploy` to `main` and merge it, then wait for the **Deploy
+Lambda** action to finish. Confirm before continuing:
+
+```bash
+aws ecr describe-images   --repository-name ambedkargpt-api   --query 'sort_by(imageDetails,&imagePushedAt)[-1].imagePushedAt'
+```
+
+That timestamp must be after the merge.
+
+### 2. The watcher's IAM role
+
+It reads the watch state, reads each channel's processed.json, and submits a
+job. It never reads a transcript or writes a story, so it needs no Mongo,
+Pinecone or model keys.
 
 ```bash
 ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
 REGION=ap-south-1
-IMAGE="${ACCOUNT}.dkr.ecr.${REGION}.amazonaws.com/ambedkargpt-api:latest"
+BUCKET=ambedkargpt-artifacts
 
-aws lambda create-function \
-  --function-name ambedkargpt-watch \
-  --package-type Image \
-  --code ImageUri="${IMAGE}" \
-  --image-config '{"Command":["backend.worker.watch_handler.handler"]}' \
-  --role "arn:aws:iam::${ACCOUNT}:role/ambedkargpt-watch-role" \
-  --timeout 120 \
-  --memory-size 512 \
-  --environment "Variables={
-    S3_BUCKET=ambedkargpt-artifacts,
-    S3_STATE_PREFIX=state,
-    BATCH_JOB_QUEUE=ambedkargpt-worker-queue,
-    BATCH_JOB_DEFINITION=ambedkargpt-worker,
-    WATCH_MAX_ATTEMPTS=3
+aws iam create-role   --role-name ambedkargpt-watch-role   --assume-role-policy-document '{
+    "Version":"2012-10-17",
+    "Statement":[{"Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]
+  }'
+
+aws iam attach-role-policy   --role-name ambedkargpt-watch-role   --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+aws iam put-role-policy   --role-name ambedkargpt-watch-role   --policy-name watch-state-and-submit   --policy-document "{
+    \"Version\":\"2012-10-17\",
+    \"Statement\":[
+      {\"Effect\":\"Allow\",
+       \"Action\":[\"s3:GetObject\",\"s3:PutObject\"],
+       \"Resource\":\"arn:aws:s3:::${BUCKET}/state/watch/*\"},
+      {\"Effect\":\"Allow\",
+       \"Action\":\"s3:GetObject\",
+       \"Resource\":\"arn:aws:s3:::${BUCKET}/state/channels/*\"},
+      {\"Effect\":\"Allow\",
+       \"Action\":\"batch:SubmitJob\",
+       \"Resource\":[
+         \"arn:aws:batch:${REGION}:${ACCOUNT}:job-queue/ambedkargpt-worker-queue\",
+         \"arn:aws:batch:${REGION}:${ACCOUNT}:job-definition/ambedkargpt-worker\"
+       ]},
+      {\"Effect\":\"Allow\",\"Action\":\"batch:ListJobs\",\"Resource\":\"*\"}
+    ]
   }"
 ```
 
-The role needs only: `s3:GetObject` and `s3:PutObject` on
-`<bucket>/state/watch/*`, `s3:GetObject` on `<bucket>/state/channels/*`,
-`batch:SubmitJob`, `batch:ListJobs`, and the basic Lambda logging policy. It does
-**not** need Mongo, Pinecone or any model key — it never reads a transcript or
-writes a story.
+`batch:ListJobs` takes no resource — it is queue-wide by design, which is why it
+is the one wildcard here.
 
-## The schedule
+### 3. The watcher Lambda
+
+Same image as the API, different command. Nothing extra to build.
 
 ```bash
-aws scheduler create-schedule \
-  --name ambedkargpt-watch \
-  --schedule-expression "rate(10 minutes)" \
-  --flexible-time-window '{"Mode":"OFF"}' \
-  --target "{
+aws lambda create-function   --function-name ambedkargpt-watch   --package-type Image   --code ImageUri="${ACCOUNT}.dkr.ecr.${REGION}.amazonaws.com/ambedkargpt-api:latest"   --image-config '{"Command":["backend.worker.watch_handler.handler"]}'   --role "arn:aws:iam::${ACCOUNT}:role/ambedkargpt-watch-role"   --timeout 120 --memory-size 512   --environment "Variables={S3_BUCKET=${BUCKET},S3_STATE_PREFIX=state,BATCH_JOB_QUEUE=ambedkargpt-worker-queue,BATCH_JOB_DEFINITION=ambedkargpt-worker,WATCH_MAX_ATTEMPTS=3}"
+```
+
+Test it before putting it on a schedule. With S3 still empty it should report
+every channel as having new videos and submit one job — which is why the seed in
+step 5 comes first if you would rather it not:
+
+```bash
+aws lambda invoke --function-name ambedkargpt-watch /dev/stdout
+```
+
+### 4. The schedule
+
+```bash
+aws iam create-role   --role-name ambedkargpt-scheduler-role   --assume-role-policy-document '{
+    "Version":"2012-10-17",
+    "Statement":[{"Effect":"Allow","Principal":{"Service":"scheduler.amazonaws.com"},"Action":"sts:AssumeRole"}]
+  }'
+
+aws iam put-role-policy   --role-name ambedkargpt-scheduler-role   --policy-name invoke-watch   --policy-document "{
+    \"Version\":\"2012-10-17\",
+    \"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"lambda:InvokeFunction\",
+      \"Resource\":\"arn:aws:lambda:${REGION}:${ACCOUNT}:function:ambedkargpt-watch\"}]
+  }"
+
+aws scheduler create-schedule   --name ambedkargpt-watch   --schedule-expression "rate(10 minutes)"   --flexible-time-window '{"Mode":"OFF"}'   --target "{
     \"Arn\":\"arn:aws:lambda:${REGION}:${ACCOUNT}:function:ambedkargpt-watch\",
     \"RoleArn\":\"arn:aws:iam::${ACCOUNT}:role/ambedkargpt-scheduler-role\"
   }"
 ```
 
-Ten minutes is a deliberate floor, not a limit of the feed. A pipeline run takes
-six to eight minutes, so checking much more often only finds a job already
-running. Uploads are picked up on the next tick, not instantly.
+### 5. Seed the state — from your own machine, not CloudShell
+
+This uploads what is already on the machine that has been doing the manual
+scrapes, so CloudShell cannot do it: the transcripts are not there.
+
+Without this, the first Batch job sees no processed.json for any channel, treats
+the whole lookback window as new, and refetches videos that are already on disk.
+Across five channels that is enough requests to be refused partway, so the first
+automated run ends in a rate limit and a half-filled feed.
+
+Create an access key for yourself (IAM → Users → your user → Security
+credentials → Create access key), then locally:
+
+```bash
+export AWS_ACCESS_KEY_ID=...
+export AWS_SECRET_ACCESS_KEY=...
+export AWS_DEFAULT_REGION=ap-south-1
+export S3_BUCKET=ambedkargpt-artifacts
+
+python -m backend.scripts.seed_channel_state --dry-run
+python -m backend.scripts.seed_channel_state
+```
+
+About 1275 files and 125 MB. Run it once. Running it again later is safe but
+wrong: after the first automated run, AWS holds the newer state and this would
+push an older copy over it.
+
+### 6. Check the Batch job role can write the state back
+
+The job writes to `state/channels/*`, which the watcher only reads. If
+`ambedkargpt-worker-role` is scoped to `artifacts/*` rather than the whole
+bucket, add `s3:GetObject`, `s3:PutObject` and `s3:ListBucket` for
+`state/channels/*` — otherwise every run starts from nothing and the seed above
+is undone on the first pass.
 
 ## Batch job environment
 
