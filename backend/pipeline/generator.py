@@ -422,6 +422,44 @@ def _extract_post_body(raw: str) -> str:
     return "\n\n".join(pieces)
 
 
+# What each destination will actually accept, in characters.
+#
+# These are not preferences. content_length is a matter of taste and the prompt
+# rightly treats it as the writer's own call; this is a property of the place
+# the post is going, and a post over it cannot be published at all. A 1626
+# character "tweet" is not a long tweet, it is not a tweet.
+#
+# Kept here rather than taken from the request: the client sends which platform
+# was chosen, and the limit for that platform is a fact the server should know
+# rather than accept.
+_PLATFORM_CHAR_LIMITS = {
+    "twitter": 280,
+    "twitter / x": 280,
+    "x": 280,
+    "instagram": 2200,
+    "reddit": 40000,
+    "whatsapp": 5000,
+    "linkedin": 3000,
+}
+
+
+def _platform_char_limit(profile: Dict[str, str]) -> Optional[int]:
+    """The destination's hard ceiling, or None when it has no useful one."""
+    label = str(profile.get("target_platform") or "").strip().lower()
+    if not label:
+        return None
+    limit = _PLATFORM_CHAR_LIMITS.get(label)
+    if limit is None:
+        # An unrecognised label is not an error - a platform can reach the
+        # picker before it reaches this table - but it must not silently become
+        # "no limit" for a platform that has one, so it is logged.
+        _log.info("post generation: no character limit known for platform %r", label)
+        return None
+    # Reddit's forty thousand constrains nothing a writer would produce, and
+    # stating it only invites the model to fill the space.
+    return limit if limit <= 5000 else None
+
+
 def generate_post(
     client: OpenAI,
     model: str,
@@ -488,6 +526,29 @@ def generate_post(
     # instruction already in the prompt.)
     if lang_instruction:
         system_msg = f"CRITICAL LANGUAGE OVERRIDE — This instruction supersedes any language field in the USER PROFILE:\n{lang_instruction}\n\n---\n\n{system_msg}"
+
+    # The prompt tells the model content_length "wins over every other instinct
+    # about how long a post should be", and it obeys: a writer whose length was
+    # set to Extended got a 1626 character post for a 280 character
+    # destination. The platform was only ever described to it as deciding
+    # "format conventions", with no number attached.
+    #
+    # Prepended and worded as superseding for the same reason the language
+    # override is: appended, it loses to the "USER PROFILE is highest authority"
+    # rule already in the file.
+    char_limit = _platform_char_limit(profile)
+    if char_limit:
+        system_msg = (
+            "CRITICAL LENGTH LIMIT - This supersedes content_length and every other "
+            "length instruction, including the CONTENT LENGTH section below.\n"
+            f"The finished post goes to {profile.get('target_platform')}, which accepts at "
+            f"most {char_limit} characters in total: body, line breaks and hashtags "
+            "together.\n"
+            f"Stay under {char_limit} characters. Where content_length asks for more than "
+            "fits, the limit wins and you write a shorter post - fewer points made "
+            "properly, not the same points cut off. Never end mid-sentence.\n\n---\n\n"
+            + system_msg
+        )
 
     # The news pipeline injects the full worked style reference here. Post
     # generation deliberately does not: it is 7.7KB of examples, and every extra

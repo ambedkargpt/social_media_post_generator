@@ -116,6 +116,7 @@ export default {
   'gen.versionHint': 'जो पसंद हो उसे प्रकाशित करें — दूसरी हट जाएगी।',
   'gen.chars': 'अक्षर',
   'gen.words': 'शब्द',
+  'gen.lengthCappedByPlatform': '{platform} पर {limit} अक्षर तक ही जा सकते हैं, जो आपकी चुनी हुई लंबाई से कम है। इस प्लेटफ़ॉर्म के पोस्ट उसी सीमा में लिखे जाते हैं।',
   'gen.hashtags': 'हैशटैग',
   'gen.alsoGenerate': 'यह भी बना सकते हैं',
   'gen.targetPlatform': 'किस प्लेटफ़ॉर्म के लिए',

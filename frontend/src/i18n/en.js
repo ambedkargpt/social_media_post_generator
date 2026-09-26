@@ -110,6 +110,7 @@ export default {
   'gen.versionHint': 'Publish whichever you prefer — the other is discarded.',
   'gen.chars': 'Chars',
   'gen.words': 'Words',
+  'gen.lengthCappedByPlatform': '{platform} allows {limit} characters, which is shorter than the length you chose in preferences. Posts for this platform are written to fit the limit.',
   'gen.hashtags': 'Hashtags',
   'gen.alsoGenerate': 'You Can Also Generate',
   'gen.targetPlatform': 'Target Platform',

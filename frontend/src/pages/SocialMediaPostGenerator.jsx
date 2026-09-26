@@ -625,6 +625,24 @@ export default function SocialMediaPostGenerator() {
   const charOverLimit = chars > activePlatform.limit;
   const charWarning = charPct > 0.85 && !charOverLimit;
 
+  // Whether the writer's chosen length can fit this destination at all.
+  //
+  // The two settings can contradict: Extended asks for 250-400 words, Twitter
+  // takes 280 characters. The server resolves it by letting the platform win,
+  // which is the only workable answer - a 1626 character tweet is not a tweet.
+  // But a length setting that silently stops applying is worse than one that
+  // says so, which is what this line is for.
+  //
+  // Six characters a word is deliberately generous; Devanagari runs longer. If
+  // it does not fit at six, it will not fit.
+  const lengthMaxWords = (() => {
+    const label = preferences['profile_content_length'] || '';
+    const numbers = label.match(/\d+/g);
+    return numbers ? Math.max(...numbers.map(Number)) : 0;
+  })();
+  const lengthOverriddenByPlatform =
+    Boolean(activePlatform.limit) && lengthMaxWords * 6 > activePlatform.limit;
+
   // A story handed over by the dashboard's top-story card. The card names the
   // story it was showing when Generate Post was clicked, and this opens that
   // story's page, never the one the carousel moved to next. Generation is left
@@ -2286,6 +2304,15 @@ export default function SocialMediaPostGenerator() {
                 </div>
               </button>
             </div>
+
+            {lengthOverriddenByPlatform && (
+              <p className="mt-2 text-[11.5px] leading-relaxed text-[#8b94b8]">
+                {t('gen.lengthCappedByPlatform', {
+                  platform: activePlatform.label,
+                  limit: activePlatform.limit.toLocaleString(),
+                })}
+              </p>
+            )}
 
             {/* You Can Also Generate — card with grid buttons */}
             <div className="mt-5 overflow-hidden rounded-2xl border border-[#1e3260]/60 bg-[#0a1130]/70 p-5">
