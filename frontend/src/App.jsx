@@ -154,9 +154,13 @@ export default function App() {
             <Route path="/posts" element={
               <ProtectedRoute><PostHistory /></ProtectedRoute>
             } />
-            <Route path="/bheembot" element={
+            <Route path="/bhimbot" element={
               <ProtectedRoute><BheemBot /></ProtectedRoute>
             } />
+            {/* The page was /bheembot until the spelling was corrected. Anyone
+                holding that link - a bookmark, a shared message - still lands
+                on the page rather than the catch-all redirect to home. */}
+            <Route path="/bheembot" element={<Navigate to="/bhimbot" replace />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

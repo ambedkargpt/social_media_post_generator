@@ -85,9 +85,9 @@ export default function HeroSection({ splashDone = true }) {
 
   function handleBheemBot() {
     if (currentUser) {
-      navigate("/bheembot");
+      navigate("/bhimbot");
     } else {
-      sessionStorage.setItem("auth_redirect", "/bheembot");
+      sessionStorage.setItem("auth_redirect", "/bhimbot");
       navigate("/login");
     }
   }

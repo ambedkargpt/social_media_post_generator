@@ -83,9 +83,9 @@ export default function Navbar() {
 
     if (item.action === 'bheembot') {
       if (currentUser) {
-        navigate('/bheembot');
+        navigate('/bhimbot');
       } else {
-        sessionStorage.setItem('auth_redirect', '/bheembot');
+        sessionStorage.setItem('auth_redirect', '/bhimbot');
         navigate('/login');
       }
       return;

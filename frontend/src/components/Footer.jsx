@@ -10,7 +10,7 @@ import { useI18n } from '../i18n/index.jsx';
 // "#contact" links did not: they appended a hash to whatever page you were on.
 const PRODUCT_LINKS = [
   { key: "foot.generatePosts", to: "/generate/social-media" },
-  { key: "foot.bheembot", to: "/bheembot" },
+  { key: "foot.bheembot", to: "/bhimbot" },
   { key: "foot.useCases", to: "/#bheem" },
   { key: "foot.solutions", to: "/solutions" },
 ];
