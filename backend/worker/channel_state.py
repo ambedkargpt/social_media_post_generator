@@ -159,6 +159,35 @@ def push(channel) -> None:
             log.info("pushed %s", path.name)
 
 
+def push_transcript_index(channel) -> bool:
+    """
+    Send just this channel's master transcript up, nothing else.
+
+    push() carries everything a Fargate run needs to continue and runs to
+    hundreds of files; this is the one file the API needs, and the reason it is
+    separate is that the scraping currently happens on a laptop. Without it the
+    API only ever sees transcripts that were committed and baked into its
+    image, so a story scraped today cannot be researched until someone
+    redeploys - which is exactly backwards, since the newest stories are the
+    ones worth researching.
+
+    Best effort. A scrape that fetched transcripts has already done its work;
+    failing to copy one file up must not undo that.
+    """
+    if not is_configured():
+        return False
+    path = channel.master_transcript_path
+    if not path or not path.is_file():
+        return False
+    try:
+        _sync_up_file(_client(), path, f"{_channel_prefix(channel.name)}/master.txt")
+        log.info("pushed %s master transcript (%.1f MB)", channel.name, path.stat().st_size / 1048576)
+        return True
+    except Exception as exc:  # noqa: BLE001 - see the docstring
+        log.warning("could not push %s master transcript: %s", channel.name, exc)
+        return False
+
+
 def read_processed_ids(name: str) -> set[str]:
     """
     Which videos this channel has already ingested, read straight from S3.

@@ -250,6 +250,20 @@ def pending_uploads(name: str, payload: dict, ledger: dict, max_attempts: int, c
     return fresh
 
 
+def _push_transcript_index(name: str, payload: dict) -> None:
+    """Copy this channel's master transcript to S3, when S3 is configured."""
+    try:
+        from backend.pipeline.orchestration import load_channel_config
+        from backend.worker import channel_state
+
+        if not channel_state.is_configured():
+            return
+        if channel_state.push_transcript_index(load_channel_config(ROOT / "backend", name)):
+            log(f"  {name}: master transcript pushed to S3 for the API to read")
+    except Exception as exc:  # noqa: BLE001 - a scrape must not fail over this
+        log(f"  {name}: could not push the master transcript ({type(exc).__name__}: {exc})")
+
+
 def attempted_slice(pending: list[youtube_feed.Upload], payload: dict) -> list[youtube_feed.Upload]:
     """
     Of everything pending, the part one run could actually have reached.
@@ -340,6 +354,14 @@ def tick(names: list[str], *, max_attempts: int, dry_run: bool) -> int:
             metrics = run_channel(name)
             touch_lock()
             refusals += int((metrics.get("ingestion") or {}).get("transcript_failures", 0) or 0)
+
+            # A run that fetched something has a master transcript the API does
+            # not have. The API reads transcripts baked into its image, so
+            # without this the stories it can research are always the ones from
+            # before the last deploy and never the ones just scraped. Only on a
+            # fetch: uploading an unchanged file every quarter hour is waste.
+            if int((metrics.get("ingestion") or {}).get("cleaned_transcripts", 0) or 0):
+                _push_transcript_index(name, payload)
 
             # Whatever did not arrive gets a strike. A video that did arrive is
             # in processed.json now and will not be offered again, so its
