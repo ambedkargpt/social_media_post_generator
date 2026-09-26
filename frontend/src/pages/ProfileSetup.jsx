@@ -98,13 +98,14 @@ export default function ProfileSetup() {
   // already chosen, rather than asking someone to find it again.
   const [partyLevel, setPartyLevel] = useState(() => groupForId(currentUser?.party_position || ''));
 
-  // Party and position are set once and then fixed, because every party answer
-  // is stored against an id that names the party — party_inc_q1,
-  // pos_inc_national_q3 — so changing it orphans them rather than carrying
-  // them across. The server refuses the change either way; these disable the
-  // controls so nobody fills a form that is going to be rejected.
+  // The party is set once and then fixed: every answer is stored against an id
+  // that names it, so changing party orphans all fifteen at once. The server
+  // refuses it either way; this disables the control so nobody fills in a form
+  // that is going to be rejected.
+  //
+  // The position is not locked. People are promoted and move between bodies,
+  // and only the five answers written for the old level stop being read.
   const partyLocked = Boolean(currentUser?.political_party);
-  const positionLocked = Boolean(currentUser?.party_position);
 
   function handleLevelChange(level) {
     setPartyLevel(level);
@@ -486,7 +487,7 @@ export default function ProfileSetup() {
                   <select
                     value={partyLevel}
                     onChange={(e) => handleLevelChange(e.target.value)}
-                    disabled={!politicalParty || positionLocked}
+                    disabled={!politicalParty}
                     aria-label={t('profile.levelLabel')}
                     className="w-full appearance-none rounded-xl px-4 py-3.5 pr-10 text-[14px] outline-none transition disabled:cursor-not-allowed disabled:opacity-50"
                     style={{
@@ -516,7 +517,7 @@ export default function ProfileSetup() {
                   <select
                     value={partyPosition}
                     onChange={(e) => setPartyPosition(e.target.value)}
-                    disabled={!partyLevel || positionLocked}
+                    disabled={!partyLevel}
                     aria-label={t('profile.positionLabel')}
                     className="w-full appearance-none rounded-xl px-4 py-3.5 pr-10 text-[14px] outline-none transition disabled:cursor-not-allowed disabled:opacity-50"
                     style={{
@@ -544,7 +545,7 @@ export default function ProfileSetup() {
               </div>
 
               <p className="mt-1.5 text-[12px]" style={{ color: '#5a6e9a' }}>
-                {positionLocked ? t('profile.positionLocked') : t('profile.positionHint')}
+                {t('profile.positionHint')}
               </p>
             </div>
 
