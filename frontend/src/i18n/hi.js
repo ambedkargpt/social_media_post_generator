@@ -344,6 +344,7 @@ export default {
   "nav.servicesCaps": "सेवाएँ",
   "nav.bheemCaps": "भीम चैटबॉट",
   "nav.contactCaps": "संपर्क",
+  "nav.donateCaps": "सहयोग",
   "foot.product": "उत्पाद",
   "foot.company": "कंपनी",
   "foot.generatePosts": "पोस्ट बनाएँ",

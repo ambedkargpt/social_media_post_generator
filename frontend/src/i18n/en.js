@@ -340,6 +340,7 @@ export default {
   "nav.servicesCaps": "SERVICES",
   "nav.bheemCaps": "BHEEM CHATBOT",
   "nav.contactCaps": "CONTACT",
+  "nav.donateCaps": "DONATE",
   "foot.product": "Product",
   "foot.company": "Company",
   "foot.generatePosts": "Generate posts",

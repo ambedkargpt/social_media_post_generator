@@ -6,13 +6,23 @@ import { useAuth } from '../context/AuthContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../i18n/index.jsx';
 
-// action: 'scroll' (default) | 'bheembot' | 'dashboard' | 'section:<id>'
+// action: 'scroll' (default) | 'bheembot' | 'dashboard' | 'section:<id>' | 'donate'
 const navItems = [
   { key: 'nav.homeCaps',     sectionId: 'home' },
   { key: 'nav.corpusCaps',   sectionId: 'ambedkarverse' },
   { key: 'nav.servicesCaps', sectionId: 'services' },
   { key: 'nav.bheemCaps',    sectionId: 'bheem',   action: 'bheembot' },
   { key: 'nav.contactCaps',  sectionId: 'contact' },
+  // Lands on the form itself rather than the top of the section, because
+  // someone who clicked this has already decided to write to us.
+  //
+  // Its own sectionId, not 'contact': that id is the React key and is what the
+  // active highlight compares against, so sharing it would duplicate the key
+  // and light both items at once. Its own action keeps it out of the scroll
+  // spy, which only observes items with no action or a 'section:' one - there
+  // is no element called 'donate' to observe, and a funding prompt is not a
+  // place on the page you scroll past.
+  { key: 'nav.donateCaps',   sectionId: 'donate',  action: 'donate' },
 ];
 
 export default function Navbar() {
@@ -98,6 +108,11 @@ export default function Navbar() {
         sessionStorage.setItem('auth_redirect', '/dashboard');
         navigate('/login');
       }
+      return;
+    }
+
+    if (item.action === 'donate') {
+      scrollToSection('contact-form');
       return;
     }
 
