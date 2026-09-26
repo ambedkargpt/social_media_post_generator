@@ -23,9 +23,22 @@ const META_KEYS = {
 // label in a sidebar this narrow, so it becomes the hint underneath instead.
 const PARTY_Q = /^party_(?:inc|bsp)_q(\d{1,2})$/;
 
+// Position questions are pos_<inc|bsp>_<group>_q<n>, five per level.
+//
+// Unlike the party ten, these are not worded identically across levels — a
+// district question asks about local detail where the national one asks how to
+// present a position — so the short label names what the question is *for*
+// rather than restating it, and the question's own sentence sits underneath as
+// the hint. Same treatment as the party set, for the same reason: the full
+// text is too long to be a label in a sidebar this narrow.
+const POSITION_Q = /^pos_(?:inc|bsp)_[a-z_]+_q([1-5])$/;
+
 function getMeta(questionId, questionText, t, lang) {
   const party = PARTY_Q.exec(questionId);
   if (party) return { label: t(`qmeta.partyQ${party[1]}`), hint: questionText };
+
+  const position = POSITION_Q.exec(questionId);
+  if (position) return { label: t(`qmeta.posQ${position[1]}`), hint: questionText };
 
   const key = META_KEYS[questionId];
   if (!key) return { label: questionLabel(questionText, lang), hint: '' };

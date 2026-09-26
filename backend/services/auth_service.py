@@ -375,8 +375,28 @@ class AuthService:
             if existing and str(existing["_id"]) != str(user["_id"]):
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username already taken.")
             fields["username"] = username
+        # Party and position are set once and then fixed.
+        #
+        # Every party answer is stored against an id that names the party -
+        # party_inc_q1, pos_inc_national_q3 - so moving to another party does
+        # not carry them across, it orphans them. The writer would keep a
+        # profile full of answers that no longer reach a prompt, and the posts
+        # would quietly change character with no visible cause.
+        #
+        # Re-sending the same value is allowed, so saving the form again is not
+        # an error. Setting one that was never set is allowed too: this locks a
+        # choice, it does not force one. Correcting a genuine mistake is a
+        # database edit, deliberately - it should involve someone who can also
+        # clear the answers left behind.
         if political_party is not None:
-            fields["political_party"] = political_party.strip()
+            new_party = political_party.strip()
+            current_party = str(user.get("political_party") or "").strip()
+            if current_party and new_party != current_party:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Your party is already set and cannot be changed.",
+                )
+            fields["political_party"] = new_party
         if party_position is not None:
             # Unknown keys are dropped rather than stored: a stale id would sit
             # on the user forever and resolve to no guidance at generation time,
@@ -384,7 +404,14 @@ class AuthService:
             from backend.pipeline.party_roles import ROLES
 
             pos = party_position.strip()
-            fields["party_position"] = pos if pos in ROLES else ""
+            pos = pos if pos in ROLES else ""
+            current_pos = str(user.get("party_position") or "").strip()
+            if current_pos and pos != current_pos:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Your position is already set and cannot be changed.",
+                )
+            fields["party_position"] = pos
         if email is not None:
             email = email.strip().lower()
             if email and (existing := self.users_repo.find_by_email(email)) and str(existing["_id"]) != str(user["_id"]):

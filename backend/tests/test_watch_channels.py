@@ -263,3 +263,85 @@ def test_repeated_failures_eventually_stop_running_the_pipeline(watch_dir, monke
 
     # Three attempts, then it is left alone — not five runs, and not forever.
     assert len(runs) == 3
+
+
+# ── The lock ────────────────────────────────────────────────────────────────
+# A run killed mid-fetch cannot release its own lock, and the heartbeat alone
+# left every later tick standing down for the rest of the staleness window.
+
+
+@pytest.fixture
+def lock(tmp_path, monkeypatch):
+    import backend.scripts.watch_channels as watcher
+
+    monkeypatch.setattr(watcher, "LOCK_PATH", tmp_path / "watch.lock", raising=False)
+    monkeypatch.setattr(watcher, "LOG_PATH", tmp_path / "watch.log", raising=False)
+    return watcher
+
+
+def _held_by(watcher, pid, *, seconds_ago=0):
+    import time
+
+    watcher.LOCK_PATH.write_text(
+        json.dumps({"pid": pid, "heartbeat": time.time() - seconds_ago}), encoding="utf-8"
+    )
+
+
+def test_a_live_holder_is_not_displaced(lock, monkeypatch):
+    """The ordinary case: a run is going, so this tick stands down."""
+    _held_by(lock, 999_001, seconds_ago=1)
+    monkeypatch.setattr(lock, "_process_alive", lambda _pid: True)
+
+    assert lock.claim_lock() is False
+
+
+def test_this_process_can_reclaim_its_own_lock(lock):
+    """A run that touches its own lock mid-pass must not lock itself out."""
+    import os
+
+    _held_by(lock, os.getpid(), seconds_ago=1)
+
+    assert lock.claim_lock() is True
+
+
+def test_liveness_is_read_from_the_real_process_table(lock):
+    """The stub above is only for arranging cases; this checks the real thing."""
+    import os
+
+    assert lock._process_alive(os.getpid()) is True
+    assert lock._process_alive(0) is False
+
+
+def test_a_dead_holder_is_taken_over_at_once(lock, monkeypatch):
+    """
+    The fix.
+
+    A killed run leaves a lock nobody will release. Waiting out the staleness
+    window means half an hour of ticks that do nothing.
+    """
+    _held_by(lock, 999_002, seconds_ago=60)              # fresh heartbeat
+    monkeypatch.setattr(lock, "_process_alive", lambda _pid: False)
+
+    assert lock.claim_lock() is True
+
+
+def test_a_stale_heartbeat_is_taken_over_even_if_the_pid_looks_alive(lock, monkeypatch):
+    """Process ids are reused; an unrelated program must not hold this forever."""
+    _held_by(lock, 999_003, seconds_ago=lock.LOCK_STALE_SECONDS + 5)
+    monkeypatch.setattr(lock, "_process_alive", lambda _pid: True)
+
+    assert lock.claim_lock() is True
+
+
+def test_standing_down_is_not_a_failure(lock, monkeypatch):
+    """
+    Exit 0.
+
+    A non-zero exit made every tick that landed during a run show up as a failed
+    task in the scheduler's history, which is how a healthy watcher came to look
+    broken.
+    """
+    _held_by(lock, 999_004, seconds_ago=1)
+    monkeypatch.setattr(lock, "_process_alive", lambda _pid: True)
+
+    assert lock.main(["--once"]) == 0

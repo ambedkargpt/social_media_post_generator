@@ -18,7 +18,8 @@ import { useAuth } from '../context/AuthContext';
 import { getNews, getNewsById, getTenants } from '../api/news';
 import { adaptNews, resolveTenantForUser } from '../utils/newsTenants';
 import { generatePostForNews, regeneratePostFromSnapshot, translatePost, getDailyQuota, togglePostVersion } from '../api/posts';
-import { getPartyQuestions, getQuestions } from '../api/questions';
+import { getPartyQuestions, getPositionQuestions, getQuestions } from '../api/questions';
+import { groupForId } from '../utils/partyRoles';
 import { getProfileAnswers, saveProfileAnswers } from '../api/profile';
 import { CORE_QUESTION_IDS } from '../utils/preferenceQuestions';
 import { getSiteLanguage, SITE_LANGUAGES } from '../utils/siteLanguage';
@@ -379,7 +380,14 @@ export default function SocialMediaPostGenerator() {
       getQuestions(25),
       getProfileAnswers(currentUser.id).catch(() => []),
       getPartyQuestions(currentUser.political_party || '').catch(() => []),
-    ]).then(([allQs, saved, partyQs]) => {
+      // The five written for this party *and* this level. The group comes from
+      // the stored position, so someone who has not set one gets an empty list
+      // rather than another party's set.
+      getPositionQuestions(
+        currentUser.political_party || '',
+        groupForId(currentUser.party_position || ''),
+      ).catch(() => []),
+    ]).then(([allQs, saved, partyQs, positionQs]) => {
       const qMap = Object.fromEntries(allQs.map((q) => [q.question_id, q]));
       // Length first, then the party set in its own order. The party list is
       // empty for a party with no questions written for it, and the panel then
@@ -393,6 +401,14 @@ export default function SocialMediaPostGenerator() {
         // one, so showing options_hi here would send Hindi where the defaults,
         // the saved answers and the validation all speak English.
         ...partyQs.map((q) => ({
+          ...q,
+          question_text: siteLang === 'hi' && q.question_text_hi ? q.question_text_hi : q.question_text,
+        })),
+        // Position questions last: they are the narrowest of the three, asking
+        // how someone at this level in this party should sound, so they read
+        // as a refinement of the party answers above rather than a separate
+        // subject. Localised the same way and for the same reason.
+        ...positionQs.map((q) => ({
           ...q,
           question_text: siteLang === 'hi' && q.question_text_hi ? q.question_text_hi : q.question_text,
         })),
@@ -413,7 +429,10 @@ export default function SocialMediaPostGenerator() {
     // Re-runs on a language switch, so the party questions come back in the
     // language now on screen, and on a party change, so they come back as the
     // new party's set rather than the old one's.
-  }, [currentUser?.id, currentUser?.political_party, siteLang]);
+    // Position is in here too: the five questions are written per level, so
+    // moving from District to State has to bring the new set rather than leave
+    // the old one on screen.
+  }, [currentUser?.id, currentUser?.political_party, currentUser?.party_position, siteLang]);
 
   // Resize drag refs
   const resizing  = useRef(false);
@@ -605,6 +624,24 @@ export default function SocialMediaPostGenerator() {
   const charPct = activePlatform.limit ? chars / activePlatform.limit : 0;
   const charOverLimit = chars > activePlatform.limit;
   const charWarning = charPct > 0.85 && !charOverLimit;
+
+  // Whether the writer's chosen length can fit this destination at all.
+  //
+  // The two settings can contradict: Extended asks for 250-400 words, Twitter
+  // takes 280 characters. The server resolves it by letting the platform win,
+  // which is the only workable answer - a 1626 character tweet is not a tweet.
+  // But a length setting that silently stops applying is worse than one that
+  // says so, which is what this line is for.
+  //
+  // Six characters a word is deliberately generous; Devanagari runs longer. If
+  // it does not fit at six, it will not fit.
+  const lengthMaxWords = (() => {
+    const label = preferences['profile_content_length'] || '';
+    const numbers = label.match(/\d+/g);
+    return numbers ? Math.max(...numbers.map(Number)) : 0;
+  })();
+  const lengthOverriddenByPlatform =
+    Boolean(activePlatform.limit) && lengthMaxWords * 6 > activePlatform.limit;
 
   // A story handed over by the dashboard's top-story card. The card names the
   // story it was showing when Generate Post was clicked, and this opens that
@@ -2267,6 +2304,15 @@ export default function SocialMediaPostGenerator() {
                 </div>
               </button>
             </div>
+
+            {lengthOverriddenByPlatform && (
+              <p className="mt-2 text-[11.5px] leading-relaxed text-[#8b94b8]">
+                {t('gen.lengthCappedByPlatform', {
+                  platform: activePlatform.label,
+                  limit: activePlatform.limit.toLocaleString(),
+                })}
+              </p>
+            )}
 
             {/* You Can Also Generate — card with grid buttons */}
             <div className="mt-5 overflow-hidden rounded-2xl border border-[#1e3260]/60 bg-[#0a1130]/70 p-5">

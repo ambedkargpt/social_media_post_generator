@@ -21,6 +21,11 @@ const COMPANY_LINKS = [
   { key: "foot.dalitCorpus", to: "/#ambedkarverse" },
   { key: "foot.resources", to: "/resources" },
   { key: "foot.contactUs", to: "/contact" },
+  // Straight to the form rather than the top of the section: someone who
+  // clicked this has already decided to write to us. MainLayout does the hash
+  // scrolling, retrying briefly because the section is not mounted on the
+  // first frame after a route change.
+  { key: "foot.donate", to: "/#contact-form" },
 ];
 
 // Accounts with no URL are skipped rather than rendered as links that go

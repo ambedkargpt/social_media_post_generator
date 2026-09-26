@@ -106,6 +106,20 @@ class PostsService:
         if is_publishing:
             self._validate_status_transition(existing["status"], "published")
             user_id = current_user_id or str(existing["user_id"])
+            # A test account publishes as often as the team needs to see what a
+            # published post does, so it skips the cap and the atomic claim on
+            # it -- but still stamps published_at and counts toward the streak,
+            # because those are the behaviour being tested.
+            if self._is_test_account(user_id):
+                self.repo.set_published_at(post_id)
+                self.streak_repo.on_publish(user_id)
+                self.repo.drop_unpublished_version(post_id)
+                doc = self.repo.update(post_id, updates)
+                if not doc:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND, detail="Post not found."
+                    )
+                return self._to_response(doc)
             # ── Atomic daily publish rate limit ─────────────────────────────
             published_today = self.repo.count_published_today(user_id)
             if published_today >= DAILY_POST_LIMIT:
@@ -168,8 +182,13 @@ class PostsService:
         if already:
             return already
 
+        # Exempt from the cap here for the same reason as on the ordinary
+        # publish path: a test account has to be able to reach this screen more
+        # than five times in a day. Everything else still applies, Reddit's own
+        # refusals included.
+        unrestricted = self._is_test_account(user_id)
         first_publish = existing.get("status") != "published"
-        if first_publish and self.repo.count_published_today(user_id) >= DAILY_POST_LIMIT:
+        if first_publish and not unrestricted and self.repo.count_published_today(user_id) >= DAILY_POST_LIMIT:
             next_midnight = (datetime.now(timezone.utc) + timedelta(days=1)).replace(
                 hour=0, minute=0, second=0, microsecond=0
             )
@@ -214,10 +233,17 @@ class PostsService:
         # try_publish_atomic stamps published_at and guards the quota; the
         # status is a separate write, the same way the ordinary publish path
         # sets it after that check.
-        if first_publish and self.repo.try_publish_atomic(post_id, user_id, DAILY_POST_LIMIT):
-            self.repo.update(post_id, {"status": "published"})
-            self.streak_repo.on_publish(user_id)
-            self.repo.drop_unpublished_version(post_id)
+        if first_publish:
+            if unrestricted:
+                # No quota to claim, so published_at is stamped directly.
+                self.repo.set_published_at(post_id)
+                claimed = True
+            else:
+                claimed = self.repo.try_publish_atomic(post_id, user_id, DAILY_POST_LIMIT)
+            if claimed:
+                self.repo.update(post_id, {"status": "published"})
+                self.streak_repo.on_publish(user_id)
+                self.repo.drop_unpublished_version(post_id)
 
         return publication
 
@@ -287,12 +313,19 @@ class PostsService:
             position_answers=raw_settings["position_answers"],
         )
         created_day = today_day_key()
-        self._refuse_duplicate_generation(
-            user_id=user_id,
-            news_id=news_id,
-            created_day=created_day,
-            fingerprint=fingerprint,
-        )
+        # A test account writes the same story as often as the team needs it to.
+        # Its posts are stamped with a different origin, which is what actually
+        # keeps them out: both unique indexes and both checks below are partial
+        # on origin "generate", so skipping the check alone would still leave
+        # the insert to be refused by the index.
+        unrestricted = self._is_test_account(user_id)
+        if not unrestricted:
+            self._refuse_duplicate_generation(
+                user_id=user_id,
+                news_id=news_id,
+                created_day=created_day,
+                fingerprint=fingerprint,
+            )
 
         tenant = article.get("tenant_slug") or "general"
         embedder, store, context_by_title = self._rag_stack(tenant)
@@ -377,7 +410,7 @@ class PostsService:
                     "hashtags": [],
                     "status": "draft",
                     "generation_meta": generation_meta,
-                    "origin": "generate",
+                    "origin": "test" if unrestricted else "generate",
                     "created_day": created_day,
                     "fingerprint": fingerprint,
                 }
@@ -392,6 +425,23 @@ class PostsService:
             retrieval_snapshot_id=snapshot_id,
             retrieval_reused=False,
         )
+
+    def _is_test_account(self, user_id: str) -> bool:
+        """
+        Whether this account is exempt from the limits a real one lives under.
+
+        Seeded by backend/scripts/seed_test_accounts.py so the team can retest a
+        story as often as they need. A flag on the record rather than a list in
+        the code, so an account can be revoked by editing one field instead of
+        shipping a release.
+        """
+        try:
+            user = db["users"].find_one(
+                {"_id": ObjectId(user_id)}, {"is_test_account": 1}
+            )
+        except Exception:
+            return False
+        return bool((user or {}).get("is_test_account"))
 
     def _refuse_duplicate_generation(
         self, *, user_id: str, news_id: str, created_day: str, fingerprint: str
@@ -454,10 +504,9 @@ class PostsService:
         if str(source_doc["user_id"]) != current_user_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot regenerate another user's post.")
 
-        # One refinement per post. Checked here as well as in the write, which
-        # is where two clicks arriving together are actually settled -- this is
-        # the cheap refusal that saves the model call.
-        if source_doc.get("refined_at"):
+        # One refinement per post, except on a test account, which needs to be
+        # able to try a note, read the result, and try a different one.
+        if source_doc.get("refined_at") and not self._is_test_account(current_user_id):
             raise self._already_refined_error()
         # Refining after publishing would rewrite what already went out.
         if source_doc.get("status") == "published":
@@ -561,6 +610,7 @@ class PostsService:
             content=post_text,
             fingerprint=fingerprint,
             generation_meta=generation_meta,
+            allow_repeat=self._is_test_account(current_user_id),
         )
         if not doc:
             raise self._already_refined_error()
@@ -831,7 +881,9 @@ class PostsService:
         # How this writer wants to write from their position, in their own
         # answers. Empty for a party or position with no question set and for
         # anyone who has not answered, so those prompts are unchanged.
-        position_prose, position_answers = self._position_preferences(user_id, user_doc)
+        position_prose, position_answers = self._position_preferences(
+            user_id, user_doc, overrides=profile_overrides
+        )
         default_profile["position_preferences"] = position_prose
 
         # What relationship this writer wants with the party: whether to defend
@@ -909,7 +961,10 @@ class PostsService:
         return render_preferences(QuestionsRepository().list_by_ids(ids), answers), answers
 
     def _position_preferences(
-        self, user_id: str, user_doc: dict[str, Any]
+        self,
+        user_id: str,
+        user_doc: dict[str, Any],
+        overrides: dict[str, str] | None = None,
     ) -> tuple[str, dict[str, str]]:
         """
         The writer's answers to the five questions for their party and position.
@@ -937,7 +992,22 @@ class PostsService:
         rows = self.profile_answers_repo.list_by_user(
             user_id=user_id, question_ids=ids, limit=len(ids), skip=0
         )
-        answers = {str(row.get("question_id")): row.get("answer") for row in rows}
+        saved = {str(row.get("question_id")): row.get("answer") for row in rows}
+
+        # The generator's side panel now carries these five as well, and a
+        # control that does not change the post it sits beside is worse than no
+        # control. Read the same way the party answers already are: picked out
+        # of profile_overrides by id, because the profile loop that builds them
+        # only keeps keys naming a PROFILE_FIELDS entry and drops every one of
+        # these. The panel's value wins for this post without being saved.
+        wanted = set(ids)
+        panel = {
+            qid: value
+            for qid, value in (overrides or {}).items()
+            if qid in wanted and isinstance(value, str) and value.strip()
+        }
+
+        answers = {**saved, **panel}
         if not answers:
             return "", {}
         return render_preferences(QuestionsRepository().list_by_ids(ids), answers), answers

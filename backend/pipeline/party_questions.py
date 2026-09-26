@@ -46,9 +46,11 @@ CATEGORY = "party"
 # for any other reason re-prompts every user who already answered.
 LAUNCHED_AT = datetime(2026, 9, 17, tzinfo=timezone.utc)
 
-PARTIES = ("inc", "bsp")
+PARTIES = ("inc", "bsp", "sp")
 
-# The ten questions, in order, as (English, Hindi). Identical for both parties.
+# The ten questions, in order, as (English, Hindi). Identical for every party:
+# what differs between them is the vocabulary an answer is offered in, not
+# what is being asked.
 QUESTIONS: list[tuple[str, str]] = [
     (
         "When your selected party is mentioned in a news story, what should your post focus on most?",
@@ -240,6 +242,79 @@ OPTIONS: dict[str, list[list[tuple[str, str]]]] = {
             ("Supportive only when supported by evidence", "समर्थन तभी, जब सबूत साथ हों"),
         ],
     ],
+    # ── Samajwadi Party ────────────────────────────────────────────────────
+    "sp": [
+        [
+            ('Social justice and backward-class representation', 'सामाजिक न्याय और पिछड़ों का प्रतिनिधित्व'),
+            ('The PDA coalition — backward classes, Dalits and minorities', 'पीडीए — पिछड़े, दलित और अल्पसंख्यक'),
+            ('Employment, farmers and the concerns of the young', 'रोज़गार, किसान और नौजवानों के सवाल'),
+            ("The party's position compared with the government's", 'सरकार के मुक़ाबले पार्टी का रुख़'),
+            ('How the issue affects ordinary people in the state', 'मुद्दा प्रदेश के आम लोगों को कैसे प्रभावित करता है'),
+        ],
+        [
+            ('Defend it strongly from a social-justice standpoint', 'सामाजिक न्याय के नज़रिए से मज़बूती से बचाव करें'),
+            ('Connect it to PDA representation and empowerment', 'उसे पीडीए के प्रतिनिधित्व और सशक्तिकरण से जोड़ें'),
+            ('Frame it as the socialist alternative to the government', 'उसे सरकार के मुक़ाबले समाजवादी विकल्प के रूप में रखें'),
+            ('Explain what it means for backward, Dalit and minority communities', 'पिछड़े, दलित और अल्पसंख्यक समुदायों के लिए उसका मतलब समझाएँ'),
+            ('Support it firmly while keeping the argument evidence-based', 'मज़बूती से समर्थन करें, पर दलील तथ्यों पर टिकी रहे'),
+        ],
+        [
+            ('Directly challenge the criticism with facts', 'तथ्यों के साथ आलोचना का सीधा जवाब दें'),
+            ('Expose the caste and representation politics behind it', 'उसके पीछे की जाति और प्रतिनिधित्व की राजनीति उजागर करें'),
+            ("Defend the party's record on social justice", 'सामाजिक न्याय पर पार्टी के रिकॉर्ड का बचाव करें'),
+            ("Contrast it with the government's own record", 'उसे सरकार के अपने रिकॉर्ड से आमने-सामने रखें'),
+            ('Respond firmly while remaining evidence-based', 'मज़बूती से जवाब दें, पर तथ्यों पर टिके रहें'),
+        ],
+        [
+            ('Defend the party against politically motivated criticism', 'राजनीति से प्रेरित आलोचना के ख़िलाफ़ पार्टी का बचाव करें'),
+            ('Acknowledge the mistake but provide context', 'ग़लती स्वीकारें, पर संदर्भ भी दें'),
+            ('Criticize the decision while standing by the socialist position', 'फ़ैसले की आलोचना करें, पर समाजवादी रुख़ के साथ खड़े रहें'),
+            ('Demand accountability while avoiding unnecessary attacks', 'जवाबदेही माँगें, पर ग़ैरज़रूरी हमलों से बचें'),
+            ('Judge it by what it means for backward, Dalit and minority communities', 'पिछड़े, दलित और अल्पसंख्यक समुदायों पर असर से आँकें'),
+        ],
+        [
+            ('Assertive and confident', 'मुखर और आत्मविश्वासी'),
+            ("Rooted in social justice and Lohia's socialism", 'सामाजिक न्याय और लोहिया के समाजवाद में जड़ें जमाए'),
+            ('Hopeful and youth-oriented', 'उम्मीद भरी और नौजवानों की ओर'),
+            ('Angry about injustice and unemployment', 'अन्याय और बेरोज़गारी पर ग़ुस्सा'),
+            ('Calm, mature and persuasive', 'शांत, गंभीर और भरोसा जगाने वाली'),
+        ],
+        [
+            ('Representation of backward classes, Dalits and minorities', 'पिछड़ों, दलितों और अल्पसंख्यकों का प्रतिनिधित्व'),
+            ('The demand for a caste census', 'जाति जनगणना की माँग'),
+            ("The party's record of governance and development in the state", 'प्रदेश में पार्टी के शासन और विकास का रिकॉर्ड'),
+            ('Secularism and communal harmony', 'धर्मनिरपेक्षता और साम्प्रदायिक सद्भाव'),
+            ('Promises versus actual outcomes', 'वादे बनाम असल नतीजे'),
+        ],
+        [
+            ('As the voice of the PDA coalition', 'पीडीए की आवाज़ के रूप में'),
+            ('As the socialist inheritor of Lohia and the Mandal era', 'लोहिया और मंडल दौर की समाजवादी विरासत के रूप में'),
+            ('As a force for backward-class representation', 'पिछड़ों के प्रतिनिधित्व की ताक़त के रूप में'),
+            ('As a defender of secularism and minority rights', 'धर्मनिरपेक्षता और अल्पसंख्यक अधिकारों के रक्षक के रूप में'),
+            ('As a party whose record should be judged through evidence and outcomes', 'ऐसी पार्टी जिसका रिकॉर्ड तथ्यों और नतीजों से आँका जाए'),
+        ],
+        [
+            ("Connect present politics with Lohia's socialist movement", 'आज की राजनीति को लोहिया के समाजवादी आंदोलन से जोड़ें'),
+            ('Highlight the Mandal era and backward-class assertion', 'मंडल दौर और पिछड़ों की मुखरता को सामने रखें'),
+            ("Recall the party's governance record in the state", 'प्रदेश में पार्टी के शासन का रिकॉर्ड याद दिलाएँ'),
+            ('Critically examine both achievements and failures', 'उपलब्धियों और नाकामियों — दोनों को परखें'),
+            ('Use history only when it directly strengthens the argument', 'इतिहास तभी लाएँ जब वह दलील को सीधे मज़बूत करे'),
+        ],
+        [
+            ("A strong rebuttal defending the party's position", 'पार्टी के रुख़ का मज़बूत बचाव करता जवाब'),
+            ('A social-justice analysis of the controversy', 'विवाद का सामाजिक न्याय के नज़रिए से विश्लेषण'),
+            ('A direct examination of caste and representation', 'जाति और प्रतिनिधित्व की सीधी पड़ताल'),
+            ('A fact-based breakdown of claims and counterclaims', 'दावों और जवाबी दावों का तथ्यपरक विश्लेषण'),
+            ('An analysis of how it affects the PDA constituency', 'पीडीए के मतदाताओं पर उसके असर का विश्लेषण'),
+        ],
+        [
+            ('Strongly supportive', 'पूरी तरह समर्थक'),
+            ('Supportive but willing to criticize', 'समर्थक, पर आलोचना को तैयार'),
+            ('Socialist but constructively critical', 'समाजवादी, पर रचनात्मक आलोचना के साथ'),
+            ('Analytical and issue-based', 'विश्लेषणात्मक और मुद्दा-आधारित'),
+            ('Supportive only when supported by evidence', 'समर्थन तभी, जब तथ्य साथ हों'),
+        ],
+    ],
 }
 
 # Question 10 is the one that separates two supporters of the same party who
@@ -265,6 +340,7 @@ COMPULSORY_NUMBERS = (10,)
 DEFAULT_NUMBERS: dict[str, tuple[int, ...]] = {
     "inc": (2, 1, 1, 2, 1, 3, 2, 2, 4, 2),
     "bsp": (2, 1, 1, 2, 1, 1, 1, 1, 4, 2),
+    "sp": (2, 1, 1, 2, 1, 1, 1, 1, 4, 2),
 }
 
 

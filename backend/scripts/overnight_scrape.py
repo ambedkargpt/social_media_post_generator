@@ -40,11 +40,21 @@ LOG = ROOT / "backend" / "outputs" / "overnight_scrape.log"
 # bjp is appended last with no tuning behind its position: there is no video-
 # count data for it yet the way there is for the other two. Move it earlier
 # once a real run shows whether it is starving the others of budget.
-CHANNELS = ("samajwadi", "ravish", "congress", "bjp")
+# dalitdastak sits after ravish: it is small, and the two of them together use
+# little of the transcript budget before congress and bjp take the rest. It was
+# missing from this list entirely, so every catch-up run skipped it.
+CHANNELS = ("samajwadi", "ravish", "dalitdastak", "congress", "bjp")
 
 # A video that is known to exist and to have captions. Probing one known id is
 # cheaper and more honest than trying a whole run to find out.
 PROBE_VIDEO = "skfnSEaUkB4"
+
+
+# The watcher runs on a schedule and this runs by hand; both drive the same
+# pipeline over the same processed.json, so they must not overlap. Sharing the
+# watcher's lock is what keeps a catch-up run and a quarter-hourly tick from
+# fetching the same videos twice.
+from backend.scripts.watch_channels import claim_lock, release_lock, touch_lock  # noqa: E402
 
 
 def log(msg: str) -> None:
@@ -97,6 +107,7 @@ def run_channel(channel: str) -> dict:
         f"  {channel}: queued={ing.get('queued_urls', 0)} "
         f"fetched={ing.get('cleaned_transcripts', 0)} "
         f"failures={ing.get('transcript_failures', 0)} "
+        f"deferred={ing.get('deferred_by_cap', 0)} "
         f"skipped_existing={ing.get('skipped_existing', 0)} "
         f"published={pub.get('inserted', 0)}"
     )
@@ -112,6 +123,9 @@ def main() -> None:
     args = ap.parse_args()
 
     log("=" * 70)
+    if not claim_lock():
+        log("a run is already going - nothing to do")
+        return
     log(f"overnight scrape starting - probe every {args.probe_minutes}m, up to {args.max_rounds} rounds")
 
     deadline = time.time() + args.max_wait_hours * 3600
@@ -132,16 +146,27 @@ def main() -> None:
         # --- scrape ---------------------------------------------------------
         failures = 0
         published = 0
+        deferred = 0
         for channel in CHANNELS:
             m = run_channel(channel)
-            failures += int(m.get("ingestion", {}).get("transcript_failures", 0) or 0)
+            ing = m.get("ingestion", {})
+            failures += int(ing.get("transcript_failures", 0) or 0)
+            deferred += int(ing.get("deferred_by_cap", 0) or 0)
             published += int(m.get("publish", {}).get("inserted", 0) or 0)
+            touch_lock()          # a round takes many minutes; keep the lock warm
 
-        log(f"round {rnd} done: published={published} transcript_failures={failures}")
+        log(f"round {rnd} done: published={published} failures={failures} deferred={deferred}")
 
-        if failures == 0:
+        # Two separate reasons to go round again, and only one of them used to
+        # count. A channel with a backlog hits max_videos_per_run and leaves the
+        # rest for the next run with no failures at all - so "failures == 0"
+        # called it finished and walked away from everything still queued.
+        if failures == 0 and deferred == 0:
             log("nothing left to fetch - finished")
             break
+        if failures == 0:
+            log(f"  {deferred} video(s) held back by the per-run cap - going again")
+            continue
 
         if rnd < args.max_rounds:
             log(f"  {failures} still missing, cooling off {args.cool_off_minutes}m before the next round")
@@ -160,6 +185,7 @@ def main() -> None:
     except Exception as exc:
         log(f"final count failed: {exc}")
 
+    release_lock()
     log("overnight scrape ended")
 
 
