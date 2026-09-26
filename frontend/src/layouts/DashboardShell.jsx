@@ -23,7 +23,7 @@ const ACTIVE_BY_PATH = {
   '/posts': 'searches',
   '/preferences': 'prefs',
   '/profile-setup': 'profile',
-  '/bheembot': 'bheembot',
+  '/bhimbot': 'bheembot',
 };
 
 export default function DashboardShell({ children, background, active: activeProp }) {

@@ -426,7 +426,7 @@ export default function BheemBot() {
           { id: Date.now(), role: 'assistant', content: 'Your session has expired. Please log in again.', sources: [], timestamp: Date.now() },
         ]);
         setTimeout(() => {
-          sessionStorage.setItem('auth_redirect', '/bheembot');
+          sessionStorage.setItem('auth_redirect', '/bhimbot');
           logout().catch(() => {});
           navigate('/login', { replace: true });
         }, 2000);

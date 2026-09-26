@@ -34,7 +34,7 @@ import {
 const QUICK_ACTIONS = [
   { labelKey: 'dash.socialPost',  descKey: 'dash.socialPostDesc',  Icon: Sparkles, route: '/generate/social-media', accent: '#3f9fff' },
   { labelKey: 'dash.musicStudio', descKey: 'dash.musicStudioDesc', Icon: Music,    route: '/generate/music',        accent: '#7b5cff' },
-  { labelKey: 'dash.bheembot',    descKey: 'dash.bheembotDesc',    Icon: Bot,      route: '/bheembot',              accent: '#22c55e' },
+  { labelKey: 'dash.bheembot',    descKey: 'dash.bheembotDesc',    Icon: Bot,      route: '/bhimbot',              accent: '#22c55e' },
 ];
 
 export default function Dashboard() {
@@ -348,7 +348,7 @@ export default function Dashboard() {
 
                 <button
                   type="button"
-                  onClick={() => navigate('/bheembot')}
+                  onClick={() => navigate('/bhimbot')}
                   className="group mt-auto inline-flex w-fit items-center gap-2 rounded-xl btn-gradient px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_8px_22px_rgba(45,111,255,0.32)]"
                 >
                   <Sparkles size={13} strokeWidth={2} />

@@ -26,7 +26,7 @@ const PRIMARY = { id: 'generate', labelKey: 'nav.generate', Icon: Sparkles, rout
 // plain items made them look broken: clicking did nothing and gave no feedback.
 const NAV = [
   { id: 'dashboard',  labelKey: 'nav.dashboard',        Icon: LayoutGrid },
-  { id: 'bheembot',   labelKey: 'dash.bheembot',         Icon: Bot, route: '/bheembot' },
+  { id: 'bheembot',   labelKey: 'dash.bheembot',         Icon: Bot, route: '/bhimbot' },
   { id: 'searches',   labelKey: 'nav.postHistory',     Icon: Search, route: '/posts' },
   { id: 'prefs',      labelKey: 'nav.preferences',      Icon: SlidersHorizontal, route: '/preferences' },
   { id: 'saved',      labelKey: 'nav.savedPrompts',    Icon: Bookmark, soon: true },
