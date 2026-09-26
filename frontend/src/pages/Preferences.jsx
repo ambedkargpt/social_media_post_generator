@@ -9,6 +9,22 @@ import { saveProfileAnswers, getProfileAnswers } from '../api/profile';
 import { getPartyQuestions, getPositionQuestions, getQuestions } from '../api/questions';
 import { groupForId } from '../utils/partyRoles';
 import { CORE_QUESTION_IDS, labelWithSize } from '../utils/preferenceQuestions';
+
+// The seven core profile questions are hidden here for now.
+//
+// Six of them describe who the writer is - their role, their audience, their
+// perspective - and the party and position sets now cover that ground in the
+// writer's own vocabulary. The seventh, content_length, is not hidden so much
+// as moved: it changes from one post to the next and lives in the generator's
+// side panel, which is where it is actually reached for.
+//
+// They are still seeded, still active, and still answered by anyone who went
+// through the questionnaire; only this page stops showing them. Their stored
+// answers keep reaching the prompt, and unanswered ones fall back to the
+// profile defaults, so nothing about generation changes by hiding them.
+//
+// Flip to true to bring the section back.
+const SHOW_CORE_QUESTIONS = false;
 import { useI18n } from '../i18n/index.jsx';
 import { questionLabel } from '../i18n/preferenceOptions';
 
@@ -292,7 +308,13 @@ export default function Preferences() {
         // Core is the seven the generator's panel shows, in that order, rather
         // than is_required: the database marks fourteen questions required,
         // which would move seven of them into this page's Core section.
-        setCompulsory(CORE_QUESTION_IDS.map((id) => byId[id]).filter(Boolean).map(toUiQuestion));
+        setCompulsory(
+          SHOW_CORE_QUESTIONS
+            ? CORE_QUESTION_IDS.map((id) => byId[id]).filter(Boolean).map(toUiQuestion)
+            // Empty rather than merely unrendered, so the page's answered count
+            // describes what is on it instead of counting invisible questions.
+            : []
+        );
         setOptional(active.filter((q) => !CORE_QUESTION_IDS.includes(q.question_id)).map(toUiQuestion));
       })
       .catch(() => setLoadError('core'))
@@ -429,24 +451,28 @@ export default function Preferences() {
         <ConnectedAccounts />
 
         {/* ── Compulsory questions ── */}
-        <SectionHeader
-          label={t('prefs.coreProfile')}
-          badge={t('prefs.required')}
-          description={t('prefs.coreDesc')}
-        />
-        <div className="space-y-4">
-          {loadingCore && !compulsory.length
-            ? <Skeletons count={CORE_QUESTION_IDS.length} rows={6} />
-            : compulsory.map((q, i) => (
-              <QuestionCard
-                key={q.id}
-                q={q}
-                num={i + 1}
-                value={prefs[q.id]}
-                onSelect={(v) => select(q.id, v)}
-              />
-            ))}
-        </div>
+        {SHOW_CORE_QUESTIONS && (
+          <>
+            <SectionHeader
+              label={t('prefs.coreProfile')}
+              badge={t('prefs.required')}
+              description={t('prefs.coreDesc')}
+            />
+            <div className="space-y-4">
+              {loadingCore && !compulsory.length
+                ? <Skeletons count={CORE_QUESTION_IDS.length} rows={6} />
+                : compulsory.map((q, i) => (
+                  <QuestionCard
+                    key={q.id}
+                    q={q}
+                    num={i + 1}
+                    value={prefs[q.id]}
+                    onSelect={(v) => select(q.id, v)}
+                  />
+                ))}
+            </div>
+          </>
+        )}
 
         {loadError && (
           <div className="mt-12 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#e55555]/35 bg-[#1a0f18] px-5 py-4">
