@@ -18,7 +18,7 @@ import { useAuth } from '../context/AuthContext';
 import { getNews, getNewsById, getTenants } from '../api/news';
 import { adaptNews, resolveTenantForUser } from '../utils/newsTenants';
 import { generatePostForNews, regeneratePostFromSnapshot, translatePost, getDailyQuota, togglePostVersion } from '../api/posts';
-import { getPartyQuestions, getPositionQuestions, getQuestions } from '../api/questions';
+import { getPositionQuestions, getQuestions } from '../api/questions';
 import { groupForId } from '../utils/partyRoles';
 import { getProfileAnswers, saveProfileAnswers } from '../api/profile';
 import { CORE_QUESTION_IDS } from '../utils/preferenceQuestions';
@@ -379,35 +379,32 @@ export default function SocialMediaPostGenerator() {
     Promise.all([
       getQuestions(25),
       getProfileAnswers(currentUser.id).catch(() => []),
-      getPartyQuestions(currentUser.political_party || '').catch(() => []),
       // The five written for this party *and* this level. The group comes from
       // the stored position, so someone who has not set one gets an empty list
       // rather than another party's set.
+      //
+      // The ten party questions are deliberately not here. They ask what the
+      // writer wants said about their party, which does not change from one
+      // story to the next, and sixteen dropdowns made the panel something to
+      // scroll past rather than reach for. They still shape every post: the
+      // generator reads the saved answers, and Preferences is where they are
+      // set.
       getPositionQuestions(
         currentUser.political_party || '',
         groupForId(currentUser.party_position || ''),
       ).catch(() => []),
-    ]).then(([allQs, saved, partyQs, positionQs]) => {
+    ]).then(([allQs, saved, positionQs]) => {
       const qMap = Object.fromEntries(allQs.map((q) => [q.question_id, q]));
-      // Length first, then the party set in its own order. The party list is
-      // empty for a party with no questions written for it, and the panel then
-      // shows length alone rather than breaking.
+      // Length, then the five for this writer's level. The position list is
+      // empty for a party or level with no set written for it, and the panel
+      // then shows length alone rather than breaking.
       const qs = [
         ...PREF_QUESTION_IDS.map((id) => qMap[id]).filter(Boolean),
-        // question_text is localised here rather than in the panel, so the
-        // panel keeps taking one string per question.
-        // The question text is localised, the options are not. The option
-        // string IS the stored answer and the backend matches on the English
-        // one, so showing options_hi here would send Hindi where the defaults,
-        // the saved answers and the validation all speak English.
-        ...partyQs.map((q) => ({
-          ...q,
-          question_text: siteLang === 'hi' && q.question_text_hi ? q.question_text_hi : q.question_text,
-        })),
-        // Position questions last: they are the narrowest of the three, asking
-        // how someone at this level in this party should sound, so they read
-        // as a refinement of the party answers above rather than a separate
-        // subject. Localised the same way and for the same reason.
+        // The question text is localised here rather than in the panel, so the
+        // panel keeps taking one string per question. The options are not: the
+        // option string IS the stored answer and the backend matches on the
+        // English one, so showing options_hi would send Hindi where the
+        // defaults, the saved answers and the validation all speak English.
         ...positionQs.map((q) => ({
           ...q,
           question_text: siteLang === 'hi' && q.question_text_hi ? q.question_text_hi : q.question_text,
