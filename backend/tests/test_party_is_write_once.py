@@ -1,11 +1,15 @@
 """
-Party and position are set once and then fixed.
+The party is set once and then fixed. The position is not.
 
-Every party answer is stored against an id that names the party -
-`party_inc_q1`, `pos_inc_national_q3` - so a writer who moves to another party
-does not carry those answers across, they orphan them: a profile full of
-answers that no longer reach any prompt, and posts that change character with
-no visible cause.
+Every answer is stored against an id that names the party - `party_inc_q1`,
+`pos_inc_national_q3` - so a writer who moves to another party leaves all
+fifteen behind at once, and the posts change character with nothing on screen
+to explain it.
+
+A position change is the ordinary case rather than that: people are promoted,
+move between a district and a state body, join a frontal wing. The ten party
+answers still apply afterwards, and only the five written for the old level
+stop being read.
 """
 from __future__ import annotations
 
@@ -100,11 +104,21 @@ def test_a_position_can_be_set_when_there_is_none(service):
     assert service.users_repo.saved["party_position"] == POSITION
 
 
-def test_the_position_cannot_be_changed_once_set(service):
+def test_the_position_can_be_changed(service):
+    """People are promoted and move between bodies; the party is what is fixed."""
+    service.users_repo.row = {"_id": "u1", "political_party": INC, "party_position": POSITION}
+
+    _update(service, party_position="national_president")
+
+    assert service.users_repo.saved["party_position"] == "national_president"
+
+
+def test_changing_the_position_does_not_let_the_party_move_with_it(service):
+    """The looser rule on one field must not loosen the other."""
     service.users_repo.row = {"_id": "u1", "political_party": INC, "party_position": POSITION}
 
     with pytest.raises(HTTPException) as caught:
-        _update(service, party_position="national_president")
+        _update(service, political_party=BSP, party_position="national_president")
 
     assert caught.value.status_code == 409
     assert service.users_repo.saved == {}
@@ -124,12 +138,8 @@ def test_an_unknown_position_is_still_dropped_rather_than_stored(service):
     assert service.users_repo.saved["party_position"] == ""
 
 
-def test_an_empty_stored_position_does_not_count_as_locked(service):
-    """
-    Someone whose unknown id was dropped to "" has not chosen yet.
-
-    Treating that as locked would leave them unable to ever set one.
-    """
+def test_a_position_can_be_set_after_an_unknown_one_was_dropped(service):
+    """An id that was dropped to "" leaves the writer free to choose again."""
     service.users_repo.row = {"_id": "u1", "political_party": INC, "party_position": ""}
 
     _update(service, party_position=POSITION)

@@ -288,7 +288,6 @@ export default {
   "profile.positionInParty": "Your position in the party",
   "profile.positionHint": "Sets how your posts speak: what they claim, and whether they speak for the party.",
   "profile.partyLocked": "Your party is set and cannot be changed. Your saved answers are written for it.",
-  "profile.positionLocked": "Your position is set and cannot be changed. The five questions written for your level depend on it.",
   "profile.selectParty": "Select a political party",
   "profile.levelLabel": "Level",
   "profile.positionLabel": "Position",
