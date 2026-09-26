@@ -290,6 +290,8 @@ export default {
   "profile.feedTailored": "आपकी समाचार फ़ीड इसी चुनाव के अनुसार बनती है।",
   "profile.positionInParty": "दल में आपका पद",
   "profile.positionHint": "यह तय करता है कि आपकी पोस्ट किस लहजे में बोलें, क्या दावा करें, और वे दल की ओर से बोल रही हैं या नहीं।",
+  "profile.partyLocked": "आपकी पार्टी तय हो चुकी है और अब बदली नहीं जा सकती। आपके सहेजे हुए जवाब उसी के लिए लिखे गए हैं।",
+  "profile.positionLocked": "आपका पद तय हो चुका है और अब बदला नहीं जा सकता। आपके स्तर के लिए लिखे पाँच सवाल उसी पर टिके हैं।",
   "profile.selectParty": "राजनीतिक दल चुनें",
   "profile.levelLabel": "स्तर",
   "profile.positionLabel": "पद",

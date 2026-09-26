@@ -98,6 +98,14 @@ export default function ProfileSetup() {
   // already chosen, rather than asking someone to find it again.
   const [partyLevel, setPartyLevel] = useState(() => groupForId(currentUser?.party_position || ''));
 
+  // Party and position are set once and then fixed, because every party answer
+  // is stored against an id that names the party — party_inc_q1,
+  // pos_inc_national_q3 — so changing it orphans them rather than carrying
+  // them across. The server refuses the change either way; these disable the
+  // controls so nobody fills a form that is going to be rejected.
+  const partyLocked = Boolean(currentUser?.political_party);
+  const positionLocked = Boolean(currentUser?.party_position);
+
   function handleLevelChange(level) {
     setPartyLevel(level);
     // The old position belongs to the old level, so keeping it would leave the
@@ -430,7 +438,8 @@ export default function ProfileSetup() {
                 <select
                   value={politicalParty}
                   onChange={(e) => { setPoliticalParty(e.target.value); setErrors((p) => ({ ...p, politicalParty: '' })); }}
-                  className="w-full appearance-none rounded-xl px-4 py-3.5 pr-10 text-[14px] outline-none transition"
+                  disabled={partyLocked}
+                  className="w-full appearance-none rounded-xl px-4 py-3.5 pr-10 text-[14px] outline-none transition disabled:cursor-not-allowed disabled:opacity-60"
                   style={{
                     backgroundColor: '#0a1130',
                     border: `1px solid ${errors.politicalParty ? '#ef4444' : '#1e3260'}`,
@@ -451,6 +460,9 @@ export default function ProfileSetup() {
                   style={{ color: '#8b94b8' }}
                 />
               </div>
+              {partyLocked && (
+                <p className="mt-1.5 text-[12px]" style={{ color: '#8b94b8' }}>{t('profile.partyLocked')}</p>
+              )}
               {errors.politicalParty
                 ? <p className="mt-1.5 text-[12px]" style={{ color: '#ef4444' }}>{errors.politicalParty}</p>
                 : <p className="mt-1.5 text-[12px]" style={{ color: '#5a6e9a' }}>{t('profile.feedTailored')}</p>}
@@ -474,7 +486,7 @@ export default function ProfileSetup() {
                   <select
                     value={partyLevel}
                     onChange={(e) => handleLevelChange(e.target.value)}
-                    disabled={!politicalParty}
+                    disabled={!politicalParty || positionLocked}
                     aria-label={t('profile.levelLabel')}
                     className="w-full appearance-none rounded-xl px-4 py-3.5 pr-10 text-[14px] outline-none transition disabled:cursor-not-allowed disabled:opacity-50"
                     style={{
@@ -504,7 +516,7 @@ export default function ProfileSetup() {
                   <select
                     value={partyPosition}
                     onChange={(e) => setPartyPosition(e.target.value)}
-                    disabled={!partyLevel}
+                    disabled={!partyLevel || positionLocked}
                     aria-label={t('profile.positionLabel')}
                     className="w-full appearance-none rounded-xl px-4 py-3.5 pr-10 text-[14px] outline-none transition disabled:cursor-not-allowed disabled:opacity-50"
                     style={{
@@ -532,7 +544,7 @@ export default function ProfileSetup() {
               </div>
 
               <p className="mt-1.5 text-[12px]" style={{ color: '#5a6e9a' }}>
-                {t('profile.positionHint')}
+                {positionLocked ? t('profile.positionLocked') : t('profile.positionHint')}
               </p>
             </div>
 
