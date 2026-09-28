@@ -115,7 +115,12 @@ export default function PublishSheet({ post, onClose, onPublished }) {
 
   const connected = Boolean(status?.connected);
   const configured = status?.configured !== false;
-  const subreddit = status?.subreddit || 'ambedkargpt';
+  // The server's answer, never a guess. A hardcoded fallback here named a
+  // community the post was not going to whenever the status call had not
+  // answered yet - harmless while the two matched, wrong the moment the
+  // deployment pointed somewhere else, and wrong in the worst way: it would
+  // have told someone their post went to r/ambedkargpt while it went elsewhere.
+  const subreddit = status?.subreddit || '';
   const overLimit = title.trim().length > TITLE_MAX;
 
   return (
@@ -200,7 +205,7 @@ export default function PublishSheet({ post, onClose, onPublished }) {
                     />
                     <span className="min-w-0 flex-1 text-[14px] font-medium text-white">
                       {t(d.labelKey)}
-                      {d.id === 'reddit' && (
+                      {d.id === 'reddit' && subreddit && (
                         <span className="ml-2 font-count text-[12px] text-[#7d89ad]">r/{subreddit}</span>
                       )}
                     </span>
