@@ -342,6 +342,48 @@ class ResearchBrief:
             ],
         }
 
+    @staticmethod
+    def from_meta(meta: Optional[Dict[str, Any]]) -> Optional["ResearchBrief"]:
+        """
+        The brief rebuilt from what as_meta stored.
+
+        Research is the slow half of writing a post - three claims searched,
+        eighteen pages read and fact-checked, about twenty seconds - and it is
+        the same work for every post written from the same story. Doing it once
+        and keeping the result is what lets the API use research at all: the
+        HTTP API in front of the Lambda gives up at thirty seconds, and
+        researching inline does not fit inside that.
+
+        Lossless for everything the writer reads. source_quote and trace_dir
+        are not carried: the first is only used while extracting claims, the
+        second names a folder on whichever machine ran the research.
+        """
+        if not meta:
+            return None
+        findings = [
+            ClaimFinding(
+                claim=Claim(
+                    claim=str(row.get("claim") or ""),
+                    query=str(row.get("query") or ""),
+                    kind=str(row.get("kind") or "other"),
+                ),
+                brief=str(row.get("brief") or ""),
+                sources=list(row.get("sources") or []),
+                stance=str(row.get("stance") or "NEUTRAL"),
+                verdict=str(row.get("verdict") or ""),
+                facts=list(row.get("facts") or []),
+                in_transcript=bool(row.get("in_transcript", True)),
+                verification=dict(row.get("verification") or {}),
+            )
+            for row in (meta.get("claims") or [])
+            if (row.get("claim") or "").strip()
+        ]
+        if not findings:
+            return None
+        return ResearchBrief(
+            findings=findings, stance_mode=str(meta.get("stance_mode") or "angle")
+        )
+
     def as_payload(self) -> Dict[str, Any]:
         """
         The research half of the JSON handed to the writer.
