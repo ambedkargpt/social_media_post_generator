@@ -36,6 +36,15 @@ CONFIG_DIR = PROJECT_ROOT / "config" / "channels"
 
 _ACTIVE_JOB_STATES = ("SUBMITTED", "PENDING", "RUNNABLE", "STARTING", "RUNNING")
 
+# How long to leave a video alone between attempts.
+#
+# YouTube writes auto-captions some time after an upload, not with it. On a
+# ten-minute schedule three attempts land inside half an hour of publication,
+# and a video whose captions had simply not appeared yet is retired for good.
+# That is what happened on the laptop watcher: about a hundred videos orphaned,
+# several of which fetch a full transcript when asked today.
+_RETRY_AFTER_SECONDS = float(os.getenv("WATCH_RETRY_AFTER_HOURS", "6")) * 3600
+
 
 # One function per client rather than a bare `import boto3` in the handler.
 # boto3 is present in the Lambda runtime and the worker image but not in
@@ -145,8 +154,19 @@ def pending_by_channel(ledger: dict, max_attempts: int) -> dict[str, list]:
                         # is not work — it is background that never clears.
                         if lookback_days and upload.age_days(now=now) > lookback_days:
                             continue
-                        if int(seen.get(upload.video_id, {}).get("attempts", 0)) >= max_attempts:
+                        entry = seen.get(upload.video_id, {})
+                        if int(entry.get("attempts", 0)) >= max_attempts:
                             continue
+                        # Tried recently: leave it be. This spaces the attempts
+                        # apart and stops a container being started again for a
+                        # video that is not ready yet.
+                        last = entry.get("last_attempt")
+                        if last:
+                            try:
+                                if (now - datetime.fromisoformat(last)).total_seconds() < _RETRY_AFTER_SECONDS:
+                                    continue
+                            except ValueError:
+                                pass
                         if all(upload.video_id != f.video_id for f in fresh):
                             fresh.append(upload)
             except youtube_feed.FeedUnavailable as exc:

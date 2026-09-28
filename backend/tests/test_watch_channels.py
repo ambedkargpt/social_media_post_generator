@@ -249,17 +249,40 @@ def test_a_video_the_run_did_fetch_leaves_no_ledger_entry(watch_dir, monkeypatch
     assert state["videos"].get("testchannel", {}) == {}
 
 
-def test_repeated_failures_eventually_stop_running_the_pipeline(watch_dir, monkeypatch):
-    """The whole point: a video that can never be fetched stops costing runs."""
+def test_a_video_is_left_alone_between_attempts(watch_dir, monkeypatch):
+    """
+    The fix for the orphaned videos.
+
+    YouTube writes auto-captions some time after an upload, not with it. Ticks
+    are fifteen minutes apart, so back-to-back attempts spent all three strikes
+    inside an hour of publication and retired videos whose captions simply had
+    not appeared yet. Roughly a hundred were lost that way, several of which
+    fetch a full transcript when asked today.
+    """
     watcher, tmp_path = watch_dir
     uploads = [_upload("aaaaaaaaaaa", days_old=0.1)]
     runs = []
 
-    def _count(_processed):
-        runs.append(1)
-
     for _ in range(5):
-        _run_tick(watcher, tmp_path, monkeypatch, uploads, on_run=_count, max_attempts=3)
+        _run_tick(watcher, tmp_path, monkeypatch, uploads,
+                  on_run=lambda _p: runs.append(1), max_attempts=3)
+
+    # One run. The next four ticks find it inside the cooldown and pass over it.
+    assert len(runs) == 1
+
+
+def test_repeated_failures_eventually_stop_running_the_pipeline(watch_dir, monkeypatch):
+    """Spacing the attempts must not stop them running out."""
+    watcher, tmp_path = watch_dir
+    uploads = [_upload("aaaaaaaaaaa", days_old=0.1)]
+    runs = []
+
+    # No cooldown, so every tick is a fresh attempt: the same state the real
+    # watcher reaches six hours apart, without waiting six hours.
+    monkeypatch.setattr(watcher, "RETRY_AFTER_SECONDS", 0, raising=False)
+    for _ in range(5):
+        _run_tick(watcher, tmp_path, monkeypatch, uploads,
+                  on_run=lambda _p: runs.append(1), max_attempts=3)
 
     # Three attempts, then it is left alone — not five runs, and not forever.
     assert len(runs) == 3

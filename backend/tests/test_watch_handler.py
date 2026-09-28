@@ -167,16 +167,39 @@ def test_a_running_job_is_not_joined_by_a_second(aws, monkeypatch):
     assert s3.objects == {}
 
 
+def test_a_video_is_left_alone_between_attempts(aws, monkeypatch):
+    """
+    YouTube writes auto-captions some time after an upload, not with it.
+
+    On a ten-minute schedule, back-to-back attempts spend all three strikes
+    inside half an hour of publication and retire a video whose captions had
+    simply not appeared yet. That is what orphaned about a hundred videos on
+    the laptop watcher.
+    """
+    watch_handler, _s3, batch = aws
+    _feed(monkeypatch, [_upload("aaaaaaaaaaa")])
+
+    for _ in range(6):
+        watch_handler.handler()
+
+    # One container. The next five schedules find it inside the cooldown.
+    assert len(batch.submitted) == 1
+
+
 def test_a_video_that_never_arrives_stops_costing_containers(aws, monkeypatch):
     """
     The loop-breaker.
 
     A video with no captions never reaches processed.json. Without the attempt
     ledger this would start a Batch container on every schedule, forever.
+    Spacing the attempts must not stop them running out.
     """
     watch_handler, _s3, batch = aws
     _feed(monkeypatch, [_upload("aaaaaaaaaaa")])
 
+    # No cooldown, so every schedule is a fresh attempt: the state the real
+    # watcher reaches six hours apart, without waiting six hours.
+    monkeypatch.setattr(watch_handler, "_RETRY_AFTER_SECONDS", 0, raising=False)
     for _ in range(6):
         watch_handler.handler()
 
