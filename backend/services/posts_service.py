@@ -789,7 +789,7 @@ class PostsService:
                 detail=f"Invalid status transition from {old_status} to {new_status}.",
             )
 
-    def _news_doc_to_article(self, doc: dict) -> dict[str, str]:
+    def _news_doc_to_article(self, doc: dict) -> dict[str, Any]:
         # source_url is the video this story came from. It was being dropped
         # here, which left the post with no way to cite where it originated.
         return {
@@ -801,6 +801,11 @@ class PostsService:
             # Needed downstream to keep one channel's research off another's
             # posts. Without it every tenant shared one cache.
             "tenant_slug": str(doc.get("tenant_slug") or "general").strip().lower(),
+            # The brief researched for this story ahead of time, when there is
+            # one. Dropped here, _research_for_article found nothing stored and
+            # searched again on every request - the twenty seconds this exists
+            # to avoid.
+            "research": doc.get("research"),
             "source": "backend_news_collection",
         }
 
@@ -1497,10 +1502,37 @@ class PostsService:
         if not news_item:
             return None
 
-        video_link = str(article.get("source_url") or "").strip()
-        transcript = self._transcript_for_article(article, retrieved_chunks)
         import logging as _logging
         _log = _logging.getLogger(__name__)
+
+        # A brief already researched for this story, if there is one.
+        #
+        # Research is the same work for every post written from the same story,
+        # and it is the slow half: three claims searched, eighteen pages read
+        # and fact-checked, about twenty seconds. Done inline it pushed
+        # generation past the thirty seconds the HTTP API in front of the
+        # Lambda allows, so the browser got a 503 while the Lambda went on to
+        # finish the post. Precomputed off the request path - see
+        # backend/scripts/research_recent_news.py - it costs nothing here.
+        from backend.pipeline.web_research import ResearchBrief
+
+        stored = ResearchBrief.from_meta(article.get("research"))
+        if stored:
+            _log.info("[research] using the brief stored with this story (%d claim(s))",
+                      len(stored.findings))
+            return stored
+
+        if settings.web_research_precomputed_only:
+            # No brief for this story yet, and the request path is not allowed
+            # to go and make one: twenty seconds of searching does not fit
+            # inside the thirty the gateway allows. The post is written without
+            # research rather than timing out, and the next run of
+            # research_recent_news will have a brief ready for the one after.
+            _log.info("[research] no brief stored for this story; writing without one")
+            return None
+
+        video_link = str(article.get("source_url") or "").strip()
+        transcript = self._transcript_for_article(article, retrieved_chunks)
         if transcript:
             _log.info("[research] source video: %s  (transcript %d chars)",
                       video_link or "(no video link)", len(transcript))

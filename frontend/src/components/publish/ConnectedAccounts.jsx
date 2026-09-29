@@ -80,7 +80,8 @@ export default function ConnectedAccounts() {
 
   const connected = Boolean(status?.connected);
   const handle = status?.account?.account_handle;
-  const subreddit = status?.subreddit || 'ambedkargpt';
+  // The server's answer, never a guess - see the note in PublishSheet.
+  const subreddit = status?.subreddit || '';
 
   return (
     <div className="dash-panel mt-10 p-4 sm:p-5">
@@ -88,9 +89,11 @@ export default function ConnectedAccounts() {
         <h2 className="font-display text-[15px] font-semibold text-white">{t('acct.title')}</h2>
         <span className="dash-eyebrow">{t('acct.eyebrow')}</span>
       </div>
-      <p className="mt-1.5 text-[12.5px] leading-relaxed text-[#8b94b8]">
-        {t('acct.sub', { sub: subreddit })}
-      </p>
+      {subreddit && (
+        <p className="mt-1.5 text-[12.5px] leading-relaxed text-[#8b94b8]">
+          {t('acct.sub', { sub: subreddit })}
+        </p>
+      )}
 
       {notice && (
         <p

@@ -96,6 +96,7 @@ class Settings:
     contact_from_email: str
     # Web research: verify a news item's claims before the post is written
     web_research_enabled: bool
+    web_research_precomputed_only: bool
     searxng_url: str
     web_research_max_claims: int
     web_research_top_k: int
@@ -377,6 +378,18 @@ def get_settings() -> Settings:
     ).strip()
     web_research_enabled = (os.getenv("WEB_RESEARCH_ENABLED") or "").strip().lower() in {"1", "true", "yes", "on"}
     searxng_url = (os.getenv("SEARXNG_URL") or "http://localhost:8080").strip().rstrip("/")
+    # Whether the API may research on the spot, or only use a brief someone
+    # prepared earlier.
+    #
+    # Researching inline takes about twenty seconds and pushed generation past
+    # the thirty the HTTP API in front of the Lambda allows: the browser got a
+    # 503 while the Lambda finished the post and logged a 200. Thirty seconds
+    # is a hard ceiling there and cannot be raised, so the request path reads
+    # briefs and does not make them. backend/scripts/research_recent_news.py
+    # makes them, off the request path, where nothing times out.
+    web_research_precomputed_only = (
+        os.getenv("WEB_RESEARCH_PRECOMPUTED_ONLY") or "1"
+    ).strip().lower() in {"1", "true", "yes", "on"}
     web_research_max_claims = int(os.getenv("WEB_RESEARCH_MAX_CLAIMS", "3"))
     web_research_top_k = int(os.getenv("WEB_RESEARCH_TOP_K", "6"))
     # On by default: it is cheap, it only re-asks when something is actually
@@ -523,6 +536,7 @@ def get_settings() -> Settings:
         contact_recipient_email=contact_recipient_email,
         contact_from_email=contact_from_email,
         web_research_enabled=web_research_enabled,
+        web_research_precomputed_only=web_research_precomputed_only,
         searxng_url=searxng_url,
         web_research_max_claims=web_research_max_claims,
         web_research_top_k=web_research_top_k,

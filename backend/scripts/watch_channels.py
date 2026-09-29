@@ -71,6 +71,20 @@ CHANNEL_ORDER = ("samajwadi", "ravish", "dalitdastak", "congress", "bjp")
 # enough to cover a full channel run, which is six to eight minutes.
 LOCK_STALE_SECONDS = 30 * 60
 
+# How long to leave a video alone between attempts.
+#
+# YouTube generates auto-captions some time after an upload, not with it. The
+# watcher runs every fifteen minutes, so three attempts used to land inside an
+# hour of publication - and a video that simply had no captions *yet* was
+# retired for good before they appeared. Roughly a hundred videos were orphaned
+# that way, several of which fetch a full transcript when asked today.
+#
+# Spacing the attempts is what makes the attempt count mean "we kept asking and
+# it never came" rather than "we asked three times in forty minutes". Three
+# attempts now span about a day, and lookback_days still drops a video that
+# never arrives.
+RETRY_AFTER_SECONDS = float(os.getenv("WATCH_RETRY_AFTER_HOURS", "6")) * 3600
+
 
 # Launched from Task Scheduler through pythonw there is no console at all, and
 # sys.stdout is None - printing to it raises and would take the watcher down on
@@ -238,8 +252,20 @@ def pending_uploads(name: str, payload: dict, ledger: dict, max_attempts: int, c
             # counting it would keep the channel permanently dirty.
             if lookback_days and upload.age_days(now=now) > lookback_days:
                 continue
-            if int(seen.get(upload.video_id, {}).get("attempts", 0)) >= max_attempts:
+            entry = seen.get(upload.video_id, {})
+            if int(entry.get("attempts", 0)) >= max_attempts:
                 continue
+            # Tried recently: leave it be. This is what spaces the attempts
+            # apart, and it also stops the channel being run again every tick
+            # for a video that is not ready yet.
+            last = entry.get("last_attempt")
+            if last:
+                try:
+                    age = (now - datetime.fromisoformat(last)).total_seconds()
+                except ValueError:
+                    age = RETRY_AFTER_SECONDS
+                if age < RETRY_AFTER_SECONDS:
+                    continue
             if all(upload.video_id != f.video_id for f in fresh):
                 fresh.append(upload)
 
