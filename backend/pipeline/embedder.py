@@ -3,8 +3,6 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
-# Google GenAI SDK for Gemini embeddings
-from google import genai
 from tqdm import tqdm
 
 from .embedding_cache import (
@@ -29,6 +27,12 @@ class ChunkEmbedder:
         model_name: str = "gemini-embedding-001",
         batch_size: int = 25,
     ) -> None:
+        # Imported here, not at module scope. This module is reached from
+        # posts_service, so every cold start paid 260 ms to load the Gemini SDK
+        # - including the ones that only wanted to list news and never embed
+        # anything. Now the first embedder pays it, once per container.
+        from google import genai   # Google GenAI SDK for Gemini embeddings
+
         self.model_name = model_name
         self.client = genai.Client(api_key=api_key)
         self.batch_size = batch_size
