@@ -3,13 +3,13 @@ import { Play } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SectionLabel from './SectionLabel';
 import { useAuth } from '../../context/AuthContext';
-import savitribai from '../../assets/images/makers/savitribai.png';
-import gurram     from '../../assets/images/makers/gurram.png';
-import jagjivan   from '../../assets/images/makers/jagjivan.png';
-import udham      from '../../assets/images/makers/udham.png';
-import dakshayani from '../../assets/images/makers/dakshayani.png';
-import kanshi     from '../../assets/images/makers/kanshi.png';
-import janabai    from '../../assets/images/makers/janabai.png';
+import savitribai from '../../assets/images/makers/savitribai.webp';
+import gurram     from '../../assets/images/makers/gurram.webp';
+import jagjivan   from '../../assets/images/makers/jagjivan.webp';
+import udham      from '../../assets/images/makers/udham.webp';
+import dakshayani from '../../assets/images/makers/dakshayani.webp';
+import kanshi     from '../../assets/images/makers/kanshi.webp';
+import janabai    from '../../assets/images/makers/janabai.webp';
 import { useI18n } from '../../i18n/index.jsx';
 
 const MAKERS = [

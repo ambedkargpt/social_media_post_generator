@@ -375,24 +375,24 @@ class AuthService:
             if existing and str(existing["_id"]) != str(user["_id"]):
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username already taken.")
             fields["username"] = username
-        # The party is set once and then fixed; the position is not.
+        # Party and position are both set once and then fixed.
         #
         # Every answer is stored against an id that names the party -
         # party_inc_q1, pos_inc_national_q3 - so moving to another party leaves
         # all fifteen behind at once and the posts quietly change character
-        # with nothing on screen to explain it.
+        # with nothing on screen to explain it. The position is the same story
+        # one level down: the five answers are written for one level, so
+        # changing it silently retires them and the writing shifts without
+        # anything on screen saying why.
         #
-        # A position change is the ordinary case rather than that: people are
-        # promoted, move between a district and a state body, join a frontal
-        # wing. The ten party answers still apply afterwards, and only the five
-        # written for the old level stop being read. Those are left in place
-        # rather than deleted, so someone who moves back finds them again.
-        #
-        # Re-sending the same party is allowed, so saving the form again is not
+        # Re-sending the same value is allowed, so saving the form again is not
         # an error. Setting one that was never set is allowed too: this locks a
-        # choice, it does not force one. Correcting a genuine party mistake is a
+        # choice, it does not force one. Correcting a genuine mistake is a
         # database edit, deliberately - it should involve someone who can also
         # clear the answers left behind.
+        #
+        # Both screens say so before the choice is made, because a lock the
+        # user only meets as a 409 is a trap rather than a rule.
         if political_party is not None:
             new_party = political_party.strip()
             current_party = str(user.get("political_party") or "").strip()
@@ -409,7 +409,16 @@ class AuthService:
             from backend.pipeline.party_roles import ROLES
 
             pos = party_position.strip()
-            fields["party_position"] = pos if pos in ROLES else ""
+            pos = pos if pos in ROLES else ""
+            current_pos = str(user.get("party_position") or "").strip()
+            # An unknown key arriving as "" must not read as "clear it": that
+            # would unlock the field for anyone who can send a bad id.
+            if current_pos and pos != current_pos:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Your role is already set and cannot be changed.",
+                )
+            fields["party_position"] = pos
         if email is not None:
             email = email.strip().lower()
             if email and (existing := self.users_repo.find_by_email(email)) and str(existing["_id"]) != str(user["_id"]):

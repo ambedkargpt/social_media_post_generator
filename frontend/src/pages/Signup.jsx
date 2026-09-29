@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { isValidPhoneNumber } from 'react-phone-number-input';
 import { useAuth, friendlyError } from '../context/AuthContext';
@@ -292,6 +293,24 @@ export default function Signup() {
             />
           </div>
 
+          {/* Both fields below are set once and then fixed, so the warning
+              comes before them rather than after a save is refused. Same
+              reasoning as the profile screen, which carries the same note. */}
+          <div
+            className="flex gap-3 rounded-xl px-4 py-3"
+            style={{ backgroundColor: 'rgba(240,160,75,0.08)', border: '1px solid rgba(240,160,75,0.28)' }}
+          >
+            <AlertTriangle size={15} strokeWidth={2} className="mt-0.5 shrink-0" style={{ color: '#f0b877' }} />
+            <div>
+              <p className="text-[12.5px] font-semibold" style={{ color: '#f0b877' }}>
+                {t('profile.lockWarning.title')}
+              </p>
+              <p className="mt-0.5 text-xs leading-relaxed" style={{ color: '#c0cde8' }}>
+                {t('profile.lockWarning.body')}
+              </p>
+            </div>
+          </div>
+
           {/* Political Party Dropdown */}
           <div ref={partyDropdownRef} className="relative">
             <label className="block mb-1.5 text-sm font-medium" style={{ color: '#c5cde8' }}>
@@ -412,7 +431,7 @@ export default function Signup() {
               >
                 <option value="">{partyLevel ? t('profile.positionLabel') : t('auth.pickLevel')}</option>
                 {rolesInGroup(partyLevel).map((r) => (
-                  <option key={r.id} value={r.id}>{roleLabel(r, politicalParty)}</option>
+                  <option key={r.id} value={r.id}>{roleLabel(r, politicalParty, lang)}</option>
                 ))}
               </select>
             </div>

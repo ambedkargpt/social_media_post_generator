@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Sparkle from "./Sparkle";
 import { useAuth } from "../../context/AuthContext";
-import squiggleSrc from "../../assets/images/squiggle-lines.png";
+import squiggleSrc from "../../assets/images/squiggle-lines.webp";
 import ambedkarPortrait from "../../assets/images/hero-ambedkar.webp";
 import { useI18n } from '../../i18n/index.jsx';
 

@@ -1,4 +1,4 @@
-import logoSrc from '../assets/images/logo-animation.png';
+import logoSrc from '../assets/images/logo-animation.webp';
 import { useCurtain } from '../context/CurtainContext';
 import { useI18n } from '../i18n/index.jsx';
 

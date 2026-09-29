@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { sendChatMessage } from '../api/chat';
-import logoSrc from '../assets/images/logo-animation.png';
+import logoSrc from '../assets/images/logo-animation.webp';
 import { useI18n } from '../i18n/index.jsx';
 
 // ── Constants ──────────────────────────────────────────────────────────────────

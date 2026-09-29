@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, AtSign, Mail, ArrowRight, ArrowLeft, ChevronDown } from 'lucide-react';
+import { User, AtSign, Mail, ArrowRight, ArrowLeft, ChevronDown, AlertTriangle } from 'lucide-react';
 import { isValidPhoneNumber } from 'react-phone-number-input';
 import { useAuth } from '../context/AuthContext';
 import { useCurtain } from '../context/CurtainContext';
@@ -10,8 +10,8 @@ import { INDIAN_STATES, CITIES_BY_STATE } from '../utils/indianStatesCities';
 import PhoneField  from '../components/PhoneField';
 import DashboardShell from '../layouts/DashboardShell';
 import DrawerButton from '../components/dashboard/DrawerButton';
-import logoSrc     from '../assets/images/logo-animation.png';
-import ambedkarSrc from '../assets/images/qna-ambedkar.png';
+import logoSrc     from '../assets/images/logo-animation.webp';
+import ambedkarSrc from '../assets/images/qna-ambedkar.webp';
 import { useI18n } from '../i18n/index.jsx';
 import { partyLabel, levelLabel } from '../utils/displayLabel';
 
@@ -98,14 +98,16 @@ export default function ProfileSetup() {
   // already chosen, rather than asking someone to find it again.
   const [partyLevel, setPartyLevel] = useState(() => groupForId(currentUser?.party_position || ''));
 
-  // The party is set once and then fixed: every answer is stored against an id
-  // that names it, so changing party orphans all fifteen at once. The server
-  // refuses it either way; this disables the control so nobody fills in a form
-  // that is going to be rejected.
+  // Party and position are each set once and then fixed: every answer is
+  // stored against an id that names them, so changing either orphans the
+  // answers written for it. The server refuses both; these disable the
+  // controls so nobody fills in a form that is going to be rejected.
   //
-  // The position is not locked. People are promoted and move between bodies,
-  // and only the five answers written for the old level stop being read.
+  // They lock independently, because they are not always chosen together: a
+  // supporter with no office picks a party and leaves the position empty, and
+  // has to be able to fill it in later without the party being in the way.
   const partyLocked = Boolean(currentUser?.political_party);
+  const positionLocked = Boolean(currentUser?.party_position);
 
   function handleLevelChange(level) {
     setPartyLevel(level);
@@ -430,6 +432,27 @@ export default function ProfileSetup() {
               />
             </div>
 
+            {/* Said before the choice, not after it. A lock the writer only
+                meets as a rejected save is a trap; this is the Instagram
+                pattern for a username or a date of birth. It disappears once
+                both are set, because by then it is advice about nothing. */}
+            {(!partyLocked || !positionLocked) && (
+              <div
+                className="flex gap-3 rounded-xl px-4 py-3.5"
+                style={{ backgroundColor: 'rgba(240,160,75,0.08)', border: '1px solid rgba(240,160,75,0.28)' }}
+              >
+                <AlertTriangle size={16} strokeWidth={2} className="mt-0.5 shrink-0" style={{ color: '#f0b877' }} />
+                <div>
+                  <p className="text-[13px] font-semibold" style={{ color: '#f0b877' }}>
+                    {t('profile.lockWarning.title')}
+                  </p>
+                  <p className="mt-1 text-[12.5px] leading-relaxed" style={{ color: '#c0cde8' }}>
+                    {t('profile.lockWarning.body')}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Party affiliation — decides which news feed the user sees */}
             <div>
               <label className="mb-1.5 block text-[13px] font-medium text-white">
@@ -487,7 +510,7 @@ export default function ProfileSetup() {
                   <select
                     value={partyLevel}
                     onChange={(e) => handleLevelChange(e.target.value)}
-                    disabled={!politicalParty}
+                    disabled={!politicalParty || positionLocked}
                     aria-label={t('profile.levelLabel')}
                     className="w-full appearance-none rounded-xl px-4 py-3.5 pr-10 text-[14px] outline-none transition disabled:cursor-not-allowed disabled:opacity-50"
                     style={{
@@ -517,7 +540,7 @@ export default function ProfileSetup() {
                   <select
                     value={partyPosition}
                     onChange={(e) => setPartyPosition(e.target.value)}
-                    disabled={!partyLevel}
+                    disabled={!partyLevel || positionLocked}
                     aria-label={t('profile.positionLabel')}
                     className="w-full appearance-none rounded-xl px-4 py-3.5 pr-10 text-[14px] outline-none transition disabled:cursor-not-allowed disabled:opacity-50"
                     style={{
@@ -531,7 +554,7 @@ export default function ProfileSetup() {
                     </option>
                     {rolesInGroup(partyLevel).map((r) => (
                       <option key={r.id} value={r.id} className="bg-[#0a1130] text-white">
-                        {roleLabel(r, politicalParty)}
+                        {roleLabel(r, politicalParty, lang)}
                       </option>
                     ))}
                   </select>
@@ -544,8 +567,8 @@ export default function ProfileSetup() {
                 </div>
               </div>
 
-              <p className="mt-1.5 text-[12px]" style={{ color: '#5a6e9a' }}>
-                {t('profile.positionHint')}
+              <p className="mt-1.5 text-[12px]" style={{ color: positionLocked ? '#8b94b8' : '#5a6e9a' }}>
+                {positionLocked ? t('profile.roleLocked') : t('profile.positionHint')}
               </p>
             </div>
 

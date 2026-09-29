@@ -3,13 +3,15 @@ import { Link } from 'react-router-dom';
 import ImagePlaceholder from './ImagePlaceholder';
 import { useI18n } from '../i18n/index.jsx';
 
-// eager-load image assets so the build bundles them
-const imageModules = import.meta.glob('../assets/images/*.{jpg,jpeg,png,webp}', {
-  eager: true,
-});
-const portraitSrc = imageModules['../assets/images/ambedkar-portrait.png']?.default ?? null;
-const statueSrc   = imageModules['../assets/images/ambedkar-statue.png']?.default ?? null;
-const logoSrc     = imageModules['../assets/images/logo-animation.png']?.default ?? null;
+// Three named imports, not a glob over the folder.
+//
+// This used to be `import.meta.glob('../assets/images/*', { eager: true })`
+// picking three keys out of the result. The other thirty went into the build
+// too - 3.6 MB of images nothing on the site renders - and every file anyone
+// dropped in that folder afterwards joined them silently.
+import portraitSrc from '../assets/images/ambedkar-portrait.webp';
+import statueSrc from '../assets/images/ambedkar-statue.webp';
+import logoSrc from '../assets/images/logo-animation.webp';
 
 // Radar-ring logo image sourced from the design asset
 function LogoMark({ size = 44 }) {

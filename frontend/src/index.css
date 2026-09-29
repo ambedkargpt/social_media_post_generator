@@ -966,19 +966,27 @@ html { scroll-behavior: smooth; }
 }
 
 /* --- Navbar mobile dropdown --- */
-/* Dashboard top story: stories cross-fade rather than slide. The visual takes
-   a trace of scale with it, the text a few pixels of rise — a wide editorial
-   card sliding sideways read as a banner advert. 500ms matches FADE_MS in
-   TopStoryCarousel. */
+/* Dashboard top story: stories slide sideways, the way the dots and the swipe
+   both run. The distance is a share of the card rather than a fixed number of
+   pixels, so a phone gets a proportionate move instead of a twitch, and the
+   fade carries most of the change — a card thrown the full width read as a
+   banner advert. 500ms matches FADE_MS in TopStoryCarousel.
+
+   Two directions, because going back has to look like going back: the forward
+   pair enters from the right, the -back pair from the left. */
 @keyframes storyVisualIn  { from { opacity: 0; transform: scale(1.04); } to { opacity: 1; transform: scale(1); } }
 @keyframes storyVisualOut { from { opacity: 1; transform: scale(1); }    to { opacity: 0; transform: scale(0.985); } }
-@keyframes storyTextIn    { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes storyTextOut   { from { opacity: 1; transform: translateY(0); }   to { opacity: 0; transform: translateY(-6px); } }
+@keyframes storyTextIn       { from { opacity: 0; transform: translateX(16%); }  to { opacity: 1; transform: translateX(0); } }
+@keyframes storyTextOut      { from { opacity: 1; transform: translateX(0); }    to { opacity: 0; transform: translateX(-16%); } }
+@keyframes storyTextInBack   { from { opacity: 0; transform: translateX(-16%); } to { opacity: 1; transform: translateX(0); } }
+@keyframes storyTextOutBack  { from { opacity: 1; transform: translateX(0); }    to { opacity: 0; transform: translateX(16%); } }
 
 .story-visual-in  { animation: storyVisualIn  500ms cubic-bezier(0.22, 1, 0.36, 1) both; }
 .story-visual-out { animation: storyVisualOut 500ms cubic-bezier(0.22, 1, 0.36, 1) both; }
-.story-text-in    { animation: storyTextIn    500ms cubic-bezier(0.22, 1, 0.36, 1) both; }
-.story-text-out   { animation: storyTextOut   500ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.story-text-in       { animation: storyTextIn      500ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.story-text-out      { animation: storyTextOut     500ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.story-text-in-back  { animation: storyTextInBack  500ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.story-text-out-back { animation: storyTextOutBack 500ms cubic-bezier(0.22, 1, 0.36, 1) both; }
 
 /* The party symbol, drawn as a mask so one file can take whichever accent the
    section carries. The files are alpha only: colour comes from here. */
@@ -993,7 +1001,8 @@ html { scroll-behavior: smooth; }
 
 @media (prefers-reduced-motion: reduce) {
   .story-visual-in, .story-visual-out,
-  .story-text-in, .story-text-out { animation-duration: 1ms; }
+  .story-text-in, .story-text-out,
+  .story-text-in-back, .story-text-out-back { animation-duration: 1ms; }
 }
 
 @keyframes nav-dropdown {

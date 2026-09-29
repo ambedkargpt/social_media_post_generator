@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from _party_roles_source import ROWS, LEVELS, LEVEL_AUDIENCE  # noqa: E402
+from _party_roles_source import ROWS, LEVELS, LEVEL_AUDIENCE, HI  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -95,7 +95,11 @@ groups = []
 for rid, group, level, sp, inc, generic, voice in ROWS:
     if not groups or groups[-1]["group"] != group:
         groups.append({"group": group, "roles": []})
-    groups[-1]["roles"].append({"id": rid, "sp": sp, "inc": inc, "generic": generic})
+    sp_hi, inc_hi, generic_hi = HI[rid]
+    groups[-1]["roles"].append({
+        "id": rid, "sp": sp, "inc": inc, "generic": generic,
+        "sp_hi": sp_hi, "inc_hi": inc_hi, "generic_hi": generic_hi,
+    })
 
 fe = ROOT / "frontend" / "src" / "utils" / "partyRoles.js"
 js = [
@@ -116,14 +120,18 @@ js = [
     "  return 'generic';",
     "}",
     "",
-    "export function roleLabel(role, party) {",
-    "  return role[partyKey(party)] || role.generic;",
+    "// Falls back along two axes, party then language, so a role that is missing",
+    "// either still reads as something rather than as nothing.",
+    "export function roleLabel(role, party, lang) {",
+    "  const key = partyKey(party);",
+    "  if (lang === 'hi') return role[`${key}_hi`] || role.generic_hi || role[key] || role.generic;",
+    "  return role[key] || role.generic;",
     "}",
     "",
-    "export function labelForId(id, party) {",
+    "export function labelForId(id, party, lang) {",
     "  for (const g of ROLE_GROUPS) {",
     "    const hit = g.roles.find((r) => r.id === id);",
-    "    if (hit) return roleLabel(hit, party);",
+    "    if (hit) return roleLabel(hit, party, lang);",
     "  }",
     "  return '';",
     "}",
