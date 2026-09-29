@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Search, Filter, Sparkles,
   Copy, Check, RefreshCw, ChevronDown, FileText, Star, Radio,
-  ArrowUpDown, List, LayoutGrid, ArrowLeftRight, Users, Globe,
+  ArrowUpDown, List, LayoutGrid, Users, Globe,
   CalendarDays, Clock, ChevronRight, X as XIcon,
   MessageCircle, Repeat2, Heart, Share, Flame, AlertTriangle,
 } from 'lucide-react';
@@ -13,13 +13,12 @@ import DevSourceTag from '../components/DevSourceTag';
 import PublishSheet from '../components/publish/PublishSheet';
 import ScrollRow from '../components/ui/ScrollRow';
 import PostContent from '../components/generate/PostContent';
-import logoSrc from '../assets/images/logo-animation.png';
+import logoSrc from '../assets/images/logo-animation.webp';
 import { useAuth } from '../context/AuthContext';
 import { getNews, getNewsById, getTenants } from '../api/news';
 import { adaptNews, resolveTenantForUser } from '../utils/newsTenants';
 import { generatePostForNews, regeneratePostFromSnapshot, translatePost, getDailyQuota, togglePostVersion } from '../api/posts';
-import { getPositionQuestions, getQuestions } from '../api/questions';
-import { groupForId } from '../utils/partyRoles';
+import { getPartyQuestions, getQuestions } from '../api/questions';
 import { getProfileAnswers, saveProfileAnswers } from '../api/profile';
 import { CORE_QUESTION_IDS } from '../utils/preferenceQuestions';
 import { getSiteLanguage, SITE_LANGUAGES } from '../utils/siteLanguage';
@@ -28,6 +27,7 @@ import Spinner from '../components/Spinner';
 import { useI18n } from '../i18n/index.jsx';
 import SpeakButton from '../components/generate/SpeakButton';
 import { partyLabel, toneLabel } from '../utils/displayLabel';
+import { partyLogo } from '../utils/politicalParties';
 
 const TONES = ['Professional', 'Inspirational', 'Creative', 'Casual', 'Motivational'];
 const ALSO_GENERATE = ['Audio', 'Shorts', 'Image'];
@@ -379,33 +379,31 @@ export default function SocialMediaPostGenerator() {
     Promise.all([
       getQuestions(25),
       getProfileAnswers(currentUser.id).catch(() => []),
-      // The five written for this party *and* this level. The group comes from
-      // the stored position, so someone who has not set one gets an empty list
-      // rather than another party's set.
+      // The ten written for this party. They ask what the writer wants said
+      // about their party, which is the thing a particular story most often
+      // needs changed for one post: the same news deserves a different stance
+      // depending on how the party is named in it.
       //
-      // The ten party questions are deliberately not here. They ask what the
-      // writer wants said about their party, which does not change from one
-      // story to the next, and sixteen dropdowns made the panel something to
-      // scroll past rather than reach for. They still shape every post: the
-      // generator reads the saved answers, and Preferences is where they are
-      // set.
-      getPositionQuestions(
-        currentUser.political_party || '',
-        groupForId(currentUser.party_position || ''),
-      ).catch(() => []),
-    ]).then(([allQs, saved, positionQs]) => {
+      // The five position questions are deliberately not here. Those describe
+      // how someone at this level writes, which does not move from story to
+      // story, and carrying both sets put sixteen dropdowns in the panel and
+      // made it something to scroll past rather than reach for. They still
+      // shape every post: the generator reads the saved answers, and the
+      // questionnaire is where they are set.
+      getPartyQuestions(currentUser.political_party || '').catch(() => []),
+    ]).then(([allQs, saved, partyQs]) => {
       const qMap = Object.fromEntries(allQs.map((q) => [q.question_id, q]));
-      // Length, then the five for this writer's level. The position list is
-      // empty for a party or level with no set written for it, and the panel
-      // then shows length alone rather than breaking.
+      // Length, then the ten for this writer's party. The party list is empty
+      // for a party with no set written for it, and the panel then shows
+      // length alone rather than breaking.
       const qs = [
         ...PREF_QUESTION_IDS.map((id) => qMap[id]).filter(Boolean),
         // The question text is localised here rather than in the panel, so the
-        // panel keeps taking one string per question. The options are not: the
-        // option string IS the stored answer and the backend matches on the
-        // English one, so showing options_hi would send Hindi where the
-        // defaults, the saved answers and the validation all speak English.
-        ...positionQs.map((q) => ({
+        // panel keeps taking one string per question. options_hi travels
+        // untouched: the panel draws it but still writes back the English
+        // option, which is what the defaults, the saved answers and the
+        // backend's matching all speak.
+        ...partyQs.map((q) => ({
           ...q,
           question_text: siteLang === 'hi' && q.question_text_hi ? q.question_text_hi : q.question_text,
         })),
@@ -425,11 +423,9 @@ export default function SocialMediaPostGenerator() {
     }).catch(() => {});
     // Re-runs on a language switch, so the party questions come back in the
     // language now on screen, and on a party change, so they come back as the
-    // new party's set rather than the old one's.
-    // Position is in here too: the five questions are written per level, so
-    // moving from District to State has to bring the new set rather than leave
-    // the old one on screen.
-  }, [currentUser?.id, currentUser?.political_party, currentUser?.party_position, siteLang]);
+    // new party's set rather than the old one's. Position is not a dependency
+    // any more: the panel no longer asks anything that varies by level.
+  }, [currentUser?.id, currentUser?.political_party, siteLang]);
 
   // Resize drag refs
   const resizing  = useRef(false);
@@ -1222,28 +1218,47 @@ export default function SocialMediaPostGenerator() {
               {(() => {
                 const pt = PARTY_THEME[activeParty.slug] ?? DEFAULT_PARTY_THEME;
                 const initials = partyShortLabel(activeParty, currentUser?.political_party, t, lang);
+                const logo = partyLogo(currentUser?.political_party || activeParty.name);
                 const tags = (PARTY_TAG_KEYS[activeParty.slug] ?? [])
                   .map((k) => t(k))
                   .filter((v) => v && !v.startsWith('ptag.'));
                 return (
                   <div
-                    className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-4 rounded-2xl border px-5 py-4"
+                    className="mb-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-4 rounded-2xl border px-5 py-4"
                     style={{
                       borderColor: `${pt.accent}3d`,
                       background: `linear-gradient(100deg, #0e1320 0%, #0e1320 45%, ${pt.tint} 100%)`,
                     }}
                   >
+                    {/* The party's own logo, as the dashboard shows it, with
+                        the lettered tile behind it. A logo that is missing or
+                        fails to load hides itself and leaves the initials, so
+                        a party we have no artwork for still reads as itself
+                        rather than as a broken image. */}
                     <span
-                      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl font-display text-[20px] font-bold text-white"
+                      className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl font-display text-[20px] font-bold text-white"
                       style={{
                         background: `linear-gradient(150deg, ${pt.accent} 0%, ${pt.accent}b0 100%)`,
                         boxShadow: `0 6px 20px ${pt.accent}55`,
                       }}
                     >
                       {initials}
+                      {logo && (
+                        <img
+                          src={logo}
+                          alt={activeParty.name}
+                          className="absolute inset-0 h-full w-full bg-white object-contain p-1.5"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                      )}
                     </span>
 
-                    <div className="min-w-0 flex-1">
+                    {/* Sizes to its own text rather than filling the row. The
+                        "Change party" button used to hold the right-hand end,
+                        and without it a stretched block left the name marooned
+                        against a wide empty gap. It can still shrink, so a long
+                        name truncates rather than pushing the logo off. */}
+                    <div className="min-w-0">
                       {/* Wraps on a phone, where truncating turned the party's
                           name into "India…". Ellipsis only once there is a
                           column to run out of. */}
@@ -1257,18 +1272,9 @@ export default function SocialMediaPostGenerator() {
                       )}
                     </div>
 
-                    {/* The party comes from the profile, so this is where that
-                        setting lives rather than a second place to change it. */}
-                    <button
-                      type="button"
-                      onClick={() => navigate('/profile-setup')}
-                      aria-label={t('gen.changeParty')}
-                      className="inline-flex h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-full border border-[#1e3260]/70 bg-[#0d1531]/80 text-[12.5px] font-medium text-[#a3b0d4] transition hover:border-[#3a6bc4]/60 hover:text-white sm:h-auto sm:w-auto sm:px-4 sm:py-2.5"
-                    >
-                      <ArrowLeftRight size={13} strokeWidth={2} className="hidden sm:block" />
-                      <ChevronDown size={16} strokeWidth={2} className="sm:hidden" />
-                      <span className="hidden sm:inline">{t('gen.changeParty')}</span>
-                    </button>
+                    {/* There was a "Change party" button here. The party is
+                        write-once, so it only ever led to a form that would
+                        refuse the change: an offer the product cannot keep. */}
                   </div>
                 );
               })()}

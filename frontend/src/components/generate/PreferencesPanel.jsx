@@ -17,13 +17,18 @@ const META_KEYS = {
   profile_call_to_action:          'qmeta.cta',
 };
 
-// Party questions are party_<inc|bsp>_q<n>, and the label comes from the
-// number alone: the ten are worded identically for both parties, only the
-// options differ. Their own question text is a full sentence, too long for a
-// label in a sidebar this narrow, so it becomes the hint underneath instead.
-const PARTY_Q = /^party_(?:inc|bsp)_q(\d{1,2})$/;
+// Party questions are party_<party>_q<n>, and the label comes from the number
+// alone: the ten are worded identically for every party, only the options
+// differ. Their own question text is a full sentence, too long for a label in
+// a sidebar this narrow, so it becomes the hint underneath instead.
+//
+// The party is matched loosely rather than listed. Naming inc and bsp was
+// already wrong once: Samajwadi was added later, party_sp_q1 matched nothing,
+// and those questions silently fell through to the generic branch that draws
+// the whole sentence as the label.
+const PARTY_Q = /^party_[a-z]+_q(\d{1,2})$/;
 
-// Position questions are pos_<inc|bsp>_<group>_q<n>, five per level.
+// Position questions are pos_<party>_<group>_q<n>, five per level.
 //
 // Unlike the party ten, these are not worded identically across levels — a
 // district question asks about local detail where the national one asks how to
@@ -31,7 +36,7 @@ const PARTY_Q = /^party_(?:inc|bsp)_q(\d{1,2})$/;
 // rather than restating it, and the question's own sentence sits underneath as
 // the hint. Same treatment as the party set, for the same reason: the full
 // text is too long to be a label in a sidebar this narrow.
-const POSITION_Q = /^pos_(?:inc|bsp)_[a-z_]+_q([1-5])$/;
+const POSITION_Q = /^pos_[a-z]+_[a-z_]+_q([1-5])$/;
 
 function getMeta(questionId, questionText, t, lang) {
   const party = PARTY_Q.exec(questionId);
@@ -52,7 +57,7 @@ function buildDefaults(questions) {
   );
 }
 
-function Dropdown({ value, options, onChange, lang }) {
+function Dropdown({ value, options, optionsHi, onChange, lang }) {
   return (
     <div className="relative">
       <select
@@ -60,17 +65,24 @@ function Dropdown({ value, options, onChange, lang }) {
         onChange={(e) => onChange(e.target.value)}
         className="w-full appearance-none rounded-lg border border-[#1e3260]/70 bg-[#0a1130]/80 py-2.5 pl-3 pr-9 text-[12.5px] font-medium text-white outline-none transition focus:border-[#3f9fff]/70 focus:shadow-[0_0_0_3px_rgba(63,159,255,0.15)] hover:border-[#3f9fff]/50"
       >
-        {options.map((opt) => (
-          // The stored value is the whole "Label -> Description" string and has
-          // to stay that, but the panel is a narrow sidebar: showing it whole
-          // truncated mid-word to "Communicator -> Focus on explain...". So the
-          // label shows, plus the word count where the option names one, since
-          // "Short" and "Medium" say nothing about the size being chosen. The
-          // Preferences page renders the same way. Full text on hover.
-          <option key={opt} value={opt} title={opt} className="bg-[#0a1130] text-white">
-            {labelWithSize(opt, lang)}
-          </option>
-        ))}
+        {options.map((opt, i) => {
+          // The value is always the English option, because that is the string
+          // the backend matches on and the one written back as the answer.
+          // Only what is drawn changes with the language.
+          //
+          // Two kinds of option arrive here. The preference bank stores
+          // "Label -> Description", which is too long for a narrow sidebar, so
+          // it shows the label alone plus the word count where the option names
+          // one - "Short" and "Medium" say nothing about the size being chosen.
+          // Position options are short sentences with a translation carried
+          // alongside them, and those are shown whole. Full text on hover.
+          const hi = lang === 'hi' ? optionsHi?.[i] : '';
+          return (
+            <option key={opt} value={opt} title={opt} className="bg-[#0a1130] text-white">
+              {hi || labelWithSize(opt, lang)}
+            </option>
+          );
+        })}
       </select>
       <ChevronDown
         size={13}
@@ -159,6 +171,7 @@ export default function PreferencesPanel({ questions = [], value, onChange, defa
                   <Dropdown
                     value={current[q.question_id] ?? q.options[0]}
                     options={q.options}
+                    optionsHi={q.options_hi}
                     lang={lang}
                     onChange={(v) => setField(q.question_id, v)}
                   />
