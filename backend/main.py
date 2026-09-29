@@ -29,13 +29,42 @@ def _warm_rag_cache() -> None:
         logging.getLogger(__name__).warning("RAG pre-warm failed: %s", exc)
 
 
-@asynccontextmanager
-async def app_lifespan(_: FastAPI):
-    ensure_auth_indexes()
-    ensure_phase2_indexes()
-    ensure_phase3_indexes()
+# Guards the startup work so it happens once per process, whatever calls it.
+#
+# Under Gunicorn the lifespan runs once and this changes nothing. Under Mangum
+# it runs on *every* invocation, so the thirty-three create_index calls below
+# were round-tripping to Atlas on every single HTTP request: measured at 1.4s,
+# which was most of what a warm request cost. The dashboard makes five calls,
+# so a page load paid it five times over.
+#
+# A lock as well as a flag, because the pre-warm thread and a request can be
+# inside here at once and two threads creating the same indexes is the race
+# this is meant to end, not start.
+_startup_done = False
+_startup_lock = threading.Lock()
+
+
+def _run_startup_once() -> None:
+    global _startup_done
+    if _startup_done:
+        return
+    with _startup_lock:
+        if _startup_done:
+            return
+        ensure_auth_indexes()
+        ensure_phase2_indexes()
+        ensure_phase3_indexes()
+        # The flag is set after the work, not before, so a failure is retried by
+        # the next caller rather than leaving the container without indexes for
+        # good. Nothing is caught here: this failed loudly before and still does.
+        _startup_done = True
     # Pre-warm the RAG stack in the background so the first generate request is fast
     threading.Thread(target=_warm_rag_cache, daemon=True).start()
+
+
+@asynccontextmanager
+async def app_lifespan(_: FastAPI):
+    _run_startup_once()
     yield
 
 
