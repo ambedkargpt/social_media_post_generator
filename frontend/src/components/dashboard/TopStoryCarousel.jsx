@@ -12,6 +12,7 @@ import { useI18n } from '../../i18n/index.jsx';
 
 const DWELL_MS = 6000;
 const FADE_MS = 500;   // keep in step with .story-text-in / -out in index.css
+const SWIPE_MIN_PX = 45;  // shorter than this is a tap that moved, not a swipe
 
 // Same order and colours as the generator's section cards, so a category reads
 // the same on both screens.
@@ -215,20 +216,60 @@ export default function TopStoryCarousel() {
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const [pageHidden, setPageHidden] = useState(() => typeof document !== 'undefined' && document.hidden);
+  const [swiping, setSwiping] = useState(false);
+  // Which way the last move went, so the slide animation runs that way.
+  // Forward by default: the autoplay is the common case.
+  const [dir, setDir] = useState(1);
   const leaveTimer = useRef(null);
 
   const count = slides.length;
   const safeIndex = count ? Math.min(index, count - 1) : 0;
   const current = count ? slides[safeIndex] : null;
   const leavingSlide = leaving !== null && leaving < count && leaving !== safeIndex ? slides[leaving] : null;
-  const paused = hovered || focused || pageHidden;
+  const paused = hovered || focused || pageHidden || swiping;
 
-  function goTo(target) {
+  function goTo(target, direction = 1) {
     if (count < 2 || target === safeIndex) return;
+    setDir(direction);
     clearTimeout(leaveTimer.current);
     setLeaving(safeIndex);
     setIndex(target);
     leaveTimer.current = setTimeout(() => setLeaving(null), FADE_MS + 50);
+  }
+
+  // Swipe, for the phone. There is no hover there, so the dots were the only
+  // way to move and they are small targets at the far edge of the card.
+  //
+  // Only a gesture that is clearly horizontal counts: the card sits in a
+  // scrolling page, so a finger drifting sideways on the way down a scroll
+  // must not be read as a swipe and steal the story out from under it. Hence
+  // both a distance floor and the requirement that it beat the vertical
+  // movement. Nothing calls preventDefault, so vertical scrolling is never
+  // blocked while we decide.
+  //
+  // `swiping` rather than reusing `hovered`: phones synthesise mouse events
+  // after a tap, and sharing the flag risks one of those leaving the autoplay
+  // paused for good.
+  const touch = useRef(null);
+
+  function onTouchStart(e) {
+    const p = e.changedTouches[0];
+    touch.current = { x: p.clientX, y: p.clientY };
+    setSwiping(true);   // hold the autoplay while a finger is down
+  }
+
+  function onTouchEnd(e) {
+    const start = touch.current;
+    touch.current = null;
+    setSwiping(false);
+    if (!start || count < 2) return;
+    const p = e.changedTouches[0];
+    const dx = p.clientX - start.x;
+    const dy = p.clientY - start.y;
+    if (Math.abs(dx) < SWIPE_MIN_PX || Math.abs(dx) <= Math.abs(dy)) return;
+    // Right-to-left reveals what comes next, the direction the dots run.
+    if (dx < 0) goTo((safeIndex + 1) % count, 1);
+    else goTo((safeIndex - 1 + count) % count, -1);
   }
 
   useEffect(() => {
@@ -309,6 +350,9 @@ export default function TopStoryCarousel() {
       onMouseLeave={() => setHovered(false)}
       onFocus={() => setFocused(true)}
       onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setFocused(false); }}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+      onTouchCancel={() => { touch.current = null; setSwiping(false); }}
     >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-6">
         {/* Only the story cross-fades. The button and the dots stay put, so the
@@ -317,13 +361,13 @@ export default function TopStoryCarousel() {
           <StorySlide
             key={`in-${current.id}-${current.article.id}`}
             slide={current}
-            className={leavingSlide ? 'story-text-in' : ''}
+            className={leavingSlide ? (dir < 0 ? 'story-text-in-back' : 'story-text-in') : ''}
           />
           {leavingSlide && (
             <StorySlide
               key={`out-${leavingSlide.id}-${leavingSlide.article.id}`}
               slide={leavingSlide}
-              className="story-text-out absolute inset-0"
+              className={`${dir < 0 ? 'story-text-out-back' : 'story-text-out'} absolute inset-0`}
               hidden
             />
           )}
@@ -354,7 +398,7 @@ export default function TopStoryCarousel() {
                 <button
                   key={s.id}
                   type="button"
-                  onClick={() => goTo(i)}
+                  onClick={() => goTo(i, i > safeIndex ? 1 : -1)}
                   aria-label={t(s.labelKey)}
                   aria-current={i === safeIndex ? 'true' : undefined}
                   className="rounded-full p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6fb2ff]/70"
