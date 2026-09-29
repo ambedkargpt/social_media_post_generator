@@ -1,6 +1,6 @@
 ﻿import Sparkle from './Sparkle';
-import indiaAiLogo     from '../../assets/images/indiaai-logo.png';
-import digitalIndiaLogo from '../../assets/images/digital-india-logo.png';
+import indiaAiLogo     from '../../assets/images/indiaai-logo.webp';
+import digitalIndiaLogo from '../../assets/images/digital-india-logo.webp';
 
 // "Trusted By" partners strip — logos with evenly spaced sparkle separators.
 export default function TrustedByStrip() {

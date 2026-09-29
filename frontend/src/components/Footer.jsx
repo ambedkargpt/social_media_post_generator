@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import logoSrc from "../assets/images/logo-animation.png";
+import logoSrc from "../assets/images/logo-animation.webp";
 import LegalModal from "./LegalModal";
 import { FacebookIcon, InstagramIcon, LinkedinIcon, TwitterIcon, YoutubeIcon } from "./landing/SocialIcons";
 import { useI18n } from '../i18n/index.jsx';

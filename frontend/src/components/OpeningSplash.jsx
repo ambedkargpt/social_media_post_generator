@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import logoSrc from '../assets/images/logo-animation.png';
+import logoSrc from '../assets/images/logo-animation.webp';
 import { useI18n } from '../i18n/index.jsx';
 
 const EXIT_MS = 180;

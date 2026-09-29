@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { LinkedinIcon, TwitterIcon } from "./SocialIcons";
 import SectionLabel from "./SectionLabel";
-import team1 from "../../assets/images/team/team1.jpeg";
-import team2 from "../../assets/images/team/team2.jpeg";
-import team3 from "../../assets/images/team/team3.jpeg";
-import team4 from "../../assets/images/team/team4.jpeg";
-import team5 from "../../assets/images/team/team5.jpeg";
-import team6 from "../../assets/images/team/team6.jpeg";
-import team7 from "../../assets/images/team/team7.jpeg";
+import team1 from "../../assets/images/team/team1.webp";
+import team2 from "../../assets/images/team/team2.webp";
+import team3 from "../../assets/images/team/team3.webp";
+import team4 from "../../assets/images/team/team4.webp";
+import team5 from "../../assets/images/team/team5.webp";
+import team6 from "../../assets/images/team/team6.webp";
+import team7 from "../../assets/images/team/team7.webp";
 import { useI18n } from '../../i18n/index.jsx';
 
 // `position` sets each photo's focal point so faces are never cropped out, and

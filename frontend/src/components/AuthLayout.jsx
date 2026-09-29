@@ -3,7 +3,7 @@ import BrandPanel from './BrandPanel';
 import BackgroundDecorations from './BackgroundDecorations';
 import { useI18n } from '../i18n/index.jsx';
 
-const logoSrc = new URL('../assets/images/logo-animation.png', import.meta.url).href;
+const logoSrc = new URL('../assets/images/logo-animation.webp', import.meta.url).href;
 
 export default function AuthLayout({ children, brandSide = 'right', brandVariant = 'login' }) {
   const { t } = useI18n();

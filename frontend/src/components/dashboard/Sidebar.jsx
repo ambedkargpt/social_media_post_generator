@@ -15,7 +15,7 @@ import {
   ChevronRight,
   ChevronLeft,
 } from 'lucide-react';
-import logoSrc from '../../assets/images/logo-animation.png';
+import logoSrc from '../../assets/images/logo-animation.webp';
 import { useI18n } from '../../i18n/index.jsx';
 
 // Generating a post is the product's primary action, so it leads the nav and is

@@ -2,7 +2,7 @@
 import { CheckCircle2 } from 'lucide-react';
 import SectionLabel from './SectionLabel';
 import CorpusContactModal from './CorpusContactModal';
-import libraryImg   from '../../assets/images/corpus-library.png';
+import libraryImg   from '../../assets/images/corpus-library.webp';
 import { useI18n } from '../../i18n/index.jsx';
 
 // Keys, not prose: the section is rendered through the dictionary so both

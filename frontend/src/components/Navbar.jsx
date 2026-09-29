@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { Menu, X } from 'lucide-react';
-import logoSrc from '../assets/images/logo-animation.png';
+import logoSrc from '../assets/images/logo-animation.webp';
 import { useAuth } from '../context/AuthContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../i18n/index.jsx';
