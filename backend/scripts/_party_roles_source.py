@@ -11,6 +11,9 @@ Columns:
   sp/inc  the title each party actually uses
   generic fallback wording for the other parties in the list
   voice   the instruction handed to the writer
+
+The same titles in Hindi live in HI below, keyed by id. They reach the
+dropdown only; see the comment there for why the backend does not get them.
 """
 
 # level -> what it means for the post
@@ -179,6 +182,64 @@ ROWS = [
      "Mayor", "Mayor", "Mayor",
      "You lead a municipal corporation and are answerable for the city."),
 ]
+
+
+# id -> the same three titles in Hindi, for the Hindi UI. The dropdown and the
+# questionnaire are the only readers: the prompt block stays English, so a role
+# name is never dropped into the middle of an English instruction.
+#
+# The SP titles were already Hindi written in Latin script, so those are simply
+# put back into Devanagari. Congress runs on its own vocabulary (AICC, PCC,
+# DCC), which has settled Hindi forms. Elected offices are the same words for
+# every party.
+HI = {
+    "national_president":         ("राष्ट्रीय अध्यक्ष", "कांग्रेस अध्यक्ष (एआईसीसी)", "राष्ट्रीय अध्यक्ष"),
+    "national_vice_president":    ("राष्ट्रीय उपाध्यक्ष", "एआईसीसी उपाध्यक्ष", "राष्ट्रीय उपाध्यक्ष"),
+    "national_general_secretary": ("राष्ट्रीय महामंत्री", "एआईसीसी महासचिव", "राष्ट्रीय महासचिव"),
+    "national_secretary":         ("राष्ट्रीय सचिव", "एआईसीसी सचिव", "राष्ट्रीय सचिव"),
+    "national_treasurer":         ("राष्ट्रीय कोषाध्यक्ष", "एआईसीसी कोषाध्यक्ष", "राष्ट्रीय कोषाध्यक्ष"),
+    "national_spokesperson":      ("राष्ट्रीय प्रवक्ता", "एआईसीसी मुख्य प्रवक्ता", "मुख्य प्रवक्ता"),
+    "state_incharge":             ("राष्ट्रीय प्रभारी", "एआईसीसी प्रदेश प्रभारी", "केंद्रीय प्रदेश प्रभारी"),
+    "state_president":            ("प्रदेश अध्यक्ष", "पीसीसी अध्यक्ष", "प्रदेश अध्यक्ष"),
+    "state_working_president":    ("प्रदेश उपाध्यक्ष", "पीसीसी कार्यकारी अध्यक्ष", "प्रदेश उपाध्यक्ष"),
+    "state_general_secretary":    ("प्रदेश महामंत्री", "पीसीसी महासचिव", "प्रदेश महासचिव"),
+    "state_secretary":            ("प्रदेश सचिव", "पीसीसी सचिव", "प्रदेश सचिव"),
+    "state_treasurer":            ("प्रदेश कोषाध्यक्ष", "पीसीसी कोषाध्यक्ष", "प्रदेश कोषाध्यक्ष"),
+    "state_spokesperson":         ("प्रदेश प्रवक्ता", "पीसीसी प्रवक्ता", "प्रदेश प्रवक्ता"),
+    "legislature_party_leader":   ("विधायक दल के नेता", "सीएलपी नेता", "विधायक दल के नेता"),
+    "district_president":         ("ज़िला अध्यक्ष", "डीसीसी अध्यक्ष", "ज़िला अध्यक्ष"),
+    "district_vice_president":    ("ज़िला उपाध्यक्ष", "डीसीसी उपाध्यक्ष", "ज़िला उपाध्यक्ष"),
+    "district_general_secretary": ("ज़िला महामंत्री", "डीसीसी महासचिव", "ज़िला महासचिव"),
+    "district_secretary":         ("ज़िला सचिव", "डीसीसी सचिव", "ज़िला सचिव"),
+    "district_treasurer":         ("ज़िला कोषाध्यक्ष", "डीसीसी कोषाध्यक्ष", "ज़िला कोषाध्यक्ष"),
+    "block_president":            ("मंडल अध्यक्ष", "ब्लॉक कांग्रेस अध्यक्ष", "ब्लॉक अध्यक्ष"),
+    "block_secretary":            ("मंडल मंत्री", "ब्लॉक कांग्रेस सचिव", "ब्लॉक सचिव"),
+    "karyakarta":                 ("कार्यकर्ता", "कार्यकर्ता", "सक्रिय कार्यकर्ता"),
+    "booth_karyakarta":           ("बूथ कार्यकर्ता", "बूथ स्तर कार्यकर्ता", "बूथ स्तर कार्यकर्ता"),
+    "primary_member":             ("सदस्य", "कांग्रेस सदस्य", "प्राथमिक सदस्य"),
+    "youth_wing":                 ("समाजवादी युवजन सभा अध्यक्ष", "भारतीय युवा कांग्रेस अध्यक्ष", "युवा मोर्चा अध्यक्ष"),
+    "women_wing":                 ("समाजवादी महिला सभा अध्यक्ष", "महिला कांग्रेस अध्यक्ष", "महिला मोर्चा अध्यक्ष"),
+    "farmers_wing":               ("समाजवादी किसान सभा अध्यक्ष", "किसान कांग्रेस अध्यक्ष", "किसान मोर्चा अध्यक्ष"),
+    "students_wing":              ("समाजवादी छात्र सभा अध्यक्ष", "एनएसयूआई अध्यक्ष", "छात्र मोर्चा अध्यक्ष"),
+    "legal_wing":                 ("अधिवक्ता सभा अध्यक्ष", "एआईसीसी विधि प्रकोष्ठ अध्यक्ष", "विधि प्रकोष्ठ प्रमुख"),
+    "minority_wing":              ("अल्पसंख्यक प्रकोष्ठ अध्यक्ष", "अल्पसंख्यक विभाग अध्यक्ष", "अल्पसंख्यक प्रकोष्ठ प्रमुख"),
+    "sc_st_obc_wing":             ("अनुसूचित जाति/जनजाति प्रकोष्ठ अध्यक्ष", "अनुसूचित जाति/जनजाति/ओबीसी विभाग अध्यक्ष", "अनुसूचित जाति/जनजाति/ओबीसी प्रकोष्ठ प्रमुख"),
+    "labour_wing":                ("श्रमिक प्रकोष्ठ अध्यक्ष", "इंटक अध्यक्ष", "श्रमिक संगठन प्रमुख"),
+    "union_minister":             ("केंद्रीय मंत्री", "केंद्रीय मंत्री", "केंद्रीय मंत्री"),
+    "mp_lok_sabha":               ("सांसद (लोकसभा)", "सांसद (लोकसभा)", "सांसद (लोकसभा)"),
+    "mp_rajya_sabha":             ("सांसद (राज्यसभा)", "सांसद (राज्यसभा)", "सांसद (राज्यसभा)"),
+    "chief_minister":             ("मुख्यमंत्री", "मुख्यमंत्री", "मुख्यमंत्री"),
+    "state_minister":             ("राज्य कैबिनेट मंत्री", "राज्य कैबिनेट मंत्री", "राज्य कैबिनेट मंत्री"),
+    "mla":                        ("विधायक", "विधायक", "विधायक"),
+    "mlc":                        ("विधान परिषद सदस्य", "विधान परिषद सदस्य", "विधान परिषद सदस्य"),
+    "corporator":                 ("पार्षद", "पार्षद", "पार्षद"),
+    "mayor":                      ("महापौर", "महापौर", "महापौर"),
+}
+
+
+# Every row must have Hindi, or the dropdown silently falls back to Latin for
+# one entry and reads as a bug rather than a gap.
+assert {r[0] for r in ROWS} == set(HI), "ROWS and HI disagree about which roles exist"
 
 
 def label_for(row, party_key):

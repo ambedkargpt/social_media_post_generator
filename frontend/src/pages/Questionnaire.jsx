@@ -8,8 +8,8 @@ import { getPartyQuestions, getPositionQuestions } from '../api/questions';
 import usePendingQuestions, { clearPendingQuestions } from '../hooks/usePendingQuestions';
 import { groupForId, roleLabel, rolesInGroup } from '../utils/partyRoles';
 import { levelLabel } from '../utils/displayLabel';
-import logoSrc     from '../assets/images/logo-animation.png';
-import ambedkarSrc from '../assets/images/qna-ambedkar.png';
+import logoSrc     from '../assets/images/logo-animation.webp';
+import ambedkarSrc from '../assets/images/qna-ambedkar.webp';
 import { useI18n } from '../i18n/index.jsx';
 
 // This page asks whichever question sets the user has never answered, which
@@ -299,9 +299,7 @@ export default function Questionnaire() {
 
   if (loadingQ || !question) return <Spinner />;
 
-  // Position names exist only in English (partyRoles has no Hindi), so a Hindi
-  // page shows the level alone rather than a line in two scripts.
-  const roleName = role && lang !== 'hi' ? roleLabel(role, party) : '';
+  const roleName = role ? roleLabel(role, party, lang) : '';
 
   return (
     <Shell>
