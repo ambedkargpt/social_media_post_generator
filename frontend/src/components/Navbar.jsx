@@ -5,13 +5,15 @@ import logoSrc from '../assets/images/logo-animation.webp';
 import { useAuth } from '../context/AuthContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../i18n/index.jsx';
+import { useRadio } from '../context/RadioContext';
 
-// action: 'scroll' (default) | 'bheembot' | 'dashboard' | 'section:<id>'
+// action: 'scroll' (default) | 'bheembot' | 'dashboard' | 'radio' | 'section:<id>'
 const navItems = [
   { key: 'nav.homeCaps',     sectionId: 'home' },
   { key: 'nav.corpusCaps',   sectionId: 'ambedkarverse' },
   { key: 'nav.servicesCaps', sectionId: 'services' },
   { key: 'nav.bheemCaps',    sectionId: 'bheem',   action: 'bheembot' },
+  { key: 'nav.radioCaps',    sectionId: 'radio',   action: 'radio' },
   { key: 'nav.contactCaps',  sectionId: 'contact' },
 ];
 
@@ -20,6 +22,7 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser } = useAuth();
+  const { setOpen: setRadioOpen } = useRadio();
   const [active,   setActive]   = useState('home');
   const [menuOpen, setMenuOpen] = useState(false);
   const headerRef  = useRef(null);
@@ -80,6 +83,11 @@ export default function Navbar() {
   function handleNav(item) {
     setActive(item.sectionId);
     setMenuOpen(false);
+
+    if (item.action === 'radio') {
+      setRadioOpen(true);
+      return;
+    }
 
     if (item.action === 'bheembot') {
       if (currentUser) {

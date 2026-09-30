@@ -1395,3 +1395,57 @@ html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) {
   .sheet-up { animation-duration: 1ms; }
 }
+
+/* --- Bhim Radio sliders --- */
+/* A range input is drawn by the OS unless every part is replaced, and the
+   default light track is unreadable on this ground. Track and thumb are
+   written twice because WebKit and Firefox share no pseudo-element, and a
+   selector either browser cannot parse invalidates the whole rule - so they
+   cannot be combined into one list. */
+.radio-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: #1e3260;
+  outline: none;
+  cursor: pointer;
+}
+.radio-range:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.radio-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: none;
+  background: #3f9fff;
+  box-shadow: 0 0 10px rgba(63, 159, 255, 0.55);
+  transition: transform 140ms ease;
+}
+.radio-range::-moz-range-thumb {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: none;
+  background: #3f9fff;
+  box-shadow: 0 0 10px rgba(63, 159, 255, 0.55);
+  transition: transform 140ms ease;
+}
+.radio-range:not(:disabled):hover::-webkit-slider-thumb { transform: scale(1.18); }
+.radio-range:not(:disabled):hover::-moz-range-thumb     { transform: scale(1.18); }
+
+/* Keyboard focus has to stay visible: the thumb is the only thing that moves,
+   so the ring goes on it rather than on the track. */
+.radio-range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(63, 159, 255, 0.35), 0 0 10px rgba(63, 159, 255, 0.55);
+}
+.radio-range:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 3px rgba(63, 159, 255, 0.35), 0 0 10px rgba(63, 159, 255, 0.55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radio-range::-webkit-slider-thumb { transition: none; }
+  .radio-range::-moz-range-thumb     { transition: none; }
+}

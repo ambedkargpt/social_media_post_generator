@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CurtainProvider } from './context/CurtainContext';
+import { RadioProvider } from './context/RadioContext';
+import BhimRadioPlayer from './components/radio/BhimRadioPlayer';
 import ProtectedRoute   from './components/ProtectedRoute';
 
 import Home       from './pages/Home';
@@ -90,6 +92,11 @@ export default function App() {
       <BrowserRouter>
         <CurtainProvider>
         <AuthProvider>
+        {/* Above the routes on purpose. Every public page mounts its own
+            MainLayout, so a radio living in a layout would be torn down and
+            recreated on each navigation and the audio would cut out. Here it
+            outlives the page the listener is on. */}
+        <RadioProvider>
           <IntroGate
             stage={stage}
             onSplashDone={handleSplashDone}
@@ -166,6 +173,11 @@ export default function App() {
           </Routes>
           </Suspense>
           </PageTransition>
+          {/* Last child, so the panel paints over the page. It portals to
+              document.body anyway, but source order still decides which of two
+              portalled layers wins. */}
+          <BhimRadioPlayer />
+        </RadioProvider>
         </AuthProvider>
         </CurtainProvider>
       </BrowserRouter>
