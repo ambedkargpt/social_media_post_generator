@@ -1397,40 +1397,52 @@ html { scroll-behavior: smooth; }
 }
 
 /* --- Bhim Radio sliders --- */
-/* A range input is drawn by the OS unless every part is replaced, and the
-   default light track is unreadable on this ground. Track and thumb are
-   written twice because WebKit and Firefox share no pseudo-element, and a
-   selector either browser cannot parse invalidates the whole rule - so they
-   cannot be combined into one list. */
+/* A range input is drawn by the OS unless every part is replaced. The player
+   is a light glass panel, so the track is a pale blue-grey and the thumb and
+   the filled part carry the accent.
+
+   The filled part is a gradient, not a track pseudo-element: only Firefox has
+   ::-moz-range-progress, so a gradient driven by --radio-fill (set inline from
+   the value) is the one way both engines agree on. The unfilled colour is
+   set so the two halves clear 3:1 against each other, since that boundary
+   is how the value is read. Track and thumb are written
+   twice because WebKit and Firefox share no pseudo-element, and a selector
+   either browser cannot parse invalidates the whole rule - so they cannot be
+   combined into one list. */
 .radio-range {
   -webkit-appearance: none;
   appearance: none;
-  height: 4px;
+  --radio-fill: 0%;
+  height: 6px;
   border-radius: 999px;
-  background: #1e3260;
+  background: linear-gradient(
+    to right,
+    #1d7afc 0 var(--radio-fill),
+    #d4e1f1 var(--radio-fill) 100%
+  );
   outline: none;
   cursor: pointer;
 }
-.radio-range:disabled { opacity: 0.4; cursor: not-allowed; }
+.radio-range:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .radio-range::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 13px;
-  height: 13px;
+  width: 15px;
+  height: 15px;
   border-radius: 50%;
-  border: none;
-  background: #3f9fff;
-  box-shadow: 0 0 10px rgba(63, 159, 255, 0.55);
+  border: 2px solid #ffffff;
+  background: #1d7afc;
+  box-shadow: 0 1px 4px rgba(16, 52, 105, 0.35);
   transition: transform 140ms ease;
 }
 .radio-range::-moz-range-thumb {
-  width: 13px;
-  height: 13px;
+  width: 15px;
+  height: 15px;
   border-radius: 50%;
-  border: none;
-  background: #3f9fff;
-  box-shadow: 0 0 10px rgba(63, 159, 255, 0.55);
+  border: 2px solid #ffffff;
+  background: #1d7afc;
+  box-shadow: 0 1px 4px rgba(16, 52, 105, 0.35);
   transition: transform 140ms ease;
 }
 .radio-range:not(:disabled):hover::-webkit-slider-thumb { transform: scale(1.18); }
@@ -1439,10 +1451,10 @@ html { scroll-behavior: smooth; }
 /* Keyboard focus has to stay visible: the thumb is the only thing that moves,
    so the ring goes on it rather than on the track. */
 .radio-range:focus-visible::-webkit-slider-thumb {
-  box-shadow: 0 0 0 3px rgba(63, 159, 255, 0.35), 0 0 10px rgba(63, 159, 255, 0.55);
+  box-shadow: 0 0 0 4px rgba(29, 122, 252, 0.3), 0 1px 4px rgba(16, 52, 105, 0.35);
 }
 .radio-range:focus-visible::-moz-range-thumb {
-  box-shadow: 0 0 0 3px rgba(63, 159, 255, 0.35), 0 0 10px rgba(63, 159, 255, 0.55);
+  box-shadow: 0 0 0 4px rgba(29, 122, 252, 0.3), 0 1px 4px rgba(16, 52, 105, 0.35);
 }
 
 @media (prefers-reduced-motion: reduce) {
