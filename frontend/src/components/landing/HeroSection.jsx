@@ -226,8 +226,17 @@ export default function HeroSection({ splashDone = true }) {
           </div>
 
           {/* Sub-copy */}
+          {/* sm:mb-10 is the floor under the CTA's sm:mt-auto. An auto margin
+              only distributes space that is left over, so once this column
+              fills its row the gap collapses to nothing - which is what Hindi
+              does, running to three lines where English runs to two, and the
+              buttons ended up sitting on the descenders of the last line. Auto
+              still takes over whenever there is slack to take.
+
+              Only from sm up: below that the CTA carries its own mt-8 and the
+              gap was never in question, so a margin here would just double it. */}
           <p
-            className="font-count mt-5 max-w-[700px] text-[clamp(16px,4.3vw,22px)] leading-[1.6] text-[#b7c6e1] sm:mt-6 sm:leading-8 md:text-[24px] md:leading-9"
+            className="font-count mt-5 max-w-[700px] text-[clamp(16px,4.3vw,22px)] leading-[1.6] text-[#b7c6e1] sm:mt-6 sm:mb-10 sm:leading-8 md:text-[24px] md:leading-9"
             style={fadeUp(1050)}
           >
             {t('landing.heroSub')}
