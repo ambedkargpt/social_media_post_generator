@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { readSession } from '../api/sessionStore';
 import * as authApi from '../api/auth';
+import { setAnalyticsUser, trackEvent } from '../analytics/ga';
 
 const AuthContext = createContext(null);
 
@@ -54,6 +55,12 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // Keeps analytics tied to whoever is signed in, so a visit that starts
+  // logged out and continues logged in reads as one person rather than two.
+  // The app's own id, never an email or a phone: sending anything that
+  // identifies a person directly is against Google's terms.
+  useEffect(() => { setAnalyticsUser(currentUser?.id); }, [currentUser?.id]);
+
   // ── Email signup → returns data including dev_otp in dev mode ─────────────
   // `extra` carries the fields collected regardless of which identifier is
   // primary: a phone given alongside the email, state, city, date of birth.
@@ -101,20 +108,27 @@ export function AuthProvider({ children }) {
     // Tokens were already saved on signup/login. Refresh user to get verified state.
     const user = await authApi.getMe().catch(() => authApi.getStoredUser());
     if (user) setCurrentUser(user);
+    trackEvent(purpose === 'signup_verify' ? 'sign_up' : 'login', { method: channel });
     return data;
   }
 
   // ── Email / phone + password login ────────────────────────────────────────
   async function loginWithEmail(identifier, password) {
     const data = await authApi.login({ identifier, password });
-    if (data?.user && !data.otp_required) setCurrentUser(data.user);
+    if (data?.user && !data.otp_required) {
+      setCurrentUser(data.user);
+      trackEvent('login', { method: 'password' });
+    }
     return data; // caller checks data.otp_required to decide next route
   }
 
   // ── Google OAuth login ─────────────────────────────────────────────────────
   async function loginWithGoogle(googleAccessToken, politicalParty) {
     const data = await authApi.loginWithGoogle(googleAccessToken, politicalParty);
-    if (data?.user) setCurrentUser(data.user);
+    if (data?.user) {
+      setCurrentUser(data.user);
+      trackEvent('login', { method: 'google' });
+    }
     return data;
   }
 

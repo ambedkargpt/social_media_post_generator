@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { getSiteLanguage, setSiteLanguage } from '../utils/siteLanguage';
+import { trackEvent } from '../analytics/ga';
 import en from './en';
 import hi from './hi';
 
@@ -52,6 +53,9 @@ export function I18nProvider({ children }) {
     if (!DICTIONARIES[next]) return;
     setSiteLanguage(next);
     setLang(next);
+    // Worth counting on a two-language product: it says which one people
+    // actually choose, as opposed to which one they were given.
+    trackEvent('language_change', { language: next });
   }, []);
 
   const value = useMemo(

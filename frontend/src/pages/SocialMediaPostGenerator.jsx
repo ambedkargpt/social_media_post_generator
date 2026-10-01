@@ -28,6 +28,7 @@ import { useI18n } from '../i18n/index.jsx';
 import SpeakButton from '../components/generate/SpeakButton';
 import { partyLabel, toneLabel } from '../utils/displayLabel';
 import { partyLogo } from '../utils/politicalParties';
+import { trackEvent } from '../analytics/ga';
 
 const TONES = ['Professional', 'Inspirational', 'Creative', 'Casual', 'Motivational'];
 const ALSO_GENERATE = ['Audio', 'Shorts', 'Image'];
@@ -708,6 +709,9 @@ export default function SocialMediaPostGenerator() {
       });
       const content = response?.post?.content || '';
       if (!content.trim()) throw new Error('empty_content');
+      // After the content check, not before: a response that came back empty
+      // is a failure, and counting it would flatter the numbers.
+      trackEvent('generate_post', { platform, tone, language: siteLang });
       setGeneratedPost(content);
       setPostFailed(false);
       setSelectedPostId(response?.post?.id || null);
@@ -775,6 +779,7 @@ export default function SocialMediaPostGenerator() {
       });
       const content = response?.post?.content || '';
       if (!content.trim()) throw new Error('empty_content');
+      trackEvent('refine_post', { language: siteLang });
       setGeneratedPost(content);
       setPostFailed(false);
       setSelectedPostId(response?.post?.id || selectedPostId);
