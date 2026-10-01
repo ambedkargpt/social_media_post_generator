@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import threading
 from pathlib import Path
 from typing import Any, Dict, List, Sequence, Tuple
 
@@ -64,6 +65,12 @@ def load_transcript_file() -> str:
 
 
 _RAG_CACHE: tuple | None = None
+# Serialises the build. Without it the pre-warm thread and the first request
+# both found an empty cache and both did the whole job: 204 MB of artifacts
+# downloaded from S3 twice, 4867 chunks parsed twice, Pinecone connected to
+# twice. On a cold container that was about six seconds of a thirty-second
+# budget, spent arriving at the same answer in parallel.
+_RAG_LOCK = threading.Lock()
 
 
 def _get_pinecone_index(settings):
@@ -87,9 +94,19 @@ def ensure_rag_stack(settings) -> Tuple[ChunkEmbedder, Any, Dict[str, Dict[str, 
     Full rebuild path (no chunks file + Pinecone index empty):
       - Parses transcripts, embeds, upserts to Pinecone, saves chunks JSON.
     """
-    global _RAG_CACHE
     if _RAG_CACHE is not None:
         return _RAG_CACHE
+    # Checked again under the lock: whoever waited here while another thread
+    # built the stack wants its result, not a second build of its own.
+    with _RAG_LOCK:
+        if _RAG_CACHE is not None:
+            return _RAG_CACHE
+        return _build_rag_stack(settings)
+
+
+def _build_rag_stack(settings) -> Tuple[ChunkEmbedder, Any, Dict[str, Dict[str, Any]]]:
+    """The real work. Only ever called with _RAG_LOCK held."""
+    global _RAG_CACHE
 
     # --- Ensure artifact files are local (S3 download on Lambda cold start) ---
     for fname, local in [
