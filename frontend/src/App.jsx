@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { CurtainProvider } from './context/CurtainContext';
 import { RadioProvider } from './context/RadioContext';
 import BhimRadioPlayer from './components/radio/BhimRadioPlayer';
+import { usePageViews } from './analytics/usePageViews';
 import ProtectedRoute   from './components/ProtectedRoute';
 
 import Home       from './pages/Home';
@@ -74,6 +75,13 @@ function IntroGate({ stage, onSplashDone, onLanguageDone }) {
   );
 }
 
+/** Reports one page_view per route change. Renders nothing; it has to live
+    inside the router because that is where the location comes from. */
+function AnalyticsPageViews() {
+  usePageViews();
+  return null;
+}
+
 export default function App() {
   // stage: 'splash' -> 'language' -> 'done'
   const [stage, setStage] = useState(() => {
@@ -102,6 +110,7 @@ export default function App() {
             onSplashDone={handleSplashDone}
             onLanguageDone={handleLanguageDone}
           />
+          <AnalyticsPageViews />
           <TransitionCurtain />
           <ScrollProgress />
           <CustomCursor />

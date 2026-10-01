@@ -9,6 +9,7 @@ import {
 } from 'react';
 
 import { loadTracks } from '../data/bhimRadioTracks';
+import { trackEvent } from '../analytics/ga';
 
 /**
  * Bhim Radio's one audio element and everything that knows about it.
@@ -163,6 +164,7 @@ export function RadioProvider({ children }) {
     const el = audioRef.current;
     if (!el || !el.src) return;
     wantPlay.current = true;
+    trackEvent('radio_play');
     el.play().catch(() => setPlaying(false));
   }, []);
 
