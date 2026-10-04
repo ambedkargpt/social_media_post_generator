@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 
 import { useRadio } from '../../context/RadioContext';
+import { STATIONS } from '../../data/bhimRadio';
 import { useI18n } from '../../i18n/index.jsx';
 
 /**
@@ -22,9 +23,10 @@ import { useI18n } from '../../i18n/index.jsx';
  * fixed descendant, so a fixed panel nested inside one anchors to that box
  * instead of the viewport. This has bitten the navbar and a landing modal.
  *
- * Audio state lives in RadioContext, one level above the router. This is only
- * the face of it: closing the panel leaves the station playing, which is what
- * a radio should do.
+ * What plays is one file per station per day. The scrubber runs over the whole
+ * bulletin and the skip buttons jump between its stories, the way chapters
+ * work in a podcast - so "track 3 of 12" is a position in one broadcast, not a
+ * separate download.
  */
 
 // One place for the palette, so a colour is never guessed twice.
@@ -33,7 +35,7 @@ const INK = '#102a4d';     // headings and anything that must be read
 // glass surface is least forgiving: #6b809f measured 2.79:1 there and
 // #b0442c 4.13:1, so neither was readable enough for body text.
 const MUTED = '#4d5d76';   // secondary text, icons at rest - 4.63:1
-const DANGER = '#a64029';  // a track or a station that failed - 4.52:1
+const DANGER = '#a64029';  // a stream that failed - 4.52:1
 const ACCENT = '#1d7afc';  // fills, the play button, the icon tile
 // The accent as a text colour only reaches 3.66:1 on the pale button it
 // sits on, so the one label that uses it gets a darker shade of itself.
@@ -56,13 +58,15 @@ export default function BhimRadioPlayer() {
   const { t } = useI18n();
   const {
     open, setOpen,
-    tracks, status, retry,
-    track, index,
+    configured,
+    tenant, setTenant,
+    station, status, retry,
+    tracks, track, index,
     playing, toggle, next, previous,
     position, duration, seek,
     volume, setVolume,
     muted, toggleMute,
-    trackError,
+    streamError,
   } = useRadio();
 
   // Escape closes the panel. It does not stop playback: the listener asked for
@@ -76,8 +80,8 @@ export default function BhimRadioPlayer() {
 
   if (!open) return null;
 
-  const empty = status === 'ready' && tracks.length === 0;
-  const canPlay = Boolean(track) && !trackError;
+  const onAir = status === 'ready' && Boolean(station);
+  const canPlay = onAir && !streamError;
   const scrubMax = duration > 0 ? duration : 0;
   const shownVolume = muted ? 0 : volume;
 
@@ -144,6 +148,31 @@ export default function BhimRadioPlayer() {
           </button>
         </div>
 
+        {/* ── Station switcher ── */}
+        {/* Four bulletins are built every day, one per party. The listener's
+            own party is selected for them; this is for hearing what another
+            one is saying, which is most of the point of the product. */}
+        <div className="mb-4 flex flex-wrap gap-1.5" role="tablist" aria-label={t('radio.stations')}>
+          {STATIONS.map((s) => {
+            const active = s.slug === tenant;
+            return (
+              <button
+                key={s.slug}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setTenant(s.slug)}
+                className="rounded-full px-3 py-1.5 text-[12px] font-semibold transition"
+                style={active
+                  ? { background: ACCENT, color: '#ffffff', boxShadow: '0 3px 10px rgba(29,122,252,0.35)' }
+                  : { background: 'rgba(255,255,255,0.7)', color: '#274b78', border: '1px solid #c3d6ee' }}
+              >
+                {t(s.labelKey)}
+              </button>
+            );
+          })}
+        </div>
+
         {/* ── Now playing ── */}
         <div
           className="mb-5 min-h-[56px] rounded-2xl px-4 py-3.5"
@@ -152,14 +181,20 @@ export default function BhimRadioPlayer() {
             border: '1px solid rgba(146,186,235,0.55)',
           }}
         >
-          {status === 'loading' && (
+          {!configured && (
+            <p className="text-[13px] leading-relaxed" style={{ color: '#3c5b85' }}>
+              {t('radio.empty')}
+            </p>
+          )}
+
+          {configured && (status === 'loading' || status === 'idle') && (
             <p className="flex items-center gap-2 text-[13px]" style={{ color: MUTED }}>
               <Loader2 size={14} className="animate-spin" />
               {t('radio.loading')}
             </p>
           )}
 
-          {status === 'error' && (
+          {configured && status === 'error' && (
             <div className="flex items-center justify-between gap-3">
               <p className="text-[13px] font-medium" style={{ color: DANGER }}>
                 {t('radio.loadFailed')}
@@ -176,25 +211,27 @@ export default function BhimRadioPlayer() {
             </div>
           )}
 
-          {empty && (
+          {configured && status === 'empty' && (
             <p className="text-[13px] leading-relaxed" style={{ color: '#3c5b85' }}>
-              {t('radio.empty')}
+              {t('radio.emptyStation')}
             </p>
           )}
 
-          {track && (
+          {onAir && (
             <>
               <p
                 className="truncate font-count text-[14.5px] font-semibold"
                 style={{ color: INK }}
-                title={track.title}
+                title={track?.title || station.title}
               >
-                {track.title}
+                {/* Before the first story the intro is playing, so the
+                    bulletin's own title is the honest thing to show. */}
+                {track?.title || station.title || t('radio.title')}
               </p>
-              <p className="mt-0.5 truncate text-[12.5px]" style={{ color: trackError ? DANGER : MUTED }}>
-                {trackError
+              <p className="mt-0.5 truncate text-[12.5px]" style={{ color: streamError ? DANGER : MUTED }}>
+                {streamError
                   ? t('radio.trackFailed')
-                  : track.artist || t('radio.trackOf', { n: index + 1, total: tracks.length })}
+                  : t('radio.trackOf', { n: Math.max(index + 1, 1), total: tracks.length })}
               </p>
             </>
           )}
@@ -233,7 +270,7 @@ export default function BhimRadioPlayer() {
           <button
             type="button"
             onClick={previous}
-            disabled={tracks.length < 2}
+            disabled={!canPlay || !tracks.length}
             aria-label={t('radio.previous')}
             className={`${roundButton} h-11 w-11`}
           >
@@ -261,7 +298,7 @@ export default function BhimRadioPlayer() {
           <button
             type="button"
             onClick={next}
-            disabled={tracks.length < 2}
+            disabled={!canPlay || index >= tracks.length - 1}
             aria-label={t('radio.next')}
             className={`${roundButton} h-11 w-11`}
           >
