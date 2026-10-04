@@ -1,0 +1,135 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Deploy Radio
+#
+# Builds the Bheem Radio bulletin image and registers its Batch job definition.
+#
+# Separate from deploy-worker.yml because it is a separate image, and it is a
+# separate image because bheem-radio needs openai>=3.0 and google-genai>=2.25
+# where this project pins 1.61.1 and 1.29.0. See Dockerfile.radio.
+#
+# It also runs on its own trigger: the radio changes rarely, and rebuilding a
+# 16 GB ML image every time a prompt moves is not worth the minutes.
+#
+# One-time setup this workflow does not do (see docs/bheem-radio.md):
+#   - the ECR repository ambedkargpt-radio
+#   - the SARVAM_API_KEY parameter in SSM
+#   - the EventBridge rule that calls the radio Lambda daily
+#   - the CloudFront distribution over the bucket's radio/ prefix
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: Deploy Radio
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Dockerfile.radio'
+      - 'backend/worker/build_radio.py'
+      - 'backend/worker/radio_handler.py'
+      - '.github/workflows/deploy-radio.yml'
+  workflow_dispatch:        # for moving the pinned Bheem Radio commit
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-push:
+    name: Build → ECR → Batch Job Def
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ap-south-1
+
+      - name: Log in to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build radio image
+        run: |
+          IMAGE_URI="${{ secrets.ECR_REGISTRY }}/ambedkargpt-radio"
+          docker build -f Dockerfile.radio \
+            -t "${IMAGE_URI}:latest" \
+            -t "${IMAGE_URI}:${{ github.sha }}" \
+            .
+          echo "IMAGE_URI=${IMAGE_URI}" >> $GITHUB_ENV
+
+      - name: Push to ECR
+        run: |
+          docker push "${IMAGE_URI}:latest"
+          docker push "${IMAGE_URI}:${{ github.sha }}"
+
+      # 1 vCPU / 2 GB: mixing an hour of mono audio is light. The slow case is
+      # waiting on the voice API, not the mixing, so more CPU buys nothing.
+      #
+      # Timeout 30 min: a cold day with nothing cached needs about ninety
+      # cloned-voice requests, which is ten minutes at the Sarvam Starter
+      # plan's ten a minute.
+      #
+      # One retry. The content-addressed cache makes it cheap: a retry only
+      # pays for whatever failed the first time.
+      - name: Register Batch job definition
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          WORKER_ROLE_ARN="arn:aws:iam::${ACCOUNT_ID}:role/ambedkargpt-worker-role"
+          LOG_GROUP="/aws/batch/job"
+          SSM="arn:aws:ssm:ap-south-1:${ACCOUNT_ID}:parameter/ambedkargpt/prod"
+
+          NEW_JOB_DEF_ARN=$(aws batch register-job-definition \
+            --job-definition-name ambedkargpt-radio \
+            --type container \
+            --platform-capabilities FARGATE \
+            --retry-strategy '{"attempts": 2}' \
+            --timeout '{"attemptDurationSeconds": 1800}' \
+            --parameters '{"tenant": "general"}' \
+            --container-properties "{
+              \"image\": \"${IMAGE_URI}:${{ github.sha }}\",
+              \"command\": [\"--tenant\", \"Ref::tenant\"],
+              \"jobRoleArn\":       \"${WORKER_ROLE_ARN}\",
+              \"executionRoleArn\": \"${WORKER_ROLE_ARN}\",
+              \"fargatePlatformConfiguration\": {\"platformVersion\": \"LATEST\"},
+              \"resourceRequirements\": [
+                {\"type\": \"VCPU\",   \"value\": \"1\"},
+                {\"type\": \"MEMORY\", \"value\": \"2048\"}
+              ],
+              \"environment\": [
+                {\"name\": \"S3_BUCKET\",         \"value\": \"ambedkargpt-artifacts\"},
+                {\"name\": \"MONGODB_DATABASE\",  \"value\": \"ambedkargpt\"}
+              ],
+              \"secrets\": [
+                {\"name\": \"MONGODB_URI\",      \"valueFrom\": \"${SSM}/MONGODB_URI\"},
+                {\"name\": \"DEEPSEEK_API_KEY\", \"valueFrom\": \"${SSM}/DEEPSEEK_API_KEY\"},
+                {\"name\": \"GEMINI_API_KEY\",   \"valueFrom\": \"${SSM}/GEMINI_API_KEY\"}
+              ],
+              \"networkConfiguration\": {
+                \"assignPublicIp\": \"ENABLED\"
+              },
+              \"logConfiguration\": {
+                \"logDriver\": \"awslogs\",
+                \"options\": {
+                  \"awslogs-group\":  \"${LOG_GROUP}\",
+                  \"awslogs-region\": \"ap-south-1\",
+                  \"awslogs-stream-prefix\": \"ambedkargpt-radio\"
+                }
+              }
+            }" \
+            --query 'jobDefinitionArn' \
+            --output text)
+
+          echo "Registered job definition: ${NEW_JOB_DEF_ARN}"
+          echo "NEW_JOB_DEF_ARN=${NEW_JOB_DEF_ARN}" >> $GITHUB_ENV
+
+      - name: Deployment summary
+        run: |
+          echo "## Radio Deployment ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Image | \`${IMAGE_URI}:${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Job Definition | \`${NEW_JOB_DEF_ARN}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY

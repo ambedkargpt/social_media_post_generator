@@ -133,6 +133,19 @@ jobs:
             echo "ambedkargpt-watch does not exist yet - skipping."
           fi
 
+      # Same image again, a third entry point. The radio watcher submits the
+      # day's four bulletin jobs; EventBridge calls it once a day. Created by
+      # hand (see docs/bheem-radio.md) - this only keeps its code current.
+      - name: Update radio watcher Lambda (if it exists)
+        run: |
+          if aws lambda get-function --function-name ambedkargpt-radio-watch >/dev/null 2>&1; then
+            aws lambda update-function-code               --function-name ambedkargpt-radio-watch               --image-uri "${IMAGE_URI}:${{ github.sha }}"
+            aws lambda wait function-updated --function-name ambedkargpt-radio-watch
+            echo "Radio watcher Lambda updated."
+          else
+            echo "ambedkargpt-radio-watch does not exist yet - skipping."
+          fi
+
       # Optional smoke test — hits the health endpoint and checks for HTTP 200.
       # LAMBDA_FUNCTION_URL is stored as a GitHub *Variable* (not a Secret)
       # because it is not sensitive. Set it under Settings → Variables → Actions.

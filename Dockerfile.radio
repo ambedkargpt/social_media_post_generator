@@ -1,0 +1,82 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Dockerfile.radio
+#
+# AWS Batch container for the Bheem Radio daily bulletin build. One job per
+# party per day; nothing runs between builds.
+#
+# Why this is a separate image, when the Bheem Radio integration guide says
+# "you don't need a new container":
+#
+#   bheem-radio requires  openai>=3.0        google-genai>=2.25
+#   this project pins     openai==1.61.1     google-genai==1.29.0
+#
+# Those are major-version gaps on both. Installing bheem-radio into
+# Dockerfile.worker is not a tight squeeze, it is impossible - pip cannot
+# satisfy `==1.61.1` and `>=3.0` at once. Forcing the upgrade would rewrite
+# the OpenAI client call in thirteen files and the Gemini embedder, to make
+# the radio work. Isolating the radio costs one more image and leaves the
+# product's own dependency tree untouched.
+#
+# It is also much smaller: no yt-dlp, no torch, no SEMRAG. The whole radio
+# build is text in, audio out.
+#
+# Build:
+#   docker build -f Dockerfile.radio -t ambedkargpt-radio:local .
+#
+# Run one party locally (needs MONGODB_URI, DEEPSEEK_API_KEY, GEMINI_API_KEY):
+#   docker run --rm --env-file .env.radio ambedkargpt-radio:local --tenant samajwadi
+#
+# Batch vCPU:   1
+# Batch memory: 2 GB   (mixing an hour of mono audio is light)
+# Timeout:      30 min (a cold day with nothing cached is the slow case)
+# ─────────────────────────────────────────────────────────────────────────────
+
+FROM python:3.11-slim-bookworm
+
+LABEL org.opencontainers.image.title="ambedkargpt-radio" \
+      org.opencontainers.image.description="Bheem Radio daily bulletin build (AWS Batch)"
+
+# ffmpeg mixes and encodes the stream; git is needed to install bheem-radio,
+# which has no PyPI release yet.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ffmpeg git ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Pinned to a commit, not a tag: the repository has no tags despite the
+# integration guide asking for one. A commit is a stricter pin anyway - move
+# it deliberately, and the diff says exactly what changed.
+ARG BHEEM_RADIO_REF=32289f8a25b3f9be09ac817aec4458af873b6864
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir \
+      "bheem-radio[mongo] @ git+https://github.com/smartbhaujan/BHEEM-RADIO.git@${BHEEM_RADIO_REF}"
+
+# The music package and the spoken lines are data, not part of the Python
+# package, so pip does not bring them. Taken from the same commit.
+RUN git clone --depth 1 https://github.com/smartbhaujan/BHEEM-RADIO.git /tmp/bheem && \
+    cd /tmp/bheem && git fetch --depth 1 origin "${BHEEM_RADIO_REF}" && git checkout -q FETCH_HEAD && \
+    mkdir -p /opt/bheem-radio && \
+    cp -r /tmp/bheem/assets /tmp/bheem/prompts /opt/bheem-radio/ && \
+    rm -rf /tmp/bheem
+
+# Only the entry point. It imports nothing from this repository - stdlib and
+# bheem_radio alone - so the rest of the backend has no business in here.
+COPY backend/__init__.py        /app/backend/__init__.py
+COPY backend/worker/__init__.py /app/backend/worker/__init__.py
+COPY backend/worker/build_radio.py /app/backend/worker/build_radio.py
+
+RUN mkdir -p /tmp/bheem-radio
+
+ENV BHEEM_ASSETS_DIR=/opt/bheem-radio/assets \
+    BHEEM_PROMPTS_DIR=/opt/bheem-radio/prompts \
+    BHEEM_DATA_DIR=/tmp/bheem-radio \
+    PYTHONPATH=/app \
+    PYTHONUNBUFFERED=1 \
+    PYTHONUTF8=1
+
+# Fails the build rather than the 6 a.m. job if the install is broken.
+RUN python -c "import bheem_radio, backend.worker.build_radio; print('ok')" && \
+    ffmpeg -version > /dev/null
+
+ENTRYPOINT ["python", "-m", "backend.worker.build_radio"]
