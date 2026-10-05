@@ -133,9 +133,11 @@ jobs:
             echo "ambedkargpt-watch does not exist yet - skipping."
           fi
 
-      # Same image again, a third entry point. The radio watcher submits the
-      # day's four bulletin jobs; EventBridge calls it once a day. Created by
-      # hand (see docs/bheem-radio.md) - this only keeps its code current.
+      # Same image again, a third entry point. Optional: the radio runs off
+      # four EventBridge schedules that submit to Batch directly, with no
+      # Lambda in the path. This one submits all four in a single call, which
+      # is convenient for a manual rebuild. Nothing creates it; if someone
+      # does, this keeps its code current.
       - name: Update radio watcher Lambda (if it exists)
         run: |
           if aws lambda get-function --function-name ambedkargpt-radio-watch >/dev/null 2>&1; then
