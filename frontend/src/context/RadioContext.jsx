@@ -10,7 +10,7 @@ import {
 
 import { useAuth } from './AuthContext';
 import { loadStation, radioConfigured, stationForParty, trackAt } from '../data/bhimRadio';
-import { trackEvent } from '../analytics/ga';
+import { trackEvent } from '../analytics/metrics';
 
 /**
  * Bhim Radio's one audio element and everything that knows about it.
