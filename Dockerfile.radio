@@ -52,10 +52,23 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir \
       "bheem-radio[mongo] @ git+https://github.com/smartbhaujan/BHEEM-RADIO.git@${BHEEM_RADIO_REF}"
 
-# The music package and the spoken lines are data, not part of the Python
-# package, so pip does not bring them. Taken from the same commit.
+# The prompts and the music are data, not part of the Python package, so pip
+# does not bring them.
+#
+# The music is not in the repository either: `assets/` holds only a
+# manifest.json, and the seven WAVs come from scripts/compose_news_music.py,
+# which needs numpy and scipy. Their integration guide copies `assets/`
+# straight across, which produces an image that fails on its first run with
+# `MissingAssetError: sonic_logo` - before any paid call, at least, but every
+# build, every morning. Found by running the builder for real.
+#
+# numpy and scipy are installed for that one script and removed again: they
+# are about 100 MB and nothing at run time wants them.
 RUN git clone --depth 1 https://github.com/smartbhaujan/BHEEM-RADIO.git /tmp/bheem && \
     cd /tmp/bheem && git fetch --depth 1 origin "${BHEEM_RADIO_REF}" && git checkout -q FETCH_HEAD && \
+    pip install --no-cache-dir "numpy>=1.26" "scipy>=1.11" && \
+    python scripts/compose_news_music.py && \
+    pip uninstall -y numpy scipy && \
     mkdir -p /opt/bheem-radio && \
     cp -r /tmp/bheem/assets /tmp/bheem/prompts /opt/bheem-radio/ && \
     rm -rf /tmp/bheem
@@ -75,8 +88,13 @@ ENV BHEEM_ASSETS_DIR=/opt/bheem-radio/assets \
     PYTHONUNBUFFERED=1 \
     PYTHONUTF8=1
 
-# Fails the build rather than the 6 a.m. job if the install is broken.
-RUN python -c "import bheem_radio, backend.worker.build_radio; print('ok')" && \
-    ffmpeg -version > /dev/null
+# Fails the build rather than the 6 a.m. job if any of this is broken. The
+# music check is here because its absence is exactly what shipped silently
+# once: the directory exists, the manifest is in it, and only the WAVs the
+# mixer actually opens are missing.
+RUN python -c "import bheem_radio, backend.worker.build_radio; print('imports ok')" && \
+    ffmpeg -version > /dev/null && \
+    test -s /opt/bheem-radio/assets/music/sonic_logo.wav && \
+    echo "music package present: $(ls /opt/bheem-radio/assets/music | wc -l) files"
 
 ENTRYPOINT ["python", "-m", "backend.worker.build_radio"]
