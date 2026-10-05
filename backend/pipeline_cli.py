@@ -19,7 +19,7 @@ from backend.core.s3_loader import ensure_artifact_local, artifact_s3_key
 from backend.pipeline.retriever import retrieve_relevant_chunks
 from backend.pipeline.generator import generate_post
 from backend.pipeline.profiles import get_user_profiles
-from backend.pipeline.title_embeddings import build_title_embeddings, save_title_embeddings, load_title_embeddings
+from backend.pipeline.title_embeddings import build_title_embeddings, save_title_embeddings
 from backend.semrag.build import build_semrag_graph, save_semrag_chunks
 from backend.semrag.chunking import chunk_videos_for_semrag
 from backend.semrag.runtime import semrag_candidates_for_query
@@ -149,10 +149,19 @@ def ensure_rag_stack(settings) -> Tuple[ChunkEmbedder, Any, Dict[str, Dict[str, 
     video_context = json.loads(VIDEO_CONTEXT_PATH.read_text(encoding="utf-8"))
     context_by_title = {v["video_title"]: v for v in video_context}
 
-    te = load_title_embeddings(TITLE_EMB_PATH)
-    if te is None or te.model != settings.embedding_model:
-        te = build_title_embeddings(video_context, embedder)
-        save_title_embeddings(te, TITLE_EMB_PATH)
+    # Only build it when it is not there. It used to be loaded and checked:
+    # `load_title_embeddings` reads 127 MB, parses it and builds a NumPy array
+    # of 1376 embeddings, all to compare one string - and then threw the result
+    # away, because `te` is never used again and never reaches the cache. That
+    # was 2.2 s of every container's first generation, spent on nothing.
+    #
+    # The model check is not lost: the retriever reads the same file, compares
+    # the model itself, and embeds the titles on the fly when it does not match.
+    # And the artifact is the worker's to build - build_artifacts writes it on
+    # every rebuild - so on Lambda the rebuild here would only have written into
+    # a /tmp that goes away with the container.
+    if not TITLE_EMB_PATH.exists():
+        save_title_embeddings(build_title_embeddings(video_context, embedder), TITLE_EMB_PATH)
 
     _RAG_CACHE = (embedder, store, context_by_title)
     return _RAG_CACHE
