@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple, Set, Optional
+from typing import Any, List, Dict, Tuple, Set, Optional
 from pathlib import Path
 import json
 import os
@@ -19,6 +19,25 @@ TITLE_TOP_N = 5
 STAGE2_SEARCH_K = 250
 _ARTIFACTS_DIR = Path(os.environ["LAMBDA_ARTIFACTS_DIR"]) if os.getenv("LAMBDA_ARTIFACTS_DIR") else Path(__file__).resolve().parents[1] / "data"
 TITLE_EMB_PATH = _ARTIFACTS_DIR / "video_title_embeddings.json"
+
+# video_title_embeddings.json is 127 MB, and this module read and parsed it on
+# every retrieval: 0.5 s to read, 1.6 s to parse, for a file that changes only
+# when the worker rebuilds the artifacts. Every generation paid it.
+#
+# Keyed on the file's mtime and size so a rebuilt artifact is picked up without
+# anyone having to remember to clear anything - the container that sees a new
+# file parses it once more and then stops.
+_TITLE_PAYLOAD_CACHE: dict[str, Any] = {}
+
+
+def _title_payload(path: Path) -> dict:
+    """The parsed title-embedding artifact, parsed at most once per version."""
+    st = path.stat()
+    key = (str(path), st.st_mtime_ns, st.st_size)
+    if _TITLE_PAYLOAD_CACHE.get("key") != key:
+        _TITLE_PAYLOAD_CACHE["key"] = key
+        _TITLE_PAYLOAD_CACHE["payload"] = json.loads(path.read_text(encoding="utf-8"))
+    return _TITLE_PAYLOAD_CACHE["payload"]
 STRICT_TITLE_TOP_N = 2
 RRF_K = 60
 BM25_TOP_N = 250
@@ -140,7 +159,7 @@ def _select_candidate_titles(
     payload = {}
     if TITLE_EMB_PATH.exists():
         try:
-            payload = json.loads(TITLE_EMB_PATH.read_text(encoding="utf-8"))
+            payload = _title_payload(TITLE_EMB_PATH)
             if payload.get("embedding_model") == embedder.model_name:
                 title_map = payload.get("title_map") or {}
                 if isinstance(title_map, dict) and title_map:
@@ -158,6 +177,10 @@ def _select_candidate_titles(
                             json.dumps(payload, ensure_ascii=False, indent=2),
                             encoding="utf-8",
                         )
+                        # The cache key is the file's mtime, and we have just
+                        # changed it. Dropping the key rather than re-reading
+                        # 127 MB: `payload` in hand is already the new content.
+                        _TITLE_PAYLOAD_CACHE.clear()
 
                     embs = [title_map[t]["embedding"] for t in all_titles]
                     title_embs = np.array(embs, dtype=np.float32)
