@@ -179,3 +179,10 @@ legacy/
 # Channel transcripts are runtime data, not a build artifact: transcripts.py
 # reads them on every post generation to hand the writer what the speaker
 # actually said. Without them that silently falls back to retrieved chunks.
+
+# Locally built radio bulletins (real MP3s, several MB each) served by the
+# dev server at /radio. The real ones come from the Batch job via S3.
+frontend/public/radio/
+
+# Playwright run output
+frontend/test-results/
