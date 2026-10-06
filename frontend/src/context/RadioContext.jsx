@@ -9,7 +9,8 @@ import {
 } from 'react';
 
 import { useAuth } from './AuthContext';
-import { loadStation, radioConfigured, stationForParty, trackAt } from '../data/bhimRadio';
+import {
+  broadcastPositionSec, loadStation, radioConfigured, stationForParty, trackAt } from '../data/bhimRadio';
 import { trackEvent } from '../analytics/metrics';
 
 /**
@@ -34,6 +35,26 @@ const VOLUME_KEY = 'bhim-radio-volume';
 // every other player behaves.
 const RESTART_WINDOW_SEC = 3;
 
+/**
+ * Put the needle at `seconds`, now or as soon as the file admits its length.
+ *
+ * Assigning currentTime before `loadedmetadata` is silently ignored, which
+ * would land a listener at the top of the file instead of on air - and
+ * silently, because the audio plays perfectly well from the wrong place.
+ */
+function seekWhenReady(el, seconds) {
+  if (!Number.isFinite(seconds) || seconds < 0) return;
+  if (el.readyState > 0) {
+    el.currentTime = seconds;
+    return;
+  }
+  const once = () => {
+    el.removeEventListener('loadedmetadata', once);
+    el.currentTime = seconds;
+  };
+  el.addEventListener('loadedmetadata', once);
+}
+
 function readStoredVolume() {
   // Per-viewer convenience only. Private windows and blocked site data make
   // this throw or come back empty, which is not worth an error - it just means
@@ -55,7 +76,22 @@ export function RadioProvider({ children }) {
   // is not allowed, and an <audio> is a side effect besides.
   const [audioReady, setAudioReady] = useState(false);
 
-  const [open, setOpen] = useState(false);
+  // Set by anything that needs to know what is on air - the station page, the
+  // headline ticker. Until something asks, no manifest is fetched, so a reader
+  // who never meets the radio does not pay for it.
+  const [primed, setPrimed] = useState(false);
+  const primeStation = useCallback(() => setPrimed(true), []);
+
+  // Whether this listener is on the broadcast or holding the tape.
+  //
+  // On (the default) the station runs on a clock: tuning in joins it wherever
+  // it has got to, and the position keeps moving while tuned out. That is what
+  // a radio does, and it is wrong for one job - showing somebody how a
+  // bulletin is built. There you have to stop on the opening music, talk over
+  // it, and carry on from that exact second; and a scrub while stopped has to
+  // stay where it was put instead of being overwritten by the clock a second
+  // later. Off, this behaves like any player.
+  const [followBroadcast, setFollowBroadcast] = useState(true);
   const [tenant, setTenantState] = useState('general');
   const [station, setStation] = useState(null);
   // idle | loading | ready | empty | error. `idle` until the panel is first
@@ -86,6 +122,9 @@ export function RadioProvider({ children }) {
   // every render, which would make the context value new every render too
   // and re-render every listener of it for nothing.
   const tracks = useMemo(() => station?.tracks ?? [], [station]);
+  // Everything, furniture included - see segmentsFrom. Only the demo controls
+  // use it, and for the same reason as `tracks`, it is memoised.
+  const segments = useMemo(() => station?.segments ?? [], [station]);
   const index = trackAt(tracks, position);
   const track = index >= 0 ? tracks[index] : null;
 
@@ -94,7 +133,7 @@ export function RadioProvider({ children }) {
   const retry = useCallback(() => setReloadToken((n) => n + 1), []);
 
   useEffect(() => {
-    if (!open || !radioConfigured) return undefined;
+    if (!primed || !radioConfigured) return undefined;
     let cancelled = false;
     setStatus('loading');
     loadStation(tenant)
@@ -109,7 +148,7 @@ export function RadioProvider({ children }) {
         setStatus('error');
       });
     return () => { cancelled = true; };
-  }, [open, tenant, reloadToken]);
+  }, [primed, tenant, reloadToken]);
 
   // ── The element ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -159,7 +198,9 @@ export function RadioProvider({ children }) {
     if (!audioUrl) { el.removeAttribute('src'); el.load(); return; }
     el.src = audioUrl;
     el.preload = 'metadata';
-    setPosition(0);
+    const live = broadcastPositionSec(station);
+    seekWhenReady(el, live);
+    setPosition(live);
     setDuration(station?.durationSec || 0);
     setStreamError(false);
     if (wantPlay.current) {
@@ -175,14 +216,35 @@ export function RadioProvider({ children }) {
     if (el) { el.volume = volume; el.muted = muted; }
   }, [volume, muted, audioReady]);
 
+  // While tuned out, the broadcast carries on without us, and the panel says
+  // so: the position keeps moving and the story name keeps changing. Nothing
+  // is decoding and nothing is being downloaded - this is the clock, not the
+  // audio. Without it a listener who tunes out sees a frozen player and has
+  // every reason to think the station went off air with them.
+  useEffect(() => {
+    if (playing || !station || !followBroadcast) return undefined;
+    const tick = () => setPosition(broadcastPositionSec(station));
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [playing, station, followBroadcast]);
+
   // ── Controls ────────────────────────────────────────────────────────────
   const play = useCallback(() => {
     const el = audioRef.current;
     if (!el || !el.src) return;
     wantPlay.current = true;
     trackEvent('radio_play', { station: tenant });
+    // Tuning in joins the broadcast where it is now, not where this listener
+    // left it. Someone who tunes out for ten minutes and back in has missed
+    // ten minutes, exactly as they would on a real set.
+    if (followBroadcast) {
+      const live = broadcastPositionSec(station);
+      seekWhenReady(el, live);
+      setPosition(live);
+    }
     el.play().catch(() => setPlaying(false));
-  }, [tenant]);
+  }, [tenant, station, followBroadcast]);
 
   const pause = useCallback(() => {
     wantPlay.current = false;
@@ -228,20 +290,22 @@ export function RadioProvider({ children }) {
   }, []);
 
   const value = useMemo(() => ({
-    open, setOpen,
     configured: radioConfigured,
     tenant, setTenant,
     station, status, retry,
-    tracks, track, index,
+    tracks, segments, track, index,
     playing, play, pause, toggle,
+    primeStation,
+    followBroadcast, setFollowBroadcast,
     next, previous,
     position, duration, seek,
     volume, setVolume,
     muted, toggleMute: () => setMuted((m) => !m),
     streamError,
   }), [
-    open, tenant, setTenant, station, status, retry, tracks, track, index,
-    playing, play, pause, toggle, next, previous, position, duration, seek,
+    tenant, setTenant, station, status, retry, tracks, segments, track, index,
+    playing, play, pause, toggle, next, previous, position, duration, seek, primeStation,
+    followBroadcast,
     volume, setVolume, muted, streamError,
   ]);
 

@@ -7,7 +7,9 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { loadStation, stationForParty, trackAt } from './bhimRadio';
+import {
+  broadcastPositionSec, loadStation, partyStation, stationForParty, trackAt,
+} from './bhimRadio';
 
 // A manifest shaped exactly like the one in Bheem Radio's integration guide.
 const MANIFEST = {
@@ -45,27 +47,41 @@ function mockFetch(body, status = 200) {
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe('stationForParty', () => {
+  // One bulletin is being built, so one station is what anyone can be sent to.
+  // The picker went with it, which means a listener routed to a silent station
+  // has no way off it - the case this pins.
+  it('sends everybody to the station that is actually on air', () => {
+    expect(stationForParty('Indian National Congress (INC)')).toBe('general');
+    expect(stationForParty('Samajwadi Party (SP)')).toBe('general');
+    expect(stationForParty('')).toBe('general');
+    expect(stationForParty(null)).toBe('general');
+  });
+});
+
+describe('partyStation', () => {
+  // Kept working while only General is built, so switching the others on is a
+  // line in stationForParty rather than rewriting this from memory.
   it('sends a listener to their own party', () => {
-    expect(stationForParty('Indian National Congress (INC)')).toBe('congress');
-    expect(stationForParty('Samajwadi Party (SP)')).toBe('samajwadi');
+    expect(partyStation('Indian National Congress (INC)')).toBe('congress');
+    expect(partyStation('Samajwadi Party (SP)')).toBe('samajwadi');
   });
 
-  it('never makes BJP someone\'s own station', () => {
+  it("never makes BJP someone's own station", () => {
     // BJP is scraped to be answered, not represented. The signup picker does
     // not offer it either, so a stored value naming it must not select it.
-    expect(stationForParty('Bharatiya Janata Party (BJP)')).toBe('general');
+    expect(partyStation('Bharatiya Janata Party (BJP)')).toBe('general');
   });
 
   it('does not mistake Trinamool Congress for Congress', () => {
     // Substring matching is what resolves the news tenant too, and "Trinamool
     // Congress" contains "congress".
-    expect(stationForParty('Trinamool Congress (TMC)')).toBe('general');
+    expect(partyStation('Trinamool Congress (TMC)')).toBe('general');
   });
 
   it('falls back to General for no party and for parties we have no corpus for', () => {
-    expect(stationForParty('')).toBe('general');
-    expect(stationForParty(null)).toBe('general');
-    expect(stationForParty('Aam Aadmi Party (AAP)')).toBe('general');
+    expect(partyStation('')).toBe('general');
+    expect(partyStation(null)).toBe('general');
+    expect(partyStation('Aam Aadmi Party (AAP)')).toBe('general');
   });
 });
 
@@ -144,5 +160,53 @@ describe('trackAt', () => {
 
   it('is -1 when there are no stories', () => {
     expect(trackAt([], 10)).toBe(-1);
+  });
+});
+
+/* ── broadcastPositionSec ─────────────────────────────────────────────────
+   The station runs on a clock, not on where a listener stopped. These pin
+   that, because the failure is quiet: a wrong epoch still plays audio, it
+   just plays the wrong part of the day, and nobody can tell by looking.
+   ------------------------------------------------------------------------ */
+
+// 2026-10-06 00:00 IST, which is 2026-10-05 18:30 UTC.
+const MIDNIGHT_IST = Date.UTC(2026, 9, 5, 18, 30, 0);
+const station = { date: '2026-10-06', durationSec: 200 };
+
+describe('broadcastPositionSec', () => {
+  it('is at the station ident at midnight', () => {
+    expect(broadcastPositionSec(station, MIDNIGHT_IST)).toBe(0);
+  });
+
+  it('is however many seconds have passed, inside the first loop', () => {
+    expect(broadcastPositionSec(station, MIDNIGHT_IST + 90_000)).toBe(90);
+  });
+
+  it('wraps, because the file is played round all day', () => {
+    // 200s loop: ten minutes in is the start of the fourth pass.
+    expect(broadcastPositionSec(station, MIDNIGHT_IST + 600_000)).toBe(0);
+    expect(broadcastPositionSec(station, MIDNIGHT_IST + 630_000)).toBe(30);
+  });
+
+  it('gives the same answer to every listener, whatever their own timezone', () => {
+    // The argument is an absolute instant, so this is really a guard against
+    // anyone rewriting it with local getHours()/getDate().
+    const instant = Date.parse('2026-10-06T12:00:00+05:30');
+    expect(broadcastPositionSec(station, instant)).toBe((12 * 3600) % 200);
+  });
+
+  it('stays positive for a bulletin dated ahead of the clock', () => {
+    // An early build, or a listener whose clock is behind. `%` alone would
+    // return a negative offset here and the seek would be refused.
+    const pos = broadcastPositionSec(station, MIDNIGHT_IST - 30_000);
+    expect(pos).toBeGreaterThanOrEqual(0);
+    expect(pos).toBe(170);
+  });
+
+  it('falls back to the start when there is nothing to go on', () => {
+    expect(broadcastPositionSec(null, MIDNIGHT_IST)).toBe(0);
+    expect(broadcastPositionSec({ date: '', durationSec: 200 }, MIDNIGHT_IST)).toBe(0);
+    expect(broadcastPositionSec({ date: 'today', durationSec: 200 }, MIDNIGHT_IST)).toBe(0);
+    expect(broadcastPositionSec({ date: '2026-10-06', durationSec: 0 }, MIDNIGHT_IST)).toBe(0);
   });
 });

@@ -19,6 +19,21 @@ export const radioConfigured = Boolean(BASE_URL);
 // (`daily_tenants`), so they are written out rather than fetched: one more
 // request on page load to learn four strings that have not changed would be a
 // poor trade.
+// The symbol each station is known by - the same marks the news carousel puts
+// beside a story, so a listener recognises the station from the feed. General
+// has no party of its own and carries the product mark instead.
+const STATION_ART = {
+  congress:  '/party-symbols/congress.png',   // the open hand
+  samajwadi: '/party-symbols/samajwadi.png',  // the cycle
+  bjp:       '/party-symbols/bjp.png',        // the lotus
+  general:   '/logo.png',
+};
+
+/** Artwork for a station, falling back to the product mark. */
+export function stationArt(slug) {
+  return STATION_ART[slug] || STATION_ART.general;
+}
+
 export const STATIONS = [
   { slug: 'congress',  labelKey: 'radio.stationCongress' },
   { slug: 'samajwadi', labelKey: 'radio.stationSamajwadi' },
@@ -27,14 +42,34 @@ export const STATIONS = [
 ];
 
 /**
- * Which stream to open for a listener, from the party stored on their account.
+ * Which stream to open for a listener.
+ *
+ * Everyone gets General, because General is the only bulletin being built.
+ * The station picker is gone with it: with one station on air, a picker
+ * offered three ways to reach an empty panel - which is exactly what a
+ * Congress account saw, since the party on the account chose the station and
+ * no Congress bulletin exists.
+ *
+ * When the other three are building, the intended order is congress, then
+ * samajwadi, then bjp, then general, and the party on the account chooses
+ * again. The matching that did that is kept below rather than deleted, so
+ * turning it back on is one line and not a re-derivation.
+ */
+export function stationForParty(partyName) {
+  return 'general';
+  // eslint-disable-next-line no-unreachable
+  return partyStation(partyName);
+}
+
+/**
+ * The station a party would listen to, once they are all on air.
  *
  * Matched loosely on the stored name, the same way the news feed resolves a
  * tenant. BJP is deliberately not matched: it is scraped to be answered, never
  * to be someone's own party, and the signup picker does not offer it either.
  * Anyone else - no party, or one we hold no corpus for - gets General.
  */
-export function stationForParty(partyName) {
+export function partyStation(partyName) {
   const name = String(partyName || '').toLowerCase();
   if (name.includes('congress') && !name.includes('trinamool')) return 'congress';
   if (name.includes('samajwadi')) return 'samajwadi';
@@ -73,7 +108,30 @@ export async function loadStation(tenant) {
     audioUrl,
     durationSec: Number(manifest.duration_sec) || 0,
     tracks: tracksFrom(manifest),
+    segments: segmentsFrom(manifest),
   };
+}
+
+/**
+ * Every part of the broadcast, in order, including the ones a listener is not
+ * meant to land on.
+ *
+ * `tracksFrom` deliberately throws away the intro, the headline montage and
+ * the sign-off, because nobody wants "next" to stop on a nine-second ident.
+ * This keeps them, for the one case where stepping through the furniture is
+ * the point: showing somebody how a bulletin is put together.
+ */
+export function segmentsFrom(manifest) {
+  const segments = Array.isArray(manifest?.segments) ? manifest.segments : [];
+  return segments
+    .filter((s) => s && Number.isFinite(Number(s.start_sec)))
+    .map((s, i) => ({
+      id: String(s.story_id || `${manifest.date || 'day'}-seg-${i}`),
+      kind: String(s.kind || 'segment'),
+      title: String(s.title || '').trim(),
+      startSec: Number(s.start_sec),
+      endSec: Number.isFinite(Number(s.end_sec)) ? Number(s.end_sec) : null,
+    }));
 }
 
 /**
@@ -98,6 +156,45 @@ function tracksFrom(manifest) {
       endSec: Number.isFinite(Number(s.end_sec)) ? Number(s.end_sec) : null,
       tenant: s.tenant || manifest.tenant || '',
     }));
+}
+
+// India has one offset and no daylight saving, so a fixed number is correct
+// here and a timezone library would buy nothing.
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+
+/**
+ * Where the broadcast has got to right now, in seconds into the loop.
+ *
+ * A radio station does not wait for you. The day's bulletin is one file played
+ * round and round from midnight, so what you hear when you tune in is decided
+ * by the clock, not by where you stopped listening yesterday. That is the
+ * whole difference between a station and a podcast, and it is the reason this
+ * is computed rather than remembered.
+ *
+ * Midnight is IST for every listener, not each listener's own midnight: two
+ * people tuning in at the same moment have to hear the same sentence, or it is
+ * not a broadcast. The offsets in the manifest are relative to the file, so
+ * nothing else here needs to know about time zones.
+ *
+ * Returns 0 when there is nothing on air or the manifest carries no usable
+ * date, which lands the listener at the station ident - the right place to
+ * start when we cannot tell what time the broadcast thinks it is.
+ */
+export function broadcastPositionSec(station, nowMs = Date.now()) {
+  const duration = Number(station?.durationSec);
+  if (!Number.isFinite(duration) || duration <= 0) return 0;
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(station?.date || ''));
+  if (!match) return 0;
+
+  const [, y, m, d] = match;
+  const midnightIst = Date.UTC(Number(y), Number(m) - 1, Number(d)) - IST_OFFSET_MS;
+  const elapsedSec = (nowMs - midnightIst) / 1000;
+  if (!Number.isFinite(elapsedSec)) return 0;
+
+  // Two modulos: a bulletin dated tomorrow (a clock that is behind, or a build
+  // that ran early) gives a negative elapsed time, and `%` keeps the sign.
+  return ((elapsedSec % duration) + duration) % duration;
 }
 
 /** The track playing at `seconds`, or -1 before the first story starts. */
