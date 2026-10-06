@@ -9,6 +9,7 @@ import {
   User,
   Settings,
   Bot,
+  Radio,
   X,
   LogOut,
   Sparkles,
@@ -27,6 +28,7 @@ const PRIMARY = { id: 'generate', labelKey: 'nav.generate', Icon: Sparkles, rout
 const NAV = [
   { id: 'dashboard',  labelKey: 'nav.dashboard',        Icon: LayoutGrid },
   { id: 'bheembot',   labelKey: 'dash.bheembot',         Icon: Bot, route: '/bhimbot' },
+  { id: 'radio',      labelKey: 'radio.title',            Icon: Radio, route: '/bhimradio' },
   { id: 'searches',   labelKey: 'nav.postHistory',     Icon: Search, route: '/posts' },
   { id: 'prefs',      labelKey: 'nav.preferences',      Icon: SlidersHorizontal, route: '/preferences' },
   { id: 'saved',      labelKey: 'nav.savedPrompts',    Icon: Bookmark, soon: true },

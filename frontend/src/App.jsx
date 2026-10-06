@@ -4,7 +4,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CurtainProvider } from './context/CurtainContext';
 import { RadioProvider } from './context/RadioContext';
-import BhimRadioPlayer from './components/radio/BhimRadioPlayer';
+import RadioNowPlayingBar from './components/radio/RadioNowPlayingBar';
 import { usePageViews } from './analytics/usePageViews';
 import ProtectedRoute   from './components/ProtectedRoute';
 
@@ -33,6 +33,7 @@ const MusicGenerationStudio = lazy(() => import('./pages/MusicGenerationStudio')
 const Preferences = lazy(() => import('./pages/Preferences'));
 const PostHistory = lazy(() => import('./pages/PostHistory'));
 const BheemBot = lazy(() => import('./pages/BheemBot'));
+const BhimRadio = lazy(() => import('./pages/BhimRadio'));
 import CustomCursor        from './components/CustomCursor';
 import ScrollProgress      from './components/ScrollProgress';
 import OpeningSplash       from './components/OpeningSplash';
@@ -173,6 +174,9 @@ export default function App() {
             <Route path="/bhimbot" element={
               <ProtectedRoute><BheemBot /></ProtectedRoute>
             } />
+            <Route path="/bhimradio" element={
+              <ProtectedRoute><BhimRadio /></ProtectedRoute>
+            } />
             {/* The page was /bheembot until the spelling was corrected. Anyone
                 holding that link - a bookmark, a shared message - still lands
                 on the page rather than the catch-all redirect to home. */}
@@ -182,10 +186,9 @@ export default function App() {
           </Routes>
           </Suspense>
           </PageTransition>
-          {/* Last child, so the panel paints over the page. It portals to
-              document.body anyway, but source order still decides which of two
-              portalled layers wins. */}
-          <BhimRadioPlayer />
+          {/* Shown where the panel is not, so sound is never coming out of a
+              page with no visible way to stop it. */}
+          <RadioNowPlayingBar />
         </RadioProvider>
         </AuthProvider>
         </CurtainProvider>
