@@ -148,3 +148,48 @@ def test_the_stream_is_written_under_radio(monkeypatch):
     import os
     assert os.environ["BHEEM_STORAGE_BACKEND"] == "s3"
     assert os.environ["BHEEM_DAILY_S3_PREFIX"] == "radio/"
+
+
+# ── the anchor's voice ──────────────────────────────────────────────────────
+
+def test_the_voice_mapping_is_sent_whole(monkeypatch):
+    """
+    A dict setting read from the environment REPLACES pydantic's default; it
+    does not merge. Sending only {"sarvam": ...} would leave every other
+    provider without a speaker, so a day when Sarvam is down would fail at the
+    fallback instead of quietly carrying on - which is the whole point of
+    having one.
+    """
+    import json
+
+    from backend.worker import build_radio
+
+    voices = json.loads(build_radio.DEFAULTS["BHEEM_TTS_VOICES"])
+
+    assert voices["sarvam"] == {"hi": "ritu", "en": "ritu"}
+    # The fallback provider must still have a voice of its own.
+    assert voices["gemini"]["hi"], "the Gemini fallback lost its speaker"
+    assert set(voices) >= {"sarvam", "gemini", "openai", "minimax", "fake"}
+
+
+def test_sarvam_speaker_names_are_lowercase():
+    """Sarvam's catalogue is case-sensitive; "Shreya" is a 4xx, not a voice."""
+    import json
+
+    from backend.worker import build_radio
+
+    for lang, name in json.loads(build_radio.DEFAULTS["BHEEM_TTS_VOICES"])["sarvam"].items():
+        assert name == name.lower(), f"{lang}: {name!r} must be lowercase"
+
+
+def test_expressiveness_stays_inside_what_the_api_accepts():
+    """
+    Bheem Radio's config documents the range as 0.01-2.0. The live API answers
+    400 to anything above 1.0 - measured, not read. A value over the cap would
+    fail every bulletin at the first narration, so it is pinned here rather
+    than discovered in a build.
+    """
+    from backend.worker import build_radio
+
+    temperature = float(build_radio.DEFAULTS["BHEEM_SARVAM_TEMPERATURE"])
+    assert 0.01 <= temperature <= 1.0, "Sarvam rejects expressiveness above 1.0"

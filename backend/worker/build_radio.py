@@ -92,6 +92,32 @@ DEFAULTS = {
         "source_name": "source_name",
         "source_url": "source_url",
     }),
+    # The anchor's voice. Whole dict again, and for the same reason as
+    # BHEEM_MONGO_FIELDS above: sending only {"sarvam": ...} would drop every
+    # other provider's voice, so the Gemini fallback would have no speaker and
+    # a day without Sarvam would fail instead of degrading.
+    #
+    # The one line that differs from their default is `sarvam`: shreya rather
+    # than shubh. Sarvam's speaker names are case-sensitive and lowercase.
+    #
+    # Pinning the rest has a cost worth naming: if Bheem Radio changes a
+    # default voice upstream we keep the old one until this is edited.
+    "BHEEM_TTS_VOICES": json.dumps({
+        "minimax": {"hi": "English_Persuasive_Man", "en": "English_Persuasive_Man"},
+        "selfhosted": {"hi": "agastya", "en": "agastya"},
+        "gemini": {"hi": "Charon", "en": "Charon"},
+        "sarvam": {"hi": "ritu", "en": "ritu"},         # <- ours
+        "openai": {"hi": "onyx", "en": "onyx"},
+        "fake": {"hi": "tone", "en": "tone"},
+    }),
+    # Delivery, chosen by ear from a set of auditions rather than from the
+    # catalogue: ritu read faster and with more lift than the rest.
+    #
+    # Expressiveness is at its ceiling. Bheem Radio's own config says the range
+    # is 0.01-2.0; the live API rejects anything above 1.0, so 1.0 is as lively
+    # as a stock voice gets and the reader has to supply the rest.
+    "BHEEM_SARVAM_PACE": "1.22",
+    "BHEEM_SARVAM_TEMPERATURE": "1.0",
     # BHEEM_MONGO_LIVE_STATUSES is deliberately not set. Our documents have no
     # status field, and Bheem's default of [] already means "no filter". Any
     # value here would match nothing and build four empty bulletins.
