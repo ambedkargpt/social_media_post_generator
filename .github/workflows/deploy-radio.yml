@@ -73,6 +73,12 @@ jobs:
       #
       # One retry. The content-addressed cache makes it cheap: a retry only
       # pays for whatever failed the first time.
+      #
+      # SARVAM_API_KEY is listed with the rest because build_radio only reaches
+      # for Bulbul v3 when it sees that key, and falls back to a Gemini stock
+      # voice when it does not. Leaving it out does not fail the build - it
+      # quietly ships the wrong voice, with one warning line nobody reads. The
+      # SSM parameter must exist before this runs, or the job cannot start.
       - name: Register Batch job definition
         run: |
           ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
@@ -104,7 +110,8 @@ jobs:
               \"secrets\": [
                 {\"name\": \"MONGODB_URI\",      \"valueFrom\": \"${SSM}/MONGODB_URI\"},
                 {\"name\": \"DEEPSEEK_API_KEY\", \"valueFrom\": \"${SSM}/DEEPSEEK_API_KEY\"},
-                {\"name\": \"GEMINI_API_KEY\",   \"valueFrom\": \"${SSM}/GEMINI_API_KEY\"}
+                {\"name\": \"GEMINI_API_KEY\",   \"valueFrom\": \"${SSM}/GEMINI_API_KEY\"},
+                {\"name\": \"SARVAM_API_KEY\",   \"valueFrom\": \"${SSM}/SARVAM_API_KEY\"}
               ],
               \"networkConfiguration\": {
                 \"assignPublicIp\": \"ENABLED\"
