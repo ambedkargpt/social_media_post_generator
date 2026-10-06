@@ -42,7 +42,7 @@ export default function Home({ splashDone = true }) {
       <div className="section-seam" aria-hidden="true" />
 
       <RevealOnScroll delayMs={60}>
-        <FourIdeasSection />
+        <KnowledgeSection />
       </RevealOnScroll>
 
       <RevealOnScroll delayMs={60}>
@@ -56,7 +56,7 @@ export default function Home({ splashDone = true }) {
       <div className="section-seam" aria-hidden="true" />
 
       <RevealOnScroll delayMs={60}>
-        <KnowledgeSection />
+        <FourIdeasSection />
       </RevealOnScroll>
 
       <RevealOnScroll delayMs={60}>
