@@ -5,7 +5,6 @@ import logoSrc from '../assets/images/logo-animation.webp';
 import { useAuth } from '../context/AuthContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../i18n/index.jsx';
-import { useRadio } from '../context/RadioContext';
 
 // action: 'scroll' (default) | 'bheembot' | 'dashboard' | 'radio' | 'section:<id>'
 const navItems = [
@@ -22,7 +21,6 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser } = useAuth();
-  const { setOpen: setRadioOpen } = useRadio();
   const [active,   setActive]   = useState('home');
   const [menuOpen, setMenuOpen] = useState(false);
   const headerRef  = useRef(null);
@@ -84,8 +82,17 @@ export default function Navbar() {
     setActive(item.sectionId);
     setMenuOpen(false);
 
+    // The radio lives behind the dashboard shell, so a listener has to be
+    // signed in. Opening the floating player straight from the landing page
+    // let a visitor hear a bulletin without ever having an account, which is
+    // the one thing the station is not for.
     if (item.action === 'radio') {
-      setRadioOpen(true);
+      if (currentUser) {
+        navigate('/bhimradio');
+      } else {
+        sessionStorage.setItem('auth_redirect', '/bhimradio');
+        navigate('/login');
+      }
       return;
     }
 
