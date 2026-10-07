@@ -155,6 +155,11 @@ function tracksFrom(manifest) {
       startSec: Number(s.start_sec),
       endSec: Number.isFinite(Number(s.end_sec)) ? Number(s.end_sec) : null,
       tenant: s.tenant || manifest.tenant || '',
+      // The narration itself, which the manifest carries. It is what the
+      // transcript shows and what the word highlight runs over - the words a
+      // listener is hearing, not a summary written separately from them.
+      text: String(s.text || '').trim(),
+      storyType: String(s.story_type || '').trim(),
     }));
 }
 

@@ -216,6 +216,21 @@ export function RadioProvider({ children }) {
     if (el) { el.volume = volume; el.muted = muted; }
   }, [volume, muted, audioReady]);
 
+  // The clock, ticking on its own four times a second.
+  //
+  // Separate from `position`, which follows the audio element: the panel has
+  // to keep moving for someone who is not listening at all, and a tape that
+  // scrolls at eleven pixels a second needs finer resolution than `timeupdate`
+  // fires at. Nothing here touches the audio.
+  const [broadcastNow, setBroadcastNow] = useState(0);
+  useEffect(() => {
+    if (!station) return undefined;
+    const tick = () => setBroadcastNow(broadcastPositionSec(station));
+    tick();
+    const timer = setInterval(tick, 250);
+    return () => clearInterval(timer);
+  }, [station]);
+
   // While tuned out, the broadcast carries on without us, and the panel says
   // so: the position keeps moving and the story name keeps changing. Nothing
   // is decoding and nothing is being downloaded - this is the clock, not the
@@ -294,6 +309,7 @@ export function RadioProvider({ children }) {
     tenant, setTenant,
     station, status, retry,
     tracks, segments, track, index,
+    broadcastNow,
     playing, play, pause, toggle,
     primeStation,
     followBroadcast, setFollowBroadcast,
@@ -303,7 +319,7 @@ export function RadioProvider({ children }) {
     muted, toggleMute: () => setMuted((m) => !m),
     streamError,
   }), [
-    tenant, setTenant, station, status, retry, tracks, segments, track, index,
+    tenant, setTenant, station, status, retry, tracks, segments, track, index, broadcastNow,
     playing, play, pause, toggle, next, previous, position, duration, seek, primeStation,
     followBroadcast,
     volume, setVolume, muted, streamError,

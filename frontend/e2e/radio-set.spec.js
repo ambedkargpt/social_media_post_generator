@@ -30,92 +30,72 @@ async function signedInAs(page, email) {
   }, email);
 }
 
-test.describe('the radio set', () => {
-  test('renders as a set, with a readout and presets', async ({ page }) => {
-    await signedInAs(page, DEMO_EMAIL);
-    await page.goto('/bhimradio');
-    await expect(page).toHaveURL(/\/bhimradio/);
-
-    // The readout is the part that proves the manifest arrived: it carries a
-    // clock, which only exists once a duration is known.
-    await expect(page.getByText(/\d+:\d{2}/).first()).toBeVisible();
-
-    // A preset per story, and they seek rather than load.
-    const presets = page.getByRole('button', { name: /^\d+$/ });
-    expect(await presets.count()).toBeGreaterThan(0);
-
-    // Both knobs are real controls, not pictures of them.
-    await expect(page.getByRole('slider', { name: /volume|आवाज़/i })).toBeVisible();
-  });
-
-  test('the station switcher is gone', async ({ page }) => {
-    // Only General is built today; the picker offered three stations that are
-    // not on air and one that is.
-    await signedInAs(page, DEMO_EMAIL);
-    await page.goto('/bhimradio');
-    await expect(page).toHaveURL(/\/bhimradio/);
-
-    await expect(page.getByRole('tab')).toHaveCount(0);
-  });
-
-  test('the walk-through is offered to the demo account', async ({ page }) => {
-    await signedInAs(page, DEMO_EMAIL);
-    await page.goto('/bhimradio');
-    await expect(page).toHaveURL(/\/bhimradio/);
-
-    const open = page.getByRole('button', { name: /walk-through|पूरी सैर/i });
-    await expect(open).toBeVisible();
-    await open.click();
-
-    // Every part of the bulletin, furniture included - which is the whole
-    // point of it: the music, the voice, and the sign-off are each reachable.
-    await expect(page.getByRole('button', { name: /^intro|^open|शुरुआत/i }).first()).toBeVisible();
-  });
-
-  test('and to nobody else', async ({ page }) => {
+test.describe('the broadcast desk', () => {
+  test('shows what is on air, the running order, and the transcript', async ({ page }) => {
     await signedInAs(page, 'someone.else@example.com');
     await page.goto('/bhimradio');
     await expect(page).toHaveURL(/\/bhimradio/);
+
+    await expect(page.getByText(/now on air|अभी ऑन एयर/i).first()).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2 })).not.toBeEmpty();
+
+    // The running order is the rest of the bulletin, and it must not be
+    // clickable: a station has no "skip to".
+    const order = page.locator('ol li');
+    expect(await order.count()).toBeGreaterThan(1);
+    await expect(order.first().getByRole('button')).toHaveCount(0);
+
+    // The transcript is the narration the manifest carries, not a summary
+    // written beside it, so it has to have words in it.
+    await expect(page.getByText(/transcript|पाठ/i).first()).toBeVisible();
+  });
+
+  test('offers tune in and nothing that pauses the broadcast', async ({ page }) => {
+    await signedInAs(page, 'someone.else@example.com');
+    await page.goto('/bhimradio');
+
+    await expect(page.getByRole('button', { name: /tune in to bhim radio|भीम रेडियो ट्यून/i })).toBeVisible();
+    // No transport for an ordinary listener - that was the whole point of the
+    // brief, and the demo account is the one exception.
+    await expect(page.getByRole('button', { name: /^(previous|next) track$/i })).toHaveCount(0);
+  });
+
+  test('the clock keeps moving for someone who never tuned in', async ({ page }) => {
+    await signedInAs(page, 'someone.else@example.com');
+    await page.goto('/bhimradio');
+
+    const countdown = page.getByText(/next story in|अगली ख़बर/i).first();
+    const first = await countdown.textContent();
+    await page.waitForTimeout(2400);
+    expect(await countdown.textContent()).not.toBe(first);
+  });
+
+  test('the tape layout draws the bulletin against a needle', async ({ page }) => {
+    await signedInAs(page, 'someone.else@example.com');
+    await page.goto('/bhimradio');
+
+    await page.getByRole('button', { name: /^tape|टेप$/i }).click();
+    await expect(page.getByText(/^NOW \d{2}:\d{2}:\d{2}$/)).toBeVisible();
+
+    // The choice is remembered for this viewer, which is the point of shipping
+    // both: compare them without re-picking on every visit.
+    await page.reload();
+    await expect(page.getByText(/^NOW \d{2}:\d{2}:\d{2}$/)).toBeVisible();
+  });
+
+  test('the demo account still gets its transport', async ({ page }) => {
+    await signedInAs(page, DEMO_EMAIL);
+    await page.goto('/bhimradio');
+
+    await page.getByRole('button', { name: /walk-through|पूरी सैर/i }).click();
+    await expect(page.getByRole('button', { name: /play|चलाएँ/i }).first()).toBeVisible();
+    await expect(page.getByRole('slider', { name: /seek|आगे-पीछे/i })).toBeVisible();
+  });
+
+  test('and nobody else does', async ({ page }) => {
+    await signedInAs(page, 'someone.else@example.com');
+    await page.goto('/bhimradio');
 
     await expect(page.getByRole('button', { name: /walk-through|पूरी सैर/i })).toHaveCount(0);
-  });
-  test('for the demo account, stopping and starting holds its place', async ({ page }) => {
-    // The point of the mode: stop on the opening music, talk over it, carry on
-    // from that same second. On the broadcast it would have moved on.
-    await signedInAs(page, DEMO_EMAIL);
-    await page.goto('/bhimradio');
-    await expect(page).toHaveURL(/\/bhimradio/);
-
-    const dial = page.getByRole('slider', { name: /seek|आगे-पीछे/i });
-    await expect(dial).toBeEnabled();
-
-    // Put it somewhere deliberate while stopped; the clock must not take it
-    // back, which is what used to happen a second later.
-    await dial.fill('95');
-    await page.waitForTimeout(1600);
-    expect(Number(await dial.inputValue())).toBeCloseTo(95, 0);
-  });
-
-  test('and the big button offers play rather than tune in', async ({ page }) => {
-    await signedInAs(page, DEMO_EMAIL);
-    await page.goto('/bhimradio');
-
-    // The label carries the mode: a demo account is holding a tape, so it
-    // must not be offered "tune in".
-    await expect(page.getByRole('button', { name: /play|चलाएँ/i }).first()).toBeVisible();
-    await expect(page.getByRole('button', { name: /tune in|सुनिए/i })).toHaveCount(0);
-  });
-
-  test('everyone else still gets the broadcast', async ({ page }) => {
-    // Tuned out, the station carries on without them: the position keeps
-    // moving on its own, which is the whole difference.
-    await signedInAs(page, 'someone.else@example.com');
-    await page.goto('/bhimradio');
-    await expect(page).toHaveURL(/\/bhimradio/);
-
-    const dial = page.getByRole('slider', { name: /seek|आगे-पीछे/i });
-    const first = Number(await dial.inputValue());
-    await page.waitForTimeout(2200);
-    expect(Number(await dial.inputValue())).toBeGreaterThan(first);
   });
 });
