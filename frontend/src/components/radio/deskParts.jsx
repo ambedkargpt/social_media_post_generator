@@ -1,7 +1,7 @@
 import { Radio } from 'lucide-react';
 
 import { useI18n } from '../../i18n/index.jsx';
-import { ACCENT, ACCENT_HOVER, INK, MUTED, RULE, R_CTRL, mmss } from './radioTokens';
+import { ACCENT, ACCENT_HOVER, INK, MUTED, RULE, mmss } from './radioTokens';
 
 /* ── pieces both broadcast layouts are built from ─────────────────────────
    Flat surfaces, no radius, 2px rules between regions. The two layouts differ
@@ -62,11 +62,7 @@ export function Transcript({ text, offsetSec, durationSec, listening, size = 23 
             key={`${i}-${word}`}
             style={
               i === current
-                ? {
-                    background: '#1a3a80', color: '#fff',
-                    padding: '1px 4px', borderRadius: 5,
-                    boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone',
-                  }
+                ? { background: '#1a3a80', color: '#fff', padding: '0 2px' }
                 : i < current
                   ? { color: INK }
                   : { color: '#5a6789' }
@@ -100,7 +96,6 @@ export function SignalMeter({ active, bars = 28 }) {
           className={active ? 'bhim-signal-bar' : ''}
           style={{
             width: 3,
-            borderRadius: 2,
             height: active ? undefined : 3,
             background: active ? ACCENT_HOVER : RULE,
             animationDelay: `${(i % 7) * 0.13}s`,
@@ -126,13 +121,9 @@ export function TuneButton({ listening, onClick, disabled, width = 220, height =
       style={{
         width, height,
         display: 'flex', alignItems: 'center', gap: 12,
-        padding: '0 22px',
-        borderRadius: 14,
-        border: listening ? `1px solid ${ACCENT}` : '1px solid transparent',
-        background: listening
-          ? 'rgba(29,122,252,0.10)'
-          : 'linear-gradient(135deg, #1a5fff 0%, #7b3fff 100%)',
-        boxShadow: listening ? 'none' : '0 10px 28px rgba(26,95,255,0.32)',
+        padding: '0 20px',
+        border: listening ? `2px solid ${ACCENT}` : '2px solid transparent',
+        background: listening ? 'transparent' : ACCENT,
         color: listening ? ACCENT_HOVER : '#fff',
         font: '600 15px/1 var(--font-body, Inter), system-ui, sans-serif',
         letterSpacing: '0.02em',
@@ -141,7 +132,7 @@ export function TuneButton({ listening, onClick, disabled, width = 220, height =
       }}
     >
       {listening
-        ? <span style={{ width: 10, height: 10, borderRadius: 3, background: ACCENT_HOVER, flex: 'none' }} />
+        ? <span style={{ width: 10, height: 10, background: ACCENT_HOVER, flex: 'none' }} />
         : <Radio size={18} strokeWidth={2.2} style={{ flex: 'none' }} />}
       <span style={{ textAlign: 'left' }}>
         {listening ? t('radio.tuneOff') : t('radio.tuneIn')}
@@ -172,8 +163,7 @@ export function VolumeControl({ volume, onChange, listening, disabled }) {
         disabled={disabled}
         aria-label={t('radio.volume')}
         style={{
-          width: 120, height: 4, appearance: 'none', cursor: 'pointer',
-          borderRadius: 999,
+          width: 120, height: 3, appearance: 'none', cursor: 'pointer',
           background: `linear-gradient(90deg, ${ACCENT} ${pct}, ${RULE} ${pct})`,
         }}
       />
@@ -213,10 +203,7 @@ export function StatusLine({ listening, nextInSec, progress }) {
           {t('radio.nextIn', { time: mmss(nextInSec) })}
         </span>
       </div>
-      <div
-        style={{ height: 4, background: RULE, borderRadius: 999, overflow: 'hidden' }}
-        aria-hidden="true"
-      >
+      <div style={{ height: 3, background: RULE }} aria-hidden="true">
         <div style={{ height: '100%', width: `${progress * 100}%`, background: ACCENT }} />
       </div>
     </div>

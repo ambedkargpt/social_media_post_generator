@@ -12,34 +12,6 @@ export const ACCENT = '#1d7afc';
 export const ACCENT_HOVER = '#3f9fff';
 export const DEEP = '#05081a';
 
-/* The dashboard's own surfaces, so this page belongs to the product rather
-   than to the brief it was drawn from. The values are index.css's .dash-panel,
-   .dash-tile and .dash-inset; kept here as objects because these components
-   style inline, and duplicated values would drift from the stylesheet. */
-export const BORDER = 'rgba(60, 85, 155, 0.22)';
-export const BORDER_SOFT = 'rgba(60, 85, 155, 0.18)';
-
-export const PANEL = {
-  borderRadius: 16,
-  border: `1px solid ${BORDER}`,
-  background: 'linear-gradient(180deg, rgba(16,25,55,0.8) 0%, rgba(10,16,38,0.8) 100%)',
-  boxShadow: 'inset 0 1px 0 rgba(150,195,255,0.05)',
-};
-
-export const TILE = {
-  borderRadius: 14,
-  border: `1px solid ${BORDER_SOFT}`,
-  background: 'linear-gradient(180deg, rgba(14,23,52,0.7) 0%, rgba(9,15,36,0.7) 100%)',
-};
-
-// No border: nested inside a panel, an outline reads as a card in a card.
-export const INSET = {
-  borderRadius: 12,
-  background: 'rgba(255,255,255,0.022)',
-};
-
-export const R_CTRL = 10;
-
 /** Seconds as m:ss. */
 export function mmss(seconds) {
   if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
