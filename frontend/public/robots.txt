@@ -1,0 +1,25 @@
+# AmbedkarGPT — https://www.ambedkargpt.in
+#
+# Without this file the SPA answers /robots.txt with index.html, which Search
+# Console reports as "Valid" because it is a 200 - it just carries no rules.
+
+User-agent: *
+Allow: /
+
+# Behind a login, or a step inside one. Indexed, they put a sign-in form in
+# search results where a page about the product should be.
+Disallow: /login
+Disallow: /signup
+Disallow: /otp
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /questionnaire
+Disallow: /profile-setup
+Disallow: /dashboard
+Disallow: /generate
+Disallow: /posts
+Disallow: /preferences
+Disallow: /bhimbot
+Disallow: /bhimradio
+
+Sitemap: https://www.ambedkargpt.in/sitemap.xml
