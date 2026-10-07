@@ -182,22 +182,24 @@ export default function RadioDesk({
       </footer>
 
       <style>{`
+        /* Two columns and a border, not three columns with a generated one
+           in the middle: a ::before is a grid item, and pinning it to column
+           two left the real children to auto-place around it - which put the
+           story in the right-hand column and pushed the running order off
+           the row entirely. */
         .bhim-desk-body {
           display: grid;
-          grid-template-columns: 1.45fr 2px 1fr;
+          grid-template-columns: 1.45fr 1fr;
+          align-items: start;
         }
-        .bhim-desk-body::before {
-          content: '';
-          grid-column: 2;
-          background: ${RULE};
-        }
-        .bhim-desk-body > :nth-child(2) { grid-column: 3; }
+        .bhim-desk-body > section { border-right: 2px solid ${RULE}; }
         @media (max-width: 1023px) {
           .bhim-desk-body { grid-template-columns: 1fr; }
-          .bhim-desk-body::before { display: none; }
-          .bhim-desk-body > section { padding-right: 0 !important; }
+          .bhim-desk-body > section {
+            border-right: none;
+            padding-right: 0 !important;
+          }
           .bhim-desk-order {
-            grid-column: 1 !important;
             padding-left: 0 !important;
             border-top: 2px solid ${RULE};
           }

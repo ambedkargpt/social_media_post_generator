@@ -98,4 +98,25 @@ test.describe('the broadcast desk', () => {
 
     await expect(page.getByRole('button', { name: /walk-through|पूरी सैर/i })).toHaveCount(0);
   });
+  test('the story sits left of the running order, both on screen', async ({ page }) => {
+    // The first build put a generated element in the middle grid column. It
+    // is a grid item, so the real children auto-placed around it: the story
+    // landed in the right-hand column and the running order left the row.
+    // Geometry rather than class names, because the classes were all correct.
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await signedInAs(page, 'someone.else@example.com');
+    await page.goto('/bhimradio');
+    await expect(page).toHaveURL(/\/bhimradio/);
+
+    const story = await page.locator('.bhim-desk-body > section').boundingBox();
+    const order = await page.locator('.bhim-desk-order').boundingBox();
+
+    expect(story.x).toBeLessThan(order.x);          // story on the left
+    // 1.45fr against 1fr: the ratio is what proves the columns took, and
+    // unlike an absolute x it does not depend on how wide the sidebar is.
+    expect(story.width).toBeGreaterThan(order.width);
+    expect(order.x + order.width).toBeLessThanOrEqual(1441);
+    // Side by side, not stacked.
+    expect(Math.abs(story.y - order.y)).toBeLessThan(80);
+  });
 });
