@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useRadio } from '../context/RadioContext';
 import RadioDesk from '../components/radio/RadioDesk';
 import RadioTape from '../components/radio/RadioTape';
-import { INK, MUTED, RULE, SURFACE, mmss } from '../components/radio/radioTokens';
+import { BORDER, INK, INSET, MUTED, mmss } from '../components/radio/radioTokens';
 import { useI18n } from '../i18n/index.jsx';
 
 /* ── the station ──────────────────────────────────────────────────────────
@@ -139,10 +139,14 @@ export default function BhimRadioPage() {
               onClick={() => setLayout(id)}
               aria-pressed={layout === id}
               style={{
-                padding: '6px 14px',
-                border: `2px solid ${layout === id ? '#1d7afc' : RULE}`,
-                background: layout === id ? '#1d7afc' : 'transparent',
+                padding: '7px 16px',
+                borderRadius: 999,
+                border: `1px solid ${layout === id ? 'transparent' : BORDER}`,
+                background: layout === id
+                  ? 'linear-gradient(135deg, #1a5fff 0%, #7b3fff 100%)'
+                  : 'rgba(255,255,255,0.022)',
                 color: layout === id ? '#fff' : MUTED,
+                boxShadow: layout === id ? '0 6px 18px rgba(26,95,255,0.30)' : 'none',
                 font: '600 11px/1 Inter, system-ui, sans-serif',
                 letterSpacing: '0.12em', textTransform: 'uppercase',
                 cursor: 'pointer',
@@ -157,8 +161,9 @@ export default function BhimRadioPage() {
               type="button"
               onClick={() => setShowDemo((v) => !v)}
               style={{
-                marginLeft: 'auto', padding: '6px 14px',
-                border: `2px solid ${RULE}`, background: 'transparent', color: '#6b9fff',
+                marginLeft: 'auto', padding: '7px 16px', borderRadius: 999,
+                border: `1px solid ${BORDER}`,
+                background: 'rgba(255,255,255,0.022)', color: '#6b9fff',
                 font: '600 11px/1 Inter, system-ui, sans-serif',
                 letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer',
               }}
@@ -184,8 +189,8 @@ export default function BhimRadioPage() {
                   onClick={retry}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 6,
-                    border: `2px solid ${RULE}`, background: SURFACE, color: INK,
-                    padding: '6px 12px', font: '600 12px/1 Inter, sans-serif', cursor: 'pointer',
+                    border: `1px solid ${BORDER}`, ...INSET, color: INK,
+                    padding: '7px 14px', font: '600 12px/1 Inter, sans-serif', cursor: 'pointer',
                   }}
                 >
                   <RotateCw size={12} />{t('radio.retry')}
@@ -213,7 +218,7 @@ export default function BhimRadioPage() {
             because that account is also off the clock - stepping through a
             broadcast that keeps moving would be unusable. */}
         {isDemo && showDemo && onAir && (
-          <div style={{ borderTop: `2px solid ${RULE}`, padding: '18px 0 0', marginTop: 20 }}>
+          <div style={{ borderTop: `1px solid ${BORDER}`, padding: '18px 0 0', marginTop: 20 }}>
             <p style={{
               margin: '0 0 12px', font: '600 11px/1 Inter, sans-serif',
               letterSpacing: '0.12em', textTransform: 'uppercase', color: MUTED,
@@ -228,8 +233,8 @@ export default function BhimRadioPage() {
                   onClick={() => seek(s.startSec)}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 8,
-                    border: `2px solid ${RULE}`, background: SURFACE, color: INK,
-                    padding: '8px 12px', font: '600 12px/1 Inter, sans-serif', cursor: 'pointer',
+                    border: `1px solid ${BORDER}`, ...INSET, color: INK,
+                    padding: '9px 14px', font: '600 12px/1 Inter, sans-serif', cursor: 'pointer',
                   }}
                 >
                   {t(`radio.kind.${s.kind}`)}
@@ -243,8 +248,10 @@ export default function BhimRadioPage() {
                 onClick={toggle}
                 style={{
                   marginLeft: 8,
-                  border: '2px solid #1d7afc', background: '#1d7afc', color: '#fff',
-                  padding: '8px 16px', font: '600 12px/1 Inter, sans-serif', cursor: 'pointer',
+                  border: '1px solid transparent', borderRadius: 10, color: '#fff',
+                  background: 'linear-gradient(135deg, #1a5fff 0%, #7b3fff 100%)',
+                  boxShadow: '0 8px 20px rgba(26,95,255,0.30)',
+                  padding: '9px 18px', font: '600 12px/1 Inter, sans-serif', cursor: 'pointer',
                 }}
               >
                 {playing ? t('radio.pause') : t('radio.play')}

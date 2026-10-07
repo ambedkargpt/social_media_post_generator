@@ -2,7 +2,9 @@ import { useI18n } from '../../i18n/index.jsx';
 import {
   Label, SignalMeter, StatusLine, Transcript, TuneButton, VolumeControl,
 } from './deskParts.jsx';
-import { ACCENT, ACCENT_HOVER, DEEP, INK, MUTED, RULE, SURFACE, istClock } from './radioTokens';
+import {
+  ACCENT, ACCENT_HOVER, BORDER, INK, INSET, MUTED, PANEL, RULE, istClock,
+} from './radioTokens';
 
 /**
  * Layout 2b - the broadcast tape.
@@ -64,14 +66,14 @@ export default function RadioTape({
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
+    <div style={{ ...PANEL, display: 'flex', flexDirection: 'column', minHeight: '100%', overflow: 'hidden' }}>
 
       {/* ── masthead ── */}
       <header
         style={{
           display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
           gap: 24, flexWrap: 'wrap',
-          padding: '0 0 20px', borderBottom: `2px solid ${RULE}`,
+          padding: '24px', borderBottom: `1px solid ${BORDER}`,
         }}
       >
         <div style={{ minWidth: 0 }}>
@@ -109,7 +111,7 @@ export default function RadioTape({
       </header>
 
       {/* ── now ── */}
-      <div className="bhim-tape-now" style={{ padding: '24px 0' }}>
+      <div className="bhim-tape-now" style={{ padding: 24 }}>
         <div style={{ minWidth: 0 }}>
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 14 }}>
             <Label tone={ACCENT}>{t('radio.nowOnAir')}</Label>
@@ -131,7 +133,7 @@ export default function RadioTape({
           </p>
         </div>
 
-        <div style={{ minWidth: 0, borderLeft: `2px solid ${RULE}`, paddingLeft: 24 }}>
+        <div style={{ minWidth: 0, borderLeft: `1px solid ${BORDER}`, paddingLeft: 24 }}>
           <Transcript
             text={story?.text}
             offsetSec={offsetInStory}
@@ -146,7 +148,10 @@ export default function RadioTape({
       <div
         style={{
           position: 'relative', height: TAPE_H, overflow: 'hidden',
-          background: SURFACE, borderTop: `2px solid ${RULE}`,
+          margin: '0 24px 24px',
+          ...INSET,
+          borderRadius: 14,
+          border: `1px solid ${BORDER}`,
         }}
         role="img"
         aria-label={t('radio.tapeAria')}
@@ -170,11 +175,13 @@ export default function RadioTape({
             <div
               key={seg.key}
               style={{
-                position: 'absolute', top: 0, left: 0,
+                position: 'absolute', top: 6, left: 0,
                 width: seg.duration * PX_PER_SEC,
-                height: TAPE_H - 34,
+                height: TAPE_H - 42,
                 transform: `translateX(${x}px)`,
                 borderLeft: `2px solid ${live ? ACCENT : RULE}`,
+                borderRadius: '0 10px 10px 0',
+                background: live ? 'rgba(26,95,255,0.10)' : 'transparent',
                 padding: '14px 12px',
                 boxSizing: 'border-box',
                 color: past ? MUTED : INK,
@@ -248,7 +255,8 @@ export default function RadioTape({
               position: 'absolute', top: 0, left: 0, whiteSpace: 'nowrap',
               background: ACCENT_HOVER, color: '#0a0e27',
               font: '700 10px/1 ui-monospace, monospace',
-              letterSpacing: '0.1em', padding: '5px 7px',
+              letterSpacing: '0.1em', padding: '5px 8px',
+              borderRadius: '0 6px 6px 0',
             }}
           >
             NOW {istClock(now, true)}
@@ -259,7 +267,9 @@ export default function RadioTape({
       {/* ── footer band ── */}
       <footer
         style={{
-          background: DEEP, padding: 20, marginTop: 'auto',
+          borderTop: `1px solid ${BORDER}`,
+          background: 'rgba(255,255,255,0.018)',
+          padding: 20, marginTop: 'auto',
           display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap',
         }}
       >
@@ -276,7 +286,7 @@ export default function RadioTape({
           .bhim-tape-now > :nth-child(2) {
             border-left: none !important;
             padding-left: 0 !important;
-            border-top: 2px solid ${RULE};
+            border-top: 1px solid ${BORDER};
             padding-top: 20px;
           }
         }

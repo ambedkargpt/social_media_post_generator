@@ -2,7 +2,9 @@ import { useI18n } from '../../i18n/index.jsx';
 import {
   Label, SignalMeter, StatusLine, Transcript, TuneButton, VolumeControl,
 } from './deskParts.jsx';
-import { ACCENT, INK, MUTED, RULE, SURFACE, airTime, istClock } from './radioTokens';
+import {
+  ACCENT, BORDER, INK, INSET, MUTED, PANEL, RULE, airTime, istClock,
+} from './radioTokens';
 
 /**
  * Layout 2a - the broadcast desk.
@@ -20,14 +22,14 @@ export default function RadioDesk({
   const { t } = useI18n();
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
+    <div style={{ ...PANEL, display: 'flex', flexDirection: 'column', minHeight: '100%', overflow: 'hidden' }}>
 
       {/* ── header ── */}
       <header
         style={{
           display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
           gap: 24, flexWrap: 'wrap',
-          padding: '0 0 20px', borderBottom: `2px solid ${RULE}`,
+          padding: '22px 24px', borderBottom: `1px solid ${BORDER}`,
         }}
       >
         <div style={{ minWidth: 0 }}>
@@ -46,7 +48,10 @@ export default function RadioDesk({
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 10, height: 10, background: ACCENT, flex: 'none' }} aria-hidden="true" />
+            <span
+            style={{ width: 9, height: 9, borderRadius: 3, background: ACCENT, flex: 'none' }}
+            aria-hidden="true"
+          />
             <Label tone={INK}>{t('ticker.label')}</Label>
           </span>
           <span
@@ -64,7 +69,7 @@ export default function RadioDesk({
       <div className="bhim-desk-body" style={{ flex: 1, minHeight: 0 }}>
 
         {/* what is on air */}
-        <section style={{ minWidth: 0, padding: '24px 28px 24px 0' }}>
+        <section style={{ minWidth: 0, padding: '24px 28px' }}>
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 16 }}>
             <Label tone={ACCENT}>{t('radio.nowOnAir')}</Label>
             <Label>
@@ -96,7 +101,7 @@ export default function RadioDesk({
             })}
           </p>
 
-          <div style={{ borderTop: `2px solid ${RULE}`, margin: '24px 0 20px' }} />
+          <div style={{ borderTop: `1px solid ${BORDER}`, margin: '24px 0 20px' }} />
           <div style={{ marginBottom: 14 }}><Label>{t('radio.transcript')}</Label></div>
 
           <Transcript
@@ -110,7 +115,7 @@ export default function RadioDesk({
         {/* the running order */}
         <aside
           className="bhim-desk-order"
-          style={{ minWidth: 0, padding: '24px 0 24px 28px' }}
+          style={{ minWidth: 0, padding: '24px 24px 24px 28px' }}
         >
           <div style={{ marginBottom: 16 }}>
             <Label>{t('radio.runningOrder', { n: total })}</Label>
@@ -125,10 +130,15 @@ export default function RadioDesk({
                   gridTemplateColumns: 'auto 1fr auto',
                   alignItems: 'baseline',
                   gap: 12,
-                  padding: '10px 12px',
-                  borderBottom: `1px solid ${RULE}`,
-                  background: state === 'onair' ? ACCENT : 'transparent',
+                  padding: '11px 13px',
+                  marginBottom: 6,
+                  ...INSET,
+                  background: state === 'onair'
+                    ? 'linear-gradient(135deg, rgba(26,95,255,0.95) 0%, rgba(123,63,255,0.9) 100%)'
+                    : INSET.background,
+                  boxShadow: state === 'onair' ? '0 8px 22px rgba(26,95,255,0.28)' : 'none',
                   color: state === 'onair' ? '#fff' : state === 'aired' ? MUTED : INK,
+                  opacity: state === 'aired' ? 0.6 : 1,
                 }}
               >
                 <span
@@ -165,7 +175,8 @@ export default function RadioDesk({
       {/* ── footer ── */}
       <footer
         style={{
-          background: SURFACE, borderTop: `2px solid ${RULE}`,
+          borderTop: `1px solid ${BORDER}`,
+          background: 'rgba(255,255,255,0.018)',
           padding: 20, marginTop: 'auto',
           display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap',
         }}
@@ -192,7 +203,7 @@ export default function RadioDesk({
           grid-template-columns: 1.45fr 1fr;
           align-items: start;
         }
-        .bhim-desk-body > section { border-right: 2px solid ${RULE}; }
+        .bhim-desk-body > section { border-right: 1px solid ${BORDER}; }
         @media (max-width: 1023px) {
           .bhim-desk-body { grid-template-columns: 1fr; }
           .bhim-desk-body > section {
@@ -201,7 +212,7 @@ export default function RadioDesk({
           }
           .bhim-desk-order {
             padding-left: 0 !important;
-            border-top: 2px solid ${RULE};
+            border-top: 1px solid ${BORDER};
           }
         }
         .bhim-tune:hover:not(:disabled) { filter: brightness(1.15); }
