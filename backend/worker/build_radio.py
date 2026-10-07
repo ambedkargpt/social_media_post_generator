@@ -27,6 +27,7 @@ import argparse
 import json
 import logging
 import os
+import pathlib
 import sys
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
@@ -122,18 +123,50 @@ DEFAULTS = {
     # The order is the order of the first round.
     "RADIO_POOL": "congress,bjp,samajwadi,general",
 
-    # Today only. Measured on 7 October 2026: one day is 56 stories, about an
-    # hour of speech; two days is 131, which is two hours twenty and well past
-    # what anyone will sit through.
-    "BHEEM_DAILY_LOOKBACK_DAYS": "1",
+    # Two days. The hour comes from the number of stories, which is the only
+    # place it can come from - see RADIO_TARGET_WORDS.
+    #
+    # Measured on 7 October 2026: one day is 56 stories and runs 38 minutes,
+    # because a story averages 43 seconds. The station is asked for 60 minutes
+    # give or take five. Writing longer scripts would have been the obvious
+    # lever and the wrong one: a story carries about 133 words of source
+    # (headline 15, summary 88, description 30) against a 140-word target, so
+    # asking for the ~220 words an hour needs is asking the writer to invent
+    # the difference. At the current length the checker already caught a script
+    # reading "fourteen crore" for 140 crore.
+    #
+    # More stories costs nothing in truth. Two days is 131 available, the cap
+    # takes the newest, and RoundRobinSource makes the cut fall evenly across
+    # the parties instead of wholly on one.
+    "BHEEM_DAILY_LOOKBACK_DAYS": "2",
 
-    # The ceiling, not the target. A story runs about 65 seconds, so 80 is
-    # roughly 87 minutes - the top of the hour-to-ninety-minutes the bulletin
-    # is meant to fill. A quiet day simply comes in shorter.
-    "BHEEM_DAILY_MAX_STORIES": "80",
+    # 101 asked for, about 99 aired. 99 stories of 36.4 seconds is 60 minutes.
+    #
+    # Both numbers are measured rather than assumed, and the first guess had
+    # both wrong: 128 was set expecting 30-second stories and a 5% fact-check
+    # drop, and the build came back 126 stories of 36.4 seconds - 76 minutes,
+    # well past the band. The writer lands above a 70-word target, and almost
+    # nothing is dropped.
+    "BHEEM_DAILY_MAX_STORIES": "101",
     # Not applicable here: General is dealt in turn with everyone else rather
     # than folded in afterwards, so the separate quota would cap it twice.
-    "BHEEM_DAILY_MAX_GENERAL_STORIES": "80",
+    "BHEEM_DAILY_MAX_GENERAL_STORIES": "128",
+
+    # How long a story should run: about 30 seconds, which is 66 words at the
+    # 2.2 words a second this reads at.
+    #
+    # Shorter than their 140-word default, deliberately, and this is the second
+    # attempt. The first went the other way - 190 words, chasing a 60-minute
+    # bulletin out of 53 stories - and measured no change at all: 37.7 minutes
+    # before, 38.3 after, 35,138 TTS characters against 35,010. The writer does
+    # not pad to meet a target; it writes what the source carries, and a story
+    # carries about 133 words (headline 15, summary 88, description 30).
+    #
+    # So the hour comes from more stories, and each one is cut to the length
+    # that holds a listener. At 66 words the target now sits well inside what
+    # the source supports, which is the safest place for it to be: there is no
+    # gap to fill, so nothing has to be invented to fill it.
+    "RADIO_TARGET_WORDS": "70",
 
     # Never off. It is on by default upstream, but this is a broadcast: a
     # wrong number read aloud as news cannot be edited afterwards the way a
@@ -228,6 +261,67 @@ class RoundRobinSource:
         return dealt
 
 
+# The one line of Bheem Radio's writer prompt we override, and what we put in
+# its place.
+#
+# Their TARGET_WORDS is hard-coded in Python (hi: 140), not a setting, and the
+# prompt substitutes it as $target_words. So the prompt directory is copied at
+# startup and this line rewritten - a copy rather than a fork, so moving the
+# pinned commit keeps every other instruction theirs.
+_LENGTH_LINE_FROM = """- `script`: the full story, about $target_words words (roughly $target_seconds seconds
+  on air). Start with the most important fact; end on a clear closing line, not a
+  question."""
+
+# The ceiling is raised and a floor is refused in the same breath. A bulletin
+# is read aloud and loops all day, so the one thing worse than a short story is
+# a padded one: the words that fill the gap are the words nobody checked.
+_LENGTH_LINE_TO = """- `script`: the full story, up to {words} words (roughly {seconds} seconds on
+  air). Start with the most important fact; end on a clear closing line, not a
+  question.
+- Length is a ceiling, never a quota. Use every fact the source gives you and
+  stop there. A story whose source supports sixty words is a sixty-word story.
+  Do NOT reach the word count by repeating a point in other words, by adding
+  background the source does not state, by describing what something "means"
+  or "signals", or by naming a reaction nobody is quoted giving. Inventing a
+  number, a date, a quote or a consequence to fill the line is the worst
+  failure available to you: this is read on air as news."""
+
+
+def _write_prompts(words: int) -> None:
+    """Copy their prompt directory and lengthen the one instruction we mean to."""
+    import shutil
+    import tempfile
+
+    source = pathlib.Path(os.environ["BHEEM_PROMPTS_DIR"])
+    if not source.is_dir():
+        # A missing directory is the wrong environment, not stale patching -
+        # bheem_radio reports it with a better message a moment later. The loud
+        # failure below is for the case that would otherwise be silent: the
+        # directory is there and the instruction has been reworded.
+        log.warning("prompts: %s is not a directory; leaving the length alone", source)
+        return
+    target = pathlib.Path(tempfile.mkdtemp(prefix="bheem-prompts-"))
+    shutil.copytree(source, target, dirs_exist_ok=True)
+
+    writer = target / "script_writer.md"
+    text = writer.read_text(encoding="utf-8")
+    if _LENGTH_LINE_FROM not in text:
+        # Loudly, not silently: upstream has reworded the instruction and this
+        # patch would otherwise do nothing while the bulletin quietly came in
+        # at their length instead of ours.
+        raise RuntimeError(
+            "script_writer.md no longer contains the length instruction this "
+            "patches; re-check it against the pinned Bheem Radio commit"
+        )
+    writer.write_text(
+        text.replace(_LENGTH_LINE_FROM,
+                     _LENGTH_LINE_TO.format(words=words, seconds=round(words / 2.2))),
+        encoding="utf-8",
+    )
+    os.environ["BHEEM_PROMPTS_DIR"] = str(target)
+    log.info("prompts: script target raised to %d words (%s)", words, target)
+
+
 def prepare_environment() -> None:
     """Copy our variables onto the BHEEM_* names and fill in the defaults."""
     for target, source in ENV_ALIASES.items():
@@ -236,6 +330,29 @@ def prepare_environment() -> None:
     for name, value in DEFAULTS.items():
         os.environ.setdefault(name, value)
     _tts_defaults()
+
+    # The cloned station voice, off unless asked for.
+    #
+    # Through the registry rather than by putting the svc- id straight into
+    # BHEEM_TTS_VOICES, which also works: the registry is what makes an expiry
+    # date and a revocation fall back to the stock voice instead of taking the
+    # bulletin off air with them.
+    #
+    # Two things to know before turning it on. Cloned requests are limited to
+    # ten a minute on Sarvam's starter plan, so a 120-story bulletin spends
+    # twelve minutes waiting on that alone. And a cloned voice takes no
+    # expressiveness setting - sarvam_temperature applies to stock voices only,
+    # so the tuning above simply does not reach it.
+    if os.getenv("RADIO_USE_CLONE", "").strip() in {"1", "true", "yes", "on"}:
+        here = pathlib.Path(__file__).resolve().parent
+        os.environ.setdefault("BHEEM_VOICES_DIR", str(here / "radio_voices"))
+        os.environ.setdefault("BHEEM_STATION_VOICE", "station")
+        log.info("station voice: %s from %s",
+                 os.environ["BHEEM_STATION_VOICE"], os.environ["BHEEM_VOICES_DIR"])
+
+    words = int(os.getenv("RADIO_TARGET_WORDS") or 0)
+    if words:
+        _write_prompts(words)
 
 
 def main(argv: list[str] | None = None) -> int:

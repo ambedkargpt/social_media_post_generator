@@ -222,14 +222,17 @@ def test_every_default_names_a_real_setting(monkeypatch):
 
 def test_the_bulletin_covers_one_day_of_every_party():
     """
-    The shape the station was asked for: one day, every party, dealt in turns.
-    Two days measured at 131 stories - two hours twenty - which is past what
-    anyone sits through, and the per-party split made the length cap fall
-    entirely on whichever tenant came last.
+    The shape the station was asked for: an hour, every party, dealt in turns.
+
+    An hour comes from the number of stories, never from longer scripts. A
+    story carries about 133 words of source against a 140-word target, so
+    writing to the ~220 words an hour would otherwise need means inventing the
+    difference - on a broadcast that loops all day. Two days of stories at
+    their honest length gets there instead.
     """
     from backend.worker import build_radio
 
-    assert build_radio.DEFAULTS["BHEEM_DAILY_LOOKBACK_DAYS"] == "1"
+    assert build_radio.DEFAULTS["BHEEM_DAILY_LOOKBACK_DAYS"] == "2"
     pool = build_radio.DEFAULTS["RADIO_POOL"].split(",")
     assert set(pool) == {"congress", "bjp", "samajwadi", "general"}
 
@@ -318,4 +321,105 @@ def test_the_checker_is_a_different_model_from_the_writer(monkeypatch):
     assert writer.split(":")[0] != checker.split(":")[0], (
         f"writer and checker are both {writer.split(':')[0]}; the check is worth "
         "nothing when one model marks its own work"
+    )
+
+
+def test_the_hour_is_made_of_stories_not_of_longer_ones():
+    """
+    Measured, not assumed. Raising the target to 190 words to stretch 53
+    stories into an hour moved nothing: 37.7 minutes became 38.3, and 35,138
+    TTS characters became 35,010. The writer does not pad to a number - it
+    writes what the source carries, about 133 words a story.
+
+    So the length is set below what the source supports and the hour comes
+    from the count. This test holds that arithmetic together: change one of
+    these and it says whether the bulletin still lands in the band.
+    """
+    from backend.worker import build_radio
+
+    words = int(build_radio.DEFAULTS["RADIO_TARGET_WORDS"])
+    cap = int(build_radio.DEFAULTS["BHEEM_DAILY_MAX_STORIES"])
+
+    # Measured on the 7 October build, not derived: 126 stories ran 4583 s,
+    # which is 36.4 s each against a 70-word target - the writer lands above
+    # the words/second the prompt assumes. 126 of 128 survived the checker.
+    SECONDS_PER_STORY = 36.4
+    SURVIVES_FACT_CHECK = 126 / 128
+
+    seconds = SECONDS_PER_STORY
+    minutes = cap * SURVIVES_FACT_CHECK * seconds / 60
+
+    assert words <= 133, "the target is above what a story's source carries"
+    assert 55 <= minutes <= 65, (
+        f"{cap} stories of {seconds:.0f}s is about {minutes:.0f} min, not 60 +/- 5"
+    )
+
+
+def test_the_prompt_still_refuses_padding():
+    """The ceiling is lower now; the refusal still has to be in the prompt."""
+    from backend.worker import build_radio
+
+    replacement = " ".join(build_radio._LENGTH_LINE_TO.split())
+    assert "ceiling, never a quota" in replacement
+    for forbidden in ("repeating a point", "background the source does not state",
+                      "Inventing a number"):
+        assert forbidden in replacement, f"the padding refusal lost: {forbidden!r}"
+
+def test_the_prompt_patch_fails_loudly_when_upstream_moves(tmp_path, monkeypatch):
+    """
+    The override rewrites one line of their prompt. If they reword it, a silent
+    no-op would leave the bulletin at their length with nothing to say why - so
+    it raises instead.
+    """
+    import pytest
+
+    from backend.worker import build_radio
+
+    (tmp_path / "script_writer.md").write_text("nothing like the line", encoding="utf-8")
+    monkeypatch.setenv("BHEEM_PROMPTS_DIR", str(tmp_path))
+
+    with pytest.raises(RuntimeError, match="no longer contains"):
+        build_radio._write_prompts(190)
+
+
+# ── the cloned station voice ────────────────────────────────────────────────
+
+def test_the_clone_is_off_unless_asked_for(monkeypatch):
+    """
+    A cloned voice costs twelve minutes of rate-limited waiting on a full
+    bulletin and takes no expressiveness setting, so it is never the default.
+    """
+    import os
+
+    from backend.worker import build_radio
+
+    for name in ("SARVAM_API_KEY", "GEMINI_API_KEY", "DEEPSEEK_API_KEY", "MONGODB_URI"):
+        monkeypatch.setenv(name, "x")
+    for name in list(os.environ):
+        if name.startswith(("BHEEM_", "RADIO_")):
+            monkeypatch.delenv(name, raising=False)
+
+    build_radio.prepare_environment()
+    assert "BHEEM_STATION_VOICE" not in os.environ
+
+
+def test_the_registry_entry_is_usable_today():
+    """
+    bheem_radio refuses a voice with no consent on record, a passed expiry or a
+    revocation - quietly falling back to the stock voice and logging it. A
+    registry that cannot be used would mean the demo runs in the wrong voice
+    with only a log line to say why.
+    """
+    import json
+    import pathlib
+
+    registry = json.loads(
+        (pathlib.Path("backend/worker/radio_voices/registry.json")).read_text(encoding="utf-8")
+    )
+    entry = next(v for v in registry["voices"] if v["name"] == "station")
+
+    assert entry["consents"], "no consent on record; the voice would be refused"
+    assert not entry["revoked"]
+    assert entry["provider_voices"]["sarvam"].startswith("svc-"), (
+        "the dispatch is on the svc- prefix; anything else is read as a stock speaker"
     )
