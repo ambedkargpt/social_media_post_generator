@@ -118,6 +118,23 @@ DEFAULTS = {
     # as a stock voice gets and the reader has to supply the rest.
     "BHEEM_SARVAM_PACE": "1.22",
     "BHEEM_SARVAM_TEMPERATURE": "1.0",
+    # One bulletin covering every party, dealt in turns - see RoundRobinSource.
+    # The order is the order of the first round.
+    "RADIO_POOL": "congress,bjp,samajwadi,general",
+
+    # Today only. Measured on 7 October 2026: one day is 56 stories, about an
+    # hour of speech; two days is 131, which is two hours twenty and well past
+    # what anyone will sit through.
+    "BHEEM_DAILY_LOOKBACK_DAYS": "1",
+
+    # The ceiling, not the target. A story runs about 65 seconds, so 80 is
+    # roughly 87 minutes - the top of the hour-to-ninety-minutes the bulletin
+    # is meant to fill. A quiet day simply comes in shorter.
+    "BHEEM_DAILY_MAX_STORIES": "80",
+    # Not applicable here: General is dealt in turn with everyone else rather
+    # than folded in afterwards, so the separate quota would cap it twice.
+    "BHEEM_DAILY_MAX_GENERAL_STORIES": "80",
+
     # BHEEM_MONGO_LIVE_STATUSES is deliberately not set. Our documents have no
     # status field, and Bheem's default of [] already means "no filter". Any
     # value here would match nothing and build four empty bulletins.
@@ -150,6 +167,57 @@ def _tts_defaults() -> None:
     else:
         os.environ.setdefault("BHEEM_LLM_FACT_CHECKER", "deepseek:deepseek-chat")
         os.environ.setdefault("BHEEM_LLM_FACT_CHECKER_FALLBACK", "")
+
+
+class RoundRobinSource:
+    """
+    Every party's news in one bulletin, taken in turns.
+
+    Bheem Radio builds one stream per tenant and `select_stories` concatenates
+    whole tenant blocks, so a combined bulletin would have run all of Congress,
+    then all of BJP, and whatever the length cap cut would have fallen entirely
+    on whoever came last. On a day with 58 Congress and 65 BJP stories that is
+    not an ordering problem, it is one party missing.
+
+    So this stands in front of their Mongo source and answers the one stream we
+    build with a deal: one story from each party in turn, skipping the ones
+    that have run out, until everything is dealt. Each party's own stories stay
+    newest-first within its own turn, and a short cap now takes proportionally
+    from everyone rather than wholly from the last.
+
+    It is a wrapper rather than an edit to their selection, so moving the
+    pinned Bheem Radio commit does not have to be re-done afterwards.
+    """
+
+    def __init__(self, inner, order: list[str]) -> None:
+        self._inner = inner
+        self._order = order
+
+    def stories(self, tenant: str, start, end):
+        # Only the stream we actually build is combined. Anything else is
+        # passed through, so building one party's own stream still works.
+        if tenant not in self._order:
+            return self._inner.stories(tenant, start, end)
+
+        queues = []
+        for member in self._order:
+            found = self._inner.stories(member, start, end)
+            if found:
+                queues.append(list(found))
+            log.info("pool %s: %d stories", member, len(found))
+
+        dealt, seen = [], set()
+        while queues:
+            for queue in list(queues):
+                story = queue.pop(0)
+                # A story tagged for two tenants would otherwise play twice.
+                if story.id not in seen:
+                    seen.add(story.id)
+                    dealt.append(story)
+                if not queue:
+                    queues.remove(queue)
+        log.info("combined bulletin: %d stories, dealt in turns", len(dealt))
+        return dealt
 
 
 def prepare_environment() -> None:
@@ -190,7 +258,12 @@ def main(argv: list[str] | None = None) -> int:
     day = (date.fromisoformat(args.date) if args.date
            else datetime.now(ZoneInfo(settings.timezone)).date())
 
-    services = build_daily_services(settings, MongoStorySource.from_settings(settings))
+    source = MongoStorySource.from_settings(settings)
+    pool = [t.strip() for t in (os.getenv("RADIO_POOL") or "").split(",") if t.strip()]
+    if pool:
+        source = RoundRobinSource(source, pool)
+
+    services = build_daily_services(settings, source)
     result = build_tenant_stream(args.tenant, day, services)
 
     stats = services.cache.stats

@@ -193,3 +193,87 @@ def test_expressiveness_stays_inside_what_the_api_accepts():
 
     temperature = float(build_radio.DEFAULTS["BHEEM_SARVAM_TEMPERATURE"])
     assert 0.01 <= temperature <= 1.0, "Sarvam rejects expressiveness above 1.0"
+
+
+# ── the bulletin's shape ────────────────────────────────────────────────────
+
+def test_every_default_names_a_real_setting(monkeypatch):
+    """
+    pydantic-settings ignores an environment variable it does not recognise, so
+    a misspelled name is silent: the build runs, the setting keeps its default,
+    and nothing says why the bulletin is the wrong length. BHEEM_LOOKBACK_DAYS
+    was exactly that typo - the field is daily_lookback_days.
+
+    Checked against the real Settings model when it is installed, and skipped
+    where it is not, because bheem_radio only lives in the radio image.
+    """
+    import pytest
+
+    from backend.worker import build_radio
+
+    Settings = pytest.importorskip("bheem_radio.config").Settings
+
+    known = {f"BHEEM_{name.upper()}" for name in Settings.model_fields}
+    ours = {k for k in build_radio.DEFAULTS if k.startswith("BHEEM_")}
+
+    unknown = sorted(ours - known)
+    assert not unknown, f"not settings on bheem_radio.Settings: {unknown}"
+
+
+def test_the_bulletin_covers_one_day_of_every_party():
+    """
+    The shape the station was asked for: one day, every party, dealt in turns.
+    Two days measured at 131 stories - two hours twenty - which is past what
+    anyone sits through, and the per-party split made the length cap fall
+    entirely on whichever tenant came last.
+    """
+    from backend.worker import build_radio
+
+    assert build_radio.DEFAULTS["BHEEM_DAILY_LOOKBACK_DAYS"] == "1"
+    pool = build_radio.DEFAULTS["RADIO_POOL"].split(",")
+    assert set(pool) == {"congress", "bjp", "samajwadi", "general"}
+
+
+def test_stories_are_dealt_in_turns_not_in_blocks():
+    """
+    One from each party in turn, so a short cap takes from everyone. Blocks
+    would have put all of Congress first and cut BJP off the end.
+    """
+    from backend.worker import build_radio
+
+    class Story:
+        def __init__(self, sid, tenant):
+            self.id, self.tenant = sid, tenant
+
+    class Inner:
+        def stories(self, tenant, start, end):
+            counts = {"congress": 3, "bjp": 2, "samajwadi": 1, "general": 2}
+            return [Story(f"{tenant}-{i}", tenant) for i in range(counts.get(tenant, 0))]
+
+    source = build_radio.RoundRobinSource(Inner(), ["congress", "bjp", "samajwadi", "general"])
+    dealt = [s.tenant for s in source.stories("congress", None, None)]
+
+    # First round is one of each, in the configured order.
+    assert dealt[:4] == ["congress", "bjp", "samajwadi", "general"]
+    # Nothing is lost when a party runs out mid-deal.
+    assert len(dealt) == 8
+    assert dealt.count("congress") == 3 and dealt.count("samajwadi") == 1
+
+
+def test_a_story_tagged_for_two_parties_plays_once():
+    """A story can carry more than one tenant; hearing it twice is a bug."""
+    from backend.worker import build_radio
+
+    class Story:
+        def __init__(self, sid, tenant):
+            self.id, self.tenant = sid, tenant
+
+    class Inner:
+        def stories(self, tenant, start, end):
+            return [Story("shared", tenant), Story(f"{tenant}-own", tenant)]
+
+    source = build_radio.RoundRobinSource(Inner(), ["congress", "bjp"])
+    ids = [s.id for s in source.stories("congress", None, None)]
+
+    assert ids.count("shared") == 1
+    assert sorted(ids) == ["bjp-own", "congress-own", "shared"]
