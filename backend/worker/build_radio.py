@@ -135,6 +135,14 @@ DEFAULTS = {
     # than folded in afterwards, so the separate quota would cap it twice.
     "BHEEM_DAILY_MAX_GENERAL_STORIES": "80",
 
+    # Never off. It is on by default upstream, but this is a broadcast: a
+    # wrong number read aloud as news cannot be edited afterwards the way a
+    # post can. Today's build caught a script that said "fourteen crore" where
+    # the story said 140 crore, twice, and dropped another story outright.
+    # Pinned here so turning it off has to be a deliberate edit with a test to
+    # answer for.
+    "BHEEM_DAILY_FACT_CHECK": "1",
+
     # BHEEM_MONGO_LIVE_STATUSES is deliberately not set. Our documents have no
     # status field, and Bheem's default of [] already means "no filter". Any
     # value here would match nothing and build four empty bulletins.

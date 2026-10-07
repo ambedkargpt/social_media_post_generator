@@ -277,3 +277,45 @@ def test_a_story_tagged_for_two_parties_plays_once():
 
     assert ids.count("shared") == 1
     assert sorted(ids) == ["bjp-own", "congress-own", "shared"]
+
+
+# ── what keeps wrong news off the air ───────────────────────────────────────
+
+def test_the_fact_checker_is_never_off():
+    """
+    A post can be corrected after it is published. A bulletin is read aloud and
+    then plays on a loop all day. The checker is on by default upstream, which
+    is exactly why it is pinned here: a default can change when the pinned
+    commit moves, and nothing would say so.
+    """
+    from backend.worker import build_radio
+
+    assert build_radio.DEFAULTS["BHEEM_DAILY_FACT_CHECK"] == "1"
+
+
+def test_the_checker_is_a_different_model_from_the_writer(monkeypatch):
+    """
+    A model checking its own work shares its own blind spots: it will not see
+    the number it just invented. The whole value of the check is that a second
+    model, trained differently, reads the script against the source.
+    """
+    import os
+
+    from backend.worker import build_radio
+
+    for name in ("SARVAM_API_KEY", "GEMINI_API_KEY", "DEEPSEEK_API_KEY", "MONGODB_URI"):
+        monkeypatch.setenv(name, "x")
+    for name in list(os.environ):
+        if name.startswith("BHEEM_"):
+            monkeypatch.delenv(name, raising=False)
+
+    build_radio.prepare_environment()
+
+    writer = os.environ["BHEEM_LLM_SCRIPT_WRITER"]
+    checker = os.environ["BHEEM_LLM_FACT_CHECKER"]
+
+    assert writer and checker
+    assert writer.split(":")[0] != checker.split(":")[0], (
+        f"writer and checker are both {writer.split(':')[0]}; the check is worth "
+        "nothing when one model marks its own work"
+    )
