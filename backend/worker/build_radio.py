@@ -107,12 +107,12 @@ DEFAULTS = {
         "minimax": {"hi": "English_Persuasive_Man", "en": "English_Persuasive_Man"},
         "selfhosted": {"hi": "agastya", "en": "agastya"},
         "gemini": {"hi": "Charon", "en": "Charon"},
-        "sarvam": {"hi": "ritu", "en": "ritu"},         # <- ours
+        "sarvam": {"hi": "priya", "en": "priya"},       # <- ours
         "openai": {"hi": "onyx", "en": "onyx"},
         "fake": {"hi": "tone", "en": "tone"},
     }),
     # Delivery, chosen by ear from a set of auditions rather than from the
-    # catalogue: ritu read faster and with more lift than the rest.
+    # catalogue, which says nothing about how a voice sounds.
     #
     # Expressiveness is at its ceiling. Bheem Radio's own config says the range
     # is 0.01-2.0; the live API rejects anything above 1.0, so 1.0 is as lively
@@ -140,33 +140,33 @@ DEFAULTS = {
     # the parties instead of wholly on one.
     "BHEEM_DAILY_LOOKBACK_DAYS": "2",
 
-    # 101 asked for, about 99 aired. 99 stories of 36.4 seconds is 60 minutes.
-    #
-    # Both numbers are measured rather than assumed, and the first guess had
-    # both wrong: 128 was set expecting 30-second stories and a 5% fact-check
-    # drop, and the build came back 126 stories of 36.4 seconds - 76 minutes,
-    # well past the band. The writer lands above a 70-word target, and almost
-    # nothing is dropped.
-    "BHEEM_DAILY_MAX_STORIES": "101",
+    # Not a length control any more - the script length is, see
+    # RADIO_TARGET_MINUTES. This is only a guard against a runaway day.
+    "BHEEM_DAILY_MAX_STORIES": "400",
     # Not applicable here: General is dealt in turn with everyone else rather
     # than folded in afterwards, so the separate quota would cap it twice.
-    "BHEEM_DAILY_MAX_GENERAL_STORIES": "128",
+    "BHEEM_DAILY_MAX_GENERAL_STORIES": "400",
 
-    # How long a story should run: about 30 seconds, which is 66 words at the
-    # 2.2 words a second this reads at.
+    # How long the whole bulletin should run, in minutes.
     #
-    # Shorter than their 140-word default, deliberately, and this is the second
-    # attempt. The first went the other way - 190 words, chasing a 60-minute
-    # bulletin out of 53 stories - and measured no change at all: 37.7 minutes
-    # before, 38.3 after, 35,138 TTS characters against 35,010. The writer does
-    # not pad to meet a target; it writes what the source carries, and a story
-    # carries about 133 words (headline 15, summary 88, description 30).
+    # The length of a story is worked out from this and from how many stories
+    # the day actually has, so a quiet day stretches and a busy one tightens
+    # instead of the bulletin changing length. See _story_words.
+    "RADIO_TARGET_MINUTES": "80",
+
+    # How the voice is treated before it goes out.
     #
-    # So the hour comes from more stories, and each one is cut to the length
-    # that holds a listener. At 66 words the target now sits well inside what
-    # the source supports, which is the safest place for it to be: there is no
-    # gap to fill, so nothing has to be invented to fill it.
-    "RADIO_TARGET_WORDS": "70",
+    # The default is "auto", which for Sarvam resolves to "clean" - trim and
+    # level, nothing else - because Sarvam's own output is already studio
+    # finished. True, and it also means the bulletin had no news treatment at
+    # all: every build so far went out raw.
+    #
+    # "energetic" is their Hindi TV-news chain: the voice about a semitone
+    # deeper and seven percent faster, chest warmth at 160 Hz, a presence lift
+    # at 3.5 kHz and heavy compression so each word lands. Applied in the
+    # mixer, not the TTS, so changing it re-mixes from the cached audio and
+    # costs nothing in voice.
+    "BHEEM_VOICE_PRESET": "energetic",
 
     # Never off. It is on by default upstream, but this is a broadcast: a
     # wrong number read aloud as news cannot be edited afterwards the way a
@@ -287,7 +287,90 @@ _LENGTH_LINE_TO = """- `script`: the full story, up to {words} words (roughly {s
   failure available to you: this is read on air as news."""
 
 
-def _write_prompts(words: int) -> None:
+# The spoken furniture of the bulletin: what the anchor says before, between
+# and after the stories. Bheem Radio keeps these in prompts/daily_<lang>.json
+# and invites editing, so these are ours.
+#
+# Merged into their file, never written over it: it also holds day_words,
+# months and the tenant names that turn a date into speech. Replacing the file
+# would leave the anchor unable to say what day it is.
+DAILY_LINES_HI = {
+    "intro": (
+        "नमस्कार! मैं सविता जाटव। "
+        "आप सुन रहे हैं $station — "
+        "अंबेडकरजीपीटी की पेशकश। "
+        "पेश हैं $date की $tenant से जुड़ी बड़ी खबरें।"
+    ),
+    "intro_general": (
+        "नमस्कार! मैं सविता जाटव। "
+        "आप सुन रहे हैं $station — "
+        "अंबेडकरजीपीटी की पेशकश। "
+        "पेश हैं $date की बड़ी खबरें, हर दल से।"
+    ),
+    # Eight links in the rotation, three of them station idents, so the name
+    # lands about every third story rather than on every one.
+    "connectives": [
+        "इसके बाद, अगली खबर।",
+        "अब चलते हैं अगली खबर की ओर।",
+        "आप सुन रहे हैं भीम रेडियो, अंबेडकरजीपीटी की पेशकश।",
+        "और अब, एक और अहम खबर।",
+        "आगे बढ़ते हैं।",
+        "भीम रेडियो पर खबरें, इतिहास और आंदोलन — अंबेडकरजीपीटी डॉट इन पर।",
+        "अब बात इस खबर की।",
+        "सविता जाटव के साथ, आप सुन रहे हैं भीम रेडियो।",
+    ],
+    # The anchor has a name now, so the bulletin says plainly that the name and
+    # the voice are both generated. Without that line a listener has every
+    # reason to think Savita Jatav is a reporter who exists.
+    "outro": (
+        "ये थीं आज की बड़ी खबरें। "
+        "ये बुलेटिन अंबेडकरजीपीटी ने एआई की मदद से तैयार किया है, "
+        "और इसे पढ़ने वाली आवाज़ भी एआई की है। "
+        "सविता जाटव का नमस्कार। "
+        "ये प्रसारण थोड़ी देर में फिर शुरू होगा। जय भीम।"
+    ),
+}
+
+
+# What a story costs on air, as a straight line through two measured builds:
+# 70 words gave 37.4-second stories, 86 words gave 42.8.
+#
+#     seconds = STORY_OVERHEAD_SEC + SECONDS_PER_WORD x words
+#
+# The intercept is the part a single ratio cannot see. Every story carries a
+# connective and a music bed whatever its length, so a bulletin of many short
+# stories spends far more on furniture than one of few long ones. Modelled as
+# a ratio, the first attempt aimed at 80 minutes and landed at 73.5.
+SECONDS_PER_WORD = 0.3375
+STORY_OVERHEAD_SEC = 13.8
+
+
+def _story_seconds(words: int) -> float:
+    return STORY_OVERHEAD_SEC + SECONDS_PER_WORD * words
+
+
+# What a story may be cut to, and what it may be stretched to.
+#
+# The ceiling is the one that matters. A story's source carries about 133
+# words - headline 15, summary 88, description 30 - so a target above that is
+# an instruction to invent the difference, on a bulletin that is read aloud as
+# news and loops all day. A quiet day therefore produces a SHORTER bulletin,
+# not a padded one; that is the trade, and it is the right way round.
+#
+# The floor stops a very busy day turning every story into a headline.
+MIN_WORDS, MAX_WORDS = 55, 125
+
+
+def _story_words(stories: int, minutes: float) -> int:
+    """How long each story should be so the bulletin runs for `minutes`."""
+    if stories <= 0:
+        return MAX_WORDS
+    seconds_each = (minutes * 60) / stories
+    words = round((seconds_each - STORY_OVERHEAD_SEC) / SECONDS_PER_WORD)
+    return max(MIN_WORDS, min(MAX_WORDS, words))
+
+
+def _write_prompts(words: int) -> pathlib.Path | None:
     """Copy their prompt directory and lengthen the one instruction we mean to."""
     import shutil
     import tempfile
@@ -299,7 +382,7 @@ def _write_prompts(words: int) -> None:
         # failure below is for the case that would otherwise be silent: the
         # directory is there and the instruction has been reworded.
         log.warning("prompts: %s is not a directory; leaving the length alone", source)
-        return
+        return None
     target = pathlib.Path(tempfile.mkdtemp(prefix="bheem-prompts-"))
     shutil.copytree(source, target, dirs_exist_ok=True)
 
@@ -318,8 +401,19 @@ def _write_prompts(words: int) -> None:
                      _LENGTH_LINE_TO.format(words=words, seconds=round(words / 2.2))),
         encoding="utf-8",
     )
+    # The anchor's own lines, merged so their date vocabulary survives.
+    daily = target / "daily_hi.json"
+    if daily.is_file():
+        import json as _json
+
+        lines = _json.loads(daily.read_text(encoding="utf-8"))
+        lines.update(DAILY_LINES_HI)
+        daily.write_text(_json.dumps(lines, ensure_ascii=False, indent=2), encoding="utf-8")
+        log.info("prompts: anchor lines replaced (%d keys)", len(DAILY_LINES_HI))
+
     os.environ["BHEEM_PROMPTS_DIR"] = str(target)
-    log.info("prompts: script target raised to %d words (%s)", words, target)
+    log.info("prompts: script target set to %d words (%s)", words, target)
+    return target
 
 
 def prepare_environment() -> None:
@@ -350,9 +444,8 @@ def prepare_environment() -> None:
         log.info("station voice: %s from %s",
                  os.environ["BHEEM_STATION_VOICE"], os.environ["BHEEM_VOICES_DIR"])
 
-    words = int(os.getenv("RADIO_TARGET_WORDS") or 0)
-    if words:
-        _write_prompts(words)
+    # The prompts are written later, in main(), because the story length
+    # depends on how many stories the day turned out to have.
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -387,6 +480,33 @@ def main(argv: list[str] | None = None) -> int:
     pool = [t.strip() for t in (os.getenv("RADIO_POOL") or "").split(",") if t.strip()]
     if pool:
         source = RoundRobinSource(source, pool)
+
+    # How many stories the day has decides how long each one may be, so the
+    # window is counted before the prompts are written. One extra Mongo read,
+    # against a build that then spends minutes on LLM and TTS calls.
+    from bheem_radio.daily.sources import day_window
+
+    minutes = float(os.getenv("RADIO_TARGET_MINUTES") or 0)
+    if minutes:
+        start, end = day_window(settings, day)
+        available = len(source.stories(args.tenant, start, end))
+        words = _story_words(available, minutes)
+        predicted = available * _story_seconds(words) / 60
+        log.info("length: %d stories available, %.0f min target -> %d words each "
+                 "(about %.0f min)", available, minutes, words, predicted)
+        if predicted < minutes - 5:
+            # Said plainly rather than filled in: the stories are as long as
+            # their sources allow, and there simply are not enough of them.
+            log.warning("short bulletin: %d stories cannot fill %.0f minutes without "
+                        "padding, so it will run short", available, minutes)
+        written = _write_prompts(words)
+        if written is not None:
+            # Settings read BHEEM_PROMPTS_DIR when it was constructed, above,
+            # so setting the variable now is too late - the prompts have to be
+            # put on the object itself. Missing this wrote a new prompt that
+            # nothing ever read: the build quietly used Bheem Radio's own
+            # length and every story came back from cache unchanged.
+            settings = settings.model_copy(update={"prompts_dir": written})
 
     services = build_daily_services(settings, source)
     result = build_tenant_stream(args.tenant, day, services)

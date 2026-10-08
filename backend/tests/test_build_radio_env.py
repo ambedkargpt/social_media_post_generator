@@ -166,7 +166,7 @@ def test_the_voice_mapping_is_sent_whole(monkeypatch):
 
     voices = json.loads(build_radio.DEFAULTS["BHEEM_TTS_VOICES"])
 
-    assert voices["sarvam"] == {"hi": "ritu", "en": "ritu"}
+    assert voices["sarvam"] == {"hi": "priya", "en": "priya"}
     # The fallback provider must still have a voice of its own.
     assert voices["gemini"]["hi"], "the Gemini fallback lost its speaker"
     assert set(voices) >= {"sarvam", "gemini", "openai", "minimax", "fake"}
@@ -324,36 +324,58 @@ def test_the_checker_is_a_different_model_from_the_writer(monkeypatch):
     )
 
 
-def test_the_hour_is_made_of_stories_not_of_longer_ones():
+def test_a_quiet_day_stretches_and_a_busy_one_tightens():
     """
-    Measured, not assumed. Raising the target to 190 words to stretch 53
-    stories into an hour moved nothing: 37.7 minutes became 38.3, and 35,138
-    TTS characters became 35,010. The writer does not pad to a number - it
-    writes what the source carries, about 133 words a story.
+    The bulletin aims at a length, not at a story count: with few stories each
+    one runs longer, with many each runs shorter. Before this the count was
+    capped and the length was whatever fell out, so a thin news day produced a
+    half-length bulletin and nothing adjusted.
+    """
+    from backend.worker.build_radio import _story_words
 
-    So the length is set below what the source supports and the hour comes
-    from the count. This test holds that arithmetic together: change one of
-    these and it says whether the bulletin still lands in the band.
+    quiet = _story_words(40, 80)
+    busy = _story_words(140, 80)
+
+    assert quiet > busy, "a quiet day has to give each story more room"
+
+
+def test_the_length_never_exceeds_what_a_story_can_support():
+    """
+    The guard that matters, and the reason a quiet day produces a SHORT
+    bulletin rather than a padded one.
+
+    A story's source carries about 133 words - headline 15, summary 88,
+    description 30. Stretching past that is an instruction to invent the
+    difference, on something read aloud as news that then loops all day. So
+    however empty the day, the ceiling holds.
+    """
+    from backend.worker.build_radio import MAX_WORDS, _story_words
+
+    SOURCE_WORDS = 133
+    assert MAX_WORDS < SOURCE_WORDS, "the ceiling is above what the source carries"
+
+    for stories in (1, 5, 20, 60):
+        assert _story_words(stories, 80) <= MAX_WORDS
+    assert _story_words(0, 80) <= MAX_WORDS      # no stories at all must not divide by zero
+
+
+def test_a_very_busy_day_does_not_reduce_stories_to_headlines():
+    """The floor: 300 stories should not turn each into a single sentence."""
+    from backend.worker.build_radio import MIN_WORDS, _story_words
+
+    assert _story_words(300, 80) >= MIN_WORDS
+
+
+def test_the_target_is_a_duration_and_the_cap_is_only_a_guard():
+    """
+    The cap used to set the length; it is now a runaway guard, well above any
+    real day. If it is ever brought back down near the real story count it
+    becomes the length control again, silently.
     """
     from backend.worker import build_radio
 
-    words = int(build_radio.DEFAULTS["RADIO_TARGET_WORDS"])
-    cap = int(build_radio.DEFAULTS["BHEEM_DAILY_MAX_STORIES"])
-
-    # Measured on the 7 October build, not derived: 126 stories ran 4583 s,
-    # which is 36.4 s each against a 70-word target - the writer lands above
-    # the words/second the prompt assumes. 126 of 128 survived the checker.
-    SECONDS_PER_STORY = 36.4
-    SURVIVES_FACT_CHECK = 126 / 128
-
-    seconds = SECONDS_PER_STORY
-    minutes = cap * SURVIVES_FACT_CHECK * seconds / 60
-
-    assert words <= 133, "the target is above what a story's source carries"
-    assert 55 <= minutes <= 65, (
-        f"{cap} stories of {seconds:.0f}s is about {minutes:.0f} min, not 60 +/- 5"
-    )
-
+    assert float(build_radio.DEFAULTS["RADIO_TARGET_MINUTES"]) > 0
+    assert int(build_radio.DEFAULTS["BHEEM_DAILY_MAX_STORIES"]) >= 300
 
 def test_the_prompt_still_refuses_padding():
     """The ceiling is lower now; the refusal still has to be in the prompt."""
@@ -423,3 +445,66 @@ def test_the_registry_entry_is_usable_today():
     assert entry["provider_voices"]["sarvam"].startswith("svc-"), (
         "the dispatch is on the svc- prefix; anything else is read as a stock speaker"
     )
+
+
+def test_a_story_costs_more_than_its_words():
+    """
+    Every story carries a connective and a music bed whatever its length, so
+    airtime is a line and not a ratio: seconds = overhead + rate x words.
+
+    The first model was a single ratio, aimed at 80 minutes with 104 stories,
+    and landed at 73.5 - because 104 stories spend around 24 minutes on
+    furniture alone, which a ratio cannot see.
+    """
+    from backend.worker.build_radio import _story_seconds, _story_words
+
+    assert _story_seconds(0) > 10, "a story with no words still costs airtime"
+
+    # Both measured builds, reproduced within a second.
+    assert abs(_story_seconds(70) - 37.4) < 1.0
+    assert abs(_story_seconds(86) - 42.8) < 1.0
+
+    # And the round trip: ask for 80 minutes, get 80 minutes.
+    for stories in (104, 120, 131):
+        words = _story_words(stories, 80)
+        assert abs(stories * _story_seconds(words) / 60 - 80) < 6
+
+
+def test_the_written_prompts_are_handed_to_the_builder(tmp_path, monkeypatch):
+    """
+    Settings reads BHEEM_PROMPTS_DIR once, when it is constructed. The story
+    length is only known after that - it depends on how many stories the day
+    has - so the new prompt directory has to be put on the settings object,
+    not left in the environment.
+
+    Missing this was silent in the worst way: the prompt was written, nothing
+    read it, the build used Bheem Radio's own 140-word default, and every
+    story came back from cache looking like a successful run.
+    """
+    from backend.worker import build_radio
+
+    source = tmp_path / "prompts"
+    source.mkdir()
+    (source / "script_writer.md").write_text(build_radio._LENGTH_LINE_FROM, encoding="utf-8")
+    monkeypatch.setenv("BHEEM_PROMPTS_DIR", str(source))
+
+    written = build_radio._write_prompts(96)
+
+    assert written is not None, "the caller cannot point settings at nothing"
+    assert written != source, "it must be a copy, not an edit of their directory"
+    assert "96 words" in (written / "script_writer.md").read_text(encoding="utf-8")
+
+
+def test_the_voice_actually_gets_the_news_treatment():
+    """
+    voice_preset defaults to "auto", which for Sarvam means "clean" - trim and
+    level and nothing else, on the grounds that Sarvam already sounds
+    finished. That is true of a sentence and wrong for a bulletin: the station
+    went out with no news treatment at all for every build up to this one.
+
+    Applied in the mixer rather than the TTS, so it re-mixes cached audio and
+    adds nothing to the voice bill.
+    """
+    from backend.worker import build_radio
+
+    assert build_radio.DEFAULTS["BHEEM_VOICE_PRESET"] == "energetic"
