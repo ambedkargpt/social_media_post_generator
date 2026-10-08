@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Loader2, RotateCw } from 'lucide-react';
 
-import DashboardShell from '../layouts/DashboardShell';
 import { useAuth } from '../context/AuthContext';
 import { useRadio } from '../context/RadioContext';
 import RadioDesk from '../components/radio/RadioDesk';
@@ -124,7 +123,7 @@ export default function BhimRadioPage() {
   };
 
   return (
-    <DashboardShell active="radio">
+    <>
       <div className="bhim-station">
 
         {/* ── layout toggle ──
@@ -280,6 +279,6 @@ export default function BhimRadioPage() {
         .bhim-station input[type="range"] { accent-color: #1d7afc; }
         .bhim-station :focus-visible { outline: 2px solid #1d7afc; outline-offset: 2px; }
       `}</style>
-    </DashboardShell>
+    </>
   );
 }

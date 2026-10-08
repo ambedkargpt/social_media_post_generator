@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, Save, Home, ArrowUp, Loader2, SlidersHorizontal } from 'lucide-react';
-import DashboardShell from '../layouts/DashboardShell';
 import Topbar from '../components/dashboard/Topbar';
 import ConnectedAccounts from '../components/publish/ConnectedAccounts';
 import { useAuth } from '../context/AuthContext';
@@ -403,7 +402,7 @@ export default function Preferences() {
   const stillLoading  = loadingCore || loadingParty || loadingPosition;
 
   return (
-    <DashboardShell active="prefs">
+    <>
       {/* The brand and the back-to-dashboard button that used to head this page
           are both in the sidebar now, which is always on screen. The answered
           count stays: it belongs to this page. */}
@@ -649,6 +648,6 @@ export default function Preferences() {
           </div>
         </div>
       )}
-    </DashboardShell>
+    </>
   );
 }

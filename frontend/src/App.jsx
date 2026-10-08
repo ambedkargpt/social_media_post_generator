@@ -38,6 +38,7 @@ import CustomCursor        from './components/CustomCursor';
 import ScrollProgress      from './components/ScrollProgress';
 import OpeningSplash       from './components/OpeningSplash';
 import LanguagePopup       from './components/LanguagePopup';
+import DashboardLayout from './layouts/DashboardLayout';
 import Spinner             from './components/Spinner';
 import { I18nProvider }    from './i18n/index.jsx';
 import TransitionCurtain   from './components/TransitionCurtain';
@@ -47,10 +48,19 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 // Wraps <Routes> and re-keys on every pathname change so the CSS
 // pageEnter animation replays on each navigation.
+// Screens that share the signed-in frame. Moving between them must not look
+// like arriving somewhere new, because the rail does not go anywhere.
+const APP_PATHS = ['/dashboard', '/generate', '/preferences', '/posts', '/bhimradio'];
+
 function PageTransition({ children }) {
   const location = useLocation();
+  // Keying on the path tells React the tree is a different one, so it throws
+  // the old one away and builds it again - rail, collapsed state, scroll
+  // position and all. The signed-in screens therefore share one key: the
+  // fade belongs to arriving at the app, not to moving around inside it.
+  const inApp = APP_PATHS.some((p) => location.pathname.startsWith(p));
   return (
-    <div key={location.pathname} className="page-enter">
+    <div key={inApp ? 'app' : location.pathname} className="page-enter">
       {children}
     </div>
   );
@@ -150,12 +160,17 @@ export default function App() {
             <Route path="/questionnaire" element={
               <ProtectedRoute><Questionnaire /></ProtectedRoute>
             } />
-            <Route path="/dashboard" element={
-              <ProtectedRoute><Dashboard /></ProtectedRoute>
-            } />
-            <Route path="/generate" element={
-              <ProtectedRoute><ServiceSelection /></ProtectedRoute>
-            } />
+            {/* One frame for all of these: the rail is mounted by the layout
+                and outlives the screen inside it, so moving between them
+                changes only the content column. Before this each page
+                rendered its own shell and the whole sidebar was rebuilt. */}
+            <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/generate" element={<ServiceSelection />} />
+              <Route path="/preferences" element={<Preferences />} />
+              <Route path="/posts" element={<PostHistory />} />
+              <Route path="/bhimradio" element={<BhimRadio />} />
+            </Route>
             <Route path="/generate/social-media" element={
               <ProtectedRoute><SocialMediaPostGenerator /></ProtectedRoute>
             } />
@@ -165,17 +180,8 @@ export default function App() {
             <Route path="/generate/music/:type" element={
               <ProtectedRoute><MusicGenerationStudio /></ProtectedRoute>
             } />
-            <Route path="/preferences" element={
-              <ProtectedRoute><Preferences /></ProtectedRoute>
-            } />
-            <Route path="/posts" element={
-              <ProtectedRoute><PostHistory /></ProtectedRoute>
-            } />
             <Route path="/bhimbot" element={
               <ProtectedRoute><BheemBot /></ProtectedRoute>
-            } />
-            <Route path="/bhimradio" element={
-              <ProtectedRoute><BhimRadio /></ProtectedRoute>
             } />
             {/* The page was /bheembot until the spelling was corrected. Anyone
                 holding that link - a bookmark, a shared message - still lands
