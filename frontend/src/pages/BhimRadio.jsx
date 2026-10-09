@@ -97,9 +97,14 @@ export default function BhimRadioPage() {
     : storyDuration - offsetInStory;
 
   // The running order: what just aired, what is on now, and what is coming.
+  // The whole rest of the bulletin, not a window of ten. The column is as
+  // tall as the story beside it, and a fixed count left a third of it empty
+  // on a desktop while hiding forty stories that were going out tonight.
+  // The list scrolls inside the column, so a long bulletin does not stretch
+  // the page.
   const upcoming = [];
   if (tracks.length) {
-    for (let k = -1; k <= 9; k += 1) {
+    for (let k = -1; k < tracks.length; k += 1) {
       const i = storyIndex + k;
       if (i < 0 || i >= tracks.length) continue;
       upcoming.push({

@@ -110,13 +110,19 @@ export default function RadioDesk({
         {/* the running order */}
         <aside
           className="bhim-desk-order"
-          style={{ minWidth: 0, padding: '24px 0 24px 28px' }}
+          style={{
+            minWidth: 0, padding: '24px 0 24px 28px',
+            display: 'flex', flexDirection: 'column', minHeight: 0,
+          }}
         >
           <div style={{ marginBottom: 16 }}>
             <Label>{t('radio.runningOrder', { n: total })}</Label>
           </div>
 
-          <ol style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+          {/* Scrolls inside the column rather than growing the page: a
+              bulletin can be sixty stories long and the footer has to stay
+              where it is. */}
+          <ol className="bhim-order-list" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
             {upcoming.map(({ track, state, at }) => (
               <li
                 key={`${track.id}-${state}`}
@@ -190,8 +196,24 @@ export default function RadioDesk({
         .bhim-desk-body {
           display: grid;
           grid-template-columns: 1.45fr 1fr;
-          align-items: start;
+          /* stretch, not start: the running order fills the row beside the
+             story instead of stopping at its last item and leaving the rest
+             of the column blank. */
+          align-items: stretch;
         }
+        .bhim-order-list {
+          overflow-y: auto;
+          flex: 1;
+          /* Bounded by the viewport, not by its own content. A grid row grows
+             to its tallest child, so a list of sixty stories simply made the
+             row sixty stories tall and nothing ever scrolled - the column was
+             full and the page was enormous. */
+          max-height: 58vh;
+          min-height: 0;
+          scrollbar-width: thin;
+        }
+        .bhim-order-list::-webkit-scrollbar { width: 6px; }
+        .bhim-order-list::-webkit-scrollbar-thumb { background: ${RULE}; }
         .bhim-desk-body > section { border-right: 2px solid ${RULE}; }
         @media (max-width: 1023px) {
           .bhim-desk-body { grid-template-columns: 1fr; }

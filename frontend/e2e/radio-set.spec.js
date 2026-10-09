@@ -119,4 +119,28 @@ test.describe('the broadcast desk', () => {
     // Side by side, not stacked.
     expect(Math.abs(story.y - order.y)).toBeLessThan(80);
   });
+  test('the running order fills the column beside the story', async ({ page }) => {
+    // It used to show ten rows at their natural height, which left a third of
+    // the column blank on a desktop while hiding forty stories that were
+    // going out tonight. Geometry, because the markup looks the same either
+    // way: the column has to reach the story's depth, and the list has to
+    // carry more than fits in it.
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await signedInAs(page, 'someone.else@example.com');
+    await page.goto('/bhimradio');
+    await expect(page).toHaveURL(/\/bhimradio/);
+
+    const story = await page.locator('.bhim-desk-body > section').boundingBox();
+    const order = await page.locator('.bhim-desk-order').boundingBox();
+
+    // Within a hair of the story's height rather than stopping short.
+    expect(order.height).toBeGreaterThan(story.height * 0.9);
+
+    // And the list actually overflows, which is what "fills" means here.
+    const list = page.locator('.bhim-order-list');
+    const { scrollHeight, clientHeight } = await list.evaluate((el) => ({
+      scrollHeight: el.scrollHeight, clientHeight: el.clientHeight,
+    }));
+    expect(scrollHeight).toBeGreaterThan(clientHeight);
+  });
 });
