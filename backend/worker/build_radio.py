@@ -107,7 +107,7 @@ DEFAULTS = {
         "minimax": {"hi": "English_Persuasive_Man", "en": "English_Persuasive_Man"},
         "selfhosted": {"hi": "agastya", "en": "agastya"},
         "gemini": {"hi": "Charon", "en": "Charon"},
-        "sarvam": {"hi": "priya", "en": "priya"},       # <- ours
+        "sarvam": {"hi": "ritu", "en": "ritu"},         # <- ours
         "openai": {"hi": "onyx", "en": "onyx"},
         "fake": {"hi": "tone", "en": "tone"},
     }),

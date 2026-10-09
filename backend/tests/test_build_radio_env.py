@@ -166,7 +166,7 @@ def test_the_voice_mapping_is_sent_whole(monkeypatch):
 
     voices = json.loads(build_radio.DEFAULTS["BHEEM_TTS_VOICES"])
 
-    assert voices["sarvam"] == {"hi": "priya", "en": "priya"}
+    assert voices["sarvam"] == {"hi": "ritu", "en": "ritu"}
     # The fallback provider must still have a voice of its own.
     assert voices["gemini"]["hi"], "the Gemini fallback lost its speaker"
     assert set(voices) >= {"sarvam", "gemini", "openai", "minimax", "fake"}
