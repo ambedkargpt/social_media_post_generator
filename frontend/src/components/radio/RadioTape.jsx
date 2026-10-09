@@ -264,7 +264,7 @@ export default function RadioTape({
         }}
       >
         <TuneButton listening={listening} onClick={onTune} disabled={!canTune} width={240} height={76} />
-        <SignalMeter active={listening} />
+        <SignalMeter active={listening} live={canTune} />
         <StatusLine listening={listening} nextInSec={nextInSec} progress={progress} />
         <VolumeControl volume={volume} onChange={onVolume} listening={listening} disabled={!canTune} />
       </footer>

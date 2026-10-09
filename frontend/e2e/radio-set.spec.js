@@ -143,4 +143,31 @@ test.describe('the broadcast desk', () => {
     }));
     expect(scrollHeight).toBeGreaterThan(clientHeight);
   });
+  test('the meter moves while tuned out, on both layouts', async ({ page }) => {
+    // The station does not stop because nobody is listening: the clock
+    // counts, the headline changes, the tape slides. The meter sitting still
+    // was the one part that said otherwise. Measured by sampling a bar's
+    // height, because the class is applied either way.
+    await signedInAs(page, 'someone.else@example.com');
+    await page.goto('/bhimradio');
+    await expect(page).toHaveURL(/\/bhimradio/);
+
+    async function barMoves() {
+      const bar = page.locator('.bhim-signal-bar').first();
+      await expect(bar).toBeVisible();
+      const seen = new Set();
+      for (let i = 0; i < 12; i += 1) {
+        seen.add(Math.round((await bar.boundingBox()).height));
+        await page.waitForTimeout(90);
+      }
+      return seen.size > 1;
+    }
+
+    expect(await barMoves()).toBe(true);
+
+    // The keyframes used to live in the desk's own style tag, so the tape's
+    // bars never moved for anyone.
+    await page.getByRole('button', { name: /^tape|टेप$/i }).click();
+    expect(await barMoves()).toBe(true);
+  });
 });

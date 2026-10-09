@@ -177,7 +177,7 @@ export default function RadioDesk({
         }}
       >
         <TuneButton listening={listening} onClick={onTune} disabled={!canTune} />
-        <SignalMeter active={listening} />
+        <SignalMeter active={listening} live={canTune} />
         <StatusLine listening={listening} nextInSec={nextInSec} progress={progress} />
         <VolumeControl
           volume={volume}
@@ -229,16 +229,6 @@ export default function RadioDesk({
         .bhim-tune:hover:not(:disabled) { filter: brightness(1.15); }
         .bhim-tune:focus-visible,
         .bhim-desk-body :focus-visible { outline: 2px solid ${ACCENT}; outline-offset: 2px; }
-        @keyframes bhim-signal {
-          from { height: 3px; }
-          to   { height: 24px; }
-        }
-        .bhim-signal-bar {
-          animation: bhim-signal 0.52s ease-in-out infinite alternate;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .bhim-signal-bar { animation: none; height: 12px; }
-        }
       `}</style>
     </div>
   );

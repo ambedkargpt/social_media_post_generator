@@ -84,7 +84,17 @@ export function Transcript({ text, offsetSec, durationSec, listening, size = 23 
 /* ── signal meter ─────────────────────────────────────────────────────────── */
 
 /** Twenty-eight bars that move only while sound is coming out. */
-export function SignalMeter({ active, bars = 28 }) {
+/**
+ * The meter moves whenever the station is on air, listening or not.
+ *
+ * It used to move only while the listener could hear it, which said the wrong
+ * thing: the clock keeps counting, the headline keeps changing and the tape
+ * keeps sliding for someone tuned out, and then the one part that actually
+ * looks like sound sat still. The broadcast is running either way - what
+ * changes is whether this person is receiving it, and that is the colour.
+ */
+export function SignalMeter({ active, live, bars = 28 }) {
+  const moving = active || live;
   return (
     <span
       aria-hidden="true"
@@ -93,12 +103,17 @@ export function SignalMeter({ active, bars = 28 }) {
       {Array.from({ length: bars }, (_, i) => (
         <span
           key={i}
-          className={active ? 'bhim-signal-bar' : ''}
+          className={moving ? 'bhim-signal-bar' : ''}
           style={{
             width: 3,
-            height: active ? undefined : 3,
-            background: active ? ACCENT_HOVER : RULE,
+            height: moving ? undefined : 3,
+            // Bright while it is reaching this listener, dim while it is
+            // going out past them.
+            background: active ? ACCENT_HOVER : moving ? '#2f4a7a' : RULE,
             animationDelay: `${(i % 7) * 0.13}s`,
+            // Shorter throw when nobody is listening, so the two states read
+            // differently at a glance rather than only by colour.
+            animationDuration: active ? undefined : '0.9s',
           }}
         />
       ))}

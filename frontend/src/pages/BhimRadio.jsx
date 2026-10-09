@@ -105,12 +105,18 @@ export default function BhimRadioPage() {
   const upcoming = [];
   if (tracks.length) {
     for (let k = -1; k < tracks.length; k += 1) {
-      const i = storyIndex + k;
-      if (i < 0 || i >= tracks.length) continue;
+      // Wrapped, because the bulletin loops all day. Without this the list
+      // ran out as the broadcast neared the last story - four rows left in a
+      // column built to hold thirty - when what comes next is the top of the
+      // bulletin again.
+      const raw = storyIndex + k;
+      const i = ((raw % tracks.length) + tracks.length) % tracks.length;
+      const wrapped = raw >= tracks.length;
+      const startSec = tracks[i].startSec + (wrapped ? cycleLength : 0);
       upcoming.push({
         track: tracks[i],
         state: k < 0 ? 'aired' : k === 0 ? 'onair' : 'next',
-        at: new Date(now.getTime() + (tracks[i].startSec - at) * 1000),
+        at: new Date(now.getTime() + (startSec - at) * 1000),
       });
     }
   }
