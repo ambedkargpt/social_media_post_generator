@@ -74,10 +74,17 @@ export default function BhimRadioPage() {
   const canTune = onAir && !streamError;
   const cycleLength = station?.durationSec || 0;
 
-  // Where the broadcast is. A listener on the clock reads it from the clock; a
-  // demonstration reads it from the audio, because it has been stopped
-  // somewhere deliberate and the clock would drag it away.
-  const at = isDemo ? position : broadcastNow;
+  // Where the panel is drawn.
+  //
+  // The clock, except for a demonstration that is actually playing - there the
+  // panel has to match what is coming out of the speakers, because the whole
+  // point is to stop on a segment and talk about it.
+  //
+  // Paused, even a demonstration goes back to the clock: the station does not
+  // stop because someone stopped listening, and a frozen tape says it did.
+  // The audio still resumes where it was left; that is `position`, and it is
+  // what the scrubber and the transport read.
+  const at = (isDemo && playing) ? position : broadcastNow;
 
   let storyIndex = -1;
   for (let i = tracks.length - 1; i >= 0; i -= 1) {

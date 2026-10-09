@@ -170,4 +170,25 @@ test.describe('the broadcast desk', () => {
     await page.getByRole('button', { name: /^tape|टेप$/i }).click();
     expect(await barMoves()).toBe(true);
   });
+  test('the tape slides while tuned out, demo account included', async ({ page }) => {
+    // The panel used to be drawn from the audio position for the demo
+    // account, so pausing froze the tape: the station appeared to stop
+    // because one listener had. Measured by a segment's x, not by the clock
+    // label, which ticks from a different source and moved either way.
+    for (const email of ['someone.else@example.com', DEMO_EMAIL]) {
+      await signedInAs(page, email);
+      await page.addInitScript(() => {
+        try { localStorage.setItem('bhim-radio-layout', 'tape'); } catch { /* blocked */ }
+      });
+      await page.goto('/bhimradio');
+
+      const segment = page.locator('[role="img"] > div').nth(1);
+      await expect(segment).toBeVisible();
+      const before = (await segment.boundingBox()).x;
+      await page.waitForTimeout(2200);
+      const after = (await segment.boundingBox()).x;
+
+      expect(after, `tape is frozen for ${email}`).toBeLessThan(before);
+    }
+  });
 });
