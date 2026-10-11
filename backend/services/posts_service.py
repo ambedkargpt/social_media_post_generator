@@ -1093,8 +1093,9 @@ class PostsService:
             _logging.getLogger(__name__).warning("semrag retrieval failed, falling back to base retrieval: %s", exc)
             retrieval_cfg["semrag_enabled"] = False
             retrieval_cfg.pop("semrag_candidates", None)
+        base_chunks: list[dict[str, Any]] = []
         try:
-            return retrieve_relevant_chunks(
+            base_chunks = retrieve_relevant_chunks(
                 news_text=query_text,
                 embedder=embedder,
                 store=store,
@@ -1102,18 +1103,50 @@ class PostsService:
                 retrieval_cfg=retrieval_cfg,
             )
         except Exception as exc:  # noqa: BLE001 - surface a usable error, not a traceback
-            # Chunks used to be the post's only grounding, so failing here was
-            # right. They are not any more: the Ambedkarite lens moved into the
-            # prompt, and the transcript and research brief carry the substance.
-            # Refusing on the weakest dependency would take the whole feature
-            # down over material the post can now do without. The caller checks
-            # that SOMETHING survived before writing.
             import logging as _logging
 
             _logging.getLogger(__name__).error(
-                "chunk retrieval failed, continuing without chunks: %s", exc
+                "chunk retrieval failed, continuing with semrag if available: %s", exc
             )
-            return []
+
+        # Retrieve authentic Dr. B.R. Ambedkar Writings & Speeches (Vol 1 & 2)
+        # from the live Memgraph Cloud SemRAG Knowledge Graph:
+        semrag_chunks: list[dict[str, Any]] = []
+        try:
+            from backend.semrag.memgraph_retriever import query_semrag
+
+            semrag_res = query_semrag(query_text, top_chunks=4)
+            for c in semrag_res.get("chunks", []):
+                vol = c.get("volume", 1)
+                cid = c.get("chunk_id", "")
+                text = (c.get("text") or "").strip()
+                if not text:
+                    continue
+                matched_ent = c.get("matched_entity", "Dr. B.R. Ambedkar")
+                ambedkar_chunk = {
+                    "chunk_id": f"semrag_vol{vol}_{cid}",
+                    "video_title": f"Dr. B.R. Ambedkar: Writings and Speeches (Vol. {vol})",
+                    "video_link": "",
+                    "chunk_text": text,
+                    "similarity_score": 0.95,
+                    "relevance_score": 0.95,
+                    "argument_score": 0.95,
+                    "final_score": 0.95,
+                    "is_semrag": True,
+                    "matched_entity": matched_ent,
+                    "volume": vol,
+                }
+                semrag_chunks.append(ambedkar_chunk)
+        except Exception as exc:
+            import logging as _logging
+
+            _logging.getLogger(__name__).warning(
+                "Failed to retrieve Memgraph SemRAG chunks: %s", exc
+            )
+
+        # Merge base video chunks and Dr. Ambedkar SemRAG chunks
+        combined = list(base_chunks) + semrag_chunks
+        return combined
 
     def _full_contexts_for_chunks(self, chunks: list[dict[str, Any]], context_by_title: dict[str, Any]) -> list[dict[str, Any]]:
         contexts: list[dict[str, Any]] = []
