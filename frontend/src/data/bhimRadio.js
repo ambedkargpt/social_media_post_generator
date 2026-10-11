@@ -97,8 +97,19 @@ export async function loadStation(tenant) {
   if (!response.ok) throw new Error(`radio manifest: HTTP ${response.status}`);
 
   const manifest = await response.json();
-  const audioUrl = manifest.audio_url
-    || (manifest.audio_key ? `${BASE_URL}/${manifest.audio_key}` : '');
+  // `audio_url` is written by the build as a path on whatever serves the
+  // manifest, which in development is the dev server at /radio. In production
+  // the audio sits behind the configured base URL instead, so the key - the
+  // object's own path, with no host in it - is the one that resolves there.
+  // Taking audio_url first sent production at /radio/..., which is gitignored
+  // and has never been deployed. An absolute URL still wins: that is the
+  // build naming a host on purpose.
+  const absolute = /^https?:\/\//i.test(manifest.audio_url || '');
+  const audioUrl = absolute
+    ? manifest.audio_url
+    : BASE_URL && manifest.audio_key
+      ? `${BASE_URL}/${manifest.audio_key}`
+      : manifest.audio_url || '';
   if (!audioUrl) return null;
 
   return {

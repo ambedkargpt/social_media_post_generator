@@ -44,7 +44,12 @@ function mockFetch(body, status = 200) {
   return fetchMock;
 }
 
-afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
+  vi.resetModules();
+  vi.restoreAllMocks();
+});
 
 describe('stationForParty', () => {
   // One bulletin is being built, so one station is what anyone can be sent to.
@@ -114,6 +119,36 @@ describe('loadStation', () => {
     const station = await loadStation('congress');
 
     expect(station.audioUrl).toMatch(/congress\/2026-10-04-3716a8dc0a\.mp3$/);
+  });
+
+  it('ignores a dev-server audio_url once a base URL is configured', async () => {
+    // The build writes audio_url as a path on whatever served the manifest,
+    // which in development is the dev server at /radio. Production serves the
+    // audio from a different host, so taking that path pointed the player at
+    // a gitignored directory that has never been deployed - the station came
+    // up, the running order filled, and the audio 404ed. audio_key carries no
+    // host, which is why it is the one that travels.
+    //
+    // The base URL is read once when the module loads, so the module has to
+    // be re-imported after the environment is stubbed.
+    vi.stubEnv('VITE_RADIO_BASE_URL', 'https://cdn.example.net');
+    vi.resetModules();
+    const { loadStation: load } = await import('./bhimRadio');
+
+    mockFetch({ ...MANIFEST, audio_url: '/radio/congress/2026-10-04-3716a8dc0a.mp3' });
+
+    expect((await load('congress')).audioUrl)
+      .toBe('https://cdn.example.net/congress/2026-10-04-3716a8dc0a.mp3');
+  });
+
+  it('still honours an absolute audio_url, which names a host deliberately', async () => {
+    vi.stubEnv('VITE_RADIO_BASE_URL', 'https://cdn.example.net');
+    vi.resetModules();
+    const { loadStation: load } = await import('./bhimRadio');
+
+    mockFetch(MANIFEST);
+
+    expect((await load('congress')).audioUrl).toBe(MANIFEST.audio_url);
   });
 
   it('reports nothing on air rather than throwing when there is no manifest', async () => {
