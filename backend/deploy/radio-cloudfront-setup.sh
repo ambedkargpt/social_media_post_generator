@@ -40,15 +40,42 @@ if [ -z "$OAC" ] || [ "$OAC" = "None" ]; then
 fi
 echo "     $OAC"
 
-echo "2/5  managed policies"
-# Looked up rather than hard-coded. The IDs are stable, but a wrong one here
-# fails the distribution create with a message that names nothing useful.
+echo "2/5  policies"
+# The cache policy is looked up rather than hard-coded. The IDs are stable,
+# but a wrong one fails the distribution create with a message that names
+# nothing useful.
 CACHE=$(aws cloudfront list-cache-policies --type managed \
   --query "CachePolicyList.Items[?CachePolicy.CachePolicyConfig.Name=='Managed-CachingOptimized'].CachePolicy.Id" \
   --output text)
-CORS=$(aws cloudfront list-response-headers-policies --type managed \
-  --query "ResponseHeadersPolicyList.Items[?ResponseHeadersPolicy.ResponseHeadersPolicyConfig.Name=='Managed-SimpleCORS'].ResponseHeadersPolicy.Id" \
-  --output text)
+
+# CORS is our own policy, not Managed-SimpleCORS. SimpleCORS leaves
+# AccessControlAllowMethods empty and does not override the origin, and with
+# it attached a real browser request - Origin header present, same URL - came
+# back with no Access-Control-Allow-Origin at all. The station showed "could
+# not load" while curl on the same file showed 200 and the header.
+#
+# So: curl is not a browser. It does not enforce CORS and therefore cannot
+# confirm it. The check that counts is a cross-origin fetch from a real page,
+# which e2e/radio-set.spec.js makes.
+CORS=$(aws cloudfront list-response-headers-policies --type custom \
+  --query "ResponseHeadersPolicyList.Items[?ResponseHeadersPolicy.ResponseHeadersPolicyConfig.Name=='$BUCKET-cors'].ResponseHeadersPolicy.Id" \
+  --output text 2>/dev/null || true)
+
+if [ -z "$CORS" ] || [ "$CORS" = "None" ]; then
+  CORS=$(aws cloudfront create-response-headers-policy --response-headers-policy-config "{
+    \"Name\": \"$BUCKET-cors\",
+    \"Comment\": \"Cross-origin reads of the bulletins, methods and headers spelled out\",
+    \"CorsConfig\": {
+      \"AccessControlAllowOrigins\": { \"Quantity\": 1, \"Items\": [\"*\"] },
+      \"AccessControlAllowHeaders\": { \"Quantity\": 1, \"Items\": [\"*\"] },
+      \"AccessControlAllowMethods\": { \"Quantity\": 3, \"Items\": [\"GET\", \"HEAD\", \"OPTIONS\"] },
+      \"AccessControlExposeHeaders\": { \"Quantity\": 3, \"Items\": [\"Content-Length\", \"Content-Range\", \"Accept-Ranges\"] },
+      \"AccessControlAllowCredentials\": false,
+      \"AccessControlMaxAgeSec\": 3600,
+      \"OriginOverride\": true
+    }
+  }" --query 'ResponseHeadersPolicy.Id' --output text)
+fi
 echo "     cache $CACHE"
 echo "     cors  $CORS"
 
@@ -112,8 +139,10 @@ echo "5/5  waiting for the distribution to deploy (5-10 min)"
 aws cloudfront wait distribution-deployed --id "$DIST_ID"
 
 echo
-echo "done. check it loads:"
-echo "  curl -I https://$DOMAIN/general/latest.json"
+echo "done. check it from a browser, not from curl:"
+echo "  VITE_RADIO_BASE_URL=https://$DOMAIN npm run dev   # in frontend/"
+echo "  npx playwright test e2e/radio-set.spec.js"
+echo "(curl does not enforce CORS, so a 200 from curl proves nothing here.)"
 echo
 echo "then in Vercel:"
 echo "  VITE_RADIO_BASE_URL = https://$DOMAIN"
