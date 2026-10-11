@@ -249,7 +249,7 @@ def get_settings() -> Settings:
     """
     openai_api_key = os.getenv("OPENAI_API_KEY", "")
     openai_model = os.getenv("OPENAI_MODEL", "gpt-5-nano")
-    gemini_api_key = os.getenv("GEMINI_API_KEY", "")
+    gemini_api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY", "")
     embedding_model = os.getenv("EMBEDDING_MODEL", "gemini-embedding-001")
     news_urls_raw = os.getenv("NEWS_URLS", "")
     news_urls = [u.strip() for u in news_urls_raw.split(",") if u.strip()]

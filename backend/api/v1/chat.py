@@ -43,16 +43,16 @@ class ChatResponse(BaseModel):
 
 # ── System prompt ──────────────────────────────────────────────────────────────
 
-_SYSTEM_PROMPT = """You are BheemBot, an AI knowledge assistant trained exclusively on the writings, speeches, and philosophy of Dr. B.R. Ambedkar — the principal architect of the Indian Constitution, social reformer, jurist, economist, and champion of the rights of Dalits and other marginalized communities.
+_SYSTEM_PROMPT = """You are BheemBot, an AI knowledge assistant trained on the authoritative writings, speeches, and philosophy of Dr. B.R. Ambedkar — principal architect of the Indian Constitution, social reformer, jurist, and champion of social justice.
 
 Your role:
 1. Answer questions about Dr. Ambedkar's life, philosophy, writings, and legacy.
-2. Explain constitutional provisions, rights, and their historical context.
-3. Discuss social justice, caste, equality, and anti-caste movements.
-4. Draw exclusively from the retrieved context below when available; if the context is insufficient, acknowledge it honestly.
-5. Be respectful, educational, and empowering in tone.
-6. Keep answers concise (3–5 paragraphs) unless the user explicitly asks for more detail.
-7. NEVER fabricate quotes or citations — if unsure, say so.
+2. Ground your explanations directly in the retrieved passages and knowledge graph relations below whenever available.
+3. When referencing Dr. Ambedkar's thoughts, cite the source volume and context (e.g. "In Volume 1 of his writings...", "In Annihilation of Caste...").
+4. If exact quotes or passages are present in the retrieved context, use them faithfully.
+5. Be respectful, educational, scholarly, and empowering in tone.
+6. Keep answers structured (3–5 paragraphs with bullet points where appropriate).
+7. If the retrieved context is insufficient to answer the question, state what is known from historical consensus or acknowledge the limits honestly.
 
 Retrieved Knowledge Context:
 {context}
@@ -119,9 +119,33 @@ def chat_message(
     if not payload.message.strip():
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Message cannot be empty.")
 
-    # 1. Retrieve relevant chunks
-    chunks = _try_retrieve(payload.message.strip(), top_k=5)
-    context_str = _chunks_to_context(chunks)
+    # 1. Primary: Retrieve authoritative Ambedkar writings & relations from SemRAG (Memgraph Cloud)
+    sources: List[SourceChunk] = []
+    context_str = ""
+    try:
+        from backend.semrag.memgraph_retriever import retrieve_semrag_context
+
+        semrag_ctx, semrag_sources = retrieve_semrag_context(payload.message.strip(), top_k=5)
+        if semrag_ctx:
+            context_str = semrag_ctx
+            sources = [
+                SourceChunk(video_title=s["video_title"], snippet=s["snippet"])
+                for s in semrag_sources
+            ]
+    except Exception as exc:
+        logger.warning("SemRAG retrieval skipped due to exception: %s", exc)
+
+    # Secondary: Fallback to local channel retrieval if SemRAG yielded no context
+    if not context_str:
+        chunks = _try_retrieve(payload.message.strip(), top_k=5)
+        context_str = _chunks_to_context(chunks)
+        seen: set[str] = set()
+        for c in chunks:
+            title = c.get("video_title", "")
+            if title and title not in seen:
+                seen.add(title)
+                snippet = (c.get("chunk_text") or "")[:160].rstrip() + "…"
+                sources.append(SourceChunk(video_title=title, snippet=snippet))
 
     lang_label = "Hindi" if payload.language == "hi" else "English"
     system_content = _SYSTEM_PROMPT.replace("{context}", context_str).replace("{language}", lang_label)
@@ -132,34 +156,37 @@ def chat_message(
         messages.append({"role": h.role, "content": h.content})
     messages.append({"role": "user", "content": payload.message.strip()})
 
-    # 3. Call LLM
+    # 3. Call LLM (supports OpenAI or Google Gemini fallback)
+    reply_text = ""
     try:
         openai_key = getattr(settings, "openai_api_key", None)
-        if not openai_key:
-            raise ValueError("OPENAI_API_KEY not configured")
-        client = OpenAI(api_key=openai_key)
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=messages,
-            max_tokens=700,
-            temperature=0.5,
-        )
-        reply_text = response.choices[0].message.content.strip()
+        if openai_key:
+            client = OpenAI(api_key=openai_key)
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=messages,
+                max_tokens=700,
+                temperature=0.5,
+            )
+            reply_text = response.choices[0].message.content.strip()
+        else:
+            gemini_key = getattr(settings, "gemini_api_key", None) or os.getenv("GOOGLE_API_KEY")
+            if gemini_key:
+                from google import genai
+                gclient = genai.Client(api_key=gemini_key)
+                combined_prompt = f"{system_content}\n\nUser Question: {payload.message.strip()}"
+                gresp = gclient.models.generate_content(
+                    model="models/gemini-2.5-flash",
+                    contents=combined_prompt,
+                )
+                reply_text = gresp.text.strip()
+            else:
+                raise ValueError("Neither OPENAI_API_KEY nor GEMINI_API_KEY is configured")
     except Exception as exc:
         logger.error("LLM call failed in BheemBot: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="BheemBot is temporarily unavailable. Please try again.",
         )
-
-    # 4. Build source list (dedup by title)
-    seen: set[str] = set()
-    sources: List[SourceChunk] = []
-    for c in chunks:
-        title = c.get("video_title", "")
-        if title and title not in seen:
-            seen.add(title)
-            snippet = (c.get("chunk_text") or "")[:160].rstrip() + "…"
-            sources.append(SourceChunk(video_title=title, snippet=snippet))
 
     return ChatResponse(reply=reply_text, sources=sources)
