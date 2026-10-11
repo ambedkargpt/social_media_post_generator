@@ -8,7 +8,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from openai import OpenAI
 from pydantic import BaseModel
 
@@ -109,12 +109,22 @@ def _chunks_to_context(chunks: List[dict]) -> str:
     return "\n\n---\n\n".join(parts)
 
 
+def _optional_user_id(authorization: str = Header(default="")) -> str:
+    if not authorization.startswith("Bearer "):
+        return "guest"
+    try:
+        from backend.core.dependencies import get_current_user_id
+        return get_current_user_id(authorization)
+    except Exception:
+        return "guest"
+
+
 # ── Endpoint ───────────────────────────────────────────────────────────────────
 
 @router.post("/message", response_model=ChatResponse)
 def chat_message(
     payload: ChatRequest,
-    current_user_id: str = Depends(get_current_user_id),
+    current_user_id: str = Depends(_optional_user_id),
 ) -> ChatResponse:
     if not payload.message.strip():
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Message cannot be empty.")

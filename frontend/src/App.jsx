@@ -42,7 +42,7 @@ import { I18nProvider }    from './i18n/index.jsx';
 import TransitionCurtain   from './components/TransitionCurtain';
 import ErrorBoundary       from './components/ErrorBoundary';
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'dummy-client-id.apps.googleusercontent.com';
 
 // Wraps <Routes> and re-keys on every pathname change so the CSS
 // pageEnter animation replays on each navigation.
@@ -171,7 +171,7 @@ export default function App() {
               <ProtectedRoute><PostHistory /></ProtectedRoute>
             } />
             <Route path="/bhimbot" element={
-              <ProtectedRoute><BheemBot /></ProtectedRoute>
+              <BheemBot />
             } />
             {/* The page was /bheembot until the spelling was corrected. Anyone
                 holding that link - a bookmark, a shared message - still lands
