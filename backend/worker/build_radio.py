@@ -111,14 +111,19 @@ DEFAULTS = {
         "openai": {"hi": "onyx", "en": "onyx"},
         "fake": {"hi": "tone", "en": "tone"},
     }),
-    # Delivery, chosen by ear from a set of auditions rather than from the
-    # catalogue, which says nothing about how a voice sounds.
+    # Ritu as Sarvam reads her, asked for on 11 October 2026 after a run of
+    # faster and heavily processed takes.
     #
-    # Expressiveness is at its ceiling. Bheem Radio's own config says the range
-    # is 0.01-2.0; the live API rejects anything above 1.0, so 1.0 is as lively
-    # as a stock voice gets and the reader has to supply the rest.
-    "BHEEM_SARVAM_PACE": "1.22",
-    "BHEEM_SARVAM_TEMPERATURE": "1.0",
+    # Pace 1.0 is her own speed: 1.22 was a TV-news quickening of ours, on top
+    # of Bheem Radio's own 1.12. Expressiveness goes back to their 0.9 rather
+    # than sitting on the ceiling, which was the other thing making her sound
+    # worked on.
+    #
+    # The ceiling still matters if this is ever raised again: Bheem Radio's
+    # config says the range is 0.01-2.0, and the live API answers 400 to
+    # anything above 1.0 - measured, not read.
+    "BHEEM_SARVAM_PACE": "1.0",
+    "BHEEM_SARVAM_TEMPERATURE": "0.9",
     # One bulletin covering every party, dealt in turns - see RoundRobinSource.
     # The order is the order of the first round.
     "RADIO_POOL": "congress,bjp,samajwadi,general",
@@ -156,17 +161,21 @@ DEFAULTS = {
 
     # How the voice is treated before it goes out.
     #
-    # The default is "auto", which for Sarvam resolves to "clean" - trim and
-    # level, nothing else - because Sarvam's own output is already studio
-    # finished. True, and it also means the bulletin had no news treatment at
-    # all: every build so far went out raw.
+    # "clean" is trim, a 50 Hz highpass and a loudness normalise - nothing that
+    # touches how she sounds. It is what "auto" resolves to for Sarvam anyway,
+    # named here so it is a decision rather than an upstream default.
     #
-    # "energetic" is their Hindi TV-news chain: the voice about a semitone
-    # deeper and seven percent faster, chest warmth at 160 Hz, a presence lift
-    # at 3.5 kHz and heavy compression so each word lands. Applied in the
-    # mixer, not the TTS, so changing it re-mixes from the cached audio and
-    # costs nothing in voice.
-    "BHEEM_VOICE_PRESET": "energetic",
+    # It replaced "energetic", their Hindi TV-news chain, which ran the voice
+    # through rubberband at pitch 0.94 and tempo 1.07 and then compressed it
+    # hard - about a semitone deeper and seven percent faster, with chest
+    # warmth at 160 Hz and a presence lift at 3.5 kHz. Good treatment, and not
+    # what was wanted: it no longer sounded like Ritu.
+    #
+    # Applied in the mixer rather than the TTS, so changing it re-mixes the
+    # cached audio and costs nothing in voice. Pace and temperature above do
+    # not - those are synthesis, and changing them means paying to read the
+    # bulletin again.
+    "BHEEM_VOICE_PRESET": "clean",
 
     # Never off. It is on by default upstream, but this is a broadcast: a
     # wrong number read aloud as news cannot be edited afterwards the way a
