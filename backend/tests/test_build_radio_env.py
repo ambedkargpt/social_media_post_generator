@@ -495,16 +495,23 @@ def test_the_written_prompts_are_handed_to_the_builder(tmp_path, monkeypatch):
     assert "96 words" in (written / "script_writer.md").read_text(encoding="utf-8")
 
 
-def test_the_voice_actually_gets_the_news_treatment():
+def test_the_reader_goes_out_as_herself():
     """
-    voice_preset defaults to "auto", which for Sarvam means "clean" - trim and
-    level and nothing else, on the grounds that Sarvam already sounds
-    finished. That is true of a sentence and wrong for a bulletin: the station
-    went out with no news treatment at all for every build up to this one.
+    Asked for on 11 October 2026: Ritu as she reads, not as we had been
+    treating her.
 
-    Applied in the mixer rather than the TTS, so it re-mixes cached audio and
-    adds nothing to the voice bill.
+    The three settings that together made her sound worked on. "energetic"
+    runs the voice through rubberband at pitch 0.94 and tempo 1.07 and
+    compresses it hard; pace 1.22 quickened it again on top of that, and
+    expressiveness sat on the API's ceiling. Each is defensible for a news
+    bulletin and all three at once stopped sounding like the voice that was
+    picked.
+
+    Pinned as a set because changing any one of them back alone would take
+    her most of the way there and look like it had been done.
     """
     from backend.worker import build_radio
 
-    assert build_radio.DEFAULTS["BHEEM_VOICE_PRESET"] == "energetic"
+    assert build_radio.DEFAULTS["BHEEM_VOICE_PRESET"] == "clean"
+    assert float(build_radio.DEFAULTS["BHEEM_SARVAM_PACE"]) == 1.0
+    assert float(build_radio.DEFAULTS["BHEEM_SARVAM_TEMPERATURE"]) == 0.9
