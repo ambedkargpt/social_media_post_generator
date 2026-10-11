@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/dashboard/Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { ShellContext } from './dashboardShellContext';
+import NewsTicker from '../components/NewsTicker';
 
 /**
  * The frame every signed-in working screen sits in: the navigation on the
@@ -24,6 +25,7 @@ const ACTIVE_BY_PATH = {
   '/preferences': 'prefs',
   '/profile-setup': 'profile',
   '/bhimbot': 'bheembot',
+  '/bhimradio': 'radio',
 };
 
 export default function DashboardShell({ children, background, active: activeProp }) {
@@ -65,10 +67,16 @@ export default function DashboardShell({ children, background, active: activePro
           onLogout={handleLogout}
         />
 
+        {/* A column, so the ticker can sit outside the scrolling element.
+            Inside it would have to be sticky, and the Topbar already holds
+            sticky top-0 - two of them would land on each other. */}
+        <div className="flex min-w-0 flex-1 flex-col">
+        <NewsTicker className="shrink-0" />
+
         {/* While the drawer is open the page behind it must not scroll. This
             is the scrolling element, so the lock goes here rather than on
             body. */}
-        <div className={`relative flex-1 min-w-0 overflow-x-hidden ${mobileOpen ? 'overflow-y-hidden' : 'overflow-y-auto'}`}>
+        <div className={`relative min-h-0 flex-1 overflow-x-hidden ${mobileOpen ? 'overflow-y-hidden' : 'overflow-y-auto'}`}>
           {/* Atmosphere, in the order it stacks: the pools of colour, the shaft
               of light crossing them, a deeper edge, and a trace of grain over
               everything. All of it decorative, none of it clickable. */}
@@ -78,6 +86,7 @@ export default function DashboardShell({ children, background, active: activePro
           <div className="dash-grain" aria-hidden="true" />
 
           {children}
+        </div>
         </div>
       </div>
     </ShellContext.Provider>

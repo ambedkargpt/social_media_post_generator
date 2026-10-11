@@ -16,7 +16,7 @@ import tailwindcss from '@tailwindcss/vite'
  * preconnect to the wrong place would waste a connection rather than save one.
  */
 function preconnectApi(mode) {
-  const url = loadEnv(mode, process.cwd(), '').VITE_API_URL
+  const url = loadEnv(mode, '.', '').VITE_API_URL
   let origin = null
   try {
     origin = url ? new URL(url).origin : null
@@ -45,6 +45,18 @@ export default defineConfig(({ mode }) => ({
     headers: {
       'Cross-Origin-Opener-Policy': 'unsafe-none',
     },
+  },
+
+  // Unit tests only. `e2e/` is Playwright's, and its `test.describe` throws
+  // when another runner imports it - so the directory has to be named here
+  // rather than left to the default glob.
+  test: {
+    include: ['src/**/*.test.{js,jsx}'],
+    environment: 'node',
+    // The radio module reads this at import time, the way Vite inlines every
+    // VITE_* value at build time. Set here so `npm test` needs no shell setup
+    // and CI does not have to know about it.
+    env: { VITE_RADIO_BASE_URL: 'https://radio.example.net' },
   },
   build: {
     chunkSizeWarningLimit: 600,

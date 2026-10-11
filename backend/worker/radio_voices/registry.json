@@ -1,0 +1,25 @@
+{
+  "voices": [
+    {
+      "name": "station",
+      "languages": [
+        "hi"
+      ],
+      "expires_on": null,
+      "provider_voices": {
+        "sarvam": "svc-75c02f63-046e-425c-b749-ae89d09e3f41"
+      },
+      "consents": [
+        {
+          "sha256": "7a8acf6a4420868a9cee27eaadfaaff3140701ee06d422a1c1f34a607a4d6749",
+          "stored_path": "consent/station-reference.wav",
+          "original_name": "hi-mistral-e29e322f.wav",
+          "recorded_at": "2026-10-07"
+        }
+      ],
+      "created_at": "2026-10-07",
+      "revoked": false,
+      "revoked_at": null
+    }
+  ]
+}

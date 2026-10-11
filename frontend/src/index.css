@@ -1461,3 +1461,19 @@ html { scroll-behavior: smooth; }
   .radio-range::-webkit-slider-thumb { transition: none; }
   .radio-range::-moz-range-thumb     { transition: none; }
 }
+
+
+/* ── Bhim Radio signal meter ───────────────────────────────────────────────
+   Global rather than inside one layout: the desk and the tape both show the
+   meter, and the keyframes lived in the desk - so on the tape the bars never
+   moved at all, whoever was listening. */
+@keyframes bhim-signal {
+  from { height: 3px; }
+  to   { height: 24px; }
+}
+.bhim-signal-bar {
+  animation: bhim-signal 0.52s ease-in-out infinite alternate;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bhim-signal-bar { animation: none; height: 12px; }
+}

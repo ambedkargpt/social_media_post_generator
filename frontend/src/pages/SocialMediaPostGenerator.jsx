@@ -28,7 +28,7 @@ import { useI18n } from '../i18n/index.jsx';
 import SpeakButton from '../components/generate/SpeakButton';
 import { partyLabel, toneLabel } from '../utils/displayLabel';
 import { partyLogo } from '../utils/politicalParties';
-import { trackEvent } from '../analytics/ga';
+import { trackEvent } from '../analytics/metrics';
 
 const TONES = ['Professional', 'Inspirational', 'Creative', 'Casual', 'Motivational'];
 const ALSO_GENERATE = ['Audio', 'Shorts', 'Image'];

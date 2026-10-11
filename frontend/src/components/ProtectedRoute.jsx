@@ -62,7 +62,7 @@ export default function ProtectedRoute({ children }) {
       <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#1e3260] border-t-brand-cyan" />
     </div>
   );
-  if (!currentUser) return <Navigate to="/login" replace />;
+  if (!currentUser) return <Navigate to="/" replace />;
 
   if (willRedirect) {
     // Where they were headed, so finishing lands them there instead of on a

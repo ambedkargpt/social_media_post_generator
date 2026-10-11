@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "e2e": "playwright test",
     "e2e:headed": "playwright test --headed",
-    "e2e:ui": "playwright test --ui"
+    "e2e:ui": "playwright test --ui",
+    "test": "vitest run"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.2.0",
@@ -38,6 +39,7 @@
     "globals": "^17.5.0",
     "postcss": "^8.5.10",
     "tailwindcss": "^4.2.2",
-    "vite": "^8.0.9"
+    "vite": "^8.0.9",
+    "vitest": "^5.0.3"
   }
 }

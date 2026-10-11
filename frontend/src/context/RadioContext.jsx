@@ -8,8 +8,10 @@ import {
   useState,
 } from 'react';
 
-import { loadTracks } from '../data/bhimRadioTracks';
-import { trackEvent } from '../analytics/ga';
+import { useAuth } from './AuthContext';
+import {
+  broadcastPositionSec, loadStation, radioConfigured, stationForParty, trackAt } from '../data/bhimRadio';
+import { trackEvent } from '../analytics/metrics';
 
 /**
  * Bhim Radio's one audio element and everything that knows about it.
@@ -20,13 +22,38 @@ import { trackEvent } from '../analytics/ga';
  * audio would stop mid-sentence. A radio that dies when you open another page
  * is not a radio.
  *
- * One <audio> is created here and reused. Creating one per track leaks
- * elements and loses the volume the listener set.
+ * What it plays is one file. Bheem Radio builds a single looped MP3 per party
+ * per day and a manifest of offsets into it, so "next story" is a seek, not a
+ * load: the audio never stops, and skipping is instant once the file is
+ * buffered. That is why there is no per-track `src` anywhere here.
  */
 
 const RadioContext = createContext(null);
 
 const VOLUME_KEY = 'bhim-radio-volume';
+// How far into a story "previous" still means "start this one again", the way
+// every other player behaves.
+const RESTART_WINDOW_SEC = 3;
+
+/**
+ * Put the needle at `seconds`, now or as soon as the file admits its length.
+ *
+ * Assigning currentTime before `loadedmetadata` is silently ignored, which
+ * would land a listener at the top of the file instead of on air - and
+ * silently, because the audio plays perfectly well from the wrong place.
+ */
+function seekWhenReady(el, seconds) {
+  if (!Number.isFinite(seconds) || seconds < 0) return;
+  if (el.readyState > 0) {
+    el.currentTime = seconds;
+    return;
+  }
+  const once = () => {
+    el.removeEventListener('loadedmetadata', once);
+    el.currentTime = seconds;
+  };
+  el.addEventListener('loadedmetadata', once);
+}
 
 function readStoredVolume() {
   // Per-viewer convenience only. Private windows and blocked site data make
@@ -42,80 +69,108 @@ function readStoredVolume() {
 }
 
 export function RadioProvider({ children }) {
+  const { currentUser } = useAuth();
+
   const audioRef = useRef(null);
   // Built on mount rather than during render: touching a ref while rendering
-  // is not allowed, and an <audio> is a side effect besides. Everything that
-  // uses it either runs from an event or from an effect that lists
-  // `audioReady`, so nothing reaches for it before it exists.
+  // is not allowed, and an <audio> is a side effect besides.
   const [audioReady, setAudioReady] = useState(false);
 
-  const [open, setOpen] = useState(false);
-  const [tracks, setTracks] = useState([]);
-  const [status, setStatus] = useState('loading');   // loading | ready | error
-  const [index, setIndex] = useState(0);
+  // Set by anything that needs to know what is on air - the station page, the
+  // headline ticker. Until something asks, no manifest is fetched, so a reader
+  // who never meets the radio does not pay for it.
+  const [primed, setPrimed] = useState(false);
+  const primeStation = useCallback(() => setPrimed(true), []);
+
+  // Whether this listener is on the broadcast or holding the tape.
+  //
+  // On (the default) the station runs on a clock: tuning in joins it wherever
+  // it has got to, and the position keeps moving while tuned out. That is what
+  // a radio does, and it is wrong for one job - showing somebody how a
+  // bulletin is built. There you have to stop on the opening music, talk over
+  // it, and carry on from that exact second; and a scrub while stopped has to
+  // stay where it was put instead of being overwritten by the clock a second
+  // later. Off, this behaves like any player.
+  const [followBroadcast, setFollowBroadcast] = useState(true);
+  const [tenant, setTenantState] = useState('general');
+  const [station, setStation] = useState(null);
+  // idle | loading | ready | empty | error. `idle` until the panel is first
+  // opened: someone who never presses Radio should not pay for the manifest.
+  const [status, setStatus] = useState('idle');
   const [playing, setPlaying] = useState(false);
   const [volume, setVolumeState] = useState(readStoredVolume);
   const [muted, setMuted] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
-  // A track whose file will not play. Kept separately from `status` so one bad
-  // file does not make the whole station look down.
-  const [trackError, setTrackError] = useState(false);
+  const [streamError, setStreamError] = useState(false);
 
-  const track = tracks[index] ?? null;
+  // Follows the signed-in user's party until they choose a station themselves,
+  // after which their choice stands - switching party mid-session is not a
+  // reason to yank the stream they are listening to.
+  const chosen = useRef(false);
+  useEffect(() => {
+    if (chosen.current) return;
+    setTenantState(stationForParty(currentUser?.political_party));
+  }, [currentUser?.political_party]);
 
-  const fetchTracks = useCallback(() => {
+  const setTenant = useCallback((next) => {
+    chosen.current = true;
+    setTenantState(next);
+  }, []);
+
+  // Memoised because the `?? []` would otherwise hand out a new array on
+  // every render, which would make the context value new every render too
+  // and re-render every listener of it for nothing.
+  const tracks = useMemo(() => station?.tracks ?? [], [station]);
+  // Everything, furniture included - see segmentsFrom. Only the demo controls
+  // use it, and for the same reason as `tracks`, it is memoised.
+  const segments = useMemo(() => station?.segments ?? [], [station]);
+  const index = trackAt(tracks, position);
+  const track = index >= 0 ? tracks[index] : null;
+
+  // ── Load the day's stream ───────────────────────────────────────────────
+  const [reloadToken, setReloadToken] = useState(0);
+  const retry = useCallback(() => setReloadToken((n) => n + 1), []);
+
+  useEffect(() => {
+    if (!primed || !radioConfigured) return undefined;
     let cancelled = false;
     setStatus('loading');
-    loadTracks()
-      .then((rows) => {
+    loadStation(tenant)
+      .then((next) => {
         if (cancelled) return;
-        setTracks(Array.isArray(rows) ? rows : []);
-        setStatus('ready');
+        setStation(next);
+        setStatus(next && next.tracks.length ? 'ready' : 'empty');
       })
       .catch(() => {
         if (cancelled) return;
-        setTracks([]);
+        setStation(null);
         setStatus('error');
       });
     return () => { cancelled = true; };
-  }, []);
+  }, [primed, tenant, reloadToken]);
 
-  useEffect(fetchTracks, [fetchTracks]);
-
+  // ── The element ─────────────────────────────────────────────────────────
   useEffect(() => {
     const el = new Audio();
     el.preload = 'none';
+    // One file, played round. The build puts the sign-off at the end and the
+    // station ident at the start, so looping reads as a broadcast rather than
+    // as a track repeating.
+    el.loop = true;
     audioRef.current = el;
     setAudioReady(true);
     return () => { el.pause(); el.src = ''; audioRef.current = null; };
   }, []);
 
-  // ── Wire the element's events to state ──────────────────────────────────
   useEffect(() => {
     const el = audioRef.current;
     if (!el) return undefined;
-
     const onTime = () => setPosition(el.currentTime || 0);
     const onMeta = () => setDuration(Number.isFinite(el.duration) ? el.duration : 0);
-    const onPlay = () => { setPlaying(true); setTrackError(false); };
+    const onPlay = () => { setPlaying(true); setStreamError(false); };
     const onPause = () => setPlaying(false);
-    const onError = () => { setPlaying(false); setTrackError(true); };
-    // Advancing on `ended` rather than on a timer: a timer drifts and fires
-    // late on a tab the browser has throttled.
-    //
-    // A one-track playlist is restarted by hand. Advancing would compute the
-    // same index, so `track` would not change, the effect that loads a source
-    // would not re-run, and the station would just stop - the one case where
-    // wrapping round does nothing.
-    const onEnded = () => {
-      if (tracks.length <= 1) {
-        el.currentTime = 0;
-        el.play().catch(() => setPlaying(false));
-        return;
-      }
-      setIndex((i) => (i + 1) % tracks.length);
-    };
+    const onError = () => { setPlaying(false); setStreamError(true); };
 
     el.addEventListener('timeupdate', onTime);
     el.addEventListener('loadedmetadata', onMeta);
@@ -123,7 +178,6 @@ export function RadioProvider({ children }) {
     el.addEventListener('play', onPlay);
     el.addEventListener('pause', onPause);
     el.addEventListener('error', onError);
-    el.addEventListener('ended', onEnded);
     return () => {
       el.removeEventListener('timeupdate', onTime);
       el.removeEventListener('loadedmetadata', onMeta);
@@ -131,68 +185,116 @@ export function RadioProvider({ children }) {
       el.removeEventListener('play', onPlay);
       el.removeEventListener('pause', onPause);
       el.removeEventListener('error', onError);
-      el.removeEventListener('ended', onEnded);
     };
-  }, [tracks.length, audioReady]);
+  }, [audioReady]);
 
-  // Point the element at the current track. `wantPlay` carries intent across
-  // the source change, so skipping while playing keeps playing and skipping
-  // while paused stays paused.
+  // Point the element at the day's file. Only ever runs when the station
+  // changes, which is why skipping between stories costs nothing.
   const wantPlay = useRef(false);
+  const audioUrl = station?.audioUrl ?? '';
   useEffect(() => {
     const el = audioRef.current;
-    if (!el || !track) return;
-    el.src = track.src;
+    if (!el) return;
+    if (!audioUrl) { el.removeAttribute('src'); el.load(); return; }
+    el.src = audioUrl;
     el.preload = 'metadata';
-    setPosition(0);
-    setDuration(0);
-    setTrackError(false);
+    const live = broadcastPositionSec(station);
+    seekWhenReady(el, live);
+    setPosition(live);
+    setDuration(station?.durationSec || 0);
+    setStreamError(false);
     if (wantPlay.current) {
       // Rejects when the browser refuses playback - autoplay rules, or a file
       // it cannot decode. Either way the element stays paused and state
       // follows it, so the button never lies about what is happening.
       el.play().catch(() => setPlaying(false));
     }
-  }, [track, audioReady]);
+  }, [audioUrl, audioReady]);   // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const el = audioRef.current;
     if (el) { el.volume = volume; el.muted = muted; }
   }, [volume, muted, audioReady]);
 
+  // The clock, ticking on its own four times a second.
+  //
+  // Separate from `position`, which follows the audio element: the panel has
+  // to keep moving for someone who is not listening at all, and a tape that
+  // scrolls at eleven pixels a second needs finer resolution than `timeupdate`
+  // fires at. Nothing here touches the audio.
+  const [broadcastNow, setBroadcastNow] = useState(0);
+  useEffect(() => {
+    if (!station) return undefined;
+    const tick = () => setBroadcastNow(broadcastPositionSec(station));
+    tick();
+    const timer = setInterval(tick, 250);
+    return () => clearInterval(timer);
+  }, [station]);
+
+  // While tuned out, the broadcast carries on without us, and the panel says
+  // so: the position keeps moving and the story name keeps changing. Nothing
+  // is decoding and nothing is being downloaded - this is the clock, not the
+  // audio. Without it a listener who tunes out sees a frozen player and has
+  // every reason to think the station went off air with them.
+  useEffect(() => {
+    if (playing || !station || !followBroadcast) return undefined;
+    const tick = () => setPosition(broadcastPositionSec(station));
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [playing, station, followBroadcast]);
+
+  // ── Controls ────────────────────────────────────────────────────────────
   const play = useCallback(() => {
     const el = audioRef.current;
     if (!el || !el.src) return;
     wantPlay.current = true;
-    trackEvent('radio_play');
+    trackEvent('radio_play', { station: tenant });
+    // Tuning in joins the broadcast where it is now, not where this listener
+    // left it. Someone who tunes out for ten minutes and back in has missed
+    // ten minutes, exactly as they would on a real set.
+    if (followBroadcast) {
+      const live = broadcastPositionSec(station);
+      seekWhenReady(el, live);
+      setPosition(live);
+    }
     el.play().catch(() => setPlaying(false));
-  }, []);
+  }, [tenant, station, followBroadcast]);
 
   const pause = useCallback(() => {
     wantPlay.current = false;
     audioRef.current?.pause();
   }, []);
 
-  const toggle = useCallback(() => {
-    if (playing) pause(); else play();
-  }, [playing, play, pause]);
-
-  const count = tracks.length;
-  const skip = useCallback((step) => {
-    if (!count) return;
-    // Carry the current intent across the change: skipping while playing keeps
-    // playing, skipping while paused stays paused.
-    wantPlay.current = playing;
-    setIndex((i) => (i + step + count) % count);
-  }, [count, playing]);
-
-  const next = useCallback(() => skip(1), [skip]);
-  const previous = useCallback(() => skip(-1), [skip]);
+  const toggle = useCallback(() => { if (playing) pause(); else play(); }, [playing, play, pause]);
 
   const seek = useCallback((seconds) => {
     const el = audioRef.current;
-    if (el && Number.isFinite(seconds)) { el.currentTime = seconds; setPosition(seconds); }
+    if (!el || !Number.isFinite(seconds)) return;
+    const limit = Number.isFinite(el.duration) && el.duration > 0 ? el.duration : null;
+    const to = Math.max(0, limit ? Math.min(seconds, limit - 0.25) : seconds);
+    el.currentTime = to;
+    setPosition(to);
   }, []);
+
+  // Skipping is a seek inside the one file, so it is instant and never
+  // interrupts playback - there is no new source to buffer.
+  const next = useCallback(() => {
+    if (!tracks.length) return;
+    const to = tracks[Math.min(index + 1, tracks.length - 1)];
+    // Past the last story, the outro is still ahead; let it run rather than
+    // jumping backwards, which would be a surprising thing for "next" to do.
+    if (index >= tracks.length - 1) return;
+    seek(to.startSec);
+  }, [tracks, index, seek]);
+
+  const previous = useCallback(() => {
+    if (!tracks.length) return;
+    if (index < 0) { seek(tracks[0].startSec); return; }
+    const current = tracks[index];
+    const restart = position - current.startSec > RESTART_WINDOW_SEC || index === 0;
+    seek(restart ? current.startSec : tracks[index - 1].startSec);
+  }, [tracks, index, position, seek]);
 
   const setVolume = useCallback((v) => {
     const clamped = Math.min(1, Math.max(0, v));
@@ -203,19 +305,24 @@ export function RadioProvider({ children }) {
   }, []);
 
   const value = useMemo(() => ({
-    open, setOpen,
-    tracks, status, retry: fetchTracks,
-    track, index,
+    configured: radioConfigured,
+    tenant, setTenant,
+    station, status, retry,
+    tracks, segments, track, index,
+    broadcastNow,
     playing, play, pause, toggle,
+    primeStation,
+    followBroadcast, setFollowBroadcast,
     next, previous,
     position, duration, seek,
     volume, setVolume,
     muted, toggleMute: () => setMuted((m) => !m),
-    trackError,
+    streamError,
   }), [
-    open, tracks, status, fetchTracks, track, index, playing, play, pause,
-    toggle, next, previous, position, duration, seek, volume, setVolume,
-    muted, trackError,
+    tenant, setTenant, station, status, retry, tracks, segments, track, index, broadcastNow,
+    playing, play, pause, toggle, next, previous, position, duration, seek, primeStation,
+    followBroadcast,
+    volume, setVolume, muted, streamError,
   ]);
 
   return <RadioContext.Provider value={value}>{children}</RadioContext.Provider>;
