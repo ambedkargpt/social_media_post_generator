@@ -19,12 +19,18 @@ AWS="${AWS:-/c/Program Files/Amazon/AWSCLIV2/aws.exe}"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
+# Everything below this line hands paths to the Windows aws.exe and to a
+# Windows python, neither of which understands Git Bash's /tmp/... form - that
+# resolves to <current drive>:	mp\..., which is not where mktemp put it.
+# cygpath -m gives C:/Users/... , which both accept.
+WORKW="$(cygpath -m "$WORK" 2>/dev/null || echo "$WORK")"
+
 echo "1/3  reading the current policy"
 "$AWS" iam get-role-policy --role-name "$ROLE" --policy-name "$POLICY" \
   --query 'PolicyDocument' > "$WORK/policy.json"
 
 echo "2/3  adding $BUCKET to the S3 statement"
-python - "$WORK/policy.json" "$WORK/new.json" "$BUCKET" <<'PY'
+python - "$WORKW/policy.json" "$WORKW/new.json" "$BUCKET" <<'PY'
 import json, sys
 
 src, dst, bucket = sys.argv[1], sys.argv[2], sys.argv[3]
@@ -55,7 +61,7 @@ PY
 
 echo "3/3  putting it back"
 "$AWS" iam put-role-policy --role-name "$ROLE" --policy-name "$POLICY" \
-  --policy-document "file://$WORK/new.json"
+  --policy-document "file://$WORKW/new.json"
 
 echo
 echo "done. what the worker may write to now:"
