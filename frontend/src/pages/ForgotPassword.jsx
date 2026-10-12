@@ -1,30 +1,38 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { friendlyError } from '../context/AuthContext';
-import AuthLayout    from '../components/AuthLayout';
-import AnimatedInput from '../components/AnimatedInput';
-import PrimaryButton from '../components/PrimaryButton';
-import GoogleButton  from '../components/GoogleButton';
-import { useAuth }   from '../context/AuthContext';
+import { ArrowRight, TriangleAlert } from 'lucide-react';
+
+import { friendlyError, useAuth } from '../context/AuthContext';
 import { useCurtain } from '../context/CurtainContext';
+import AuthLayout from '../components/AuthLayout';
+import GoogleButton from '../components/GoogleButton';
+import { Button, Field, Input } from '../components/np';
 import { useI18n } from '../i18n/index.jsx';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
+/**
+ * Phase 3 of docs/redesign/neela-press.md. The flow is the one that was
+ * here: submit, then straight to /otp, with the Google-account case handled
+ * separately because those accounts have no password to reset.
+ *
+ * The one behavioural addition is that the Google case now says what to do
+ * next instead of only what went wrong.
+ */
 export default function ForgotPassword() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const { loginWithGoogle } = useAuth();
   const { go: curtainGo } = useCurtain();
-  const [email, setEmail]         = useState('');
-  const [error, setError]         = useState('');
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState('');
   const [isGoogleAccount, setIsGoogleAccount] = useState(false);
-  const [loading, setLoading]     = useState(false);
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!email.trim()) { setError('Please enter your email address.'); return; }
+    if (!email.trim()) { setError(t('auth.emailRequired')); return; }
     setError('');
     setIsGoogleAccount(false);
     setLoading(true);
@@ -35,10 +43,10 @@ export default function ForgotPassword() {
       navigate('/otp', {
         state: {
           identifier: email.trim().toLowerCase(),
-          type:       'email',
-          mode:       'reset_password',
-          password:   '',
-          devOtp:     data?.dev_otp || '',
+          type: 'email',
+          mode: 'reset_password',
+          password: '',
+          devOtp: data?.dev_otp || '',
         },
       });
     } catch (err) {
@@ -68,60 +76,47 @@ export default function ForgotPassword() {
   }
 
   return (
-    <AuthLayout brandSide="right" brandVariant="login">
-      <div className="space-y-6">
+    <AuthLayout
+      footer={(
+        <Link to="/login" style={{ color: 'var(--color-np-neela-300)', fontWeight: 600 }}>
+          {t('auth.backToLogin')}
+        </Link>
+      )}
+    >
+      <div style={{ display: 'grid', gap: 22 }}>
         <div>
-          <h1 className="font-display text-[40px] font-bold leading-tight tracking-tight text-white md:text-[48px]">
-            {t('auth.forgotTitle')}
-          </h1>
-          <p className="mt-3 text-[14px]" style={{ color: '#8b94b8' }}>
-            {t('auth.forgotSub')}
-          </p>
+          <h1 className="np-auth-h1 np-display">{t('auth.forgotTitle')}</h1>
+          <p className="np-auth-sub">{t('auth.forgotSub')}</p>
         </div>
 
-        {isGoogleAccount && (
-          <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-4 text-sm">
-            <p className="font-medium text-blue-300">{t('auth.googleAccount')}</p>
-            <p className="mt-1 text-[#8b94b8]">
-              You signed up with Google, so there&apos;s no password to reset. Please log in with Google instead.
+        {/* There is nothing to reset on a Google account, so the answer is a
+            way in rather than an apology. */}
+        {isGoogleAccount ? (
+          <div style={{ display: 'grid', gap: 16 }}>
+            <p className="np-alert" style={{ margin: 0 }}>
+              <TriangleAlert size={18} strokeWidth={2} style={{ flex: 'none', marginTop: 1 }} />
+              <span>{t('auth.googleAccountNote')}</span>
             </p>
-            <div className="mt-3">
-              <GoogleButton
-                onSuccess={handleGoogle}
-                onError={() => setError('Google sign-in failed. Please try again.')}
-                disabled={loading}
+            <GoogleButton onSuccess={handleGoogle} disabled={loading} />
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 18 }} noValidate>
+            <Field label={t('auth.email')} error={error}>
+              <Input
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                error={!!error}
+                placeholder="you@example.com"
               />
-            </div>
-          </div>
-        )}
+            </Field>
 
-        {error && (
-          <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-            {error}
-          </div>
-        )}
-
-        {!isGoogleAccount && (
-          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-            <AnimatedInput
-              placeholders={['Enter your Email']}
-              value={email}
-              onChange={(e) => { setEmail(e.target.value); setError(''); }}
-              label={t('auth.email')}
-              error={error}
-            />
-            <PrimaryButton type="submit" loading={loading}>
-              {loading ? t('landing.sending') : t('auth.sendCode')}
-            </PrimaryButton>
+            <Button type="submit" size="lg" fullWidth loading={loading} iconRight={ArrowRight}>
+              {t('np.auth.sendCode')}
+            </Button>
           </form>
         )}
-
-        <p className="text-center text-sm" style={{ color: '#8b94b8' }}>
-          {t('auth.rememberPwd')}{' '}
-          <Link to="/login" className="underline underline-offset-2 hover:opacity-80 transition-opacity font-medium" style={{ color: '#6b8aff' }}>
-            {t('auth.backToLogin')}
-          </Link>
-        </p>
       </div>
     </AuthLayout>
   );

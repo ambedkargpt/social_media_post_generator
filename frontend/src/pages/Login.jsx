@@ -1,21 +1,32 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { isValidPhoneNumber } from 'react-phone-number-input';
+import { ArrowRight, TriangleAlert } from 'lucide-react';
+
 import { useAuth, friendlyError } from '../context/AuthContext';
 import { useCurtain } from '../context/CurtainContext';
-import AuthLayout    from '../components/AuthLayout';
-import AnimatedInput from '../components/AnimatedInput';
+import AuthLayout from '../components/AuthLayout';
 import PasswordInput from '../components/PasswordInput';
-import PhoneField    from '../components/PhoneField';
-import PrimaryButton from '../components/PrimaryButton';
-import GoogleButton  from '../components/GoogleButton';
+import PhoneField from '../components/PhoneField';
+import GoogleButton from '../components/GoogleButton';
+import { Button, Field, Input, UnderlineTabs } from '../components/np';
 import { useI18n } from '../i18n/index.jsx';
+
+/**
+ * Phase 3 of docs/redesign/neela-press.md.
+ *
+ * Every piece of logic here is the one that was here before: the OTP
+ * redirect, `otp_required`, the Google flow, `auth_redirect`, friendlyError,
+ * and the seeded test accounts. What changed is that phone leads rather than
+ * email - most of the people this is for are in India on a phone, and the
+ * tab that was second was the one they needed.
+ */
 
 // One-click sign-in for the shared team accounts seeded by
 // backend/scripts/seed_test_accounts.py.
 //
-// The password is read from the environment and never written here. Anything in
-// this file is compiled into the bundle every visitor downloads, and these
+// The password is read from the environment and never written here. Anything
+// in this file is compiled into the bundle every visitor downloads, and these
 // accounts have no limits at all -- committing their password would publish
 // uncapped generation under the project's name to anyone who opened devtools.
 // Set VITE_TEST_PASSWORD in frontend/.env locally, or on a staging deployment,
@@ -34,23 +45,23 @@ export default function Login() {
   const { go: curtainGo } = useCurtain();
   const { loginWithEmail, loginWithPhone, loginWithGoogle } = useAuth();
 
-  const [mode, setMode]         = useState('email');
-  const [email, setEmail]       = useState('');
-  const [phone, setPhone]       = useState('');
+  const [mode, setMode] = useState('phone');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
-  const [errors, setErrors]     = useState({});
+  const [errors, setErrors] = useState({});
   const [authError, setAuthError] = useState('');
-  const [loading, setLoading]   = useState(false);
+  const [loading, setLoading] = useState(false);
 
   function validate() {
     const e = {};
     if (mode === 'email') {
-      if (!email.trim()) e.email    = t('auth.emailRequired');
-      if (!password)     e.password = t('auth.passwordRequired');
+      if (!email.trim()) e.email = t('auth.emailRequired');
+      if (!password) e.password = t('auth.passwordRequired');
     } else {
-      if (!phone)                          e.phone = 'Phone number is required.';
-      else if (!isValidPhoneNumber(phone)) e.phone = 'Please enter a valid phone number.';
-      // No password for phone — OTP is sent automatically
+      if (!phone) e.phone = t('auth.phoneRequired');
+      else if (!isValidPhoneNumber(phone)) e.phone = t('auth.phoneInvalid');
+      // No password for phone - the code is sent automatically.
     }
     return e;
   }
@@ -122,120 +133,115 @@ export default function Login() {
   }
 
   return (
-    <AuthLayout brandSide="right" brandVariant="login">
-      <div className="space-y-6">
+    <AuthLayout
+      footer={(
+        <p style={{ margin: 0 }}>
+          {t('np.auth.newHere')}{' '}
+          <Link to="/signup" style={{ color: 'var(--color-np-neela-300)', fontWeight: 600 }}>
+            {t('auth.createAccount')}
+          </Link>{' '}
+          · {t('np.auth.threeSteps')}
+        </p>
+      )}
+    >
+      <div style={{ display: 'grid', gap: 22 }}>
         <div>
-          <h1 className="font-display text-[44px] font-bold leading-tight tracking-tight text-white md:text-[52px]">
-            {t('auth.welcomeBack')}
-          </h1>
-          <p className="mt-3 text-[14px]" style={{ color: '#8b94b8' }}>
-            {t('auth.loginSub')}
-          </p>
+          <h1 className="np-auth-h1 np-display">{t('np.auth.login')}</h1>
+          <p className="np-auth-sub">{t('np.auth.loginSub')}</p>
         </div>
 
-        {/* Email / Phone toggle */}
-        <div className="flex rounded-xl p-1" style={{ backgroundColor: '#0a1128', border: '1px solid #1e3260' }}>
-          {['email', 'phone'].map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => switchMode(m)}
-              className="flex-1 rounded-lg py-2 text-sm font-medium transition-all duration-200"
-              style={{
-                backgroundColor: mode === m ? '#1a2a5e' : 'transparent',
-                color: mode === m ? '#ffffff' : '#8b94b8',
-                boxShadow: mode === m ? '0 1px 4px rgba(0,0,0,0.4)' : 'none',
-              }}
-            >
-              {m === 'email' ? t('auth.email') : t('auth.phone')}
-            </button>
-          ))}
-        </div>
+        <GoogleButton onSuccess={handleGoogle} disabled={loading} />
 
-        {authError && (
-          <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-            {authError}
-          </div>
-        )}
+        <p className="np-or" style={{ margin: 0 }}>{t('auth.or')}</p>
 
-        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-          {mode === 'email' ? (
-            <AnimatedInput
-              placeholders={[t('auth.enterEmail')]}
-              value={email}
-              onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: '' })); setAuthError(''); }}
-              label={t('auth.email')}
-              error={errors.email}
-            />
-          ) : (
+        <UnderlineTabs
+          ariaLabel={t('np.auth.login')}
+          value={mode}
+          onChange={switchMode}
+          options={[
+            { value: 'phone', label: t('auth.phone') },
+            { value: 'email', label: t('auth.email') },
+          ]}
+        />
+
+        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 18 }} noValidate>
+          {mode === 'phone' ? (
             <PhoneField
               value={phone}
-              onChange={(v) => { setPhone(v ?? ''); setErrors((p) => ({ ...p, phone: '' })); setAuthError(''); }}
+              onChange={setPhone}
               error={errors.phone}
+              hint={t('auth.phoneHelp')}
             />
-          )}
-
-          {mode === 'email' && (
-            <div className="space-y-1">
+          ) : (
+            <>
+              <Field label={t('auth.email')} error={errors.email}>
+                <Input
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  error={!!errors.email}
+                  placeholder="you@example.com"
+                />
+              </Field>
               <PasswordInput
                 value={password}
-                onChange={(e) => { setPassword(e.target.value); setErrors((p) => ({ ...p, password: '' })); }}
+                onChange={(e) => setPassword(e.target.value)}
                 error={errors.password}
               />
-              <div className="flex justify-end">
-                <Link to="/forgot-password" className="text-xs underline underline-offset-2 hover:opacity-80 transition-opacity" style={{ color: '#6b8aff' }}>
+              <div style={{ marginTop: -6, textAlign: 'end' }}>
+                <Link
+                  to="/forgot-password"
+                  style={{ fontSize: 14, color: 'var(--color-np-neela-300)' }}
+                >
                   {t('auth.forgotPassword')}
                 </Link>
               </div>
-            </div>
+            </>
           )}
 
-          {mode === 'phone' && (
-            <p className="text-xs" style={{ color: '#8b94b8' }}>
-              {t('auth.otpToNumber')}
+          {authError && (
+            <p className="np-alert" role="alert" style={{ margin: 0 }}>
+              <TriangleAlert size={18} strokeWidth={2} style={{ flex: 'none', marginTop: 1 }} />
+              <span>{authError}</span>
             </p>
           )}
 
-          <PrimaryButton type="submit" loading={loading}>
-            {loading ? t('auth.pleaseWait') : mode === 'phone' ? t('auth.sendOtp') : t('auth.login')}
-          </PrimaryButton>
+          <Button
+            type="submit"
+            size="lg"
+            fullWidth
+            loading={loading}
+            iconRight={ArrowRight}
+          >
+            {mode === 'phone' ? t('np.auth.sendCode') : t('np.auth.login')}
+          </Button>
         </form>
 
-        <div className="flex items-center gap-3">
-          <div className="flex-1 h-px" style={{ backgroundColor: '#2a3566' }} />
-          <span className="text-xs" style={{ color: '#8b94b8' }}>{t('auth.or')}</span>
-          <div className="flex-1 h-px" style={{ backgroundColor: '#2a3566' }} />
-        </div>
-
-        <GoogleButton
-          onSuccess={handleGoogle}
-          onError={() => setAuthError(t('auth.googleFailed'))}
-          disabled={loading}
-        />
-
-        <p className="text-center text-sm" style={{ color: '#8b94b8' }}>
-          {t('auth.noAccount')}{' '}
-          <Link to="/signup" className="underline underline-offset-2 hover:opacity-80 transition-opacity font-medium" style={{ color: '#6b8aff' }}>
-            {t('auth.signUp')}
-          </Link>
-        </p>
-
+        {/* Only ever rendered when the environment carries the password, which
+            production does not. */}
         {TEST_PASSWORD && (
-          <div className="rounded-xl border px-3 py-2.5" style={{ borderColor: '#2a3566', backgroundColor: 'rgba(10,17,48,0.6)' }}>
-            <p className="text-[11px] font-medium" style={{ color: '#8b94b8' }}>
-              Test accounts — click to fill
+          <div style={{
+            display: 'grid', gap: 8, padding: 14, borderRadius: 12,
+            border: '1px dashed var(--color-np-rule-strong)',
+          }}>
+            <p className="np-mono" style={{ margin: 0, fontSize: 12, color: 'var(--color-np-faint)' }}>
+              test accounts
             </p>
-            <div className="mt-1.5 flex flex-col gap-1">
-              {TEST_ACCOUNTS.map((acc) => (
-                <button
-                  key={acc.email}
-                  type="button"
-                  onClick={() => { setMode('email'); setEmail(acc.email); setPassword(TEST_PASSWORD); }}
-                  className="text-left text-[11px] underline underline-offset-2 hover:opacity-80"
-                  style={{ color: '#6b8aff' }}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {TEST_ACCOUNTS.map((a) => (
+                <Button
+                  key={a.email}
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    switchMode('email');
+                    setEmail(a.email);
+                    setPassword(TEST_PASSWORD);
+                  }}
                 >
-                  {acc.email} · {acc.label}
-                </button>
+                  {a.label}
+                </Button>
               ))}
             </div>
           </div>

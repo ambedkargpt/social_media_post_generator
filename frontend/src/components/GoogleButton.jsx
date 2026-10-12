@@ -27,8 +27,17 @@ export default function GoogleButton({ onSuccess, onError, disabled, beforeLogin
       type="button"
       onClick={handleClick}
       disabled={disabled}
-      className="flex w-full items-center justify-center gap-3 rounded-xl border py-3 text-[14px] font-medium transition-all duration-200 hover:brightness-110 disabled:opacity-50 disabled:pointer-events-none"
-      style={{ backgroundColor: '#0d1b3e', borderColor: '#1e3260', color: '#c5cde8' }}
+      // The np secondary button. All three screens that render this are in
+      // the redesign, so it moves with them rather than keeping a second
+      // look for nobody.
+      className="np-btn np-btn-secondary"
+      style={{
+        width: '100%', height: 52, gap: 10, borderRadius: 10,
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 15, fontWeight: 600, fontFamily: 'inherit',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.55 : 1,
+      }}
     >
       <GoogleIcon />
       {t('auth.continueWithGoogleBtn')}

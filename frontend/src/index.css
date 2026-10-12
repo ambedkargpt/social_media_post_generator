@@ -2311,3 +2311,363 @@ html { scroll-behavior: smooth; }
 @media (max-width: 767px) { .np-page-title { font-size: 30px; } }
 .np-page-actions { display: flex; align-items: center; gap: 8px; }
 
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Auth
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.np-auth {
+  display: flex;
+  min-height: 100svh;
+}
+
+/* ── Portrait panel ───────────────────────────────────────────────────────*/
+.np-auth-portrait {
+  position: relative;
+  flex: 1 1 520px;
+  min-width: 0;
+  overflow: hidden;
+  background: #090B11;
+  animation: npFade 480ms var(--np-ease-out) both;
+}
+.np-auth-portrait > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Not centred: the face sits in the upper third of the plate, and centring
+     a tall crop on a short viewport cuts it off at the chin. */
+  object-position: center 20%;
+  filter: grayscale(1) contrast(1.1);
+}
+/* Duotone. The blue multiplies into the greyscale rather than sitting over it
+   as a tint, so the shadows carry the colour and the highlights stay paper. */
+.np-auth-duotone {
+  position: absolute;
+  inset: 0;
+  background: #1B3CC4;
+  mix-blend-mode: multiply;
+}
+.np-auth-fade {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 62%;
+  background: linear-gradient(180deg, transparent, rgba(9, 11, 17, .72) 48%, #090B11 100%);
+}
+.np-auth-chakra {
+  position: absolute;
+  top: -120px;
+  right: -140px;
+  width: 560px;
+  height: 560px;
+  color: #fff;
+  opacity: .18;
+  animation: npChakraSpin 120s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .np-auth-chakra { animation: none; }
+  .np-auth-portrait { animation: none; }
+}
+
+.np-auth-quote {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 44px 48px;
+  color: #fff;
+}
+.np-auth-quote-en { margin: 0; font-size: 44px; line-height: 1.15; }
+.np-auth-quote-hi { margin: 10px 0 0; font-size: 26px; line-height: 1.5; opacity: .88; }
+.np-auth-quote cite {
+  display: block;
+  margin-top: 18px;
+  font-family: var(--font-np-ui);
+  font-style: normal;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  opacity: .7;
+}
+
+/* ── Form column ──────────────────────────────────────────────────────────*/
+.np-auth-form {
+  position: relative;
+  flex: 1 1 520px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 28px clamp(24px, 5vw, 56px) 32px;
+}
+.np-auth-top {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.np-auth-body {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding-block: 36px;
+}
+.np-auth-inner { width: 100%; max-width: 400px; margin-inline: auto; }
+.np-auth-form.is-wide { flex: 1 1 620px; }
+.np-auth-form.is-wide .np-auth-inner { max-width: 520px; }
+.np-auth-form.is-wide ~ .np-auth-portrait,
+.np-auth:has(.is-wide) .np-auth-portrait { flex: 0 1 420px; }
+
+.np-auth-foot {
+  position: relative;
+  z-index: 1;
+  max-width: 400px;
+  margin-inline: auto;
+  font-size: 13px;
+  color: var(--color-np-muted);
+  text-align: center;
+}
+.np-auth-form.is-wide .np-auth-foot { max-width: 520px; }
+
+/* Children arrive in order rather than all at once, which is the difference
+   between a page that assembled and a page that appeared. */
+.np-stagger > * {
+  animation: npRise var(--np-dur-3) var(--np-ease-out) both;
+}
+.np-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.np-stagger > *:nth-child(2) { animation-delay: 40ms; }
+.np-stagger > *:nth-child(3) { animation-delay: 80ms; }
+.np-stagger > *:nth-child(4) { animation-delay: 120ms; }
+.np-stagger > *:nth-child(5) { animation-delay: 160ms; }
+.np-stagger > *:nth-child(6) { animation-delay: 200ms; }
+.np-stagger > *:nth-child(n+7) { animation-delay: 240ms; }
+@keyframes npRise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .np-stagger > * { animation: none; }
+}
+
+/* ── Phone ────────────────────────────────────────────────────────────────
+   The portrait becomes a banner: enough to carry the treatment, not enough
+   to push the form below the fold. */
+@media (max-width: 767px) {
+  .np-auth { flex-direction: column; }
+  .np-auth-portrait { flex: none; height: 180px; }
+  .np-auth-chakra { width: 320px; height: 320px; top: -90px; right: -90px; }
+  .np-auth-quote { display: none; }
+  .np-auth-form { padding: 20px 20px 28px; }
+  .np-auth-body { padding-block: 24px; align-items: flex-start; }
+  .np-auth-inner, .np-auth-form.is-wide .np-auth-inner { max-width: none; }
+}
+
+/* ── Shared auth pieces ───────────────────────────────────────────────────*/
+.np-auth-h1 { margin: 0; font-size: 60px; line-height: 1.02; }
+:root[lang="hi"] .np-auth-h1 { font-size: 48px; }
+@media (max-width: 767px) { .np-auth-h1 { font-size: 40px; } }
+.np-auth-sub { margin: 10px 0 0; font-size: 16px; color: var(--color-np-muted); }
+
+/* "or", with the rules drawn by the row rather than by two extra elements. */
+.np-or {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--color-np-faint);
+  font-size: 13px;
+}
+.np-or::before, .np-or::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--color-np-rule);
+}
+
+/* Underline tabs: a 2px rule that slides, not a pill. */
+.np-utabs { display: flex; gap: 4px; position: relative; border-bottom: 1px solid var(--color-np-rule); }
+.np-utab {
+  position: relative;
+  padding: 12px 4px;
+  margin-right: 20px;
+  border: none;
+  background: transparent;
+  color: var(--color-np-muted);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--np-dur-1) var(--np-ease-out);
+}
+.np-utab.is-active { color: var(--color-np-text); }
+.np-utab-bar {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  background: var(--color-np-neela-300);
+  transition: transform var(--np-dur-2) var(--np-ease-out), width var(--np-dur-2) var(--np-ease-out);
+  pointer-events: none;
+}
+
+/* An error that belongs to the form, not to one field. */
+.np-alert {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--color-np-critical);
+  background: rgba(240, 112, 90, .08);
+  color: var(--color-np-text);
+  font-size: 14px;
+}
+.np-alert-success {
+  border-color: var(--color-np-success);
+  background: rgba(76, 195, 138, .08);
+}
+
+/* ── OTP boxes ────────────────────────────────────────────────────────────*/
+.np-otp { display: flex; gap: 10px; }
+.np-otp input {
+  width: 56px;
+  height: 64px;
+  border-radius: 10px;
+  border: 1px solid var(--color-np-track);
+  background: var(--color-np-desk);
+  color: var(--color-np-text);
+  font-family: var(--font-np-mono);
+  font-size: 26px;
+  text-align: center;
+  outline: none;
+  transition: border-color var(--np-dur-1) var(--np-ease-out),
+              background-color var(--np-dur-1) var(--np-ease-out);
+}
+.np-otp input:not(:placeholder-shown) { background: var(--color-np-raised); }
+.np-otp input:focus { border-color: var(--color-np-neela-300); }
+.np-otp[data-state="error"] input { border-color: var(--color-np-critical); }
+.np-otp[data-state="ok"] input { border-color: var(--color-np-success); }
+@media (max-width: 400px) {
+  .np-otp { gap: 6px; }
+  .np-otp input { width: 46px; height: 56px; font-size: 22px; }
+}
+/* Three cycles, 6px, horizontal: enough to read as "no", not enough to look
+   like the page broke. */
+@keyframes npShake {
+  0%, 100% { transform: none; }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+.np-otp[data-state="error"] { animation: npShake 300ms var(--np-ease-out) 1; }
+@media (prefers-reduced-motion: reduce) { .np-otp[data-state="error"] { animation: none; } }
+
+/* ── Party cards (signup step 3) ──────────────────────────────────────────*/
+.np-party-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+.np-party-card {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 22px 16px;
+  border-radius: 16px;
+  border: 1.5px solid var(--color-np-edge);
+  background: var(--color-np-desk);
+  color: var(--color-np-text);
+  cursor: pointer;
+  text-align: center;
+  transition: background-color var(--np-dur-2) var(--np-ease-out),
+              border-color var(--np-dur-2) var(--np-ease-out),
+              transform var(--np-dur-2) var(--np-ease-out);
+}
+.np-party-card:hover { background: var(--color-np-raised); transform: translateY(-1px); }
+.np-party-card[aria-checked="true"] {
+  border-color: var(--color-np-neela-300);
+  background: var(--color-np-raised);
+}
+.np-party-card img { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; }
+.np-party-card-name { font-size: 18px; font-weight: 700; line-height: 1.25; }
+.np-party-card-sub { font-size: 15px; color: var(--color-np-muted); }
+.np-party-check {
+  position: absolute;
+  top: 10px; inset-inline-end: 10px;
+  width: 22px; height: 22px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--color-np-neela);
+  color: #fff;
+}
+
+/* The one panel in the product that has to be read before it is agreed to. */
+.np-confirm {
+  border: 1px solid var(--color-np-brass);
+  background: rgba(233, 185, 73, .06);
+  border-radius: 12px;
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--color-np-text-2);
+}
+
+/* ── Wizard steps ─────────────────────────────────────────────────────────*/
+.np-steps { display: flex; align-items: center; gap: 14px; }
+.np-steps-names { display: flex; gap: 10px; flex-wrap: wrap; font-size: 13px; color: var(--color-np-muted); }
+.np-steps-names .is-current { color: var(--color-np-text); font-weight: 700; }
+.np-steps-names .is-done { color: var(--color-np-neela-300); }
+
+@keyframes npSlideFromRight { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+@keyframes npSlideFromLeft  { from { opacity: 0; transform: translateX(-24px); } to { opacity: 1; transform: none; } }
+.np-step[data-dir="forward"] { animation: npSlideFromRight var(--np-dur-3) var(--np-ease-out) both; }
+.np-step[data-dir="back"]    { animation: npSlideFromLeft  var(--np-dur-3) var(--np-ease-out) both; }
+@media (prefers-reduced-motion: reduce) { .np-step { animation: none !important; } }
+
+/* ── Checkbox ─────────────────────────────────────────────────────────────*/
+.np-check {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: start;
+  font-size: 14px;
+  color: var(--color-np-text-2);
+  cursor: pointer;
+  line-height: 1.5;
+}
+.np-check input {
+  width: 20px; height: 20px;
+  margin: 1px 0 0;
+  accent-color: var(--color-np-neela);
+  cursor: pointer;
+}
+
+/* The phone library draws its own markup, so the redesigned look is applied
+   from here. Scoped to .np-phone, so the old `.phone-field` rules keep
+   serving any screen still on the previous design. */
+.np-phone.phone-field {
+  min-height: 52px;
+  border-radius: 10px;
+  border: 1px solid var(--color-np-track);
+  background: var(--color-np-desk);
+  padding: 0 4px 0 0;
+  box-shadow: none;
+}
+.np-phone.phone-field:focus-within { border-color: var(--color-np-neela-300); box-shadow: none; }
+.np-phone.phone-field.error { border-color: var(--color-np-critical); box-shadow: none; }
+.np-phone .PhoneInputInput {
+  background: transparent;
+  border: none;
+  color: var(--color-np-text);
+  font-size: 19px;
+  letter-spacing: .04em;
+  font-family: var(--font-np-mono);
+  outline: none;
+}
+.np-phone .PhoneInputInput::placeholder { color: var(--color-np-faint); letter-spacing: normal; }
+.np-phone .PhoneInputCountry { border-right: 1px solid var(--color-np-track); padding: 0 10px; }
+.np-phone .PhoneInputCountrySelectArrow { color: var(--color-np-muted); opacity: 1; }

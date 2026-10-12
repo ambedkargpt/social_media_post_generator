@@ -23,3 +23,4 @@ export { default as Stamp } from './Stamp';
 export { default as Tabs } from './Tabs';
 export { default as Tag } from './Tag';
 export { default as PageHeader } from './PageHeader';
+export { default as UnderlineTabs } from './UnderlineTabs';

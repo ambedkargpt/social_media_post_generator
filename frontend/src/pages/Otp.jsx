@@ -1,27 +1,43 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { Info, TriangleAlert } from 'lucide-react';
+
 import { useAuth, friendlyError } from '../context/AuthContext';
 import { resendOtp as resendOtpApi } from '../api/auth';
 import { useCurtain } from '../context/CurtainContext';
-import AuthLayout    from '../components/AuthLayout';
-import PrimaryButton from '../components/PrimaryButton';
-import { Info } from 'lucide-react';
+import AuthLayout from '../components/AuthLayout';
+import { Button, Chakra } from '../components/np';
 import { useI18n } from '../i18n/index.jsx';
 
+/**
+ * Phase 3 of docs/redesign/neela-press.md.
+ *
+ * The behaviour is unchanged: paste fills every box, typing advances,
+ * backspace retreats, phone users get a call rather than a message, and the
+ * resend timer is thirty seconds.
+ *
+ * What is new, besides the look: every string on this page now goes through
+ * t(). "Verify OTP", "You'll receive a call on …", "Not in your inbox?" and
+ * "Wrong number?" were hard-coded English, so a Hindi reader reached the one
+ * screen that stands between them and an account and found half of it in a
+ * language they had already said they did not read.
+ */
+
 const OTP_LENGTH = 6;
+const RESEND_SECONDS = 30;
 
 function describeIdentifier(identifier = '') {
   const trimmed = identifier.trim();
   if (trimmed.includes('@')) {
     const [local, domain] = trimmed.split('@');
-    return { labelKey: 'auth.emailWord', masked: local.slice(0, 2) + '***@' + domain };
+    return { labelKey: 'auth.emailWord', masked: `${local.slice(0, 2)}***@${domain}` };
   }
   const digits = trimmed.replace(/\D/g, '');
-  return { labelKey: 'auth.phoneWord', masked: '******' + digits.slice(-4) };
+  return { labelKey: 'auth.phoneWord', masked: `******${digits.slice(-4)}` };
 }
 
-function OtpBoxes({ value, onChange, error }) {
-  const digits    = value.split('').concat(Array(OTP_LENGTH).fill('')).slice(0, OTP_LENGTH);
+function OtpBoxes({ value, onChange, state }) {
+  const digits = value.split('').concat(Array(OTP_LENGTH).fill('')).slice(0, OTP_LENGTH);
   const inputRefs = useRef([]);
 
   useEffect(() => { inputRefs.current[0]?.focus(); }, []);
@@ -33,8 +49,8 @@ function OtpBoxes({ value, onChange, error }) {
       e.preventDefault();
       onChange(digits.map((d, j) => (j === i ? '' : d)).join(''));
       if (i > 0) focusBox(i - 1);
-    } else if (e.key === 'ArrowLeft'  && i > 0)              focusBox(i - 1);
-    else if   (e.key === 'ArrowRight' && i < OTP_LENGTH - 1) focusBox(i + 1);
+    } else if (e.key === 'ArrowLeft' && i > 0) focusBox(i - 1);
+    else if (e.key === 'ArrowRight' && i < OTP_LENGTH - 1) focusBox(i + 1);
   }
 
   function handleInput(e, i) {
@@ -52,76 +68,89 @@ function OtpBoxes({ value, onChange, error }) {
   }
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex gap-2.5 justify-between">
-        {digits.map((digit, i) => (
-          <input
-            key={i}
-            ref={(el) => (inputRefs.current[i] = el)}
-            type="text"
-            inputMode="numeric"
-            maxLength={1}
-            value={digit}
-            onKeyDown={(e) => handleKeyDown(e, i)}
-            onInput={(e) => handleInput(e, i)}
-            onPaste={handlePaste}
-            onChange={() => {}}
-            className={`input-field w-full text-center text-xl font-bold rounded-xl py-3.5 ${error ? 'error' : ''}`}
-            style={{ caretColor: '#4f6bff' }}
-          />
-        ))}
-      </div>
-      {error && <p className="text-xs" style={{ color: '#ef4444' }}>{error}</p>}
+    <div className="np-otp" data-state={state || undefined}>
+      {digits.map((digit, i) => (
+        <input
+          key={i}
+          ref={(el) => { inputRefs.current[i] = el; }}
+          type="text"
+          inputMode="numeric"
+          autoComplete={i === 0 ? 'one-time-code' : 'off'}
+          maxLength={1}
+          value={digit}
+          placeholder=" "
+          aria-label={`${i + 1}`}
+          onKeyDown={(e) => handleKeyDown(e, i)}
+          onInput={(e) => handleInput(e, i)}
+          onPaste={handlePaste}
+          onChange={() => {}}
+        />
+      ))}
     </div>
   );
 }
 
+/**
+ * Thirty seconds, shown rather than merely waited out: a ring that fills and
+ * a count in mono, so the wait has a visible end.
+ */
 function ResendTimer({ onResend, type }) {
   const { t } = useI18n();
-  const [seconds, setSeconds] = useState(30);
+  const [seconds, setSeconds] = useState(RESEND_SECONDS);
+
   useEffect(() => {
-    if (seconds <= 0) return;
-    const t = setTimeout(() => setSeconds((s) => s - 1), 1000);
-    return () => clearTimeout(t);
+    if (seconds <= 0) return undefined;
+    const timer = setTimeout(() => setSeconds((s) => s - 1), 1000);
+    return () => clearTimeout(timer);
   }, [seconds]);
-  const label = t(type === 'phone' ? 'auth.callAgain' : 'auth.resend');
+
+  if (seconds > 0) {
+    const mmss = `0:${String(seconds).padStart(2, '0')}`;
+    return (
+      <p style={{
+        margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        gap: 10, fontSize: 14, color: 'var(--color-np-muted)',
+      }}>
+        <Chakra size={20} mode="progress" value={1 - seconds / RESEND_SECONDS} />
+        <span className="np-mono">{t('np.otp.resendIn', { time: mmss })}</span>
+      </p>
+    );
+  }
+
   return (
-    <p className="text-center text-sm" style={{ color: '#8b94b8' }}>
-      {t(type === 'phone' ? 'auth.didntGetCall' : 'auth.didntReceive')}{' '}
-      {seconds > 0 ? (
-        <span style={{ color: '#6b7db3' }}>{t('auth.tryAgainIn', { seconds })}</span>
-      ) : (
-        <button type="button" onClick={() => { setSeconds(30); onResend(); }}
-          className="underline underline-offset-2 hover:opacity-80 transition-opacity font-medium"
-          style={{ color: '#6b8aff' }}>
-          {label}
-        </button>
-      )}
-    </p>
+    <div style={{ display: 'flex', justifyContent: 'center' }}>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => { setSeconds(RESEND_SECONDS); onResend(); }}
+      >
+        {t(type === 'phone' ? 'auth.callAgain' : 'auth.resend')}
+      </Button>
+    </div>
   );
 }
 
 export default function Otp() {
   const { t } = useI18n();
-  const { state }          = useLocation();
-  const navigate           = useNavigate();
-  const { go: curtainGo }  = useCurtain();
+  const { state } = useLocation();
+  const navigate = useNavigate();
+  const { go: curtainGo } = useCurtain();
   const { verifyOtp } = useAuth();
 
   const identifier = state?.identifier || '';
-  const type       = state?.type       || 'email';  // 'email' | 'phone'
-  const mode       = state?.mode       || 'signup'; // 'signup' | 'login'
-  const password   = state?.password   || '';
-  const devOtp     = state?.devOtp     || '';       // auto-filled in dev mode
+  const type = state?.type || 'email';      // 'email' | 'phone'
+  const mode = state?.mode || 'signup';     // 'signup' | 'login'
+  const devOtp = state?.devOtp || '';       // auto-filled in dev mode
 
   useEffect(() => {
     if (!identifier) navigate('/signup', { replace: true });
   }, [identifier, navigate]);
 
-  const { labelKey, masked } = describeIdentifier(identifier);
-  const [otp, setOtp]           = useState(devOtp);
+  const { masked } = describeIdentifier(identifier);
+  const [otp, setOtp] = useState(devOtp);
   const [otpError, setOtpError] = useState('');
-  const [loading, setLoading]   = useState(false);
+  const [ok, setOk] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [resendMsg, setResendMsg] = useState('');
 
   async function handleSubmit(e) {
@@ -132,14 +161,15 @@ export default function Otp() {
     try {
       const purpose = mode === 'signup' ? 'signup_verify' : 'login_verify';
       await verifyOtp(otp, identifier, type, purpose);
-      // Phone signup → profile setup → questionnaire; all other paths → questionnaire or dashboard
+      // The boxes go green for a moment before the screen changes, so the
+      // navigation reads as a consequence rather than as an interruption.
+      setOk(true);
       const dest = (mode === 'signup' && type === 'phone') ? '/profile-setup'
-                 : mode === 'signup' ? '/questionnaire'
-                 : '/dashboard';
-      curtainGo(dest, { replace: true });
+        : mode === 'signup' ? '/questionnaire'
+          : '/dashboard';
+      setTimeout(() => curtainGo(dest, { replace: true }), 300);
     } catch (err) {
       setOtpError(friendlyError(err));
-    } finally {
       setLoading(false);
     }
   }
@@ -159,62 +189,67 @@ export default function Otp() {
     }
   }
 
-  const title  = t(type === 'email' ? 'auth.verifyEmail' : 'auth.verifyPhone');
   const backTo = mode === 'login' ? '/login' : '/signup';
-  const deliveryMsg = type === 'phone'
-    ? <>You&apos;ll receive a <span className="font-medium" style={{ color: '#c8d8ff' }}>call</span> on <span className="font-medium" style={{ color: '#c8d8ff' }}>{masked}</span> with your 6-digit code.</>
-    : <>We&apos;ve sent a 6-digit code to your {t(labelKey)} <span className="font-medium" style={{ color: '#c8d8ff' }}>{masked}</span>.</>;
 
   return (
-    <AuthLayout brandSide="left" brandVariant="signup">
-      <div className="space-y-7">
+    <AuthLayout>
+      <div style={{ display: 'grid', gap: 22 }}>
         <div>
-          <h1 className="text-3xl font-bold text-white">{title}</h1>
-          <p className="mt-2 text-sm leading-relaxed" style={{ color: '#8b94b8' }}>
-            {deliveryMsg}
+          <h1 className="np-auth-h1 np-display">{t('np.otp.title')}</h1>
+          <p className="np-auth-sub">
+            {t(type === 'phone' ? 'auth.otpCallTo' : 'auth.otpSentTo', { target: masked })}{' '}
+            <Link to={backTo} style={{ color: 'var(--color-np-neela-300)', fontWeight: 600 }}>
+              {t('auth.change')}
+            </Link>
           </p>
           {devOtp && (
-            <p className="mt-1 text-xs rounded-md px-3 py-1.5 inline-block" style={{ backgroundColor: '#0d2b1a', color: '#4ade80', border: '1px solid #166534' }}>
-              Dev mode — OTP auto-filled: {devOtp}
+            <p className="np-mono" style={{
+              margin: '10px 0 0', fontSize: 12, color: 'var(--color-np-success)',
+            }}>
+              {t('auth.devOtp', { code: devOtp })}
             </p>
           )}
         </div>
 
-        {/* Email only. A verification code from a new sender is a textbook
-            spam-filter catch, and someone who does not know to look there
-            concludes the code never arrived and gives up on the signup. */}
+        {/* Email only. A code from a new sender is a textbook spam-filter
+            catch, and someone who does not know to look there concludes it
+            never arrived and gives up on the account. */}
         {type === 'email' && (
-          <div className="flex items-start gap-2.5 rounded-lg border border-[#3f9fff]/25 bg-[#3f9fff]/[0.07] px-4 py-3">
-            <Info size={16} strokeWidth={2} className="mt-px shrink-0 text-[#7fb5ff]" />
-            <p className="text-[13px] leading-relaxed text-[#a8bbdd]">
-              Not in your inbox? Check your <span className="font-medium text-[#c8d8ff]">spam</span> or{' '}
-              <span className="font-medium text-[#c8d8ff]">promotions</span> folder. It can take a minute
-              to arrive.
-            </p>
-          </div>
+          <p className="np-alert" style={{
+            margin: 0, borderColor: 'var(--color-np-rule-strong)', background: 'transparent',
+            color: 'var(--color-np-muted)',
+          }}>
+            <Info size={18} strokeWidth={2} style={{ flex: 'none', marginTop: 1 }} />
+            <span>{t('auth.spamNote')}</span>
+          </p>
         )}
 
         {resendMsg && (
-          <div className="rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-400">
+          <p className="np-alert np-alert-success" style={{ margin: 0 }} role="status">
             {resendMsg}
-          </div>
+          </p>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-          <OtpBoxes value={otp} onChange={(v) => { setOtp(v); setOtpError(''); }} error={otpError} />
-          <PrimaryButton type="submit" loading={loading}>
-            {loading ? 'Verifying…' : 'Verify OTP'}
-          </PrimaryButton>
+        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 18 }} noValidate>
+          <OtpBoxes
+            value={otp}
+            onChange={(v) => { setOtp(v); setOtpError(''); }}
+            state={otpError ? 'error' : ok ? 'ok' : ''}
+          />
+
+          {otpError && (
+            <p className="np-alert" role="alert" style={{ margin: 0 }}>
+              <TriangleAlert size={18} strokeWidth={2} style={{ flex: 'none', marginTop: 1 }} />
+              <span>{otpError}</span>
+            </p>
+          )}
+
+          <Button type="submit" size="lg" fullWidth loading={loading}>
+            {loading ? t('auth.verifying') : t('auth.verify')}
+          </Button>
         </form>
 
         <ResendTimer onResend={handleResend} type={type} />
-
-        <p className="text-center text-sm" style={{ color: '#8b94b8' }}>
-          Wrong {type === 'email' ? 'email' : 'number'}?{' '}
-          <Link to={backTo} className="underline underline-offset-2 hover:opacity-80 font-medium" style={{ color: '#6b8aff' }}>
-            {t('auth.goBack')}
-          </Link>
-        </p>
       </div>
     </AuthLayout>
   );
