@@ -39,3 +39,19 @@ export function findParty(name) {
 export function partyLogo(name) {
   return findParty(name)?.logo || null;
 }
+
+// The white line-art symbols in public/party-symbols/ - the hand, the cycle,
+// the lotus. Separate from `logo`, which is the round colour badge: at 18px
+// beside a tag a colour badge is a smudge and a line drawing still reads,
+// and as a large faint watermark only the line art works at all.
+//
+// Only the three parties the bulletin covers have one.
+const PARTY_SYMBOLS = {
+  'Indian National Congress (INC)': '/party-symbols/congress.png',
+  'Samajwadi Party (SP)':           '/party-symbols/samajwadi.png',
+  'Bharatiya Janata Party (BJP)':   '/party-symbols/bjp.png',
+};
+
+export function partySymbol(name) {
+  return PARTY_SYMBOLS[name] || null;
+}

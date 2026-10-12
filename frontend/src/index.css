@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Anybody:ital,wght@0,100..900;1,100..900&family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Noto+Sans+Devanagari:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Anybody:ital,wght@0,100..900;1,100..900&family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Noto+Sans+Devanagari:wght@300;400;500;600;700&family=Anek+Devanagari:wdth,wght@75..125,400..800&family=Mukta:wght@400;500;600;700&family=Tiro+Devanagari+Hindi:ital@0;1&family=IBM+Plex+Mono:wght@500;600&display=swap');
 @import "tailwindcss";
 
 @font-face {
@@ -38,6 +38,57 @@
   --color-text-primary: #e5e7eb;
   --color-text-muted: #8b94b8;
   --color-text-link: #6b8aff;
+
+  /* ── Neela Press ──────────────────────────────────────────────────────
+     The redesign's own token set, namespaced np-* so it sits beside the
+     old one rather than replacing it: the landing page and the post
+     generator still read the tokens above, and must keep looking as they
+     do. See docs/redesign/neela-press.md.
+     -------------------------------------------------------------------- */
+
+  /* Every np face carries Devanagari. The old display faces do not, which
+     is why :root[lang="hi"] has to rescue them further down; inside .np
+     there is nothing to rescue. */
+  --font-np-display: 'Anek Devanagari', 'Mukta', system-ui, sans-serif;
+  --font-np-serif:   'Tiro Devanagari Hindi', Georgia, serif;
+  --font-np-ui:      'Mukta', system-ui, sans-serif;
+  --font-np-mono:    'IBM Plex Mono', ui-monospace, monospace;
+
+  /* ground & surfaces */
+  --color-np-ink:         #0B0D14;
+  --color-np-rail:        #0F1119;
+  --color-np-desk:        #13161F;
+  --color-np-raised:      #181C27;
+  --color-np-active:      #1C2133;
+  --color-np-track:       #262B3A;
+  --color-np-edge:        #1D212C;
+  --color-np-rule:        #2B303E;
+  --color-np-rule-strong: #3A4050;
+
+  /* text */
+  --color-np-text:        #EDEEF2;
+  --color-np-text-2:      #C9CCD6;
+  --color-np-muted:       #A6ABBA;
+  --color-np-faint:       #8A90A2;
+
+  /* action - one blue, no gradient */
+  --color-np-neela:       #2E56E8;
+  --color-np-neela-600:   #2447C9;
+  --color-np-neela-700:   #1D3AA6;
+  --color-np-neela-300:   #8FA8FF;
+  --color-np-neela-100:   #C9D6FF;
+
+  /* paper: the brighter register, for anything read at length */
+  --color-np-paper:       #F3EBDD;
+  --color-np-paper-ink:   #1B1A22;
+  --color-np-paper-muted: #5E5A66;
+  --color-np-paper-rule:  #DCCFB8;
+
+  /* semantic - kept apart from the action colour on purpose */
+  --color-np-brass:       #E9B949;
+  --color-np-success:     #4CC38A;
+  --color-np-critical:    #F0705A;
+  --color-np-opposition:  #FFB27A;
 }
 
 * { box-sizing: border-box; }
@@ -1477,3 +1528,222 @@ html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) {
   .bhim-signal-bar { animation: none; height: 12px; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Neela Press
+   ══════════════════════════════════════════════════════════════════════════
+
+   Everything below is scoped under `.np`, which goes on the root of the
+   signed-in shell, the auth layout and the onboarding layout. Nothing here
+   may reach the landing page or the post generator - those are out of scope
+   and have to keep looking exactly as they do on main.
+
+   Tokens live in the @theme block at the top of this file.
+   The spec is docs/redesign/neela-press.md.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Motion. Only transform and opacity are ever animated - no blur, no
+     shadow, no colour-stop movement - because the floor is a mid-range
+     Android phone. */
+  --np-ease-out:    cubic-bezier(.2, .8, .2, 1);
+  --np-ease-in-out: cubic-bezier(.65, 0, .35, 1);
+  --np-spring:      cubic-bezier(.34, 1.36, .64, 1);
+  --np-dur-1: 120ms;
+  --np-dur-2: 200ms;
+  --np-dur-3: 320ms;
+  --np-dur-4: 480ms;
+}
+
+.np {
+  font-family: var(--font-np-ui);
+  color: var(--color-np-text);
+}
+
+/* ── The ground ───────────────────────────────────────────────────────────
+   One static layer. No backdrop-filter, no animation, and deliberately not
+   background-attachment: fixed - that repaints the whole gradient on every
+   scroll frame on Android. This sits on the non-scrolling shell root and the
+   scrolling column inside it stays transparent. */
+.np-bg {
+  background-color: #0B0D14;
+  background-image:
+    radial-gradient(1100px 620px at 12% -8%,  rgba(46, 86, 232, 0.16), transparent 60%),
+    radial-gradient(900px 520px  at 100% 0%,  rgba(143, 168, 255, 0.07), transparent 55%),
+    radial-gradient(800px 600px  at 85% 110%, rgba(233, 185, 73, 0.05), transparent 60%),
+    linear-gradient(180deg, #0D1020 0%, #0B0D14 45%, #090B11 100%);
+}
+
+/* Grain, so the gradient reads as paper stock rather than as a CSS gradient.
+   One 140px tile, drawn once, never animated. */
+.np-bg::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: .035;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* ── Type ─────────────────────────────────────────────────────────────────
+   Anek Devanagari is a variable font with a width axis. Condensing it is
+   what gives headings their poster feel; the tracking stays at or above
+   -0.01em because negative tracking pulls Devanagari conjuncts apart. */
+.np-display {
+  font-family: var(--font-np-display);
+  font-stretch: 87.5%;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.08;
+}
+.np-serif { font-family: var(--font-np-serif); line-height: 1.45; }
+.np-mono  { font-family: var(--font-np-mono);  font-variant-numeric: tabular-nums; }
+
+/* ── Hindi ────────────────────────────────────────────────────────────────
+   Unlike the old stack, every np face carries Devanagari, so this is not a
+   rescue - it is choosing Mukta over Mangal, which is a better-fitting face
+   and is already loaded. Line-heights open up because matras and reph need
+   the room; the ~12% size bump for small UI text is handled by the
+   :root[lang="hi"] rules further up this file and applies in here too. */
+:root[lang="hi"] .np,
+:root[lang="hi"] .np input,
+:root[lang="hi"] .np textarea,
+:root[lang="hi"] .np button,
+:root[lang="hi"] .np select {
+  font-family: var(--font-np-ui);
+}
+:root[lang="hi"] .np .np-display { line-height: 1.3; font-stretch: 100%; }
+:root[lang="hi"] .np .np-serif   { line-height: 1.5; }
+:root[lang="hi"] .np p,
+:root[lang="hi"] .np li          { line-height: 1.6; }
+
+/* ── Focus ────────────────────────────────────────────────────────────────
+   One ring everywhere, on the real focusable element. */
+.np :focus-visible {
+  outline: 2px solid var(--color-np-neela-300);
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+
+/* ── Motion off ───────────────────────────────────────────────────────────
+   Every np animation resolves to its final state rather than to nothing. */
+@media (prefers-reduced-motion: reduce) {
+  .np *,
+  .np *::before,
+  .np *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ── Chakra ───────────────────────────────────────────────────────────────
+   transform only, so it composites on its own layer and never repaints. */
+@keyframes npChakraSpin { to { transform: rotate(360deg); } }
+.np-chakra-spin { animation: npChakraSpin 1.2s linear infinite; transform-origin: 50% 50%; }
+.np-chakra-slow { animation: npChakraSpin 6s   linear infinite; transform-origin: 50% 50%; }
+@media (prefers-reduced-motion: reduce) {
+  .np-chakra-spin, .np-chakra-slow { animation: none; }
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────────
+   Colour and transform only. Nothing here glows: the old primary answered a
+   hover with a 28px blue shadow, which is the single loudest "AI template"
+   tell in the audit. */
+.np-btn-primary {
+  background: var(--color-np-neela);
+  color: #fff;
+}
+.np-btn-primary:hover:not(:disabled):not([aria-disabled="true"]) { background: var(--color-np-neela-600); }
+.np-btn-primary:active:not(:disabled) { background: var(--color-np-neela-700); transform: translateY(1px); }
+
+.np-btn-secondary {
+  background: transparent;
+  border: 1.5px solid var(--color-np-rule-strong) !important;
+  color: var(--color-np-text-2);
+}
+.np-btn-secondary:hover:not(:disabled):not([aria-disabled="true"]) {
+  border-color: var(--color-np-muted) !important;
+  color: var(--color-np-text);
+}
+.np-btn-secondary:active:not(:disabled) { transform: translateY(1px); }
+
+.np-btn-ghost {
+  background: transparent;
+  color: var(--color-np-text-2);
+}
+.np-btn-ghost:hover:not(:disabled):not([aria-disabled="true"]) {
+  background: var(--color-np-raised);
+  color: var(--color-np-text);
+}
+.np-btn-ghost:active:not(:disabled) { transform: translateY(1px); }
+
+.np-btn-danger {
+  background: transparent;
+  color: var(--color-np-critical);
+}
+.np-btn-danger:hover:not(:disabled):not([aria-disabled="true"]) { background: rgba(240, 112, 90, 0.10); }
+.np-btn-danger:active:not(:disabled) { transform: translateY(1px); }
+
+/* On paper the dark-surface greys have no contrast, so the quiet variants
+   take the paper ink instead. */
+.np-paper .np-btn-secondary { border-color: var(--color-np-paper-rule) !important; color: var(--color-np-paper-ink); }
+.np-paper .np-btn-ghost     { color: var(--color-np-paper-muted); }
+.np-paper .np-btn-ghost:hover:not(:disabled) { background: rgba(27, 26, 34, 0.06); color: var(--color-np-paper-ink); }
+
+/* ── Cards ────────────────────────────────────────────────────────────────
+   A card that does something lifts one pixel and brightens its fill. The
+   old hover was a coloured shadow, which lights a card rather than moving
+   it, and lights every card the same colour. */
+.np-card-interactive {
+  cursor: pointer;
+  transition: background-color var(--np-dur-2) var(--np-ease-out),
+              border-color var(--np-dur-2) var(--np-ease-out),
+              transform var(--np-dur-2) var(--np-ease-out);
+}
+.np-card-interactive:hover {
+  background: var(--color-np-raised) !important;
+  border-color: var(--color-np-rule) !important;
+  transform: translateY(-1px);
+}
+.np-card-interactive:active { transform: translateY(0); }
+
+/* ── Inputs ───────────────────────────────────────────────────────────────
+   Border colour only: no ring that grows, no shadow that blooms. */
+.np-control::placeholder { color: var(--color-np-faint); }
+.np-control:hover:not(:focus) { border-color: var(--color-np-rule-strong); }
+.np-control:focus { border-color: var(--color-np-neela-300); }
+.np-control-group:focus-within { border-color: var(--color-np-neela-300); }
+/* Without this the browser assumes a light UI for its own chrome and the
+   native date picker renders dark-on-dark. */
+.np-control[type="date"], .np-control[type="time"] { color-scheme: dark; }
+
+/* ── Chips ────────────────────────────────────────────────────────────────*/
+.np-chip-row::-webkit-scrollbar { display: none; }
+.np-chip { scroll-snap-align: start; }
+
+/* ── Stamp ────────────────────────────────────────────────────────────────
+   Lands once, with a small overshoot, then never moves again. */
+@keyframes npStampLand {
+  from { opacity: 0; transform: rotate(-14deg) scale(1.35); }
+  to   { opacity: 1; }
+}
+.np-stamp-land { animation: npStampLand var(--np-dur-4) var(--np-spring) both; }
+
+/* ── Skeleton ─────────────────────────────────────────────────────────────*/
+@keyframes npSkeletonPulse { 0%, 100% { opacity: .5; } 50% { opacity: .8; } }
+.np-skeleton { animation: npSkeletonPulse 1.4s ease-in-out infinite; }
+
+/* ── Empty state ──────────────────────────────────────────────────────────*/
+.np-empty-chakra { color: var(--color-np-rule-strong); }
+
+@media (prefers-reduced-motion: reduce) {
+  .np-stamp-land { animation: none; opacity: 1; }
+  .np-skeleton   { animation: none; opacity: .65; }
+}
+
+/* np-kit only: the chakra takes its colour from `currentColor`, so showing
+   two tints side by side needs a colour on the element. */
+.np-kit-neela { color: var(--color-np-neela-300); }
+.np-kit-brass { color: var(--color-np-brass); }

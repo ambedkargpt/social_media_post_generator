@@ -30,6 +30,11 @@ const ServiceSelection = lazy(() => import('./pages/ServiceSelection'));
 const SocialMediaPostGenerator = lazy(() => import('./pages/SocialMediaPostGenerator'));
 const MusicGeneration = lazy(() => import('./pages/MusicGeneration'));
 const MusicGenerationStudio = lazy(() => import('./pages/MusicGenerationStudio'));
+
+// The Neela Press primitive gallery. Lazy like the rest, and only ever
+// routed under import.meta.env.DEV, so the chunk is never reached - and so
+// never fetched - in a production build.
+const NpKit = lazy(() => import('./pages/NpKit'));
 const Preferences = lazy(() => import('./pages/Preferences'));
 const PostHistory = lazy(() => import('./pages/PostHistory'));
 const BheemBot = lazy(() => import('./pages/BheemBot'));
@@ -187,6 +192,12 @@ export default function App() {
                 holding that link - a bookmark, a shared message - still lands
                 on the page rather than the catch-all redirect to home. */}
             <Route path="/bheembot" element={<Navigate to="/bhimbot" replace />} />
+
+            {/* Development only: every redesign primitive in both scripts.
+                See docs/redesign/neela-press.md. */}
+            {import.meta.env.DEV && (
+              <Route path="/np-kit" element={<NpKit />} />
+            )}
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
