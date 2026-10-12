@@ -22,3 +22,4 @@ export { default as Skeleton } from './Skeleton';
 export { default as Stamp } from './Stamp';
 export { default as Tabs } from './Tabs';
 export { default as Tag } from './Tag';
+export { default as PageHeader } from './PageHeader';

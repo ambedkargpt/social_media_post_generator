@@ -1,93 +1,98 @@
-import { useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import Sidebar from '../components/dashboard/Sidebar';
+import MobileTabBar from '../components/dashboard/MobileTabBar';
+import NewsTicker from '../components/NewsTicker';
 import { useAuth } from '../context/AuthContext';
 import { ShellContext } from './dashboardShellContext';
-import NewsTicker from '../components/NewsTicker';
 
 /**
- * The frame every signed-in working screen sits in: the navigation on the
- * left, one scrolling column on the right, and the dashboard's atmosphere
- * behind both.
+ * The frame every signed-in working screen sits in.
  *
- * Post history, preferences and profile used to each be their own full page
- * with a "back to dashboard" button, so moving between them meant going back
- * to the dashboard first. They share this shell now, and the sidebar is always
- * there to move sideways with.
+ * Phase 2 of docs/redesign/neela-press.md. Two columns on a desktop - the
+ * rail and one scrolling content column - a tab bar instead of the rail on a
+ * phone, and one static gradient behind all of it.
+ *
+ * The four animated atmosphere layers it used to carry (dash-bloom, -beam,
+ * -vignette, -grain) are gone from here. They stay in index.css because the
+ * post generator is out of scope and still renders them; this shell paints
+ * `.np-bg` instead, which is a single static layer and the most expensive
+ * thing that was removed.
+ *
+ * Which rail item is current is worked out from the path by the rail itself,
+ * so nothing is passed down for it.
  */
-
-// Which nav item to light up, by route. The ids are the Sidebar's own.
-const ACTIVE_BY_PATH = {
-  '/dashboard': 'dashboard',
-  '/generate': 'generate',
-  '/posts': 'searches',
-  '/preferences': 'prefs',
-  '/profile-setup': 'profile',
-  '/bhimbot': 'bheembot',
-  '/bhimradio': 'radio',
-};
-
-export default function DashboardShell({ children, background, active: activeProp }) {
+export default function DashboardShell({ children }) {
   const { logout } = useAuth();
   const navigate = useNavigate();
-  const { pathname } = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const shellRef = useRef(null);
 
-  const active = activeProp ?? ACTIVE_BY_PATH[pathname] ?? '';
   const ctx = useMemo(() => ({ openMenu: () => setMobileOpen(true) }), []);
+
+  // The rail owns its collapsed state, but the grid column it sits in belongs
+  // to the shell, so the shell watches the attribute the rail writes rather
+  // than the two keeping separate copies of one fact.
+  // `animating` adds `contain` while the width moves, so a long dashboard does
+  // not relayout on every frame of the collapse. It is set in the same place
+  // as the rail state rather than in an effect that watches it: deriving one
+  // piece of state from another through a second effect means an extra render
+  // between the two, and here that render is the first frame of the animation.
+  const [rail, setRail] = useState({ state: 'expanded', animating: false });
+
+  useEffect(() => {
+    const node = shellRef.current?.querySelector('.np-rail');
+    if (!node) return undefined;
+    const read = () => (node.dataset.collapsed === 'true' ? 'collapsed' : 'expanded');
+    setRail({ state: read(), animating: false });
+    const mo = new MutationObserver(() => setRail({ state: read(), animating: true }));
+    mo.observe(node, { attributes: true, attributeFilter: ['data-collapsed'] });
+    return () => mo.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!rail.animating) return undefined;
+    const el = shellRef.current;
+    const done = () => setRail((r) => (r.animating ? { ...r, animating: false } : r));
+    el?.addEventListener('transitionend', done);
+    // A belt for the case where the transition never fires: under reduced
+    // motion it resolves to nothing and `transitionend` never arrives, so the
+    // containment would stay on forever and clip whatever overflows.
+    const timer = setTimeout(done, 420);
+    return () => { el?.removeEventListener('transitionend', done); clearTimeout(timer); };
+  }, [rail.animating]);
 
   async function handleLogout() {
     await logout();
     // The landing page, not the login form: signing out is leaving, and being
-    // dropped straight onto a form reads as "sign in again" rather than "done".
+    // dropped onto a form reads as "sign in again" rather than "done".
     navigate('/', { replace: true });
   }
 
   return (
     <ShellContext.Provider value={ctx}>
       <div
-        className="flex h-screen overflow-hidden text-[#e5e7eb]"
-        style={{
-          background:
-            background ??
-            // The ground the atmosphere sits on. Two wide pools of navy over a
-            // near-black base, rather than one flat radial: the shell frames
-            // every working screen, and a single colour behind all of them read
-            // as unfinished.
-            'radial-gradient(1200px 700px at 18% -4%, #101c46 0%, rgba(7,11,28,0) 58%),' +
-            'linear-gradient(168deg, #0a1030 0%, #070b1f 48%, #04081a 100%)',
-        }}
+        ref={shellRef}
+        className="np np-bg np-shell"
+        data-rail={rail.state}
+        data-animating={rail.animating ? 'true' : 'false'}
       >
         <Sidebar
-          active={active}
-          onSelect={(id) => { if (id === 'dashboard') navigate('/dashboard'); }}
           mobileOpen={mobileOpen}
           onMobileClose={() => setMobileOpen(false)}
           onLogout={handleLogout}
         />
 
-        {/* A column, so the ticker can sit outside the scrolling element.
-            Inside it would have to be sticky, and the Topbar already holds
-            sticky top-0 - two of them would land on each other. */}
-        <div className="flex min-w-0 flex-1 flex-col">
-        <NewsTicker className="shrink-0" />
-
-        {/* While the drawer is open the page behind it must not scroll. This
-            is the scrolling element, so the lock goes here rather than on
-            body. */}
-        <div className={`relative min-h-0 flex-1 overflow-x-hidden ${mobileOpen ? 'overflow-y-hidden' : 'overflow-y-auto'}`}>
-          {/* Atmosphere, in the order it stacks: the pools of colour, the shaft
-              of light crossing them, a deeper edge, and a trace of grain over
-              everything. All of it decorative, none of it clickable. */}
-          <div className="dash-bloom" aria-hidden="true" />
-          <div className="dash-beam" aria-hidden="true" />
-          <div className="dash-vignette" aria-hidden="true" />
-          <div className="dash-grain" aria-hidden="true" />
-
-          {children}
+        {/* A column, so the ticker sits outside the scrolling element. Inside
+            it would have to be sticky, and the page header already is - two
+            sticky strips land on each other. */}
+        <div className="np-col">
+          <NewsTicker className="np-ticker" />
+          <main className="np-main">{children}</main>
         </div>
-        </div>
+
+        <MobileTabBar />
       </div>
     </ShellContext.Provider>
   );

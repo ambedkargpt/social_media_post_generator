@@ -1747,3 +1747,567 @@ html { scroll-behavior: smooth; }
    two tints side by side needs a colour on the element. */
 .np-kit-neela { color: var(--color-np-neela-300); }
 .np-kit-brass { color: var(--color-np-brass); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   The shell and the rail
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* The grid column follows a registered custom property, so the width is an
+   animatable length rather than a step. Without @property the browser cannot
+   interpolate a custom property and the rail would jump; the fallback below
+   transitions the aside's own width instead, which is the same motion on one
+   element rather than on the whole grid. */
+@property --rail-w {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 272px;
+}
+
+.np-shell {
+  --rail-w: 272px;
+  display: grid;
+  grid-template-columns: var(--rail-w) minmax(0, 1fr);
+  /* minmax(0,1fr), not the implicit auto row: an auto row sizes to its
+     tallest item, so a long dashboard made the rail as tall as the page and
+     pushed its footer - the quota meter, the station, the user row - two
+     thousand pixels below the fold. overflow:hidden is what the old flex
+     shell used for the same job. */
+  grid-template-rows: minmax(0, 1fr);
+  height: 100dvh;
+  overflow: hidden;
+  transition: --rail-w var(--np-dur-3) var(--np-ease-in-out);
+}
+.np-shell[data-rail="collapsed"] { --rail-w: 76px; }
+
+/* While the rail is moving the content column must not relayout on every
+   frame. Set by the shell and removed on transitionend. */
+.np-shell[data-animating="true"] .np-main { contain: layout paint; }
+
+.np-col {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+.np-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── The rail itself ──────────────────────────────────────────────────────*/
+.np-rail {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  width: 100%;
+  padding: 14px 12px 12px;
+  gap: 14px;
+  /* Solid, not translucent, and no blur: the rail sits over the gradient on
+     every screen, and a blurred 272px column is a full-height repaint. */
+  background: var(--color-np-rail);
+  border-right: 1px solid var(--color-np-edge);
+}
+
+.np-rail-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+}
+
+.np-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+  text-decoration: none;
+  color: inherit;
+}
+.np-brand-mark {
+  flex: none;
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  border-radius: 10px;
+  background: var(--color-np-neela);
+  color: #fff;
+  font-family: var(--font-np-display);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1;
+}
+.np-brand-text {
+  font-size: 22px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+/* The wordmark's one accent. A flat colour, not the old animated gradient -
+   a shimmering brand name on every signed-in screen is a moving element
+   nobody asked for. */
+.np-brand-gpt { color: var(--color-np-neela-300); }
+
+.np-rail-toggle,
+.np-rail-close {
+  flex: none;
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  border-radius: 8px;
+  border: 1px solid var(--color-np-track);
+  background: transparent;
+  color: var(--color-np-muted);
+  cursor: pointer;
+  transition: color var(--np-dur-1) var(--np-ease-out),
+              border-color var(--np-dur-1) var(--np-ease-out);
+}
+.np-rail-toggle:hover,
+.np-rail-close:hover { color: var(--color-np-text); border-color: var(--color-np-rule-strong); }
+.np-rail-toggle svg { transition: transform var(--np-dur-3) var(--np-ease-in-out); }
+
+/* ── Party card ───────────────────────────────────────────────────────────*/
+.np-party {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #161A26;
+  overflow: hidden;
+}
+.np-party-watermark {
+  position: absolute;
+  top: -14px; right: -10px;
+  height: 120px;
+  opacity: .09;
+  pointer-events: none;
+}
+.np-party-logo { border-radius: 50%; flex: none; object-fit: cover; }
+.np-party-text { min-width: 0; display: grid; gap: 2px; position: relative; }
+.np-party-name {
+  font-size: 14px; font-weight: 600; color: var(--color-np-text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.np-party-sub {
+  font-size: 13px; color: var(--color-np-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.np-party-collapsed { justify-content: center; padding: 10px; }
+.np-party-collapsed img { border-radius: 50%; }
+
+/* ── New post ─────────────────────────────────────────────────────────────*/
+.np-newpost {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 50px;
+  padding: 0 14px;
+  border-radius: 12px;
+  background: var(--color-np-neela);
+  color: #fff;
+  font-weight: 600;
+  font-size: 15px;
+  text-decoration: none;
+  transition: background-color var(--np-dur-1) var(--np-ease-out),
+              transform var(--np-dur-1) var(--np-ease-out);
+}
+.np-newpost:hover { background: var(--color-np-neela-600); }
+.np-newpost:active { background: var(--color-np-neela-700); transform: translateY(1px); }
+.np-newpost.is-collapsed { justify-content: center; padding: 0; height: 48px; }
+.np-keycap {
+  margin-left: auto;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, .18);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* ── Nav ──────────────────────────────────────────────────────────────────*/
+.np-rail-nav {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: grid;
+  gap: 18px;
+  align-content: start;
+  scrollbar-width: thin;
+}
+.np-nav-group { display: grid; gap: 6px; }
+.np-nav-group-title {
+  margin: 0 0 2px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-np-faint);
+  white-space: nowrap;
+}
+
+.np-nav-indicator {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  border-radius: 10px;
+  background: var(--color-np-active);
+  pointer-events: none;
+}
+
+.np-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 10px;
+  color: var(--color-np-text-2);
+  text-decoration: none;
+  font-size: 15px;
+  transition: background-color var(--np-dur-1) var(--np-ease-out),
+              color var(--np-dur-1) var(--np-ease-out);
+}
+/* Devanagari sits taller in the line box, so the row grows rather than the
+   text being clipped. */
+:root[lang="hi"] .np-nav-item { height: 46px; }
+.np-nav-icon { flex: none; color: var(--color-np-muted); transition: transform var(--np-dur-1) var(--np-ease-out), color var(--np-dur-1) var(--np-ease-out); }
+.np-nav-item:hover { background: var(--color-np-raised); color: var(--color-np-text); }
+.np-nav-item:hover .np-nav-icon { transform: translateX(2px); }
+.np-nav-item:active { transform: scale(.98); }
+.np-nav-item.is-active { color: var(--color-np-text); font-weight: 600; }
+.np-nav-item.is-active .np-nav-icon { color: var(--color-np-neela-300); }
+/* The sliding indicator is the active background, so the row must not paint
+   its own or the two fight on every move. */
+.np-nav-item.is-active:hover { background: transparent; }
+.np-nav-item.is-collapsed { justify-content: center; padding: 0; }
+
+.np-nav-label { white-space: nowrap; overflow: hidden; }
+.np-nav-badge {
+  margin-left: auto;
+  font-family: var(--font-np-mono);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--color-np-track);
+  color: var(--color-np-muted);
+  white-space: nowrap;
+}
+/* The station being on air is the one thing in the rail that is urgent. */
+.np-nav-item[data-tip] .np-nav-badge,
+.np-nav-item .np-nav-badge:only-of-type { }
+.np-rail .np-nav-item .np-nav-badge:not(:empty) { }
+
+/* ── Footer ───────────────────────────────────────────────────────────────*/
+.np-rail-foot { margin-top: auto; display: grid; gap: 12px; }
+
+.np-quota { display: grid; gap: 7px; }
+.np-quota-line {
+  margin: 0;
+  display: flex; justify-content: space-between; gap: 8px;
+  font-size: 13px; color: var(--color-np-muted);
+}
+.np-quota-line .np-mono { color: var(--color-np-text-2); }
+.np-quota-track { display: flex; gap: 4px; }
+.np-quota-seg {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-np-track);
+  transition: background-color var(--np-dur-2) var(--np-ease-out);
+}
+.np-quota-seg.is-filled { background: var(--color-np-neela-300); }
+.np-quota-collapsed { justify-items: center; color: var(--color-np-neela-300); }
+
+.np-radio-mini {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px; border-radius: 12px; background: var(--color-np-desk);
+}
+.np-radio-btn {
+  flex: none;
+  width: 38px; height: 38px;
+  display: grid; place-items: center;
+  border: none; border-radius: 50%;
+  background: var(--color-np-text);
+  color: var(--color-np-ink);
+  cursor: pointer;
+  transition: transform var(--np-dur-1) var(--np-ease-out);
+}
+.np-radio-btn:active { transform: scale(.94); }
+.np-radio-btn:disabled { opacity: .5; cursor: not-allowed; }
+.np-radio-text { min-width: 0; display: grid; gap: 1px; }
+.np-radio-onair { font-size: 12px; font-weight: 700; color: var(--color-np-critical); }
+.np-radio-title {
+  font-size: 13px; color: var(--color-np-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.np-radio-mini-collapsed {
+  justify-self: center;
+  width: 38px; height: 38px; padding: 0;
+  border: none; border-radius: 50%;
+  background: var(--color-np-text); color: var(--color-np-ink);
+  display: grid; place-items: center; cursor: pointer;
+}
+
+/* Four bars, scaleY only. They move while sound is coming out and hold still
+   when it is not, so the rail never implies audio that is not playing. */
+.np-level { display: flex; align-items: flex-end; gap: 2px; height: 18px; margin-left: auto; flex: none; }
+.np-level i {
+  display: block; width: 3px; height: 100%;
+  border-radius: 2px;
+  background: var(--color-np-rule-strong);
+  transform: scaleY(.35);
+  transform-origin: bottom;
+}
+.np-level.is-live i { background: var(--color-np-neela-300); animation: npLevel 900ms var(--np-ease-in-out) infinite; }
+.np-level.is-live i:nth-child(2) { animation-delay: -200ms; animation-duration: 760ms; }
+.np-level.is-live i:nth-child(3) { animation-delay: -420ms; animation-duration: 1040ms; }
+.np-level.is-live i:nth-child(4) { animation-delay: -120ms; animation-duration: 840ms; }
+@keyframes npLevel {
+  0%, 100% { transform: scaleY(.3); }
+  50%      { transform: scaleY(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .np-level.is-live i { animation: none; transform: scaleY(.6); }
+}
+
+.np-user {
+  display: flex; align-items: center; gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-np-edge);
+}
+.np-user.is-collapsed { flex-direction: column; gap: 6px; }
+.np-avatar {
+  flex: none;
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--color-np-neela);
+  color: #fff;
+  font-weight: 700; font-size: 15px;
+}
+.np-user-text { min-width: 0; display: grid; gap: 1px; flex: 1; }
+.np-user-name {
+  font-size: 14px; font-weight: 600; color: var(--color-np-text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.np-user-sub {
+  font-size: 12px; color: var(--color-np-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.np-icon-btn {
+  flex: none;
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  border: none; border-radius: 8px;
+  background: transparent;
+  color: var(--color-np-muted);
+  font-size: 12px; font-weight: 600;
+  cursor: pointer; text-decoration: none;
+  transition: background-color var(--np-dur-1) var(--np-ease-out),
+              color var(--np-dur-1) var(--np-ease-out);
+}
+.np-icon-btn:hover { background: var(--color-np-raised); color: var(--color-np-text); }
+.np-icon-btn.is-active { color: var(--color-np-neela-300); background: var(--color-np-active); }
+
+/* ── Collapsed ────────────────────────────────────────────────────────────
+   Text leaves before the width does on the way in, and arrives after it on
+   the way out, so a label never wraps onto a second line mid-animation. */
+.np-rail[data-collapsed="true"] .np-nav-label,
+.np-rail[data-collapsed="true"] .np-nav-badge,
+.np-rail[data-collapsed="true"] .np-nav-group-title,
+.np-rail[data-collapsed="true"] .np-brand-text,
+.np-rail[data-collapsed="true"] .np-keycap,
+.np-rail[data-collapsed="true"] .np-user-text {
+  opacity: 0;
+  transform: translateX(-6px);
+  width: 0;
+  margin: 0;
+  pointer-events: none;
+  transition: opacity var(--np-dur-2) var(--np-ease-out),
+              transform var(--np-dur-2) var(--np-ease-out);
+}
+.np-rail[data-collapsed="false"] .np-nav-label,
+.np-rail[data-collapsed="false"] .np-nav-badge,
+.np-rail[data-collapsed="false"] .np-brand-text,
+.np-rail[data-collapsed="false"] .np-keycap,
+.np-rail[data-collapsed="false"] .np-user-text {
+  opacity: 1;
+  transform: none;
+  transition: opacity var(--np-dur-2) var(--np-ease-out) 120ms,
+              transform var(--np-dur-2) var(--np-ease-out) 120ms;
+}
+.np-rail[data-collapsed="true"] .np-rail-head { justify-content: center; }
+.np-rail[data-collapsed="true"] .np-brand { flex: none; }
+
+/* ── Tooltips ─────────────────────────────────────────────────────────────
+   Only when collapsed, and ours rather than `title`: the native one waits a
+   second, cannot be styled, and on some screen readers is read as part of
+   the name. */
+.np-rail[data-collapsed="true"] [data-tip] { position: relative; }
+.np-rail[data-collapsed="true"] [data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translate(-6px, -50%);
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: var(--color-np-raised);
+  border: 1px solid var(--color-np-rule);
+  color: var(--color-np-text);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .5);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 40;
+  transition: opacity var(--np-dur-1) var(--np-ease-out) 300ms,
+              transform var(--np-dur-1) var(--np-ease-out) 300ms;
+}
+.np-rail[data-collapsed="true"] [data-tip]:hover::after,
+.np-rail[data-collapsed="true"] [data-tip]:focus-visible::after {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+
+/* ── Breakpoints ──────────────────────────────────────────────────────────
+   1280+   expanded by default, the reader may collapse it (persisted)
+   1024-79 expanding overlays the content rather than squeezing it
+   768-023 always the icon rail; expanding overlays
+   < 768   no rail at all - the tab bar and the drawer (§5.3) */
+@media (max-width: 1279px) {
+  .np-shell[data-rail="expanded"] .np-rail {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 272px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, .5);
+  }
+  .np-shell[data-rail="expanded"] { grid-template-columns: 76px minmax(0, 1fr); }
+  .np-shell[data-rail="expanded"]::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, .4);
+    z-index: 1;
+  }
+}
+
+@media (max-width: 767px) {
+  .np-shell,
+  .np-shell[data-rail="expanded"] { grid-template-columns: minmax(0, 1fr); }
+  .np-shell > .np-rail { display: none; }
+  .np-shell[data-rail="expanded"]::before { content: none; }
+  .np-main { padding-bottom: calc(64px + env(safe-area-inset-bottom) + 16px); }
+}
+
+/* ── Drawer ───────────────────────────────────────────────────────────────*/
+.np-drawer-root { position: fixed; inset: 0; z-index: 50; }
+.np-drawer-scrim {
+  position: absolute; inset: 0;
+  background: rgba(0, 0, 0, .55);
+  animation: npFade var(--np-dur-3) var(--np-ease-out) both;
+}
+.np-drawer {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: min(84vw, 300px);
+  animation: npSlideIn var(--np-dur-3) var(--np-ease-in-out) both;
+  box-shadow: 16px 0 48px rgba(0, 0, 0, .55);
+}
+@keyframes npFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes npSlideIn { from { transform: translateX(-100%); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .np-drawer-scrim, .np-drawer { animation: none; }
+}
+
+/* ── Mobile tab bar ───────────────────────────────────────────────────────*/
+.np-tabbar {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 30;
+  display: none;
+  height: calc(64px + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--color-np-rail);
+  border-top: 1px solid var(--color-np-edge);
+  transform: translateY(0);
+  transition: transform var(--np-dur-2) var(--np-ease-out);
+}
+/* Hidden while a field has focus, so it does not ride up on the keyboard and
+   cover the thing being typed into. */
+.np-tabbar[data-hidden="true"] { transform: translateY(110%); }
+@media (max-width: 767px) { .np-tabbar { display: block; } }
+
+.np-tabbar-inner { position: relative; display: flex; height: 64px; }
+.np-tab {
+  position: relative;
+  flex: 1;
+  display: grid;
+  place-items: center;
+  gap: 3px;
+  padding-top: 7px;
+  color: var(--color-np-muted);
+  text-decoration: none;
+  font-size: 12px;
+  min-width: 0;
+}
+:root[lang="hi"] .np-tab { font-size: 14px; }
+.np-tab.is-active { color: var(--color-np-neela-300); }
+.np-tab span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.np-tab-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 24px;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--color-np-neela-300);
+  transition: transform var(--np-dur-2) var(--np-ease-out);
+  pointer-events: none;
+}
+
+/* ── News ticker, inside the shell ────────────────────────────────────────*/
+.np-col .np-ticker {
+  flex: none;
+  height: 36px;
+  background: var(--color-np-rail);
+  border-bottom: 1px solid var(--color-np-edge);
+}
+
+/* ── Page header ──────────────────────────────────────────────────────────*/
+.np-page-head {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 22px 0 14px;
+  /* Solid at 88%, not blurred: a blurred sticky header repaints everything
+     under it on every scroll frame. */
+  background: color-mix(in srgb, var(--color-np-ink) 88%, transparent);
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--np-dur-2) var(--np-ease-out);
+}
+.np-page-head[data-scrolled="true"] { border-bottom-color: var(--color-np-rule-strong); }
+.np-page-eyebrow {
+  margin: 0 0 4px;
+  font-family: var(--font-np-serif);
+  font-size: 18px;
+  color: var(--color-np-muted);
+}
+.np-page-title { margin: 0; font-size: 40px; }
+@media (max-width: 767px) { .np-page-title { font-size: 30px; } }
+.np-page-actions { display: flex; align-items: center; gap: 8px; }
+

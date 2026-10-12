@@ -53,7 +53,7 @@ test.describe('the dashboard frame', () => {
     // survive an unmount, which is exactly the difference being tested.
     await rail.evaluate((el) => { el.dataset.e2eMark = 'kept'; });
 
-    await page.getByRole('button', { name: /post history|पोस्ट इतिहास/i }).click();
+    await page.getByRole('link', { name: /my posts|मेरी पोस्ट/i }).click();
     await expect(page).toHaveURL(/\/posts/);
 
     await expect(page.locator(RAIL).first()).toHaveAttribute('data-e2e-mark', 'kept');
@@ -66,8 +66,8 @@ test.describe('the dashboard frame', () => {
     const rail = page.locator(RAIL).first();
     await rail.evaluate((el) => { el.dataset.e2eMark = 'kept'; });
 
-    for (const name of [/preferences|प्राथमिकता/i, /bhim radio|भीम रेडियो/i, /dashboard|डैशबोर्ड/i]) {
-      await page.getByRole('button', { name }).first().click();
+    for (const name of [/my posts|मेरी पोस्ट/i, /bhim radio|भीम रेडियो/i, /today|आज/i]) {
+      await page.getByRole('link', { name }).first().click();
       await page.waitForTimeout(400);
       await expect(page.locator(RAIL).first()).toHaveAttribute('data-e2e-mark', 'kept');
     }
@@ -86,7 +86,7 @@ test.describe('the dashboard frame', () => {
       await route.continue();
     });
 
-    await page.getByRole('button', { name: /bhim radio|भीम रेडियो/i }).first().click();
+    await page.getByRole('link', { name: /bhim radio|भीम रेडियो/i }).first().click();
     await expect(page.locator(RAIL).first()).toHaveAttribute('data-e2e-mark', 'kept');
   });
 });

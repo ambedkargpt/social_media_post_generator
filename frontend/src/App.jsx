@@ -55,7 +55,8 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 // pageEnter animation replays on each navigation.
 // Screens that share the signed-in frame. Moving between them must not look
 // like arriving somewhere new, because the rail does not go anywhere.
-const APP_PATHS = ['/dashboard', '/generate', '/preferences', '/posts', '/bhimradio'];
+const APP_PATHS = ['/dashboard', '/generate', '/posts', '/bhimradio',
+                  '/bhimbot', '/preferences', '/settings'];
 
 function PageTransition({ children }) {
   const location = useLocation();
@@ -172,21 +173,23 @@ export default function App() {
             <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/generate" element={<ServiceSelection />} />
-              <Route path="/preferences" element={<Preferences />} />
               <Route path="/posts" element={<PostHistory />} />
               <Route path="/bhimradio" element={<BhimRadio />} />
+              {/* These three used to render their own frame, so moving to one
+                  of them unmounted the rail and built a new one. They are in
+                  the layout now and get the shared rail like everything else. */}
+              <Route path="/bhimbot" element={<BheemBot />} />
+              <Route path="/generate/music" element={<MusicGeneration />} />
+              <Route path="/generate/music/:type" element={<MusicGenerationStudio />} />
+              {/* Phase 7 folds this into /settings along with the edit mode of
+                  profile setup. Inside the layout already, so it gets the rail. */}
+              <Route path="/preferences" element={<Preferences />} />
             </Route>
+            {/* Out of scope for the redesign, and deliberately outside the
+                layout: the generator is a full-bleed workspace of its own and
+                the owner wants it left exactly as it is. */}
             <Route path="/generate/social-media" element={
               <ProtectedRoute><SocialMediaPostGenerator /></ProtectedRoute>
-            } />
-            <Route path="/generate/music" element={
-              <ProtectedRoute><MusicGeneration /></ProtectedRoute>
-            } />
-            <Route path="/generate/music/:type" element={
-              <ProtectedRoute><MusicGenerationStudio /></ProtectedRoute>
-            } />
-            <Route path="/bhimbot" element={
-              <ProtectedRoute><BheemBot /></ProtectedRoute>
             } />
             {/* The page was /bheembot until the spelling was corrected. Anyone
                 holding that link - a bookmark, a shared message - still lands
