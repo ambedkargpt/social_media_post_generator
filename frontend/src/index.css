@@ -3086,3 +3086,282 @@ html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) {
   .np-week-bar, .np-milestone-fill { animation: none; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Create
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.np-create {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 26px;
+}
+@media (max-width: 767px) { .np-create { grid-template-columns: minmax(0, 1fr); } }
+
+.np-create-tile {
+  position: relative;
+  border-radius: 20px !important;
+  padding: 32px !important;
+  min-height: 220px;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+/* The one that is both finished and the point of the product. A border rather
+   than a bigger tile: same weight on the grid, more weight to the eye. */
+.np-create-tile.is-primary { border-color: var(--color-np-neela) !important; border-width: 1.5px !important; }
+
+.np-create-icon {
+  width: 56px; height: 56px;
+  display: grid; place-items: center;
+  border-radius: 14px;
+  background: var(--color-np-raised);
+  color: var(--color-np-neela-300);
+  margin-bottom: 8px;
+}
+.np-create-title { margin: 0; font-size: 32px; }
+:root[lang="hi"] .np-create-title { font-size: 28px; }
+.np-create-sub { margin: 0; font-size: 17px; line-height: 1.5; color: var(--color-np-text-2); max-width: 36ch; }
+
+.np-create-go {
+  position: absolute;
+  right: 28px; bottom: 28px;
+  width: 48px; height: 48px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--color-np-rule-strong);
+  color: var(--color-np-text-2);
+  transition: transform var(--np-dur-2) var(--np-ease-out),
+              background-color var(--np-dur-2) var(--np-ease-out),
+              color var(--np-dur-2) var(--np-ease-out);
+}
+.np-create-tile.is-primary .np-create-go {
+  background: var(--color-np-neela);
+  border-color: var(--color-np-neela);
+  color: #fff;
+}
+.np-create-tile:hover .np-create-go { transform: translateX(3px); }
+
+/* ── On the way ───────────────────────────────────────────────────────────
+   A ruled list, not a grid of disabled cards. Nine greyed-out tiles read as
+   nine broken things; nine rows read as a roadmap. */
+.np-soon { margin: 0; padding: 0; list-style: none; }
+.np-soon-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 10px;
+  border-bottom: 1px solid var(--color-np-rule);
+}
+.np-soon-icon {
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+  border-radius: 10px;
+  background: var(--color-np-desk);
+  color: var(--color-np-muted);
+}
+.np-soon-text { min-width: 0; display: grid; gap: 2px; }
+.np-soon-name { font-size: 16px; font-weight: 600; color: var(--color-np-text); }
+.np-soon-desc {
+  font-size: 14px; color: var(--color-np-muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.np-soon-on { color: var(--color-np-success) !important; }
+
+@media (max-width: 639px) {
+  .np-soon-row { grid-template-columns: auto minmax(0, 1fr); gap: 10px 12px; }
+  .np-soon-row > .np-btn { grid-column: 2; justify-self: start; }
+  .np-soon-desc { white-space: normal; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   My posts
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.np-posts-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+.np-posts-search {
+  position: relative;
+  flex: 1 1 260px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+.np-posts-search > svg {
+  position: absolute;
+  inset-inline-start: 14px;
+  color: var(--color-np-faint);
+  pointer-events: none;
+}
+
+.np-posts-day {
+  margin: 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-np-rule-strong);
+  font-family: var(--font-np-ui);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  color: var(--color-np-muted);
+}
+
+.np-posts-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.np-posts-list { margin: 0; padding: 0; list-style: none; }
+
+/* ── A post on paper ──────────────────────────────────────────────────────*/
+.np-post-card { display: grid; gap: 12px; align-content: start; }
+.np-post-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.np-post-platform {
+  font-family: var(--font-np-ui);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-np-paper-muted);
+}
+
+/* The excerpt is a button because the whole card opens the reader, and a
+   clickable region that is not a control is unreachable by keyboard. */
+.np-post-body {
+  display: block;
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 0;
+  text-align: start;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  /* Six lines, then the edge of the sheet. */
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.np-post-card .np-post-body :where(p, div, span) { font-size: 16px; line-height: 1.55; }
+
+.np-post-tags { margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.np-post-tags span { font-size: 13px; font-weight: 600; color: #2240B8; }
+
+.np-post-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-np-paper-rule);
+}
+.np-post-time { font-size: 13px; color: var(--color-np-paper-muted); margin-inline-end: auto; }
+
+/* ── List view ────────────────────────────────────────────────────────────*/
+.np-post-row {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 10px;
+  border-bottom: 1px solid var(--color-np-rule);
+}
+.np-post-row:hover { background: var(--color-np-raised); }
+.np-post-row .np-post-platform { color: var(--color-np-muted); }
+.np-post-row .np-post-time { color: var(--color-np-muted); margin: 0; }
+.np-post-line {
+  font-size: 17px;
+  color: var(--color-np-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.np-post-actions { display: flex; align-items: center; gap: 6px; }
+
+@media (max-width: 767px) {
+  .np-post-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "plat  stamp"
+      "line  line"
+      "acts  acts";
+    gap: 8px 12px;
+  }
+  .np-post-row .np-post-platform { grid-area: plat; }
+  .np-post-row > .np-stamp { grid-area: stamp; }
+  .np-post-line { grid-area: line; white-space: normal; }
+  .np-post-row .np-post-time { display: none; }
+  .np-post-actions { grid-area: acts; }
+}
+
+/* ── Overflow menu ────────────────────────────────────────────────────────*/
+.np-menu { position: relative; display: inline-flex; }
+.np-menu-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  inset-inline-end: 0;
+  z-index: 20;
+  min-width: 190px;
+  display: grid;
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--color-np-desk);
+  border: 1px solid var(--color-np-edge);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .5);
+  /* Out of the trigger's corner, not from nowhere. */
+  transform-origin: top right;
+  animation: npMenuIn 160ms var(--np-ease-out) both;
+}
+@keyframes npMenuIn {
+  from { opacity: 0; transform: scale(.96); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) { .np-menu-pop { animation: none; } }
+.np-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-np-text-2);
+  font: inherit;
+  font-size: 14px;
+  text-align: start;
+  cursor: pointer;
+}
+.np-menu-item:hover { background: var(--color-np-raised); color: var(--color-np-text); }
+.np-menu-item.is-danger { color: var(--color-np-critical); }
+.np-menu-item.is-danger:hover { background: rgba(240, 112, 90, .10); }
+
+/* ── Undo ─────────────────────────────────────────────────────────────────*/
+.np-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 10px 10px 18px;
+  border-radius: 12px;
+  background: var(--color-np-raised);
+  border: 1px solid var(--color-np-rule);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .5);
+  font-size: 15px;
+  animation: npRise var(--np-dur-2) var(--np-ease-out) both;
+}
+@media (max-width: 767px) { .np-toast { bottom: calc(80px + env(safe-area-inset-bottom)); } }
+
+.np-copied { color: var(--color-np-success) !important; border-color: var(--color-np-success) !important; }

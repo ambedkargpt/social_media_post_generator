@@ -1,65 +1,94 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
-  Copy,
+  ArrowRight,
   Check,
-  Search,
-  Sparkles,
-  Trash2,
-  BookmarkCheck,
+  Copy,
+  LayoutGrid,
   Languages,
-  X,
+  List,
   Maximize2,
+  MoreHorizontal,
   RefreshCw,
+  Search,
+  Send,
+  Undo2,
+  X,
 } from "lucide-react";
+
 import SpeakButton from "../components/generate/SpeakButton";
 import PublishSheet from "../components/publish/PublishSheet";
-import Topbar from "../components/dashboard/Topbar";
+import PostContent from "../components/generate/PostContent";
 import { useAuth } from "../context/AuthContext";
 import { getPosts, deletePost, translatePost, togglePostVersion } from "../api/posts";
-import PostContent from "../components/generate/PostContent";
+import {
+  Button, Card, EmptyState, Input, PageHeader, Paper, Segmented, Skeleton, Stamp,
+} from "../components/np";
 import { useI18n } from "../i18n/index.jsx";
 
-const STATUS_COLORS = {
-  draft: {
-    bg: "rgba(255,176,56,0.12)",
-    border: "rgba(255,176,56,0.35)",
-    text: "#ffb038",
-  },
-  published: {
-    bg: "rgba(34,197,94,0.10)",
-    border: "rgba(34,197,94,0.35)",
-    text: "#22c55e",
-  },
-  archived: {
-    bg: "rgba(148,163,184,0.10)",
-    border: "rgba(148,163,184,0.3)",
-    text: "#94a3b8",
-  },
-};
+/**
+ * My posts.
+ *
+ * Phase 6 of docs/redesign/neela-press.md. Every action and every API call is
+ * the one that was here: copy, publish through the sheet, translate, listen,
+ * toggle version, and archive - which is `deletePost` under the name the
+ * product shows.
+ *
+ * What changed is that posts are grouped by the day they were written, drafts
+ * sit on paper rather than in dark cards, and the row of actions under each
+ * one is now a single primary action plus a menu. A card with six equal
+ * buttons has no primary action, and this list is mostly read looking for one
+ * thing to finish.
+ */
 
-function StatusBadge({ status }) {
-  const { t, lang } = useI18n();
-  const s = STATUS_COLORS[status] ?? STATUS_COLORS.draft;
-  return (
-    <span
-      className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize"
-      style={{
-        backgroundColor: s.bg,
-        border: `1px solid ${s.border}`,
-        color: s.text,
-      }}
-    >
-      {t(`status.${status}`)}
-    </span>
-  );
+const VIEW_KEY = "ambedkargpt_posts_view";
+
+function readView() {
+  try {
+    return localStorage.getItem(VIEW_KEY) === "list" ? "list" : "grid";
+  } catch {
+    return "grid";
+  }
 }
+
+/**
+ * The day a post belongs to, named the way a person would.
+ *
+ * The locale is the UI language, not the browser's. English screens were
+ * showing Hindi month names because the formatter was left to pick for
+ * itself, and the browser of someone reading in English here is routinely
+ * set to hi-IN.
+ */
+function dayLabel(date, lang, t) {
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return "";
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const that = new Date(d);
+  that.setHours(0, 0, 0, 0);
+  const days = Math.round((today - that) / 86400000);
+  if (days === 0) return t("np.nav.today");
+  if (days === 1) return t("history.yesterday");
+  return new Intl.DateTimeFormat(lang === "hi" ? "hi-IN" : "en-IN", {
+    weekday: "short", day: "numeric", month: "short",
+  }).format(d);
+}
+
+function timeLabel(date, lang) {
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return "";
+  return new Intl.DateTimeFormat(lang === "hi" ? "hi-IN" : "en-IN", {
+    hour: "2-digit", minute: "2-digit", hour12: false,
+  }).format(d);
+}
+
+const STAMP_FOR = { draft: "draft", published: "published", archived: "saved" };
+
 
 // Full-screen reader for one post. A dialog rather than a route so the list
 // keeps its scroll position and filters when it closes.
 function PostModal({ post, onClose, onCopy, copiedId }) {
-  const { t } = useI18n();
 
   const [translating, setTranslating] = useState(false);
   const [translated, setTranslated] = useState("");
@@ -193,33 +222,83 @@ function PostModal({ post, onClose, onCopy, copiedId }) {
   );
 }
 
-function PostCard({ post, onOpen, onCopy, onPublish, onArchive, onToggleVersion, copiedId }) {
+/**
+ * The overflow menu. A popover rather than a row of five icon buttons: every
+ * one of those reads as equally important, and only one of them - finish this
+ * draft - is what anyone came for.
+ */
+function PostMenu({ onOpen, onTranslate, onArchive, onToggleVersion, translating }) {
   const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    function onDoc(e) { if (!ref.current?.contains(e.target)) setOpen(false); }
+    function onKey(e) { if (e.key === "Escape") setOpen(false); }
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const items = [
+    { key: "read", label: t("history.readFull"), icon: Maximize2, run: onOpen },
+    { key: "translate", label: t("gen.translate"), icon: translating ? RefreshCw : Languages, run: onTranslate },
+    { key: "version", label: t("gen.otherVersion"), icon: RefreshCw, run: onToggleVersion },
+    { key: "archive", label: t("history.archive"), icon: X, run: onArchive, danger: true },
+  ];
+
+  return (
+    <span className="np-menu" ref={ref}>
+      <button
+        type="button"
+        className="np-icon-btn"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={t("common.more")}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <MoreHorizontal size={18} strokeWidth={2} />
+      </button>
+      {open && (
+        <span className="np-menu-pop" role="menu">
+          {items.map(({ key, label, icon: Icon, run, danger }) => (
+            <button
+              key={key}
+              type="button"
+              role="menuitem"
+              className={`np-menu-item ${danger ? "is-danger" : ""}`}
+              onClick={() => { setOpen(false); run?.(); }}
+            >
+              <Icon size={16} strokeWidth={2} />
+              {label}
+            </button>
+          ))}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/** One post, on paper. */
+function PostCard({ post, view, onOpen, onCopy, onPublish, onArchive, onToggleVersion, copiedId }) {
+  const { t, lang } = useI18n();
   const [translating, setTranslating] = useState(false);
   const [translated, setTranslated] = useState("");
   const [showTranslated, setShowTranslated] = useState(false);
 
-  const rawContent = post.content ?? "";
-  const content = showTranslated && translated ? translated : rawContent;
-  const preview = content.slice(0, 200);
-  const hasMore = content.length > 200;
-  const date = post.created_at
-    ? new Date(post.created_at).toLocaleDateString("hi-IN", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      })
-    : "";
+  const raw = post.content ?? "";
+  const content = showTranslated && translated ? translated : raw;
+  const isDraft = post.status === "draft";
+  const copied = copiedId === post.id;
 
   async function handleTranslate() {
-    if (showTranslated) {
-      setShowTranslated(false);
-      return;
-    }
-    if (translated) {
-      setShowTranslated(true);
-      return;
-    }
+    // Translated once, then toggled. Asking the API again for a string it
+    // already returned is a second wait for the same words.
+    if (translated) { setShowTranslated((v) => !v); return; }
     setTranslating(true);
     try {
       const res = await translatePost(post.id, "en");
@@ -232,174 +311,78 @@ function PostCard({ post, onOpen, onCopy, onPublish, onArchive, onToggleVersion,
     }
   }
 
-  return (
-    <div
-      className="group relative flex flex-col gap-3 rounded-2xl border p-5 transition-all duration-200"
-      style={{
-        backgroundColor: "#07101f",
-        borderColor: "#1a2c55",
-        boxShadow: "0 2px 16px rgba(0,0,0,0.25)",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = "rgba(63,159,255,0.3)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = "#1a2c55";
-      }}
+  const stamp = (
+    <Stamp variant={STAMP_FOR[post.status] || "draft"}>
+      {t(`np.stamp.${post.status === "published" ? "published" : post.status === "archived" ? "saved" : "draft"}`)}
+    </Stamp>
+  );
+
+  const primary = isDraft ? (
+    <Button size="sm" onClick={() => onPublish(post.id)} iconRight={Send}>
+      {t("history.publish")}
+    </Button>
+  ) : (
+    <Button
+      size="sm"
+      variant="secondary"
+      onClick={() => onCopy(post.id, content)}
+      iconLeft={copied ? Check : Copy}
+      className={copied ? "np-copied" : ""}
     >
-      {/* top row */}
-      <div className="flex items-center justify-between gap-2">
-        {/* badge + date */}
-        <div className="flex min-w-0 items-center gap-2">
-          <StatusBadge status={post.status} />
-          <span className="whitespace-nowrap text-[11px] text-[#4e5a80]">
-            {date}
-          </span>
-        </div>
+      {t(copied ? "common.copied" : "common.copy")}
+    </Button>
+  );
 
-        {/* action buttons — icon-only on mobile, icon+label on sm+ */}
-        <div className="flex shrink-0 items-center gap-1">
-          {/* Read aloud. Speaks whichever version is on screen, so a
-              translated post is read in English rather than the Hindi it
-              was generated in. */}
-          <SpeakButton
-            content={content}
-            lang={showTranslated && translated ? "en" : "hi"}
-            compact
-          />
+  const menu = (
+    <PostMenu
+      translating={translating}
+      onOpen={() => onOpen(post)}
+      onTranslate={handleTranslate}
+      onArchive={() => onArchive(post.id)}
+      onToggleVersion={() => onToggleVersion(post.id)}
+    />
+  );
 
-          {/* Translate */}
-          <button
-            type="button"
-            onClick={handleTranslate}
-            disabled={translating}
-            title={showTranslated ? "Show Hindi" : "Translate to English"}
-            className="flex h-7 items-center justify-center gap-1 rounded-lg border border-[#1e3260]/60 px-1.5 text-[#6b78a0] transition hover:border-[#3f9fff]/50 hover:text-[#3f9fff] disabled:opacity-50 sm:px-2.5"
-            style={
-              showTranslated
-                ? { borderColor: "rgba(63,159,255,0.4)", color: "#3f9fff" }
-                : {}
-            }
-          >
-            <Languages size={12} strokeWidth={2} />
-            <span className="hidden text-[11px] font-medium sm:inline">
-              {translating ? "…" : showTranslated ? "हिंदी" : "EN"}
-            </span>
-          </button>
+  if (view === "list") {
+    return (
+      <li className="np-post-row">
+        <span className="np-post-platform">{post.platform || t("posts.post")}</span>
+        <span className="np-serif np-post-line">{content}</span>
+        {stamp}
+        <span className="np-mono np-post-time">{timeLabel(post.created_at, lang)}</span>
+        <span className="np-post-actions">
+          <SpeakButton text={content} lang={showTranslated && translated ? "en" : "hi"} />
+          {primary}
+          {menu}
+        </span>
+      </li>
+    );
+  }
 
-          {/* Switch version — a refined draft keeps both texts until it is
-              published, and publishing takes whichever one is showing. Without
-              this the choice would only exist on the generator screen, so a
-              draft published from here could not be switched. */}
-          {post.status === "draft" && post.previous_content && (
-            <button
-              type="button"
-              onClick={() => onToggleVersion(post.id)}
-              title={post.refined_is_live === false ? t('gen.showRefined') : t('gen.showOriginal')}
-              className="flex h-7 items-center justify-center gap-1 rounded-lg border border-[#1e3260]/60 px-1.5 text-[#6b78a0] transition hover:border-[#3f9fff]/50 hover:text-[#3f9fff] sm:px-2.5"
-            >
-              <RefreshCw size={12} strokeWidth={2} />
-              <span className="hidden text-[11px] font-medium sm:inline">
-                {post.refined_is_live === false ? t('gen.showRefined') : t('gen.showOriginal')}
-              </span>
-            </button>
-          )}
-
-          {/* Publish */}
-          {post.status === "draft" && (
-            <button
-              type="button"
-              onClick={() => onPublish(post.id)}
-              title={t('history.publish')}
-              className="flex h-7 items-center justify-center gap-1 rounded-lg border border-[#1e3260]/60 px-1.5 text-[#6b78a0] transition hover:border-[#22c55e]/50 hover:text-[#22c55e] sm:px-2.5"
-            >
-              <BookmarkCheck size={12} strokeWidth={2} />
-              <span className="hidden text-[11px] font-medium sm:inline">
-                {t("gen.publish")}
-              </span>
-            </button>
-          )}
-
-          {/* Archive */}
-          {post.status !== "archived" && (
-            <button
-              type="button"
-              onClick={() => onArchive(post.id)}
-              title={t('history.archive')}
-              className="flex h-9 w-9 items-center justify-center sm:h-7 sm:w-7 rounded-lg border border-[#1e3260]/60 text-[#6b78a0] transition hover:border-red-500/40 hover:text-red-400"
-            >
-              <Trash2 size={12} strokeWidth={2} />
-            </button>
-          )}
-
-          {/* Copy */}
-          <button
-            type="button"
-            onClick={() => onCopy(post.id, content)}
-            title="Copy"
-            className="flex h-7 items-center justify-center gap-1 rounded-lg border border-[#1e3260]/60 px-1.5 transition sm:px-2.5"
-            style={{
-              color: copiedId === post.id ? "#22c55e" : "#6b78a0",
-              borderColor:
-                copiedId === post.id ? "rgba(34,197,94,0.4)" : undefined,
-            }}
-          >
-            {copiedId === post.id ? (
-              <>
-                <Check size={12} strokeWidth={2.5} />
-                <span className="hidden text-[11px] font-medium sm:inline">
-                  {t("common.copied")}
-                </span>
-              </>
-            ) : (
-              <>
-                <Copy size={12} strokeWidth={2} />
-                <span className="hidden text-[11px] font-medium sm:inline">
-                  {t("common.copy")}
-                </span>
-              </>
-            )}
-          </button>
-        </div>
+  return (
+    <Paper as="li" className="np-post-card">
+      <div className="np-post-top">
+        <span className="np-post-platform">{post.platform || t("posts.post")}</span>
+        {stamp}
       </div>
 
-      {/* content */}
-      <p
-        className="whitespace-pre-wrap text-[13.5px] leading-relaxed"
-        style={{ color: "#c5d0e8" }}
-      >
-        {hasMore ? preview + "…" : content}
-      </p>
-
-      <button
-        type="button"
-        onClick={() => onOpen(post)}
-        className="group/open self-start inline-flex items-center gap-1.5 text-[12.5px] font-semibold transition hover:opacity-80"
-        style={{ color: "#3f9fff" }}
-      >
-        <Maximize2 size={12} strokeWidth={2.2} />
-        {t("history.readFull")}
+      <button type="button" className="np-post-body" onClick={() => onOpen(post)}>
+        <PostContent content={content} lang={showTranslated && translated ? "en" : "hi"} />
       </button>
 
-      {/* hashtags */}
       {post.hashtags?.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 pt-1">
-          {post.hashtags.map((tag) => (
-            <span
-              key={tag}
-              className="rounded-full px-2.5 py-0.5 text-[11px] font-medium"
-              style={{
-                backgroundColor: "rgba(63,159,255,0.1)",
-                color: "#5fa5ff",
-                border: "1px solid rgba(63,159,255,0.2)",
-              }}
-            >
-              #{tag}
-            </span>
-          ))}
-        </div>
+        <p className="np-post-tags">
+          {post.hashtags.map((tag) => <span key={tag}>#{tag}</span>)}
+        </p>
       )}
-    </div>
+
+      <div className="np-post-foot">
+        <span className="np-mono np-post-time">{timeLabel(post.created_at, lang)}</span>
+        <SpeakButton text={content} lang={showTranslated && translated ? "en" : "hi"} />
+        {primary}
+        {menu}
+      </div>
+    </Paper>
   );
 }
 
@@ -408,28 +391,36 @@ export default function PostHistory() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
 
-  const [posts, setPosts] = useState([]);
-  // The post whose destination is being chosen, or null.
+  const [data, setData] = useState(null);
   const [publishing, setPublishing] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [view, setView] = useState(readView);
   const [copiedId, setCopied] = useState(null);
   const [openPost, setOpenPost] = useState(null);
+  // An archive that can be taken back within five seconds, because the action
+  // behind it is a delete and there is no second copy.
+  const [undo, setUndo] = useState(null);
+
+  const userId = currentUser?.id;
+  useEffect(() => {
+    let cancelled = false;
+    getPosts({ limit: 200 })
+      .then((rows) => { if (!cancelled) setData({ userId, rows: rows ?? [] }); })
+      .catch(() => { if (!cancelled) setData({ userId, rows: [] }); });
+    return () => { cancelled = true; };
+  }, [userId]);
+
+  const fresh = data?.userId === userId ? data : null;
+  const posts = fresh?.rows ?? [];
+  const loading = !fresh;
 
   useEffect(() => {
-    getPosts({ limit: 200 })
-      .then((data) => setPosts(data ?? []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+    try { localStorage.setItem(VIEW_KEY, view); } catch { /* ignore */ }
+  }, [view]);
 
   async function handleCopy(id, content) {
-    try {
-      await navigator.clipboard.writeText(content);
-    } catch {
-      /* ignore */
-    }
+    try { await navigator.clipboard.writeText(content); } catch { /* ignore */ }
     setCopied(id);
     setTimeout(() => setCopied(null), 1800);
   }
@@ -442,37 +433,62 @@ export default function PostHistory() {
   }
 
   function handlePublished(id) {
-    setPosts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, status: "published" } : p)),
-    );
+    setData((d) => (d ? {
+      ...d,
+      rows: d.rows.map((p) => (p.id === id ? { ...p, status: "published" } : p)),
+    } : d));
   }
 
   async function handleToggleVersion(id) {
     try {
       const updated = await togglePostVersion(id);
-      setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, ...updated } : p)));
+      setData((d) => (d ? {
+        ...d, rows: d.rows.map((p) => (p.id === id ? { ...p, ...updated } : p)),
+      } : d));
     } catch {
       /* ignore */
     }
   }
 
-  async function handleArchive(id) {
-    try {
-      await deletePost(id);
-      setPosts((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, status: "archived" } : p)),
-      );
-    } catch {
-      /* ignore */
-    }
+  // The row leaves the list at once and the request waits. Undo inside five
+  // seconds puts it back without the API ever hearing about it, which is the
+  // only way to undo a delete that has no undo of its own.
+  function handleArchive(id) {
+    const post = posts.find((p) => p.id === id);
+    if (!post) return;
+    setData((d) => (d ? { ...d, rows: d.rows.filter((p) => p.id !== id) } : d));
+    const timer = setTimeout(async () => {
+      setUndo(null);
+      try { await deletePost(id); } catch { /* ignore */ }
+    }, 5000);
+    setUndo({ post, timer });
   }
 
-  const filtered = posts.filter((p) => {
+  function undoArchive() {
+    if (!undo) return;
+    clearTimeout(undo.timer);
+    setData((d) => (d ? { ...d, rows: [undo.post, ...d.rows] } : d));
+    setUndo(null);
+  }
+
+  const filtered = useMemo(() => posts.filter((p) => {
     if (filter !== "all" && p.status !== filter) return false;
-    if (search && !p.content?.toLowerCase().includes(search.toLowerCase()))
-      return false;
+    if (search && !p.content?.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
-  });
+  }), [posts, filter, search]);
+
+  // Grouped by the day they were written, newest day first.
+  const days = useMemo(() => {
+    const map = new Map();
+    [...filtered]
+      .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+      .forEach((p) => {
+        const label = dayLabel(p.created_at, lang, t) || "—";
+        if (!map.has(label)) map.set(label, []);
+        map.get(label).push(p);
+      });
+    return [...map.entries()];
+  }, [filtered, lang, t]);
 
   const counts = {
     all: posts.length,
@@ -482,113 +498,83 @@ export default function PostHistory() {
   };
 
   return (
-    <>
-      {/* The brand and the back-to-dashboard button that used to head this page
-          are both in the sidebar now, which is always on screen. */}
-      <div className="relative px-4 sm:px-6 md:px-10">
-        <Topbar
-          title={t("history.title")}
-          icon={<Search size={15} strokeWidth={2} className="hidden shrink-0 text-[#4f7fd4] lg:block" />}
-          right={
-            <button
-              type="button"
-              onClick={() => navigate("/generate")}
-              className="hidden items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-[13px] font-semibold text-white sm:inline-flex"
-              style={{
-                background: "linear-gradient(90deg,#0a7dff,#3a9fff)",
-                boxShadow: "0 4px 18px rgba(10,125,255,0.35)",
-              }}
-            >
-              <Sparkles size={14} strokeWidth={2.1} />
-              {t("history.generateNew")}
-            </button>
-          }
+    <div className="np-page">
+      <PageHeader
+        title={t("np.nav.myPosts")}
+        actions={(
+          <Button size="sm" onClick={() => navigate("/generate")} iconRight={ArrowRight}>
+            {t("np.nav.newPost")}
+          </Button>
+        )}
+      />
+
+      <div className="np-posts-bar">
+        <span className="np-posts-search">
+          <Search size={18} strokeWidth={2} aria-hidden="true" />
+          {/* The room for the icon has to be an inline style: Input sets its
+              own padding inline, and an inline style beats any class. */}
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t("history.searchPlaceholder")}
+            aria-label={t("history.searchPlaceholder")}
+            style={{ paddingInlineStart: 44 }}
+          />
+        </span>
+
+        <Segmented
+          size="sm"
+          ariaLabel={t("history.title")}
+          value={filter}
+          onChange={setFilter}
+          options={["all", "draft", "published", "archived"].map((k) => ({
+            value: k,
+            label: `${t(`history.filter.${k}`)} ${counts[k]}`,
+          }))}
         />
 
-        <main className="relative z-10 mx-auto max-w-[960px] pb-8">
-        {/* Title */}
-        <div className="mb-7">
-          <h1 className="font-display text-[28px] font-bold text-white">
-            {t("history.title")}
-          </h1>
-          <p className="mt-1 text-[13.5px] text-[#6b78a0]">
-            {t("history.sub")}
-          </p>
+        <Segmented
+          size="sm"
+          ariaLabel={t("history.view")}
+          value={view}
+          onChange={setView}
+          options={[
+            { value: "grid", label: <LayoutGrid size={16} strokeWidth={2} /> },
+            { value: "list", label: <List size={16} strokeWidth={2} /> },
+          ]}
+        />
+      </div>
+
+      {loading && (
+        <div className="np-posts-grid" style={{ marginTop: 24 }}>
+          {[0, 1, 2].map((i) => <Skeleton key={i} height={200} radius={12} />)}
         </div>
+      )}
 
-        {/* Search + filter bar */}
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="relative flex-1">
-            <Search
-              size={14}
-              strokeWidth={2}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#4e5a80]"
-            />
-            <input
-              type="text"
-              placeholder={t("history.searchPosts")}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-xl border border-[#1a2c55] bg-[#07101f] py-2.5 pl-9 pr-4 text-[13.5px] text-white placeholder:text-[#4e5a80] outline-none transition focus:border-[#3f9fff]/50"
-            />
-          </div>
-
-          <div className="flex items-center gap-1.5 rounded-xl border border-[#1a2c55] bg-[#07101f] p-1">
-            {["all", "draft", "published", "archived"].map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => setFilter(tab)}
-                className="rounded-lg px-3 py-1.5 text-[12px] font-medium capitalize transition-all duration-150"
-                style={{
-                  backgroundColor: filter === tab ? "#1a2a5e" : "transparent",
-                  color: filter === tab ? "#fff" : "#6b78a0",
-                  boxShadow:
-                    filter === tab ? "0 1px 4px rgba(0,0,0,0.4)" : "none",
-                }}
-              >
-                {t(`status.${tab}`)}{" "}
-                <span className="ml-0.5 opacity-60">({counts[tab]})</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Posts list */}
-        {loading ? (
-          <div className="flex items-center justify-center py-20 text-[#4e5a80] text-[14px]">
-            {t('history.loading')}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[#1e3260]/60 bg-[#07101f]">
-              <Sparkles
-                size={24}
-                strokeWidth={1.6}
-                className="text-[#3f9fff]"
-              />
-            </div>
-            <p className="text-[14px] text-[#6b78a0]">
-              {search ? t("history.emptySearch") : t("history.emptyStart")}
-            </p>
-            {!search && (
-              <button
-                type="button"
-                onClick={() => navigate("/generate")}
-                className="inline-flex items-center gap-2 rounded-full px-5 py-2 text-[13px] font-semibold text-white"
-                style={{ background: "linear-gradient(90deg,#0a7dff,#3a9fff)" }}
-              >
-                <Sparkles size={13} strokeWidth={2} />
-                {t("history.generateAPost")}
-              </button>
+      {!loading && days.length === 0 && (
+        <Card style={{ marginTop: 24 }}>
+          <EmptyState
+            title={t("history.empty")}
+            action={(
+              <Button onClick={() => navigate("/generate")} iconRight={ArrowRight}>
+                {t("np.dash.write")}
+              </Button>
             )}
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4">
-            {filtered.map((post) => (
+          >
+            {t("posts.emptyDesc")}
+          </EmptyState>
+        </Card>
+      )}
+
+      {!loading && days.map(([label, rows]) => (
+        <section key={label} className="np-block">
+          <h2 className="np-posts-day">{label}</h2>
+          <ul className={view === "grid" ? "np-posts-grid" : "np-posts-list"}>
+            {rows.map((post) => (
               <PostCard
                 key={post.id}
                 post={post}
+                view={view}
                 onOpen={setOpenPost}
                 onCopy={handleCopy}
                 onPublish={handlePublish}
@@ -597,30 +583,35 @@ export default function PostHistory() {
                 copiedId={copiedId}
               />
             ))}
-          </div>
-        )}
+          </ul>
+        </section>
+      ))}
 
-        {openPost && (
-          <PostModal
-            post={openPost}
-            onClose={() => setOpenPost(null)}
-            onCopy={handleCopy}
-            copiedId={copiedId}
-          />
-        )}
-        </main>
-      </div>
+      {undo && (
+        <div className="np-toast" role="status">
+          <span>{t("np.posts.archived")}</span>
+          <Button size="sm" variant="ghost" onClick={undoArchive} iconLeft={Undo2}>
+            {t("np.common.undo")}
+          </Button>
+        </div>
+      )}
+
+      {openPost && (
+        <PostModal
+          post={openPost}
+          onClose={() => setOpenPost(null)}
+          onCopy={handleCopy}
+          copiedId={copiedId}
+        />
+      )}
 
       {publishing && (
         <PublishSheet
           post={publishing}
           onClose={() => setPublishing(null)}
-          onPublished={() => {
-            handlePublished(publishing.id);
-            setPublishing(null);
-          }}
+          onPublished={handlePublished}
         />
       )}
-    </>
+    </div>
   );
 }

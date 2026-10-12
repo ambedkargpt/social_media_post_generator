@@ -1080,4 +1080,12 @@ export default {
   "dash.noNewsSub": "आज की ख़बरें थोड़ी देर में यहाँ दिखेंगी।",
   "posts.emptyDesc": "जो पोस्ट आप शुरू करके अधूरी छोड़ेंगे, वे यहाँ रहेंगी।",
   "posts.post": "पोस्ट",
+  "history.yesterday": "कल",
+  "history.filter.all": "सभी",
+  "history.filter.draft": "ड्राफ़्ट",
+  "history.filter.published": "प्रकाशित",
+  "history.filter.archived": "संग्रहित",
+  "history.searchPlaceholder": "अपनी पोस्ट खोजिए",
+  "gen.otherVersion": "दूसरा रूप",
+  "common.more": "और विकल्प",
 };

@@ -1074,4 +1074,12 @@ export default {
   "dash.noNewsSub": "Today's stories will appear here shortly.",
   "posts.emptyDesc": "Posts you start and do not finish will wait here.",
   "posts.post": "Post",
+  "history.yesterday": "Yesterday",
+  "history.filter.all": "All",
+  "history.filter.draft": "Drafts",
+  "history.filter.published": "Published",
+  "history.filter.archived": "Archived",
+  "history.searchPlaceholder": "Search your posts",
+  "gen.otherVersion": "Other version",
+  "common.more": "More actions",
 };

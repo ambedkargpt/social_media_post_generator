@@ -23,7 +23,17 @@ export default defineConfig([
       },
     },
     rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      // ESLint does not count a JSX tag as a use, so a component held in a
+      // variable - `const Icon = item.icon` then `<Icon/>` - reads as dead.
+      // varsIgnorePattern was already here for exactly that. The same
+      // components arrive as destructured props at least as often
+      // (`({ icon: Icon })`), and those are args rather than vars, so the
+      // existing exemption missed them and every such component had to be
+      // referenced a second time outside JSX to satisfy the rule.
+      'no-unused-vars': ['error', {
+        varsIgnorePattern: '^[A-Z_]',
+        argsIgnorePattern: '^[A-Z_]',
+      }],
     },
   },
 ])
