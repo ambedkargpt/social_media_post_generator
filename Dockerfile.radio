@@ -48,7 +48,24 @@ WORKDIR /app
 # integration guide asking for one. A commit is a stricter pin anyway - move
 # it deliberately, and the diff says exactly what changed.
 ARG BHEEM_RADIO_REF=32289f8a25b3f9be09ac817aec4458af873b6864
-RUN pip install --no-cache-dir --upgrade pip && \
+# smartbhaujan/BHEEM-RADIO is private, so the clone needs a credential. Three
+# builds failed on `could not read Username for 'https://github.com'` before
+# anyone read the log: pip reports it as its own failure, and the one line
+# that says what actually happened sits four lines above that.
+#
+# The token arrives as a BuildKit secret, mounted for this RUN only and never
+# written to a layer. It reaches git through a credential helper rather than
+# through the URL, because pip echoes the URL it is cloning - a token in there
+# lands in the build log, and trusting the log masker to catch it is not the
+# same as not putting it there.
+#
+# The helper that does persist in /root/.gitconfig reads
+# /run/secrets/bheem_token, which exists only inside this RUN. Afterwards it
+# resolves to nothing and grants nothing.
+RUN --mount=type=secret,id=bheem_token \
+    git config --global credential.helper \
+      '!f() { echo username=x-access-token; echo "password=$(cat /run/secrets/bheem_token)"; }; f' && \
+    pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir \
       "bheem-radio[mongo] @ git+https://github.com/smartbhaujan/BHEEM-RADIO.git@${BHEEM_RADIO_REF}"
 

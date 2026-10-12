@@ -52,10 +52,28 @@ jobs:
       - name: Log in to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
+      # bheem-radio is installed from smartbhaujan/BHEEM-RADIO, which is
+      # private. Without a credential the clone fails with "could not read
+      # Username for 'https://github.com'", four lines above pip's own error,
+      # which is why three builds failed before anyone found it. Said plainly
+      # here so a missing secret is a one-line failure instead.
+      - name: Check the Bheem Radio token is present
+        run: |
+          if [ -z "${{ secrets.BHEEM_RADIO_TOKEN }}" ]; then
+            echo "::error::BHEEM_RADIO_TOKEN is not set. The radio image installs" \
+                 "bheem-radio from the private smartbhaujan/BHEEM-RADIO, so the" \
+                 "build needs a token with read access to it."
+            exit 1
+          fi
+
       - name: Build radio image
+        env:
+          BHEEM_RADIO_TOKEN: ${{ secrets.BHEEM_RADIO_TOKEN }}
         run: |
           IMAGE_URI="${{ secrets.ECR_REGISTRY }}/ambedkargpt-radio"
+          # The secret is mounted for one RUN and never becomes a layer.
           docker build -f Dockerfile.radio \
+            --secret id=bheem_token,env=BHEEM_RADIO_TOKEN \
             -t "${IMAGE_URI}:latest" \
             -t "${IMAGE_URI}:${{ github.sha }}" \
             .
