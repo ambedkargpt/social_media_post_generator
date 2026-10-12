@@ -13,8 +13,10 @@
 # One-time setup this workflow does not do (see docs/bheem-radio.md):
 #   - the ECR repository ambedkargpt-radio
 #   - the SARVAM_API_KEY parameter in SSM
-#   - the EventBridge rule that calls the radio Lambda daily
-#   - the CloudFront distribution over the bucket's radio/ prefix
+#   - the EventBridge schedule ambedkargpt-radio-general (enable it once the
+#     first image is pushed; a schedule with no image behind it just fails)
+#   - the CloudFront distribution - see backend/deploy/radio-cloudfront-setup.sh
+#   - write access to ambedkargpt-radio on ambedkargpt-worker-role
 # ─────────────────────────────────────────────────────────────────────────────
 
 name: Deploy Radio
@@ -104,8 +106,10 @@ jobs:
                 {\"type\": \"MEMORY\", \"value\": \"2048\"}
               ],
               \"environment\": [
-                {\"name\": \"S3_BUCKET\",         \"value\": \"ambedkargpt-artifacts\"},
-                {\"name\": \"MONGODB_DATABASE\",  \"value\": \"ambedkargpt\"}
+                {\"name\": \"S3_BUCKET\",                   \"value\": \"ambedkargpt-radio\"},
+                {\"name\": \"BHEEM_DAILY_S3_PREFIX\",       \"value\": \"\"},
+                {\"name\": \"BHEEM_DAILY_PUBLIC_BASE_URL\", \"value\": \"https://d12duaxzxz067j.cloudfront.net\"},
+                {\"name\": \"MONGODB_DATABASE\",            \"value\": \"ambedkargpt\"}
               ],
               \"secrets\": [
                 {\"name\": \"MONGODB_URI\",      \"valueFrom\": \"${SSM}/MONGODB_URI\"},

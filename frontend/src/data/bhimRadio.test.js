@@ -141,14 +141,23 @@ describe('loadStation', () => {
       .toBe('https://cdn.example.net/congress/2026-10-04-3716a8dc0a.mp3');
   });
 
-  it('still honours an absolute audio_url, which names a host deliberately', async () => {
+  it('ignores an absolute audio_url too, because upstream writes localhost', async () => {
+    // This one shipped. Bheem Radio composes audio_url from its own
+    // public_base_url, which defaults to http://localhost:8000/media, so a
+    // build that is not told otherwise puts a localhost URL in a manifest
+    // served worldwide. Letting an absolute URL win on the grounds that it
+    // "named a host deliberately" meant production played that URL: the audio
+    // element raised MEDIA_ERR_SRC_NOT_SUPPORTED, the page disabled tune-in,
+    // and everything else - clock, running order, transcript - kept running,
+    // so the station looked alive and simply would not play.
     vi.stubEnv('VITE_RADIO_BASE_URL', 'https://cdn.example.net');
     vi.resetModules();
     const { loadStation: load } = await import('./bhimRadio');
 
-    mockFetch(MANIFEST);
+    mockFetch({ ...MANIFEST, audio_url: 'http://localhost:8000/media/radio/congress/x.mp3' });
 
-    expect((await load('congress')).audioUrl).toBe(MANIFEST.audio_url);
+    expect((await load('congress')).audioUrl)
+      .toBe('https://cdn.example.net/congress/2026-10-04-3716a8dc0a.mp3');
   });
 
   it('reports nothing on air rather than throwing when there is no manifest', async () => {

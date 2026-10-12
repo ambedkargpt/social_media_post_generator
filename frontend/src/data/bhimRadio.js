@@ -97,19 +97,26 @@ export async function loadStation(tenant) {
   if (!response.ok) throw new Error(`radio manifest: HTTP ${response.status}`);
 
   const manifest = await response.json();
-  // `audio_url` is written by the build as a path on whatever serves the
-  // manifest, which in development is the dev server at /radio. In production
-  // the audio sits behind the configured base URL instead, so the key - the
-  // object's own path, with no host in it - is the one that resolves there.
-  // Taking audio_url first sent production at /radio/..., which is gitignored
-  // and has never been deployed. An absolute URL still wins: that is the
-  // build naming a host on purpose.
-  const absolute = /^https?:\/\//i.test(manifest.audio_url || '');
-  const audioUrl = absolute
-    ? manifest.audio_url
-    : BASE_URL && manifest.audio_key
-      ? `${BASE_URL}/${manifest.audio_key}`
-      : manifest.audio_url || '';
+  // Where the audio actually is.
+  //
+  // The manifest carries both `audio_key` - the object's own path, no host in
+  // it - and `audio_url`, which the build composes from whatever base URL it
+  // was configured with. That base defaults to http://localhost:8000/media
+  // upstream, so a build that is not told otherwise writes a localhost URL
+  // into a manifest served worldwide.
+  //
+  // So when this app has been given a base URL, that is the authority and the
+  // key is what gets appended to it. audio_url is only read when there is no
+  // base URL to use, which is local development.
+  //
+  // An earlier version let an absolute audio_url win on the grounds that it
+  // named a host deliberately. It does not: production played the manifest's
+  // localhost URL, the audio element raised MEDIA_ERR_SRC_NOT_SUPPORTED, and
+  // the page disabled its own tune-in button while the rest of the station -
+  // clock, running order, transcript - carried on as though nothing was wrong.
+  const audioUrl = BASE_URL && manifest.audio_key
+    ? `${BASE_URL}/${manifest.audio_key}`
+    : manifest.audio_url || '';
   if (!audioUrl) return null;
 
   return {
