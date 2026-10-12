@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Concept — Log in</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anek+Devanagari:wdth,wght@75..125,400..800&amp;family=Mukta:wght@400;500;600;700&amp;family=Tiro+Devanagari+Hindi:ital@0;1&amp;display=swap">
+<style>
+body{margin:0;background:#0B0D14}
+a{color:#9DB3FF}a:hover{color:#C9D6FF}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #0B0D14; color: #EEF0F7; font-family: 'Mukta', system-ui, sans-serif; font-size: 16px; display: flex; flex-wrap: wrap">
+
+<div style="flex: 1 1 520px; min-height: 900px; position: relative; overflow: hidden; background: #0B1440; display: flex; flex-direction: column; justify-content: flex-end">
+<img src="/_blob/d49c909961c08e2298f7d0a77c56f437" alt="Portrait of Dr. B. R. Ambedkar" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 20%; filter: grayscale(1) contrast(1.1); mix-blend-mode: luminosity; opacity: 0.85">
+<div style="position: absolute; inset: 0; background: #1B3CC4; mix-blend-mode: multiply"></div>
+<div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(11,13,20,0) 40%, rgba(11,13,20,0.92) 88%)"></div>
+<svg width="560" height="560" viewBox="0 0 100 100" aria-hidden="true" style="position: absolute; right: -180px; top: -160px; opacity: 0.18"><circle cx="50" cy="50" r="44" fill="none" stroke="#C9D6FF" stroke-width="1.2"></circle><g stroke="#C9D6FF" stroke-width="0.5"><line x1="50" y1="6" x2="50" y2="94"></line><line x1="50" y1="6" x2="50" y2="94" transform="rotate(15 50 50)"></line><line x1="50" y1="6" x2="50" y2="94" transform="rotate(30 50 50)"></line><line x1="50" y1="6" x2="50" y2="94" transform="rotate(45 50 50)"></line><line x1="50" y1="6" x2="50" y2="94" transform="rotate(60 50 50)"></line><line x1="50" y1="6" x2="50" y2="94" transform="rotate(75 50 50)"></line><line x1="50" y1="6" x2="50" y2="94" transform="rotate(90 50 50)"></line><line x1="50" y1="6" x2="50" y2="94" transform="rotate(105 50 50)"></line><line x1="50" y1="6" x2="50" y2="94" transform="rotate(120 50 50)"></line><line x1="50" y1="6" x2="50" y2="94" transform="rotate(135 50 50)"></line><line x1="50" y1="6" x2="50" y2="94" transform="rotate(150 50 50)"></line><line x1="50" y1="6" x2="50" y2="94" transform="rotate(165 50 50)"></line></g></svg>
+<div style="position: relative; padding: 56px; display: flex; flex-direction: column; gap: 14px; max-width: 560px">
+<div style="font-family: 'Tiro Devanagari Hindi', Georgia, serif; font-size: 44px; line-height: 1.12">Educate, Agitate, Organize.</div>
+<div style="font-family: 'Tiro Devanagari Hindi', Georgia, serif; font-size: 26px; line-height: 1.3; color: #C9D6FF">शिक्षित बनो · संगठित रहो · संघर्ष करो</div>
+<div style="font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; color: #A6ABBA; font-weight: 600">Dr. B. R. Ambedkar</div>
+</div>
+</div>
+
+<div style="flex: 1 1 520px; min-height: 900px; display: flex; flex-direction: column; padding: 32px 40px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 16px">
+<a href="Main.dc.html" style="color: #EEF0F7; text-decoration: none; font-family: 'Anek Devanagari', 'Mukta', sans-serif; font-weight: 750; font-size: 22px; letter-spacing: -0.02em">Ambedkar<span style="color: #8FA8FF">GPT</span></a>
+<div role="group" aria-label="Language" style="display: flex; border: 1px solid #2B303E; border-radius: 8px; padding: 3px; gap: 2px">
+<button style="background: #262B3A; color: #EEF0F7; border: 0; border-radius: 8px; padding: 6px 14px; font: 600 14px 'Mukta', sans-serif; min-height: 34px">EN</button>
+<button style="background: transparent; color: #A6ABBA; border: 0; border-radius: 8px; padding: 6px 14px; font: 600 14px 'Mukta', sans-serif; min-height: 34px">हिं</button>
+</div>
+</div>
+
+<div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 0">
+<div style="width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 28px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font-family: 'Anek Devanagari', 'Mukta', sans-serif; font-stretch: 87.5%; font-size: 60px; font-weight: 750; letter-spacing: -0.01em; line-height: 1.05">Log in</h1>
+<p style="margin: 0; color: #A6ABBA; font-size: 17px">Pick up where you left off on today's news.</p>
+</div>
+
+<button style="display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 52px; border-radius: 8px; border: 1px solid #3A4050; background: #13161F; color: #EEF0F7; font: 600 16px 'Mukta', sans-serif">
+<span aria-hidden="true" style="width: 22px; height: 22px; border-radius: 50%; background: #EEF0F7; color: #0B0D14; display: inline-flex; align-items: center; justify-content: center; font: 800 13px 'Anek Devanagari', 'Mukta', sans-serif">G</span>Continue with Google</button>
+
+<div style="display: flex; align-items: center; gap: 14px; color: #A6ABBA; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase"><span style="flex: 1; height: 1px; background: #2B303E"></span>or<span style="flex: 1; height: 1px; background: #2B303E"></span></div>
+
+<div role="tablist" aria-label="Sign-in method" style="display: flex; gap: 28px; border-bottom: 1px solid #2B303E">
+<button role="tab" aria-selected="true" style="background: none; border: 0; border-bottom: 2px solid #8FA8FF; color: #EEF0F7; padding: 0 0 10px; font: 600 16px 'Mukta', sans-serif; margin-bottom: -1px">Phone</button>
+<button role="tab" aria-selected="false" style="background: none; border: 0; color: #A6ABBA; padding: 0 0 10px; font: 500 16px 'Mukta', sans-serif">Email &amp; password</button>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="phone" style="font-size: 14px; font-weight: 600; color: #C9CCD6">Mobile number</label>
+<div style="display: flex; align-items: center; min-height: 56px; border-radius: 8px; border: 1.5px solid #8FA8FF; background: #13161F; outline: 2px solid #8FA8FF; outline-offset: 2px">
+<span style="padding: 0 14px; border-right: 1px solid #2B303E; font-weight: 600; color: #C9CCD6; align-self: stretch; display: flex; align-items: center">+91</span>
+<input id="phone" value="98765 43210" style="flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: #EEF0F7; font: 500 19px 'Mukta', sans-serif; letter-spacing: 0.04em; padding: 0 14px">
+</div>
+<span style="font-size: 14px; color: #A6ABBA">We'll text you a 6-digit code. No password needed.</span>
+</div>
+
+<button style="min-height: 56px; border-radius: 8px; border: 0; background: #2E56E8; color: #FFFFFF; font: 700 18px 'Anek Devanagari', 'Mukta', sans-serif; letter-spacing: -0.01em; display: flex; align-items: center; justify-content: center; gap: 10px">Send code
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+
+<p style="margin: 0; text-align: center; color: #A6ABBA; font-size: 15px">New to AmbedkarGPT? <a href="#">Create an account</a> <span style="color: #8A93B8">· 3 quick steps</span></p>
+</div>
+</div>
+
+<p style="margin: 0; color: #8A93B8; font-size: 13px; text-align: center">By continuing you agree to the <a href="#" style="color: #A6ABBA">Terms</a> and <a href="#" style="color: #A6ABBA">Privacy Policy</a>.</p>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Concept — Settings</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anek+Devanagari:wdth,wght@75..125,400..800&amp;family=Mukta:wght@400;500;600;700&amp;family=Tiro+Devanagari+Hindi:ital@0;1&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0B0D14}
+a{color:#8FA8FF}a:hover{color:#C9D6FF}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #0B0D14; color: #EDEEF2; font-family: 'Mukta', system-ui, sans-serif; font-size: 16px; display: flex; flex-wrap: wrap">
+
+<div style="flex: 0 1 272px; min-width: 240px; display: flex">
+<dc-import name="Rail" current="settings" lang="en" hint-size="272px,1000px"></dc-import>
+</div>
+
+<main style="flex: 999 1 560px; min-width: 0; padding: 36px 48px 56px; display: flex; flex-direction: column; gap: 32px">
+<header style="display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap; border-bottom: 1px solid #3A4050; padding-bottom: 20px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-family: 'Anek Devanagari', 'Mukta', sans-serif; font-stretch: 87.5%; font-size: 56px; font-weight: 750; line-height: 1.05">Settings</h1>
+<p style="margin: 0; color: #A6ABBA; font-size: 17px">Everything about you and how your posts sound, on one page.</p>
+</div>
+<div role="tablist" aria-label="Settings sections" style="display: flex; border: 1px solid #2B303E; flex-wrap: wrap">
+<button role="tab" aria-selected="true" style="min-height: 44px; padding: 0 20px; border: 0; background: #EDEEF2; color: #0B0D14; font: 600 15px 'Mukta', sans-serif">Profile</button>
+<button role="tab" aria-selected="false" style="min-height: 44px; padding: 0 20px; border: 0; border-left: 1px solid #2B303E; background: transparent; color: #C9CCD6; font: 500 15px 'Mukta', sans-serif">Your voice</button>
+<button role="tab" aria-selected="false" style="min-height: 44px; padding: 0 20px; border: 0; border-left: 1px solid #2B303E; background: transparent; color: #C9CCD6; font: 500 15px 'Mukta', sans-serif">Accounts</button>
+<button role="tab" aria-selected="false" style="min-height: 44px; padding: 0 20px; border: 0; border-left: 1px solid #2B303E; background: transparent; color: #C9CCD6; font: 500 15px 'Mukta', sans-serif">Language</button>
+</div>
+</header>
+
+<section aria-labelledby="about" style="display: flex; flex-wrap: wrap; gap: 24px 48px">
+<div style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 6px">
+<h2 id="about" style="margin: 0; font-family: 'Anek Devanagari', sans-serif; font-stretch: 87.5%; font-size: 30px; font-weight: 700; line-height: 1.1">About you</h2>
+<p style="margin: 0; color: #A6ABBA; font-size: 15px">Your name and handle appear on every post. State and city set your local news.</p>
+</div>
+<div style="flex: 3 1 520px; min-width: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 22px 20px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="fullname" style="font-size: 14px; font-weight: 600; color: #C9CCD6">Full name</label>
+<input id="fullname" value="Bhargav Bidkar" style="min-height: 52px; border-radius: 16px; border: 1px solid #1D212C; background: #13161F; color: #EDEEF2; font: 500 17px 'Mukta', sans-serif; padding: 0 14px; outline: none">
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="username" style="font-size: 14px; font-weight: 600; color: #C9CCD6">Username</label>
+<div style="display: flex; align-items: center; min-height: 52px; border-radius: 8px; border: 2px solid #8FA8FF; background: #13161F; outline: 2px solid #8FA8FF; outline-offset: 2px">
+<span style="padding: 0 4px 0 14px; color: #A6ABBA; font: 600 17px 'Mukta', sans-serif">@</span>
+<input id="username" value="bhargav" style="flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: #EDEEF2; font: 500 17px 'Mukta', sans-serif; padding: 0 14px 0 0">
+</div>
+<span style="font-size: 14px; color: #A6ABBA">Only letters, numbers and underscores.</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="state" style="font-size: 14px; font-weight: 600; color: #C9CCD6">State</label>
+<div style="position: relative; display: flex">
+<select id="state" style="flex: 1; min-height: 52px; border-radius: 16px; border: 1px solid #1D212C; background: #13161F; color: #EDEEF2; font: 500 17px 'Mukta', sans-serif; padding: 0 40px 0 14px; appearance: none"><option>Maharashtra</option></select>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A6ABBA" stroke-width="2.4" stroke-linecap="square" aria-hidden="true" style="position: absolute; right: 14px; top: 18px; pointer-events: none"><path d="M6 9l6 6 6-6"></path></svg>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="city" style="font-size: 14px; font-weight: 600; color: #C9CCD6">City</label>
+<div style="position: relative; display: flex">
+<select id="city" style="flex: 1; min-height: 52px; border-radius: 16px; border: 1px solid #1D212C; background: #13161F; color: #EDEEF2; font: 500 17px 'Mukta', sans-serif; padding: 0 40px 0 14px; appearance: none"><option>Nagpur</option></select>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A6ABBA" stroke-width="2.4" stroke-linecap="square" aria-hidden="true" style="position: absolute; right: 14px; top: 18px; pointer-events: none"><path d="M6 9l6 6 6-6"></path></svg>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="dob" style="font-size: 14px; font-weight: 600; color: #C9CCD6">Date of birth <span style="font-weight: 400; color: #A6ABBA">· optional</span></label>
+<input id="dob" placeholder="DD / MM / YYYY" style="min-height: 52px; border-radius: 16px; border: 1px solid #1D212C; background: #13161F; color: #EDEEF2; font: 500 16px 'IBM Plex Mono', monospace; padding: 0 14px; outline: none">
+</div>
+</div>
+</section>
+
+<section aria-labelledby="party" style="display: flex; flex-wrap: wrap; gap: 24px 48px; padding-top: 32px; border-top: 1px solid #2B303E">
+<div style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 6px">
+<h2 id="party" style="margin: 0; font-family: 'Anek Devanagari', sans-serif; font-stretch: 87.5%; font-size: 30px; font-weight: 700; line-height: 1.1">Party &amp; role</h2>
+<p style="margin: 0; color: #A6ABBA; font-size: 15px">Set once, at sign-up.</p>
+</div>
+<div style="flex: 3 1 520px; min-width: 0; background: #13161F; border: 1px solid #1D212C; display: flex; flex-direction: column">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr))">
+<div style="padding: 20px 22px; display: flex; flex-direction: column; gap: 6px; border-bottom: 1px solid #2B303E">
+<span style="font-size: 14px; font-weight: 600; color: #A6ABBA">Party</span>
+<span style="display: flex; align-items: center; gap: 10px; font-family: 'Anek Devanagari', sans-serif; font-size: 24px; font-weight: 700; line-height: 1.15"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E9B949" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4"></path></svg><img src="/_blob/bf87891e7f4ed402e5be11e8b2d591fb" alt="" aria-hidden="true" style="width: 32px; height: 32px; border-radius: 50%">Congress</span>
+</div>
+<div style="padding: 20px 22px; display: flex; flex-direction: column; gap: 6px; border-bottom: 1px solid #2B303E">
+<span style="font-size: 14px; font-weight: 600; color: #A6ABBA">Role · District</span>
+<span style="display: flex; align-items: center; gap: 10px; font-family: 'Anek Devanagari', sans-serif; font-size: 24px; font-weight: 700; line-height: 1.15"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E9B949" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4"></path></svg>DCC General Secretary</span>
+</div>
+</div>
+<div style="padding: 18px 22px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap">
+<p style="margin: 0; flex: 1 1 360px; color: #C9CCD6; font-size: 15px">Your party and role decide how every post speaks, and your saved answers are written for them. That's why they can't be edited here.</p>
+<a href="#" style="display: inline-flex; align-items: center; min-height: 44px; font-weight: 600">Contact us to change →</a>
+</div>
+</div>
+</section>
+
+<section aria-labelledby="accounts" style="display: flex; flex-wrap: wrap; gap: 24px 48px; padding-top: 32px; border-top: 1px solid #2B303E">
+<div style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 6px">
+<h2 id="accounts" style="margin: 0; font-family: 'Anek Devanagari', sans-serif; font-stretch: 87.5%; font-size: 30px; font-weight: 700; line-height: 1.1">Accounts</h2>
+<p style="margin: 0; color: #A6ABBA; font-size: 15px">Full list under the Accounts tab.</p>
+</div>
+<div style="flex: 3 1 520px; min-width: 0; display: flex; flex-direction: column; border-top: 1px solid #2B303E; border-bottom: 1px solid #2B303E">
+<div style="display: flex; align-items: center; gap: 16px; padding: 18px 0; flex-wrap: wrap">
+<span aria-hidden="true" style="width: 44px; height: 44px; flex: none; border: 1.5px solid #3A4050; border-radius: 8px; display: flex; align-items: center; justify-content: center; font: 700 18px 'Anek Devanagari', sans-serif; color: #FFB27A">r/</span>
+<div style="flex: 1 1 280px; display: flex; flex-direction: column; gap: 2px">
+<span style="font-weight: 700; font-size: 17px">Reddit <span style="font-weight: 500; font-size: 14px; color: #A6ABBA">· Not connected</span></span>
+<span style="color: #C9CCD6; font-size: 15px">Your posts go out under your own name, and only when you ask. We never see your password.</span>
+</div>
+<button style="min-height: 44px; padding: 0 20px; border-radius: 8px; border: 1.5px solid #3A4050; background: transparent; color: #C9D6FF; font: 600 15px 'Mukta', sans-serif">Connect</button>
+</div>
+</div>
+</section>
+
+<div style="display: flex; justify-content: flex-end; align-items: center; gap: 16px; flex-wrap: wrap; padding-top: 24px; border-top: 2px solid #EDEEF2">
+<span style="color: #A6ABBA; font-size: 15px">1 unsaved change</span>
+<button style="min-height: 52px; padding: 0 28px; border-radius: 8px; border: 0; background: #2E56E8; color: #FFFFFF; font: 700 18px 'Anek Devanagari', 'Mukta', sans-serif">Save changes</button>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Concept — Enter code</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anek+Devanagari:wdth,wght@75..125,400..800&amp;family=Mukta:wght@400;500;600;700&amp;family=Tiro+Devanagari+Hindi:ital@0;1&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0B0D14}
+a{color:#9DB3FF}a:hover{color:#C9D6FF}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #0B0D14; color: #EEF0F7; font-family: 'Mukta', system-ui, sans-serif; font-size: 16px; display: flex; flex-wrap: wrap">
+
+<div style="flex: 1 1 520px; min-height: 900px; position: relative; overflow: hidden; background: #0B1440; display: flex; flex-direction: column; justify-content: flex-end">
+<img src="/_blob/d49c909961c08e2298f7d0a77c56f437" alt="Portrait of Dr. B. R. Ambedkar" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 20%; filter: grayscale(1) contrast(1.1); mix-blend-mode: luminosity; opacity: 0.85">
+<div style="position: absolute; inset: 0; background: #1B3CC4; mix-blend-mode: multiply"></div>
+<div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(11,13,20,0) 40%, rgba(11,13,20,0.92) 88%)"></div>
+<div style="position: relative; padding: 56px; display: flex; flex-direction: column; gap: 14px; max-width: 560px">
+<div style="font-family: 'Tiro Devanagari Hindi', Georgia, serif; font-size: 44px; line-height: 1.12">Educate, Agitate, Organize.</div>
+<div style="font-family: 'Tiro Devanagari Hindi', Georgia, serif; font-size: 26px; line-height: 1.3; color: #C9D6FF">शिक्षित बनो · संगठित रहो · संघर्ष करो</div>
+<div style="font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; color: #A6ABBA; font-weight: 600">Dr. B. R. Ambedkar</div>
+</div>
+</div>
+
+<div style="flex: 1 1 520px; min-height: 900px; display: flex; flex-direction: column; padding: 32px 40px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 16px">
+<a href="Main.dc.html" style="color: #EEF0F7; text-decoration: none; font-family: 'Anek Devanagari', 'Mukta', sans-serif; font-weight: 750; font-size: 22px; letter-spacing: -0.02em">Ambedkar<span style="color: #8FA8FF">GPT</span></a>
+<div role="group" aria-label="Language" style="display: flex; border: 1px solid #2B303E; border-radius: 8px; padding: 3px; gap: 2px">
+<button style="background: #262B3A; color: #EEF0F7; border: 0; border-radius: 8px; padding: 6px 14px; font: 600 14px 'Mukta', sans-serif; min-height: 34px">EN</button>
+<button style="background: transparent; color: #A6ABBA; border: 0; border-radius: 8px; padding: 6px 14px; font: 600 14px 'Mukta', sans-serif; min-height: 34px">हिं</button>
+</div>
+</div>
+
+<div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 0">
+<form style="width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 32px">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<h1 style="margin: 0; font-family: 'Anek Devanagari', 'Mukta', sans-serif; font-stretch: 87.5%; font-size: 60px; font-weight: 750; letter-spacing: -0.01em; line-height: 1.05">Enter the code</h1>
+<p style="margin: 0; color: #A6ABBA; font-size: 17px; line-height: 1.5">You'll get a call with your 6-digit code.</p>
+<p style="margin: 0; font-size: 17px; color: #C9CCD6">Sent to <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: #EEF0F7">+91 98765 43210</span> · <a href="Login.dc.html">Change</a></p>
+</div>
+
+<fieldset style="margin: 0; padding: 0; border: 0">
+<legend style="padding: 0; margin-bottom: 12px; font-size: 14px; font-weight: 600; color: #C9CCD6">6-digit code</legend>
+<div style="display: flex; gap: 10px">
+<label for="d1" style="flex: 1 1 0; min-width: 0"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Digit 1</span><input id="d1" inputmode="numeric" maxlength="1" value="4" style="box-sizing: border-box; width: 100%; aspect-ratio: 1 / 1; border-radius: 16px; border: 1.5px solid #3A4050; background: #13161F; color: #EEF0F7; text-align: center; font: 600 30px 'IBM Plex Mono', monospace; padding: 0"></label>
+<label for="d2" style="flex: 1 1 0; min-width: 0"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Digit 2</span><input id="d2" inputmode="numeric" maxlength="1" value="8" style="box-sizing: border-box; width: 100%; aspect-ratio: 1 / 1; border-radius: 16px; border: 1.5px solid #3A4050; background: #13161F; color: #EEF0F7; text-align: center; font: 600 30px 'IBM Plex Mono', monospace; padding: 0"></label>
+<label for="d3" style="flex: 1 1 0; min-width: 0"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Digit 3</span><input id="d3" inputmode="numeric" maxlength="1" value="2" style="box-sizing: border-box; width: 100%; aspect-ratio: 1 / 1; border-radius: 16px; border: 1.5px solid #3A4050; background: #13161F; color: #EEF0F7; text-align: center; font: 600 30px 'IBM Plex Mono', monospace; padding: 0"></label>
+<label for="d4" style="flex: 1 1 0; min-width: 0"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Digit 4</span><input id="d4" inputmode="numeric" maxlength="1" value="" style="box-sizing: border-box; width: 100%; aspect-ratio: 1 / 1; border-radius: 16px; border: 1.5px solid #8FA8FF; background: #181C27; color: #EEF0F7; text-align: center; font: 600 30px 'IBM Plex Mono', monospace; padding: 0; outline: 2px solid #8FA8FF; outline-offset: 2px; caret-color: #8FA8FF"></label>
+<label for="d5" style="flex: 1 1 0; min-width: 0"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Digit 5</span><input id="d5" inputmode="numeric" maxlength="1" value="" style="box-sizing: border-box; width: 100%; aspect-ratio: 1 / 1; border-radius: 16px; border: 1.5px solid #2B303E; background: #13161F; color: #EEF0F7; text-align: center; font: 600 30px 'IBM Plex Mono', monospace; padding: 0"></label>
+<label for="d6" style="flex: 1 1 0; min-width: 0"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Digit 6</span><input id="d6" inputmode="numeric" maxlength="1" value="" style="box-sizing: border-box; width: 100%; aspect-ratio: 1 / 1; border-radius: 16px; border: 1.5px solid #2B303E; background: #13161F; color: #EEF0F7; text-align: center; font: 600 30px 'IBM Plex Mono', monospace; padding: 0"></label>
+</div>
+<span style="display: block; margin-top: 10px; font-size: 14px; color: #A6ABBA">Paste works too. All six boxes fill at once.</span>
+</fieldset>
+
+<button type="submit" style="min-height: 56px; border-radius: 8px; border: 0; background: #2E56E8; color: #FFFFFF; font: 700 18px 'Anek Devanagari', 'Mukta', sans-serif; letter-spacing: -0.01em">Verify</button>
+
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding-top: 18px; border-top: 1px solid #2B303E">
+<span style="color: #A6ABBA; font-size: 15px">Didn't get the call?</span>
+<span role="timer" aria-live="off" style="display: inline-flex; align-items: center; gap: 10px; min-height: 44px; color: #C9CCD6; font-size: 15px">
+<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="#262B3A" stroke-width="2.5"></circle><circle cx="12" cy="12" r="10" fill="none" stroke="#8FA8FF" stroke-width="2.5" stroke-dasharray="44 62.8" transform="rotate(-90 12 12)"></circle></svg>
+Resend in <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: #EEF0F7">0:42</span></span>
+</div>
+</form>
+</div>
+
+<p style="margin: 0; color: #8A93B8; font-size: 13px; text-align: center">Wrong number? <a href="Login.dc.html" style="color: #A6ABBA">Go back</a></p>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

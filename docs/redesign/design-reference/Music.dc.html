@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Concept — Music studio</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anek+Devanagari:wdth,wght@75..125,400..800&amp;family=Mukta:wght@400;500;600;700&amp;family=Tiro+Devanagari+Hindi:ital@0;1&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0B0D14}
+a{color:#8FA8FF}a:hover{color:#C9D6FF}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #0B0D14; color: #EDEEF2; font-family: 'Mukta', system-ui, sans-serif; font-size: 16px; display: flex; flex-wrap: wrap">
+
+<div style="flex: 0 1 272px; min-width: 240px; display: flex">
+<dc-import name="Rail" current="music" lang="en" hint-size="272px,1000px"></dc-import>
+</div>
+
+<main style="flex: 999 1 560px; min-width: 0; padding: 36px 48px 56px; display: flex; flex-direction: column; gap: 32px">
+<header style="display: flex; flex-direction: column; gap: 6px; border-bottom: 1px solid #3A4050; padding-bottom: 20px">
+<a href="Generator.dc.html" style="align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; min-height: 32px; color: #C9CCD6; text-decoration: none; font-size: 15px; font-weight: 600"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg>New post</a>
+<h1 style="margin: 0; font-family: 'Anek Devanagari', 'Mukta', sans-serif; font-stretch: 87.5%; font-size: 56px; font-weight: 750; line-height: 1.05">Music studio</h1>
+<p style="margin: 0; color: #C9CCD6; font-size: 17px">Select how you want to create your music.</p>
+</header>
+
+<div role="radiogroup" aria-label="Generation type" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 16px">
+<button role="radio" aria-checked="false" style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 22px; border-radius: 16px; border: 1px solid #1D212C; background: #13161F; color: #EDEEF2; text-align: left; font-family: 'Mukta', sans-serif">
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#C9CCD6" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M10 4h20l8 8v32H10zM30 4v8h8M16 20h16M16 26h16M16 32h10"></path><path d="M30 38v-8l5-1v7"></path><circle cx="28" cy="38" r="2"></circle><circle cx="33" cy="36" r="2"></circle></svg>
+<span style="display: flex; flex-direction: column; gap: 4px"><span style="font-family: 'Anek Devanagari', sans-serif; font-size: 24px; font-weight: 700; line-height: 1.1">Lyrics</span><span style="font-size: 13px; font-weight: 600; color: #A6ABBA">Text only</span></span>
+<span style="font-size: 15px; color: #C9CCD6; line-height: 1.5">Generate creative lyrics based on your musical preferences and style.</span>
+</button>
+<button role="radio" aria-checked="true" style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 22px; border-radius: 16px; border: 2px solid #8FA8FF; background: #181C27; color: #EDEEF2; text-align: left; font-family: 'Mukta', sans-serif; position: relative">
+<span style="position: absolute; top: 18px; right: 18px; width: 28px; height: 28px; border-radius: 8px; background: #8FA8FF; color: #0B0D14; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#8FA8FF" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h40v28H4zM10 16h28v10H10zM14 38l3-6h14l3 6"></path><circle cx="17" cy="21" r="3"></circle><circle cx="31" cy="21" r="3"></circle></svg>
+<span style="display: flex; flex-direction: column; gap: 4px"><span style="font-family: 'Anek Devanagari', sans-serif; font-size: 24px; font-weight: 700; line-height: 1.1">Beat &amp; Lyrics</span><span style="font-size: 13px; font-weight: 600; color: #8FA8FF">Most popular</span></span>
+<span style="font-size: 15px; color: #C9CCD6; line-height: 1.5">Create a complete track with instrumental beats and matching lyrics.</span>
+</button>
+<button role="radio" aria-checked="false" style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 22px; border-radius: 16px; border: 1px solid #1D212C; background: #13161F; color: #EDEEF2; text-align: left; font-family: 'Mukta', sans-serif">
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#C9CCD6" stroke-width="2" aria-hidden="true"><circle cx="24" cy="24" r="20"></circle><circle cx="24" cy="24" r="13"></circle><circle cx="24" cy="24" r="5"></circle><circle cx="24" cy="24" r="1" fill="#C9CCD6"></circle></svg>
+<span style="display: flex; flex-direction: column; gap: 4px"><span style="font-family: 'Anek Devanagari', sans-serif; font-size: 24px; font-weight: 700; line-height: 1.1">Song only</span><span style="font-size: 13px; font-weight: 600; color: #A6ABBA">Instrumental</span></span>
+<span style="font-size: 15px; color: #C9CCD6; line-height: 1.5">Generate a full instrumental track tailored to your music taste.</span>
+</button>
+</div>
+
+<section aria-labelledby="track-title" style="display: flex; flex-wrap: wrap; gap: 24px; align-items: stretch">
+<div style="flex: 1 1 420px; min-width: 0; background: #13161F; border: 1px solid #1D212C; padding: 28px; display: flex; flex-direction: column; gap: 22px; border-radius: 16px">
+<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 14px; font-weight: 700">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: #4CC38A">● READY</span>
+<span style="color: #8FA8FF">Beat &amp; Lyrics</span><span style="color: #4A5062" aria-hidden="true">/</span><span style="color: #A6ABBA; font-weight: 500">Hindi · made just now</span>
+</div>
+<div style="display: flex; align-items: center; gap: 18px">
+<button aria-label="Pause" style="width: 64px; height: 64px; flex: none; border-radius: 8px; border: 0; background: #EDEEF2; color: #0B0D14; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z"></path></svg></button>
+<div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+<h2 id="track-title" style="margin: 0; font-family: 'Anek Devanagari', 'Mukta', sans-serif; font-stretch: 87.5%; font-size: 32px; font-weight: 700; line-height: 1.15">[Sample] संविधान की आवाज़</h2>
+<span style="color: #A6ABBA; font-size: 15px">For a Constitution Day rally</span>
+</div>
+</div>
+
+<div role="img" aria-label="Waveform, 0:42 of 2:14 played" style="display: flex; align-items: center; gap: 3px; height: 72px">
+<div style="flex: 1; height: 30%; background: #8FA8FF"></div>
+<div style="flex: 1; height: 48%; background: #8FA8FF"></div>
+<div style="flex: 1; height: 62%; background: #8FA8FF"></div>
+<div style="flex: 1; height: 40%; background: #8FA8FF"></div>
+<div style="flex: 1; height: 78%; background: #8FA8FF"></div>
+<div style="flex: 1; height: 92%; background: #8FA8FF"></div>
+<div style="flex: 1; height: 66%; background: #8FA8FF"></div>
+<div style="flex: 1; height: 50%; background: #8FA8FF"></div>
+<div style="flex: 1; height: 72%; background: #8FA8FF"></div>
+<div style="flex: 1; height: 100%; background: #8FA8FF"></div>
+<div style="flex: 1; height: 84%; background: #8FA8FF"></div>
+<div style="flex: 1; height: 58%; background: #8FA8FF"></div>
+<div style="flex: 1; height: 44%; background: #3A4050"></div>
+<div style="flex: 1; height: 70%; background: #3A4050"></div>
+<div style="flex: 1; height: 88%; background: #3A4050"></div>
+<div style="flex: 1; height: 64%; background: #3A4050"></div>
+<div style="flex: 1; height: 36%; background: #3A4050"></div>
+<div style="flex: 1; height: 54%; background: #3A4050"></div>
+<div style="flex: 1; height: 80%; background: #3A4050"></div>
+<div style="flex: 1; height: 96%; background: #3A4050"></div>
+<div style="flex: 1; height: 74%; background: #3A4050"></div>
+<div style="flex: 1; height: 52%; background: #3A4050"></div>
+<div style="flex: 1; height: 38%; background: #3A4050"></div>
+<div style="flex: 1; height: 60%; background: #3A4050"></div>
+<div style="flex: 1; height: 82%; background: #3A4050"></div>
+<div style="flex: 1; height: 68%; background: #3A4050"></div>
+<div style="flex: 1; height: 46%; background: #3A4050"></div>
+<div style="flex: 1; height: 90%; background: #3A4050"></div>
+<div style="flex: 1; height: 76%; background: #3A4050"></div>
+<div style="flex: 1; height: 56%; background: #3A4050"></div>
+<div style="flex: 1; height: 34%; background: #3A4050"></div>
+<div style="flex: 1; height: 62%; background: #3A4050"></div>
+<div style="flex: 1; height: 86%; background: #3A4050"></div>
+<div style="flex: 1; height: 70%; background: #3A4050"></div>
+<div style="flex: 1; height: 48%; background: #3A4050"></div>
+<div style="flex: 1; height: 58%; background: #3A4050"></div>
+<div style="flex: 1; height: 42%; background: #3A4050"></div>
+<div style="flex: 1; height: 30%; background: #3A4050"></div>
+<div style="flex: 1; height: 22%; background: #3A4050"></div>
+<div style="flex: 1; height: 14%; background: #3A4050"></div>
+</div>
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 16px; font-weight: 500">0:42 <span style="color: #A6ABBA">/ 2:14</span></span>
+<div style="display: flex; gap: 10px">
+<button style="min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1.5px solid #3A4050; background: transparent; color: #EDEEF2; font: 600 15px 'Mukta', sans-serif; display: flex; align-items: center; gap: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M4 20h16"></path></svg>Download</button>
+<button style="min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1.5px solid #3A4050; background: transparent; color: #EDEEF2; font: 600 15px 'Mukta', sans-serif">Make another</button>
+</div>
+</div>
+</div>
+
+<article aria-label="Lyrics" style="flex: 1 1 360px; min-width: 0; background: #F3EBDD; color: #1B1A22; border-radius: 12px; padding: 26px 28px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 10px 22px rgba(0,0,0,0.45); transform: rotate(0.6deg)">
+<div style="display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 10px; margin-bottom: 6px; border-bottom: 1px solid #DCCFB8"><span style="font: 700 14px 'Mukta', sans-serif">[Sample lyrics] मुखड़ा</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5E5A66">0:42</span></div>
+<p style="margin: 0; font-family: 'Tiro Devanagari Hindi', Georgia, serif; font-size: 19px; line-height: 1.7; color: #5E5A66">हाथों में किताब है, आँखों में सवाल</p>
+<p style="margin: 0; font-family: 'Tiro Devanagari Hindi', Georgia, serif; font-size: 19px; line-height: 1.7; color: #5E5A66">बाबा ने जो लिखा, वही है हमारी ढाल</p>
+<p aria-current="true" style="margin: 0; align-self: flex-start; font-family: 'Tiro Devanagari Hindi', Georgia, serif; font-size: 22px; line-height: 1.6; color: #1B1A22; border-bottom: 3px solid #E9B949">हर गली से उठती है बराबरी की चाल</p>
+<p style="margin: 0; font-family: 'Tiro Devanagari Hindi', Georgia, serif; font-size: 19px; line-height: 1.7">ना झुकेंगे, ना रुकेंगे, ये वादा है आज</p>
+<p style="margin: 0; font-family: 'Tiro Devanagari Hindi', Georgia, serif; font-size: 19px; line-height: 1.7">संविधान की आवाज़ ही हमारी आवाज़</p>
+<p style="margin: 0; font-family: 'Tiro Devanagari Hindi', Georgia, serif; font-size: 19px; line-height: 1.7">शिक्षित बनो, संगठित रहो, संघर्ष करो</p>
+</article>
+</section>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

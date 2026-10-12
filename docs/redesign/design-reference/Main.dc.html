@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AmbedkarGPT overhaul — ideas and direction</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anek+Devanagari:wdth,wght@75..125,400..800&amp;family=Mukta:wght@400;500;600;700&amp;family=Tiro+Devanagari+Hindi:ital@0;1&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0B0D14}
+a{color:#8FA8FF}a:hover{color:#C9D6FF}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important}}
+</style>
+</helmet>
+<div style="background: #0B0D14; color: #EDEEF2; font-family: 'Mukta', 'Noto Sans Devanagari', system-ui, sans-serif; font-size: 17px; line-height: 1.55; min-height: 100%">
+<div style="max-width: 1240px; margin: 0 auto; padding: 72px 32px 96px; display: flex; flex-direction: column; gap: 88px">
+
+<header style="display: flex; flex-direction: column; gap: 22px; border-bottom: 1px solid #3A4050; padding-bottom: 48px">
+<div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-family: 'IBM Plex Mono', monospace; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: #A6ABBA; font-weight: 500">
+<span>AmbedkarGPT</span><span aria-hidden="true">/</span><span>App overhaul</span><span aria-hidden="true">/</span><span>Rev. 2 · checked against the design brief</span>
+</div>
+<h1 style="margin: 0; font-family: 'Anek Devanagari', 'Mukta', sans-serif; font-stretch: 87.5%; font-size: 84px; line-height: 1.0; letter-spacing: -0.01em; font-weight: 750; max-width: 1000px; text-wrap: balance">Make the whole app look like Bhim Radio.</h1>
+<p style="margin: 0; max-width: 800px; font-size: 20px; color: #C9CCD6; text-wrap: pretty">Your brief points to the one screen that already works: a flat, sharp broadcast desk with one accent color and no glass. <strong style="color: #EDEEF2">Neela Press</strong> applies that same approach to every screen after the landing page, and adds three things the brief asks for: type that reads well in Hindi first, a light paper mode for reading, and nothing decorative that a cheap Android phone has to pay for.</p>
+</header>
+
+<section style="display: flex; flex-direction: column; gap: 28px">
+<div style="display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; border-bottom: 1px solid #2B303E; padding-bottom: 14px">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 600; color: #E9B949">01</span>
+<h2 style="margin: 0; font-family: 'Anek Devanagari', 'Mukta', sans-serif; font-stretch: 87.5%; font-size: 44px; font-weight: 700">How this meets the brief</h2>
+</div>
+<div style="display: flex; flex-direction: column">
+<div style="display: flex; flex-wrap: wrap; gap: 8px 32px; padding: 18px 0; border-bottom: 1px solid #2B303E"><strong style="flex: 1 1 260px; font-size: 17px">§2.1 Hindi is first-class</strong><span style="flex: 3 1 480px; color: #C9CCD6; font-size: 16px">All three typefaces carry Devanagari and Latin, so no heading ever falls back to the OS font. There is a Hindi version of the dashboard below the English one that tests them at heading size. Keep the existing ~12% size bump for small Hindi text. No label depends on UPPERCASE, since Hindi has no capital letters, and every button is sized to fit the Hindi text.</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px 32px; padding: 18px 0; border-bottom: 1px solid #2B303E"><strong style="flex: 1 1 260px; font-size: 17px">§2.2 Reduced motion</strong><span style="flex: 3 1 480px; color: #C9CCD6; font-size: 16px">Every animation proposed here, including the chakra, the "print" reveal and the stamps, has a still fallback. The 17 <code>prefers-reduced-motion</code> blocks stay as they are.</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px 32px; padding: 18px 0; border-bottom: 1px solid #2B303E"><strong style="flex: 1 1 260px; font-size: 17px">§2.3 Dark only → two modes</strong><span style="flex: 3 1 480px; color: #C9CCD6; font-size: 16px">The app stays dark for working screens. The second mode is paper (#F3EBDD), and it's used where people read: post previews, drafts, BhimBot answers, and the corpus later on. It starts small, on 4 surfaces, rather than as a full light theme across every screen.</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px 32px; padding: 18px 0; border-bottom: 1px solid #2B303E"><strong style="flex: 1 1 260px; font-size: 17px">§2.4 Mid-range Android</strong><span style="flex: 3 1 480px; color: #C9CCD6; font-size: 16px">No orbs, no <code>backdrop-blur</code>, no glow shadows, no gradient text. Surfaces are solid fills with 1–2px lines. The only shadow left is the one under paper cards, and it's static.</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px 32px; padding: 18px 0; border-bottom: 1px solid #2B303E"><strong style="flex: 1 1 260px; font-size: 17px">§5 The "AI look"</strong><span style="flex: 3 1 480px; color: #C9CCD6; font-size: 16px">0 Sparkles icons (down from 32): the primary button uses an arrow or the chakra. Corners follow a strict ladder, not "round everything": 16px for cards, 12px for paper, 8–10px for buttons and inputs, and circles only for avatars, party logos and the chakra. There are no pill shapes, which replaces the 213 <code>rounded-full</code>. Hover darkens the color or moves it 1px down, so it feels pressed instead of glowing. GlassCard and <code>.btn-gradient</code> are removed.</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px 32px; padding: 18px 0; border-bottom: 1px solid #2B303E"><strong style="flex: 1 1 260px; font-size: 17px">§7 Carry the weight</strong><span style="flex: 3 1 480px; color: #C9CCD6; font-size: 16px">Condensed, poster-style headlines, serif for news and reading, newspaper-style rules between rows, stamps for status, and the real party symbols (the hand, the cycle, the lotus) where a story belongs to a party. It should feel like a movement press, not a SaaS product. "POLITICS DIVIDES. CONSTITUTION UNITES." becomes black poster type with no gradient.</span></div>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 36px">
+<div style="display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; border-bottom: 1px solid #2B303E; padding-bottom: 14px">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 600; color: #E9B949">02</span>
+<h2 style="margin: 0; font-family: 'Anek Devanagari', 'Mukta', sans-serif; font-stretch: 87.5%; font-size: 44px; font-weight: 700">The system</h2>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)); gap: 1px; background: #1D212C; border: 1px solid #1D212C; border-radius: 16px; overflow: hidden">
+<div style="background: #13161F; padding: 28px; display: flex; flex-direction: column; gap: 12px; border-radius: 16px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.08em; color: #A6ABBA">DISPLAY · ANEK DEVANAGARI, CONDENSED</div>
+<div style="font-family: 'Anek Devanagari', sans-serif; font-stretch: 87.5%; font-size: 46px; font-weight: 750; line-height: 1.1">Constitution unites</div>
+<div style="font-family: 'Anek Devanagari', sans-serif; font-stretch: 87.5%; font-size: 46px; font-weight: 750; line-height: 1.3">संविधान जोड़ता है</div>
+<p style="margin: 0; color: #A6ABBA; font-size: 15px">Replaces Anybody and Poppins. One family drawn for both scripts, with a width axis, so long Hindi titles can be narrowed instead of wrapping onto a third line.</p>
+</div>
+<div style="background: #13161F; padding: 28px; display: flex; flex-direction: column; gap: 12px; border-radius: 16px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.08em; color: #A6ABBA">READING · TIRO DEVANAGARI HINDI</div>
+<div style="font-family: 'Tiro Devanagari Hindi', Georgia, serif; font-size: 30px; line-height: 1.3">Educate, Agitate, Organize</div>
+<div style="font-family: 'Tiro Devanagari Hindi', Georgia, serif; font-size: 30px; line-height: 1.45">शिक्षित बनो, संगठित रहो</div>
+<p style="margin: 0; color: #A6ABBA; font-size: 15px">Replaces Cormorant Garamond and Playfair Display, neither of which has Devanagari. Used for news headlines, quotes, BhimBot answers and anything on paper.</p>
+</div>
+<div style="background: #13161F; padding: 28px; display: flex; flex-direction: column; gap: 12px; border-radius: 16px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.08em; color: #A6ABBA">INTERFACE · MUKTA  +  DIGITS · PLEX MONO</div>
+<div style="font-size: 22px; line-height: 1.5">Write a post · पोस्ट लिखें</div>
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 500">18:42 · 42/200 · 2:14</div>
+<p style="margin: 0; color: #A6ABBA; font-size: 15px">Mukta replaces Inter and Mangal/Noto for all interface text. Plex Mono is borrowed from the Radio desk and used only for numbers and times, never for words.</p>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 96px; background: #0B0D14; border: 1px solid #2B303E"></div><strong style="font-size: 15px">Ink</strong><span style="color: #A6ABBA; font-size: 13px; font-family: 'IBM Plex Mono', monospace">#0B0D14</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 96px; background: #13161F; border: 1px solid #1D212C"></div><strong style="font-size: 15px">Desk</strong><span style="color: #A6ABBA; font-size: 13px; font-family: 'IBM Plex Mono', monospace">#13161F</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 96px; background: #A6ABBA"></div><strong style="font-size: 15px">Neutral</strong><span style="color: #A6ABBA; font-size: 13px; font-family: 'IBM Plex Mono', monospace">#A6ABBA</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 96px; background: #2E56E8"></div><strong style="font-size: 15px">Neela · action</strong><span style="color: #A6ABBA; font-size: 13px; font-family: 'IBM Plex Mono', monospace">#2E56E8</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 96px; background: #F3EBDD"></div><strong style="font-size: 15px">Paper · reading</strong><span style="color: #A6ABBA; font-size: 13px; font-family: 'IBM Plex Mono', monospace">#F3EBDD</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 96px; background: #E9B949"></div><strong style="font-size: 15px">Brass · warning</strong><span style="color: #A6ABBA; font-size: 13px; font-family: 'IBM Plex Mono', monospace">#E9B949</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 96px; background: #4CC38A"></div><strong style="font-size: 15px">Success</strong><span style="color: #A6ABBA; font-size: 13px; font-family: 'IBM Plex Mono', monospace">#4CC38A</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 96px; background: #F0705A"></div><strong style="font-size: 15px">Critical</strong><span style="color: #A6ABBA; font-size: 13px; font-family: 'IBM Plex Mono', monospace">#F0705A</span></div>
+</div>
+<p style="margin: 0; max-width: 820px; color: #C9CCD6; font-size: 16px">The ground moves from saturated navy (#05081A) to a near-neutral ink, so blue becomes an accent instead of the background. The landing page's navy still sits next to it without clashing. Blue/violet goes from 4 accents to 1. Warm colors come in through paper and brass, and the semantic set the brief found missing is added.</p>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(270px, 100%), 1fr)); gap: 16px">
+<div style="background: #13161F; border: 1px solid #1D212C; padding: 24px; display: flex; flex-direction: column; gap: 16px; border-radius: 16px">
+<div style="height: 96px; display: flex; align-items: center; justify-content: center">
+<svg width="88" height="88" viewBox="0 0 100 100" aria-hidden="true" style="animation: spin 12s linear infinite"><circle cx="50" cy="50" r="44" fill="none" stroke="#8FA8FF" stroke-width="3"></circle><circle cx="50" cy="50" r="7" fill="#8FA8FF"></circle><g stroke="#8FA8FF" stroke-width="1.6"><line x1="50" y1="6" x2="50" y2="94"></line><line x1="50" y1="6" x2="50" y2="94" transform="rotate(15 50 50)"></line><line x1="50" y1="6" x2="50" y2="94" transform="rotate(30 50 50)"></line><line x1="50" y1="6" x2="50" y2="94" transform="rotate(45 50 50)"></line><line x1="50" y1="6" x2="50" y2="94" transform="rotate(60 50 50)"></line><line x1="50" y1="6" x2="50" y2="94" transform="rotate(75 50 50)"></line><line x1="50" y1="6" x2="50" y2="94" transform="rotate(90 50 50)"></line><line x1="50" y1="6" x2="50" y2="94" transform="rotate(105 50 50)"></line><line x1="50" y1="6" x2="50" y2="94" transform="rotate(120 50 50)"></line><line x1="50" y1="6" x2="50" y2="94" transform="rotate(135 50 50)"></line><line x1="50" y1="6" x2="50" y2="94" transform="rotate(150 50 50)"></line><line x1="50" y1="6" x2="50" y2="94" transform="rotate(165 50 50)"></line></g></svg>
+</div>
+<h3 style="margin: 0; font-size: 18px; font-weight: 700">Chakra replaces Sparkles</h3>
+<p style="margin: 0; color: #A6ABBA; font-size: 15px">A 24-spoke wheel drawn in SVG strokes, so it's cheap to render. It's the loader, the daily-quota ring and the radio dial, and it's the only round decorative shape.</p>
+</div>
+<div style="background: #13161F; border: 1px solid #1D212C; padding: 24px; display: flex; flex-direction: column; gap: 16px; border-radius: 16px">
+<div style="height: 96px; display: flex; align-items: center; justify-content: center">
+<div style="background: #F3EBDD; color: #1B1A22; width: 160px; padding: 14px; border-radius: 12px; transform: rotate(-2deg); box-shadow: 0 10px 22px rgba(0,0,0,0.45); font-family: 'Tiro Devanagari Hindi', serif; font-size: 14px; line-height: 1.45">मज़दूरी तीसरे महीने भी नहीं पहुँची…</div>
+</div>
+<h3 style="margin: 0; font-size: 18px; font-weight: 700">Paper is the second mode</h3>
+<p style="margin: 0; color: #A6ABBA; font-size: 15px">Anything you'll publish or read for a while sits on paper with dark ink. At a glance, it's clear what's yours and what's the tool.</p>
+</div>
+<div style="background: #13161F; border: 1px solid #1D212C; padding: 24px; display: flex; flex-direction: column; gap: 16px; border-radius: 16px">
+<div style="height: 96px; display: flex; align-items: center; justify-content: center; gap: 14px">
+<span style="border: 2px solid #E9B949; color: #E9B949; padding: 4px 10px; border-radius: 8px; font-family: 'Anek Devanagari', sans-serif; font-weight: 800; font-size: 16px; transform: rotate(-6deg)">प्रकाशित</span>
+<span style="border: 2px dashed #A6ABBA; color: #C9CCD6; padding: 4px 10px; border-radius: 8px; font-family: 'Anek Devanagari', sans-serif; font-weight: 700; font-size: 15px">DRAFT</span>
+</div>
+<h3 style="margin: 0; font-size: 18px; font-weight: 700">Stamps for status</h3>
+<p style="margin: 0; color: #A6ABBA; font-size: 15px">Each status has one shape: a solid stamp for published, a dashed one for draft. They work in Hindi because they don't rely on uppercase letters.</p>
+</div>
+<div style="background: #13161F; border: 1px solid #1D212C; padding: 24px; display: flex; flex-direction: column; gap: 16px; border-radius: 16px">
+<div style="height: 96px; display: flex; flex-direction: column; justify-content: center; gap: 8px">
+<div style="height: 2px; background: #EDEEF2"></div><div style="font-family: 'Tiro Devanagari Hindi', serif; font-size: 17px">Headline on the wire</div><div style="height: 1px; background: #2B303E"></div><div style="font-family: 'Tiro Devanagari Hindi', serif; font-size: 17px; color: #A6ABBA">अगली ख़बर</div>
+</div>
+<h3 style="margin: 0; font-size: 18px; font-weight: 700">Fewer boxes, softer edges</h3>
+<p style="margin: 0; color: #A6ABBA; font-size: 15px">Cards are separated by a darker fill and a faint 1px edge rather than a hard 2px outline. Lists use thin rules instead of a box per row. Corners are 8–16px, which reads as calm rather than bubbly.</p>
+</div>
+</div>
+
+<div style="background: #13161F; border: 1px solid #1D212C; padding: 32px; display: flex; flex-direction: column; gap: 20px; border-radius: 16px">
+<h3 style="margin: 0; font-family: 'Anek Devanagari', sans-serif; font-stretch: 87.5%; font-size: 30px; font-weight: 700">Motion: a few moments, all cheap, all optional</h3>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); gap: 20px 40px">
+<div style="display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 16px">Story → generator</strong><span style="color: #A6ABBA; font-size: 15px">View Transitions API: the story headline slides into the generator's story panel. React Router 7 supports this through <code>viewTransition</code>.</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 16px">The post "prints"</strong><span style="color: #A6ABBA; font-size: 15px">Lines of text fade onto the paper one after another, then a stamp lands. This only animates opacity and transform, so it runs smoothly on low-end phones.</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 16px">Chakra loader and quota</strong><span style="color: #A6ABBA; font-size: 15px">The spokes light up in sequence while waiting, and one more spoke stays lit after each post.</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 16px">Pressed, not lit</strong><span style="color: #A6ABBA; font-size: 15px">Buttons darken one step and move 1px down when pressed. No glow, no <code>scale</code>, no hover lift.</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 16px">Remove the page furniture</strong><span style="color: #A6ABBA; font-size: 15px">Remove CustomCursor, ScrollProgress and TransitionCurtain from signed-in pages, and the orbs everywhere. The splash stays on the landing page only.</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 16px">Reduced motion</strong><span style="color: #A6ABBA; font-size: 15px">Every one of the above shows its final state with no animation when the user has reduced motion turned on.</span></div>
+</div>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 28px">
+<div style="display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; border-bottom: 1px solid #2B303E; padding-bottom: 14px">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 600; color: #E9B949">03</span>
+<h2 style="margin: 0; font-family: 'Anek Devanagari', 'Mukta', sans-serif; font-stretch: 87.5%; font-size: 44px; font-weight: 700">What I saw in the running app</h2>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 1px; background: #1D212C; border: 1px solid #1D212C; border-radius: 16px; overflow: hidden">
+<div style="background: #13161F; padding: 22px; display: flex; flex-direction: column; gap: 6px; border-radius: 16px"><h3 style="margin: 0; font-size: 17px; font-weight: 700">Too many "Soon" labels</h3><p style="margin: 0; color: #A6ABBA; font-size: 15px">3 of 10 sidebar items and 7 of 9 tools on the Services page say "Soon".</p></div>
+<div style="background: #13161F; padding: 22px; display: flex; flex-direction: column; gap: 6px; border-radius: 16px"><h3 style="margin: 0; font-size: 17px; font-weight: 700">Dashboard leads with charts</h3><p style="margin: 0; color: #A6ABBA; font-size: 15px">Charts take most of the screen. Today's news, the reason people open the app, gets one card.</p></div>
+<div style="background: #13161F; padding: 22px; display: flex; flex-direction: column; gap: 6px; border-radius: 16px"><h3 style="margin: 0; font-size: 17px; font-weight: 700">Orange banner everywhere</h3><p style="margin: 0; color: #A6ABBA; font-size: 15px">"200 posts → ₹2,000" appears as an alarm bar on top of every screen. It should be a progress card.</p></div>
+<div style="background: #13161F; padding: 22px; display: flex; flex-direction: column; gap: 6px; border-radius: 16px"><h3 style="margin: 0; font-size: 17px; font-weight: 700">13-field signup</h3><p style="margin: 0; color: #A6ABBA; font-size: 15px">The party choice, which can never be changed, is buried between date of birth and the checkboxes.</p></div>
+<div style="background: #13161F; padding: 22px; display: flex; flex-direction: column; gap: 6px; border-radius: 16px"><h3 style="margin: 0; font-size: 17px; font-weight: 700">Generator repeats itself</h3><p style="margin: 0; color: #A6ABBA; font-size: 15px">The profile card and "Activity score / Pro" repeat in the left column. The preview doesn't look like the platform it's for, and the news tabs get cut off on a phone.</p></div>
+<div style="background: #13161F; padding: 22px; display: flex; flex-direction: column; gap: 6px; border-radius: 16px"><h3 style="margin: 0; font-size: 17px; font-weight: 700">Date locale bug</h3><p style="margin: 0; color: #A6ABBA; font-size: 15px">Post history shows "12 अक्टू॰ 2026" while the app is set to English.</p></div>
+<div style="background: #13161F; padding: 22px; display: flex; flex-direction: column; gap: 6px; border-radius: 16px"><h3 style="margin: 0; font-size: 17px; font-weight: 700">Dead-end empty states</h3><p style="margin: 0; color: #A6ABBA; font-size: 15px">BhimBot opens to a blank chat. Preferences has nothing but the Reddit card.</p></div>
+<div style="background: #13161F; padding: 22px; display: flex; flex-direction: column; gap: 6px; border-radius: 16px"><h3 style="margin: 0; font-size: 17px; font-weight: 700">Four shells</h3><p style="margin: 0; color: #A6ABBA; font-size: 15px">BhimBot, the generator and music each have their own sidebar or back button instead of the shared rail.</p></div>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 28px">
+<div style="display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; border-bottom: 1px solid #2B303E; padding-bottom: 14px">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 600; color: #E9B949">04</span>
+<h2 style="margin: 0; font-family: 'Anek Devanagari', 'Mukta', sans-serif; font-stretch: 87.5%; font-size: 44px; font-weight: 700">Screen by screen</h2>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)); gap: 16px">
+
+<div style="background: #13161F; border: 1px solid #1D212C; padding: 26px; display: flex; flex-direction: column; gap: 12px; border-radius: 16px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px"><h3 style="margin: 0; font-family: 'Anek Devanagari', sans-serif; font-size: 24px; font-weight: 700">Login</h3><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #8FA8FF; border: 1px solid #3A4050; padding: 2px 8px">CONCEPT →</span></div>
+<ul style="margin: 0; padding-left: 18px; color: #C9CCD6; font-size: 15px; display: flex; flex-direction: column; gap: 6px">
+<li>Phone and OTP first, with email as the second tab and Google on top.</li>
+<li>A narrow 400px form, and a full-height duotone portrait with a bilingual quote.</li>
+<li>EN / हिं toggle in the corner. The primary button uses an arrow, not Sparkles.</li>
+</ul>
+</div>
+
+<div style="background: #13161F; border: 1px solid #1D212C; padding: 26px; display: flex; flex-direction: column; gap: 12px; border-radius: 16px">
+<h3 style="margin: 0; font-family: 'Anek Devanagari', sans-serif; font-size: 24px; font-weight: 700">Signup → 3 steps</h3>
+<ul style="margin: 0; padding-left: 18px; color: #C9CCD6; font-size: 15px; display: flex; flex-direction: column; gap: 6px">
+<li>Step 1: Account. Step 2: Where you are. Step 3: Party and role.</li>
+<li>Step 3 is its own screen with party cards and a "This can't be changed later" confirmation.</li>
+<li>The chakra fills a third per step.</li>
+</ul>
+</div>
+
+<div style="background: #13161F; border: 1px solid #1D212C; padding: 26px; display: flex; flex-direction: column; gap: 12px; border-radius: 16px">
+<h3 style="margin: 0; font-family: 'Anek Devanagari', sans-serif; font-size: 24px; font-weight: 700">Onboarding questionnaire</h3>
+<ul style="margin: 0; padding-left: 18px; color: #C9CCD6; font-size: 15px; display: flex; flex-direction: column; gap: 6px">
+<li>One question per screen, shown as big answer cards.</li>
+<li>A sample post on paper rewrites itself as the person answers, so they can see why the questions matter.</li>
+</ul>
+</div>
+
+<div style="background: #13161F; border: 1px solid #1D212C; padding: 26px; display: flex; flex-direction: column; gap: 12px; border-radius: 16px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px"><h3 style="margin: 0; font-family: 'Anek Devanagari', sans-serif; font-size: 24px; font-weight: 700">Dashboard → "Today's desk"</h3><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #8FA8FF; border: 1px solid #3A4050; padding: 2px 8px">EN + हिं →</span></div>
+<ul style="margin: 0; padding-left: 18px; color: #C9CCD6; font-size: 15px; display: flex; flex-direction: column; gap: 6px">
+<li>The top story first, in large serif, with one button: Write a post.</li>
+<li>"The wire": stories as ruled rows, each with its own Write button.</li>
+<li>Quota as a chakra ring. The ₹2,000 milestone as a brass bar instead of the orange banner.</li>
+<li>Drafts on paper. Charts shrink to one week strip, drawn from the same tokens (update <code>useChartScale.js</code>).</li>
+</ul>
+</div>
+
+<div style="background: #13161F; border: 1px solid #1D212C; padding: 26px; display: flex; flex-direction: column; gap: 12px; border-radius: 16px">
+<h3 style="margin: 0; font-family: 'Anek Devanagari', sans-serif; font-size: 24px; font-weight: 700">Sidebar &amp; Services</h3>
+<ul style="margin: 0; padding-left: 18px; color: #C9CCD6; font-size: 15px; display: flex; flex-direction: column; gap: 6px">
+<li>One shared sidebar component (shown on its own on the canvas). At the top, a party card with the party logo and the role, with the party symbol faint in the background. Then New post with an N shortcut, and two labelled groups: Workspace (Today, Create, My posts with count) and Learn &amp; listen (BhimBot, Bhim Radio with a LIVE tag, Music studio).</li>
+<li>The bottom of the sidebar has today's quota as 5 segments, the radio mini-player with a level meter, and the user row with a language switch and a Settings button. Settings replaces the separate Profile page.</li>
+<li>Remove the SOON rows. The five upcoming services move to one "On the way" list with a Notify-me button.</li>
+<li>One shared shell for every signed-in page, with a mini radio player in the rail.</li>
+</ul>
+</div>
+
+<div style="background: #13161F; border: 1px solid #1D212C; padding: 26px; display: flex; flex-direction: column; gap: 12px; border-radius: 16px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px"><h3 style="margin: 0; font-family: 'Anek Devanagari', sans-serif; font-size: 24px; font-weight: 700">Social post generator</h3><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #8FA8FF; border: 1px solid #3A4050; padding: 2px 8px">CONCEPT →</span></div>
+<ul style="margin: 0; padding-left: 18px; color: #C9CCD6; font-size: 15px; display: flex; flex-direction: column; gap: 6px">
+<li>Steps across the top: Story, Voice, Preview.</li>
+<li>Platform, tone and language set in one panel. Voice settings open in a drawer.</li>
+<li>A preview on paper that looks like the real platform, with a one-line Refine box underneath.</li>
+</ul>
+</div>
+
+<div style="background: #13161F; border: 1px solid #1D212C; padding: 26px; display: flex; flex-direction: column; gap: 12px; border-radius: 16px">
+<h3 style="margin: 0; font-family: 'Anek Devanagari', sans-serif; font-size: 24px; font-weight: 700">My posts</h3>
+<ul style="margin: 0; padding-left: 18px; color: #C9CCD6; font-size: 15px; display: flex; flex-direction: column; gap: 6px">
+<li>A grid of paper thumbnails, or two columns: Drafts and Published.</li>
+<li>One main action per card. The rest go in a ⋯ menu.</li>
+<li>Posts grouped by day, and the date locale fixed.</li>
+</ul>
+</div>
+
+<div style="background: #13161F; border: 1px solid #1D212C; padding: 26px; display: flex; flex-direction: column; gap: 12px; border-radius: 16px">
+<h3 style="margin: 0; font-family: 'Anek Devanagari', sans-serif; font-size: 24px; font-weight: 700">BhimBot</h3>
+<ul style="margin: 0; padding-left: 18px; color: #C9CCD6; font-size: 15px; display: flex; flex-direction: column; gap: 6px">
+<li>Answers on paper, set in the reading serif, with source chips (book or speech) under each one.</li>
+<li>The empty state shows the four categories and four starter questions.</li>
+<li>A large Hindi voice button, and "Turn this into a post" on every answer.</li>
+</ul>
+</div>
+
+<div style="background: #13161F; border: 1px solid #1D212C; padding: 26px; display: flex; flex-direction: column; gap: 12px; border-radius: 16px">
+<h3 style="margin: 0; font-family: 'Anek Devanagari', sans-serif; font-size: 24px; font-weight: 700">Bhim Radio</h3>
+<ul style="margin: 0; padding-left: 18px; color: #C9CCD6; font-size: 15px; display: flex; flex-direction: column; gap: 6px">
+<li>Mostly leave it alone. It's the model for everything else.</li>
+<li>Change its accent from #1D7AFC to the shared Neela, and move its tokens into <code>@theme</code>.</li>
+<li>The off-air state shows the next bulletin time and a "Remind me" button instead of grey text.</li>
+</ul>
+</div>
+
+<div style="background: #13161F; border: 1px solid #1D212C; padding: 26px; display: flex; flex-direction: column; gap: 12px; border-radius: 16px">
+<h3 style="margin: 0; font-family: 'Anek Devanagari', sans-serif; font-size: 24px; font-weight: 700">Music studio</h3>
+<ul style="margin: 0; padding-left: 18px; color: #C9CCD6; font-size: 15px; display: flex; flex-direction: column; gap: 6px">
+<li>Drop the rainbow gradient title. The three modes become flat cards with a lyric sheet, cassette or record icon.</li>
+<li>Results get a player in the Radio desk's style, with lyrics that move in time with the track.</li>
+</ul>
+</div>
+
+<div style="background: #13161F; border: 1px solid #1D212C; padding: 26px; display: flex; flex-direction: column; gap: 12px; border-radius: 16px">
+<h3 style="margin: 0; font-family: 'Anek Devanagari', sans-serif; font-size: 24px; font-weight: 700">Settings (one page)</h3>
+<ul style="margin: 0; padding-left: 18px; color: #C9CCD6; font-size: 15px; display: flex; flex-direction: column; gap: 6px">
+<li>Profile, Your voice, Accounts and Language as tabs on one page.</li>
+<li>Party and role shown as locked, with a "Contact us to change" link.</li>
+</ul>
+</div>
+
+<div style="background: #13161F; border: 1px solid #1D212C; padding: 26px; display: flex; flex-direction: column; gap: 12px; border-radius: 16px">
+<h3 style="margin: 0; font-family: 'Anek Devanagari', sans-serif; font-size: 24px; font-weight: 700">Phone</h3>
+<ul style="margin: 0; padding-left: 18px; color: #C9CCD6; font-size: 15px; display: flex; flex-direction: column; gap: 6px">
+<li>A bottom tab bar instead of the hamburger menu, with labels in Hindi that fit.</li>
+<li>Generator controls in a bottom sheet over the preview. News tabs scroll sideways instead of getting cut off.</li>
+<li>Share to WhatsApp from any post.</li>
+</ul>
+</div>
+
+</div>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":3700}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

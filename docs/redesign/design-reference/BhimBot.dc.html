@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Concept — BhimBot</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anek+Devanagari:wdth,wght@75..125,400..800&amp;family=Mukta:wght@400;500;600;700&amp;family=Tiro+Devanagari+Hindi:ital@0;1&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0B0D14}
+a{color:#8FA8FF}a:hover{color:#C9D6FF}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #0B0D14; color: #EDEEF2; font-family: 'Mukta', system-ui, sans-serif; font-size: 16px; display: flex; flex-wrap: wrap">
+
+<div style="flex: 0 1 272px; min-width: 240px; display: flex">
+<dc-import name="Rail" current="bhimbot" lang="en" hint-size="272px,1000px"></dc-import>
+</div>
+
+<main style="flex: 999 1 560px; min-width: 0; display: flex; flex-wrap: wrap">
+
+<div style="flex: 999 1 520px; min-width: 0; min-height: 100vh; display: flex; flex-direction: column">
+<header style="padding: 32px 48px 18px; display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap">
+<div style="flex: 1 1 360px; display: flex; flex-direction: column; gap: 6px; border-bottom: 1px solid #3A4050; padding-bottom: 16px">
+<h1 style="margin: 0; font-family: 'Anek Devanagari', 'Mukta', sans-serif; font-stretch: 87.5%; font-size: 48px; font-weight: 750; line-height: 1.05">BhimBot</h1>
+<p style="margin: 0; color: #C9CCD6; font-size: 16px">Ask the corpus a question. Answers come from Dr. Ambedkar's writings and speeches.</p>
+</div>
+<button style="min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1.5px solid #3A4050; background: transparent; color: #EDEEF2; font: 600 15px 'Mukta', sans-serif; display: flex; align-items: center; gap: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>New chat</button>
+</header>
+
+<div role="log" aria-label="Conversation" style="flex: 1; padding: 12px 48px 20px; display: flex; flex-direction: column; gap: 22px">
+<div style="align-self: flex-end; max-width: 520px; background: #181C27; border: 1px solid #2B303E; border-radius: 16px; padding: 14px 18px; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 13px; color: #A6ABBA">You · <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px">18:52</span></span>
+<p style="margin: 0; font-size: 17px; line-height: 1.5">[Sample] What did Ambedkar say about the right to work?</p>
+</div>
+
+<div style="max-width: 720px; display: flex; flex-direction: column; gap: 14px">
+<article style="background: #F3EBDD; color: #1B1A22; border-radius: 12px; padding: 24px 26px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 10px 22px rgba(0,0,0,0.45)">
+<div style="display: flex; align-items: center; gap: 10px">
+<svg width="20" height="20" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="42" fill="none" stroke="#2E56E8" stroke-width="8"></circle><g stroke="#2E56E8" stroke-width="5"><line x1="50" y1="8" x2="50" y2="92"></line><line x1="50" y1="8" x2="50" y2="92" transform="rotate(30 50 50)"></line><line x1="50" y1="8" x2="50" y2="92" transform="rotate(60 50 50)"></line><line x1="50" y1="8" x2="50" y2="92" transform="rotate(90 50 50)"></line><line x1="50" y1="8" x2="50" y2="92" transform="rotate(120 50 50)"></line><line x1="50" y1="8" x2="50" y2="92" transform="rotate(150 50 50)"></line></g></svg>
+<span style="font: 700 15px 'Mukta', sans-serif">BhimBot</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5E5A66">18:52</span>
+</div>
+<div style="font-family: 'Tiro Devanagari Hindi', Georgia, serif; font-size: 19px; line-height: 1.6; display: flex; flex-direction: column; gap: 12px">
+<p style="margin: 0">[Sample answer] Ambedkar treated work and a living wage as part of what political freedom has to deliver, not as charity. In the Constituent Assembly he argued that the Directive Principles, including the right to work, set a goal every future government would be judged against.</p>
+<p style="margin: 0">[Sample answer] He also warned that political democracy would not last unless it rested on social and economic democracy.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid #DCCFB8">
+<span style="font: 600 13px 'Mukta', sans-serif; color: #5E5A66">Sources</span>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<a href="#" style="display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 10px; border: 1px solid #5E5A66; border-radius: 8px; color: #1B1A22; text-decoration: none; font: 500 14px 'Mukta', sans-serif"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h7a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4zM20 4h-7v16"></path></svg>[Source] Annihilation of Caste</a>
+<a href="#" style="display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 10px; border: 1px solid #5E5A66; border-radius: 8px; color: #1B1A22; text-decoration: none; font: 500 14px 'Mukta', sans-serif"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v11M8 7a4 4 0 0 1 8 0v4a4 4 0 0 1-8 0zM5 11a7 7 0 0 0 14 0M12 18v3"></path></svg>[Source] Constituent Assembly debates</a>
+<a href="#" style="display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 10px; border: 1px solid #5E5A66; border-radius: 8px; color: #1B1A22; text-decoration: none; font: 500 14px 'Mukta', sans-serif"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h7a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4zM20 4h-7v16"></path></svg>[Source] States and Minorities</a>
+</div>
+</div>
+</article>
+<div style="display: flex; gap: 10px; flex-wrap: wrap">
+<a href="Generator.dc.html" style="display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 20px; border-radius: 8px; background: #2E56E8; color: #FFFFFF; text-decoration: none; font: 700 17px 'Anek Devanagari', 'Mukta', sans-serif">Turn this into a post<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+<button style="min-height: 48px; padding: 0 16px; border-radius: 8px; border: 1.5px solid #3A4050; background: transparent; color: #EDEEF2; font: 600 15px 'Mukta', sans-serif; display: flex; align-items: center; gap: 8px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M11 5L6 9H2v6h4l5 4zM15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"></path></svg>Listen</button>
+<button style="min-height: 48px; padding: 0 16px; border-radius: 8px; border: 1.5px solid #3A4050; background: transparent; color: #EDEEF2; font: 600 15px 'Mukta', sans-serif; display: flex; align-items: center; gap: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M9 9h12v12H9zM5 15H3V3h12v2"></path></svg>Copy</button>
+</div>
+</div>
+</div>
+
+<div style="padding: 0 48px 14px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 14px; font-weight: 600; color: #A6ABBA">Start from a topic</span>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button style="min-height: 44px; padding: 0 14px; border-radius: 16px; border: 1px solid #1D212C; background: #13161F; color: #EDEEF2; font: 500 15px 'Mukta', sans-serif">Constitution &amp; Law</button>
+<button style="min-height: 44px; padding: 0 14px; border-radius: 16px; border: 1px solid #1D212C; background: #13161F; color: #EDEEF2; font: 500 15px 'Mukta', sans-serif">Ambedkar's Writings</button>
+<button style="min-height: 44px; padding: 0 14px; border-radius: 16px; border: 1px solid #1D212C; background: #13161F; color: #EDEEF2; font: 500 15px 'Mukta', sans-serif">Social Justice</button>
+<button style="min-height: 44px; padding: 0 14px; border-radius: 16px; border: 1px solid #1D212C; background: #13161F; color: #EDEEF2; font: 500 15px 'Mukta', sans-serif">FAQs</button>
+</div>
+</div>
+
+<form style="position: sticky; bottom: 0; background: #0F1119; border-top: 2px solid #22262F; padding: 16px 48px 14px; display: flex; flex-direction: column; gap: 8px">
+<label for="bot-ask" style="font-size: 14px; font-weight: 600; color: #C9CCD6">Ask BhimBot</label>
+<div style="display: flex; gap: 10px; align-items: stretch; flex-wrap: wrap">
+<textarea id="bot-ask" rows="2" placeholder="Ask anything about Dr. Ambedkar…" style="flex: 1 1 300px; min-width: 0; resize: none; background: #13161F; border: 1.5px solid #3A4050; border-radius: 16px; padding: 12px 14px; color: #EDEEF2; font: 400 16px/1.5 'Mukta', sans-serif; outline: none"></textarea>
+<button type="button" style="min-height: 64px; padding: 0 20px; border-radius: 16px; border: 2px solid #8FA8FF; background: #181C27; color: #EDEEF2; font: 700 17px 'Anek Devanagari', 'Mukta', sans-serif; display: flex; align-items: center; gap: 10px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8FA8FF" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M9 3h6v11H9zM5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"></path></svg>Speak in Hindi</button>
+<button type="submit" aria-label="Send" style="width: 64px; min-height: 64px; border-radius: 8px; border: 0; background: #2E56E8; color: #FFFFFF; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"></path></svg></button>
+</div>
+<span style="font-size: 13px; color: #A6ABBA">BhimBot may occasionally make mistakes. Always verify important information.</span>
+</form>
+</div>
+
+<aside aria-labelledby="cat-title" style="flex: 1 1 260px; min-width: 0; background: #0F1119; border-left: 2px solid #22262F; padding: 32px 20px; display: flex; flex-direction: column; gap: 14px">
+<h2 id="cat-title" style="margin: 0; padding-bottom: 10px; border-bottom: 1px solid #3A4050; font-family: 'Anek Devanagari', sans-serif; font-stretch: 87.5%; font-size: 24px; font-weight: 700; line-height: 1.1">Categories</h2>
+<div style="display: flex; flex-direction: column">
+<button style="display: flex; gap: 12px; align-items: flex-start; padding: 14px 4px; border: 0; border-bottom: 1px solid #2B303E; background: transparent; color: #EDEEF2; text-align: left; font-family: 'Mukta', sans-serif"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8FA8FF" stroke-width="2" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M12 3v18M7 21h10M4 7h16M4 7l-2 6a3 3 0 0 0 6 0zM20 7l-2 6a3 3 0 0 0 4 0z"></path></svg><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 600; font-size: 16px">Constitution &amp; Law</span><span style="font-size: 14px; color: #A6ABBA; line-height: 1.4">Articles, rights, and constitutional history</span></span></button>
+<button style="display: flex; gap: 12px; align-items: flex-start; padding: 14px 4px; border: 0; border-bottom: 1px solid #2B303E; background: transparent; color: #EDEEF2; text-align: left; font-family: 'Mukta', sans-serif"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8FA8FF" stroke-width="2" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M4 4h7a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4zM20 4h-7v16"></path></svg><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 600; font-size: 16px">Ambedkar's Writings</span><span style="font-size: 14px; color: #A6ABBA; line-height: 1.4">Books, speeches, and essays</span></span></button>
+<button style="display: flex; gap: 12px; align-items: flex-start; padding: 14px 4px; border: 0; border-bottom: 1px solid #2B303E; background: transparent; color: #EDEEF2; text-align: left; font-family: 'Mukta', sans-serif"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8FA8FF" stroke-width="2" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M12 20s-8-5-8-11a4 4 0 0 1 8-1 4 4 0 0 1 8 1c0 6-8 11-8 11z"></path></svg><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 600; font-size: 16px">Social Justice</span><span style="font-size: 14px; color: #A6ABBA; line-height: 1.4">Caste, equality, and reform movements</span></span></button>
+<button style="display: flex; gap: 12px; align-items: flex-start; padding: 14px 4px; border: 0; border-bottom: 1px solid #2B303E; background: transparent; color: #EDEEF2; text-align: left; font-family: 'Mukta', sans-serif"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8FA8FF" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex: none; margin-top: 2px"><circle cx="12" cy="12" r="9"></circle><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17.5v.01"></path></svg><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 600; font-size: 16px">FAQs</span><span style="font-size: 14px; color: #A6ABBA; line-height: 1.4">Common questions about Ambedkar's life and work</span></span></button>
+</div>
+<p style="margin: 0; font-size: 14px; color: #A6ABBA">Pick a category to start a chat with a ready question.</p>
+</aside>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

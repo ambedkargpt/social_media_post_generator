@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Concept — Social post generator</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anek+Devanagari:wdth,wght@75..125,400..800&amp;family=Mukta:wght@400;500;600;700&amp;family=Tiro+Devanagari+Hindi:ital@0;1&amp;display=swap">
+<style>
+body{margin:0;background:#0B0D14}
+a{color:#9DB3FF}a:hover{color:#C9D6FF}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #0B0D14; color: #EEF0F7; font-family: 'Mukta', system-ui, sans-serif; font-size: 16px; display: flex; flex-direction: column">
+
+<header style="display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; padding: 20px 40px; border-bottom: 1px solid #22262F">
+<a href="Dashboard.dc.html" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: #C9CCD6; text-decoration: none; font-weight: 600"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg>Today</a>
+<ol aria-label="Steps" style="list-style: none; margin: 0; padding: 0; display: flex; align-items: center; gap: 14px; flex-wrap: wrap">
+<li style="display: flex; align-items: center; gap: 8px; color: #C9CCD6"><span style="width: 26px; height: 26px; border-radius: 8px; background: #262B3A; color: #8FA8FF; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>Story</li>
+<li aria-hidden="true" style="width: 32px; height: 1px; background: #3A4050"></li>
+<li style="display: flex; align-items: center; gap: 8px; color: #C9CCD6"><span style="width: 26px; height: 26px; border-radius: 8px; background: #262B3A; color: #8FA8FF; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>Voice</li>
+<li aria-hidden="true" style="width: 32px; height: 1px; background: #3A4050"></li>
+<li aria-current="step" style="display: flex; align-items: center; gap: 8px; color: #EEF0F7; font-weight: 700"><span style="width: 26px; height: 26px; border-radius: 8px; background: #2E56E8; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font: 700 13px 'Anek Devanagari', 'Mukta', sans-serif">3</span>Preview</li>
+</ol>
+<span style="color: #A6ABBA; font-size: 15px">3 posts left today</span>
+</header>
+
+<div style="flex: 1; display: flex; flex-wrap: wrap; gap: 0">
+
+<section aria-label="Story" style="flex: 1 1 300px; min-width: 0; padding: 32px; border-right: 1px solid #22262F; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><h2 style="margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #A6ABBA">Story</h2><a href="#" style="font-weight: 600; font-size: 15px">Change</a></div>
+<h3 style="margin: 0; font-family: 'Tiro Devanagari Hindi', Georgia, serif; font-weight: 400; font-size: 28px; line-height: 1.2">[Sample headline] Rural employment funds delayed for a third month across Vidarbha districts</h3>
+<span style="color: #A6ABBA; font-size: 14px">Dalit Dastak · 2 hours ago · Party news</span>
+<p style="margin: 0; color: #C9CCD6; font-size: 16px; line-height: 1.6">[Sample summary] Workers in four districts say wages for September haven't arrived. The state blames the centre's release schedule.</p>
+<div style="display: flex; flex-direction: column; gap: 10px; padding-top: 14px; border-top: 1px solid #2B303E">
+<span style="font-size: 13px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #A6ABBA">Grounded in</span>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<span style="border: 1px solid #2B303E; border-radius: 8px; padding: 4px 10px; font-size: 14px; color: #C9CCD6">Article 41 · right to work</span>
+<span style="border: 1px solid #2B303E; border-radius: 8px; padding: 4px 10px; font-size: 14px; color: #C9CCD6">[Source video title]</span>
+</div>
+</div>
+</section>
+
+<section aria-label="Voice" style="flex: 1 1 320px; min-width: 0; padding: 32px; border-right: 1px solid #22262F; background: #0F1119; display: flex; flex-direction: column; gap: 26px">
+<h2 style="margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #A6ABBA">Voice</h2>
+<fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px">
+<legend style="font-weight: 600; font-size: 15px; padding: 0; margin-bottom: 10px">Platform</legend>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<button aria-pressed="true" style="min-height: 48px; border-radius: 8px; border: 1.5px solid #8FA8FF; background: #181C27; color: #EEF0F7; font: 600 15px 'Mukta', sans-serif">X / Twitter</button>
+<button aria-pressed="false" style="min-height: 48px; border-radius: 8px; border: 1px solid #2B303E; background: transparent; color: #C9CCD6; font: 500 15px 'Mukta', sans-serif">Instagram</button>
+<button aria-pressed="false" style="min-height: 48px; border-radius: 8px; border: 1px solid #2B303E; background: transparent; color: #C9CCD6; font: 500 15px 'Mukta', sans-serif">WhatsApp</button>
+<button aria-pressed="false" style="min-height: 48px; border-radius: 8px; border: 1px solid #2B303E; background: transparent; color: #C9CCD6; font: 500 15px 'Mukta', sans-serif">Reddit</button>
+</div>
+</fieldset>
+<fieldset style="border: 0; margin: 0; padding: 0">
+<legend style="font-weight: 600; font-size: 15px; padding: 0; margin-bottom: 10px">Tone</legend>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button aria-pressed="false" style="min-height: 40px; padding: 0 14px; border-radius: 8px; border: 1px solid #2B303E; background: transparent; color: #C9CCD6; font: 500 15px 'Mukta', sans-serif">Professional</button>
+<button aria-pressed="true" style="min-height: 40px; padding: 0 14px; border-radius: 8px; border: 0; background: #EEF0F7; color: #0B0D14; font: 600 15px 'Mukta', sans-serif">Assertive</button>
+<button aria-pressed="false" style="min-height: 40px; padding: 0 14px; border-radius: 8px; border: 1px solid #2B303E; background: transparent; color: #C9CCD6; font: 500 15px 'Mukta', sans-serif">Inspirational</button>
+<button aria-pressed="false" style="min-height: 40px; padding: 0 14px; border-radius: 8px; border: 1px solid #2B303E; background: transparent; color: #C9CCD6; font: 500 15px 'Mukta', sans-serif">Casual</button>
+<button aria-pressed="false" style="min-height: 40px; padding: 0 14px; border-radius: 8px; border: 1px solid #2B303E; background: transparent; color: #C9CCD6; font: 500 15px 'Mukta', sans-serif">Motivational</button>
+</div>
+</fieldset>
+<fieldset style="border: 0; margin: 0; padding: 0">
+<legend style="font-weight: 600; font-size: 15px; padding: 0; margin-bottom: 10px">Language</legend>
+<div style="display: flex; border: 1px solid #2B303E; border-radius: 8px; padding: 3px; gap: 3px">
+<button aria-pressed="false" style="flex: 1; min-height: 42px; border-radius: 8px; border: 0; background: transparent; color: #C9CCD6; font: 500 15px 'Mukta', sans-serif">English</button>
+<button aria-pressed="true" style="flex: 1; min-height: 42px; border-radius: 8px; border: 0; background: #262B3A; color: #EEF0F7; font: 600 15px 'Mukta', sans-serif">हिंदी</button>
+</div>
+</fieldset>
+<button style="display: flex; align-items: center; justify-content: space-between; min-height: 48px; padding: 0 14px; border-radius: 8px; border: 1px dashed #3A4050; background: transparent; color: #C9CCD6; font: 500 15px 'Mukta', sans-serif">Your voice settings · 9 answers<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>
+<button style="margin-top: auto; min-height: 56px; border-radius: 8px; border: 0; background: #2E56E8; color: #FFFFFF; font: 700 18px 'Anek Devanagari', 'Mukta', sans-serif; display: flex; align-items: center; justify-content: center; gap: 12px">
+<svg width="22" height="22" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="8"></circle><g stroke="currentColor" stroke-width="5"><line x1="50" y1="8" x2="50" y2="92"></line><line x1="50" y1="8" x2="50" y2="92" transform="rotate(30 50 50)"></line><line x1="50" y1="8" x2="50" y2="92" transform="rotate(60 50 50)"></line><line x1="50" y1="8" x2="50" y2="92" transform="rotate(90 50 50)"></line><line x1="50" y1="8" x2="50" y2="92" transform="rotate(120 50 50)"></line><line x1="50" y1="8" x2="50" y2="92" transform="rotate(150 50 50)"></line></g></svg>Write it again</button>
+</section>
+
+<section aria-label="Preview" style="flex: 1.5 1 440px; min-width: 0; padding: 40px; display: flex; flex-direction: column; align-items: center; gap: 22px; background: #0D0F17">
+<div style="width: 100%; max-width: 520px; display: flex; justify-content: space-between; align-items: baseline"><h2 style="margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #A6ABBA">Preview · X</h2><span style="color: #A6ABBA; font-size: 14px">231 / 280</span></div>
+
+<div style="position: relative; width: 100%; max-width: 520px; background: #F3EBDD; color: #1B1733; border-radius: 12px; padding: 26px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 24px 50px rgba(0,0,0,0.5)">
+<span style="position: absolute; top: 18px; right: 18px; border: 2px solid #8A6A1E; color: #8A6A1E; padding: 2px 9px; border-radius: 4px; font: 800 12px 'Anek Devanagari', 'Mukta', sans-serif; letter-spacing: 0.14em; transform: rotate(-7deg)">DRAFT SAVED</span>
+<div style="display: flex; align-items: center; gap: 12px">
+<span style="width: 46px; height: 46px; border-radius: 50%; background: #2E56E8; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font: 700 18px 'Anek Devanagari', 'Mukta', sans-serif">B</span>
+<div style="display: flex; flex-direction: column; line-height: 1.25"><span style="font-weight: 700; font-size: 16px">Bhargav Bidkar</span><span style="color: #5A5470; font-size: 15px">@bhargav</span></div>
+</div>
+<p style="margin: 0; font-family: 'Tiro Devanagari Hindi', Georgia, serif; font-size: 21px; line-height: 1.5">[नमूना पोस्ट] विदर्भ के मज़दूरों को तीसरे महीने भी मज़दूरी नहीं मिली। यह देरी नहीं, काम के अधिकार से इनकार है। अनुच्छेद 41 सरकार से जवाब माँगता है, बहाने नहीं।</p>
+<p style="margin: 0; color: #2240B8; font-weight: 600; font-size: 16px">#MGNREGA #Samvidhan #JaiBhim</p>
+<span style="color: #5A5470; font-size: 14px; border-top: 1px solid #DCCFB8; padding-top: 12px">Generated just now · Assertive · Hindi</span>
+</div>
+
+<div style="width: 100%; max-width: 520px; display: flex; align-items: center; gap: 10px; min-height: 52px; border: 1px solid #3A4050; border-radius: 16px; padding: 0 6px 0 16px; background: #13161F">
+<label for="refine" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Refine the post</label>
+<input id="refine" placeholder="Refine: make it sharper, add a question, shorten…" style="flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: #EEF0F7; font: 400 16px 'Mukta', sans-serif">
+<button aria-label="Apply refinement" style="width: 42px; height: 42px; border-radius: 8px; border: 0; background: #262B3A; color: #C9D6FF; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+</div>
+
+<div style="width: 100%; max-width: 520px; display: flex; gap: 10px; flex-wrap: wrap">
+<button style="flex: 1 1 180px; min-height: 52px; border-radius: 8px; border: 0; background: #2E56E8; color: #FFFFFF; font: 700 17px 'Anek Devanagari', 'Mukta', sans-serif; display: flex; align-items: center; justify-content: center; gap: 10px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"></path></svg>Publish</button>
+<button style="flex: 1 1 120px; min-height: 52px; border-radius: 8px; border: 1px solid #3A4050; background: transparent; color: #EEF0F7; font: 600 16px 'Mukta', sans-serif; display: flex; align-items: center; justify-content: center; gap: 8px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h8"></path></svg>Copy</button>
+<button aria-label="Listen" style="width: 52px; height: 52px; border-radius: 8px; border: 1px solid #3A4050; background: transparent; color: #EEF0F7; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5L6 9H2v6h4l5 4zM15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"></path></svg></button>
+<button aria-label="More actions" style="width: 52px; height: 52px; border-radius: 8px; border: 1px solid #3A4050; background: transparent; color: #EEF0F7; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg></button>
+</div>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
