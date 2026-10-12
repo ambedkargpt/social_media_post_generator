@@ -1,63 +1,47 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
+
 import { useCurtain } from '../context/CurtainContext';
-import { ArrowLeft, ArrowRight, BookmarkCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { saveProfileAnswers } from '../api/profile';
 import { getPartyQuestions, getPositionQuestions } from '../api/questions';
 import usePendingQuestions, { clearPendingQuestions } from '../hooks/usePendingQuestions';
 import { groupForId, roleLabel, rolesInGroup } from '../utils/partyRoles';
 import { levelLabel } from '../utils/displayLabel';
-import logoSrc     from '../assets/images/logo-animation.webp';
-import ambedkarSrc from '../assets/images/qna-ambedkar.webp';
+import OnboardingLayout from '../layouts/OnboardingLayout';
+import { Button, Chakra, Paper, Tag } from '../components/np';
 import { useI18n } from '../i18n/index.jsx';
 
-// This page asks whichever question sets the user has never answered, which
-// the backend decides and /questions/pending reports.
-//
-// For a new sign-up that is the five questions written for their party and the
-// level of their position in it. The ten party questions are not asked there:
-// a new account starts from their defaults and changes them on the Preferences
-// page, which is what keeps sign-up at five questions rather than fifteen.
-//
-// For an account that predates the party questions it is those ten as well,
-// once. Those users were never offered them and would otherwise generate on
-// defaults they never saw.
-//
-// A new storage key on every change to which questions are asked, because the
-// old one holds a step index counted against the old list. Restored against a
-// shorter list it points past the end and leaves the page on its spinner.
+/**
+ * Phase 4 of docs/redesign/neela-press.md.
+ *
+ * Which questions are asked, how progress is stored, what gets saved and when
+ * - all of that is unchanged. What changed is that one question now has the
+ * screen to itself, the answers are cards a thumb can hit, and there is a
+ * sheet of paper beside them showing what the answers are building.
+ *
+ * ── unchanged from here ──────────────────────────────────────────────────
+ * This page asks whichever question sets the user has never answered, which
+ * the backend decides and /questions/pending reports.
+ *
+ * For a new sign-up that is the five questions written for their party and the
+ * level of their position in it. The ten party questions are not asked there:
+ * a new account starts from their defaults and changes them on the Preferences
+ * page, which is what keeps sign-up at five questions rather than fifteen.
+ *
+ * For an account that predates the party questions it is those ten as well,
+ * once. Those users were never offered them and would otherwise generate on
+ * defaults they never saw.
+ *
+ * A new storage key on every change to which questions are asked, because the
+ * old one holds a step index counted against the old list. Restored against a
+ * shorter list it points past the end and leaves the page on its spinner.
+ */
 const STORAGE_KEY = 'ambedkargpt_preference_questionnaire';
 
 // Mirrors question_party() in backend/pipeline/position_questions.py.
 const HAS_POSITION_SET = /indian national congress|\(inc\)|bahujan samaj|\(bsp\)/i;
-
-function useSlideAnim(index, direction) {
-  const [display, setDisplay]   = useState(index);
-  const [animate, setAnimate]   = useState('idle');
-  const [animating, setAnimating] = useState(false);
-
-  useEffect(() => {
-    if (index === display) return;
-    const exitClass  = direction === 'next' ? 'exit-left'  : 'exit-right';
-    const enterClass = direction === 'next' ? 'enter-right' : 'enter-left';
-    setAnimating(true);
-    setAnimate(exitClass);
-    const t1 = setTimeout(() => { setDisplay(index); setAnimate(enterClass); }, 350);
-    const t2 = setTimeout(() => { setAnimate('idle'); setAnimating(false); }, 700);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, [index]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  return { display, animate, animating };
-}
-
-const ANIM_STYLES = {
-  idle:          { opacity: 1, transform: 'translateX(0)' },
-  'exit-left':   { opacity: 0, transform: 'translateX(-52px)' },
-  'exit-right':  { opacity: 0, transform: 'translateX(52px)' },
-  'enter-right': { opacity: 0, transform: 'translateX(52px)' },
-  'enter-left':  { opacity: 0, transform: 'translateX(-52px)' },
-};
 
 function readSaved(party, positionId) {
   try {
@@ -70,53 +54,16 @@ function readSaved(party, positionId) {
   }
 }
 
-function Shell({ children }) {
+function Loading() {
   const { t } = useI18n();
   return (
-    <div
-      className="flex min-h-screen flex-col"
-      style={{ background: 'linear-gradient(160deg,#0d1535 0%,#080e22 100%)' }}
-    >
-      <div className="pointer-events-none fixed -left-48 -top-48 h-[500px] w-[500px] rounded-full bg-[#1e4fb5]/15 blur-[130px]" />
-      <div className="pointer-events-none fixed bottom-0 right-0 h-[400px] w-[400px] rounded-full bg-[#3f9fff]/10 blur-[120px]" />
-
-      <header className="relative z-10 flex items-center px-8 pt-7 md:px-14">
-        <div className="flex items-center gap-2.5">
-          <img src={logoSrc} alt="AmbedkarGPT" className="h-9 w-9 object-contain drop-shadow-[0_0_12px_rgba(63,159,255,0.5)]" />
-          <span className="font-display text-[20px] font-bold leading-none tracking-tight">
-            <span className="text-white">{t('brand.ambedkar')}</span>
-            <span className="gradient-text-cyan">GPT</span>
-          </span>
-        </div>
-      </header>
-
-      <main className="relative z-10 flex flex-1 flex-col items-center px-6 pb-10 pt-8 md:px-14">
-        <div className="relative flex items-center justify-center">
-          <div
-            className="absolute h-[260px] w-[260px] rounded-full blur-[60px]"
-            style={{ background: 'radial-gradient(circle, rgba(63,159,255,0.28) 0%, rgba(123,92,255,0.14) 55%, transparent 75%)' }}
-          />
-          <img
-            src={ambedkarSrc}
-            alt="Dr. B.R. Ambedkar"
-            className="relative z-10 w-[180px] object-contain drop-shadow-[0_12px_40px_rgba(0,0,0,0.55)] md:w-[210px]"
-          />
-        </div>
-        {children}
-      </main>
-    </div>
-  );
-}
-
-function Spinner() {
-  const { t } = useI18n();
-  return (
-    <div
-      className="flex min-h-screen flex-col items-center justify-center gap-4"
-      style={{ background: 'linear-gradient(160deg,#0d1535 0%,#080e22 100%)' }}
-    >
-      <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#1e3260] border-t-[#3f9fff]" />
-      <p className="font-count text-[13px] text-[#5a6e9a]">{t('quest.loading')}</p>
+    <div className="np np-bg" style={{
+      minHeight: '100svh', display: 'grid', placeItems: 'center', gap: 14,
+    }}>
+      <div style={{ display: 'grid', justifyItems: 'center', gap: 14, position: 'relative', zIndex: 1 }}>
+        <Chakra size={40} mode="spin" className="np-kit-neela" />
+        <p style={{ margin: 0, fontSize: 14, color: 'var(--color-np-muted)' }}>{t('quest.loading')}</p>
+      </div>
     </div>
   );
 }
@@ -148,10 +95,7 @@ export default function Questionnaire() {
   const { pending, checked } = usePendingQuestions(currentUser?.id);
 
   // Nothing outstanding: no questions are written for this party, or they have
-  // all been answered already. Party and position are both asked for at
-  // sign-up, so this page does not ask for a role a second time; someone who
-  // skipped it sets it on the profile screen, and the Preferences page points
-  // them there.
+  // all been answered already.
   useEffect(() => {
     if (currentUser && checked && !pending.party && !pending.position) {
       try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
@@ -161,8 +105,8 @@ export default function Questionnaire() {
 
   // ── The questions: the party set, then the position set ──
   const [questions, setQuestions] = useState([]);
-  const [loadingQ,  setLoadingQ]  = useState(false);
-  const [fetchErr,  setFetchErr]  = useState(false);
+  const [loadingQ, setLoadingQ] = useState(false);
+  const [fetchErr, setFetchErr] = useState(false);
 
   useEffect(() => {
     if (!checked || !partyHasSet || (!pending.party && !pending.position)) {
@@ -205,17 +149,15 @@ export default function Questionnaire() {
   }, [party, group, partyHasSet, checked, pending.party, pending.position]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const saved = useMemo(() => readSaved(party, positionId), [party, positionId]);
-  const [step, setStep]       = useState(saved.step ?? 0);
+  const [step, setStep] = useState(saved.step ?? 0);
   const [answers, setAnswers] = useState(saved.answers ?? {});
-  const [direction, setDir]   = useState('next');
+  const [direction, setDir] = useState('forward');
 
-  const total    = questions.length;
+  const total = questions.length;
   const safeStep = total ? Math.min(step, total - 1) : 0;
-  const { display, animate, animating } = useSlideAnim(safeStep, direction);
-  const question = questions[Math.min(display, Math.max(total - 1, 0))];
-  const progress = total ? Math.round((safeStep / total) * 100) : 0;
+  const question = questions[safeStep];
   const selected = question ? answers[question.id] : undefined;
-  const isLast   = total > 0 && safeStep === total - 1;
+  const isLast = total > 0 && safeStep === total - 1;
   // The one question nobody may skip past. Question 10 of the party set: two
   // supporters of the same party can want opposite posts, and this is the
   // answer that separates them.
@@ -224,7 +166,10 @@ export default function Questionnaire() {
   useEffect(() => {
     if (!party) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ party, positionId, step: safeStep, answers }));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ party, positionId, step: safeStep, answers }),
+      );
     } catch { /* ignore */ }
   }, [party, positionId, safeStep, answers]);
 
@@ -233,14 +178,14 @@ export default function Questionnaire() {
   }
 
   function goNext() {
-    if (!selected || animating) return;
+    if (!selected) return;
     if (isLast) { finish(); return; }
-    setDir('next');
+    setDir('forward');
     setStep(safeStep + 1);
   }
 
   function goBack() {
-    if (safeStep === 0 || animating) return;
+    if (safeStep === 0) return;
     setDir('back');
     setStep(safeStep - 1);
   }
@@ -277,153 +222,140 @@ export default function Questionnaire() {
     leave();
   }
 
+  // Number keys pick an answer and Enter moves on. Five options and five keys
+  // under the fingers is the difference between a questionnaire and a form.
+  useEffect(() => {
+    function onKey(e) {
+      if (!question || e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = e.target;
+      if (el instanceof HTMLElement
+        && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
+      const n = Number(e.key);
+      if (n >= 1 && n <= question.options.length) {
+        e.preventDefault();
+        select(question.options[n - 1].value);
+      }
+      if (e.key === 'Enter' && selected) { e.preventDefault(); goNext(); }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }); // every render: `question` and `selected` both change under it
+
   // ── Render ──
-  if (!currentUser || !partyHasSet) return <Spinner />;
+  if (!currentUser || !partyHasSet) return <Loading />;
 
   if (fetchErr) {
     return (
-      <Shell>
-        <div className="mt-8 flex w-full max-w-[600px] flex-col items-center gap-5 text-center">
-          <p className="font-count text-[14px] text-[#e55555]">{t('questionnaire.loadFailed')}</p>
-          <button
-            type="button"
-            onClick={leave}
-            className="inline-flex h-10 items-center rounded-full border border-[#1e3260]/60 px-5 text-[13px] font-medium text-[#6b80a8] transition-all hover:border-[#3a6bc4]/50 hover:text-[#a0bade]"
-          >
-            {t('quest.skipForNow')}
-          </button>
+      <OnboardingLayout>
+        <div style={{ display: 'grid', justifyItems: 'center', gap: 16, padding: '64px 0' }}>
+          <p style={{ margin: 0, color: 'var(--color-np-critical)' }}>{t('questionnaire.loadFailed')}</p>
+          <Button variant="secondary" onClick={leave}>{t('quest.skipForNow')}</Button>
         </div>
-      </Shell>
+      </OnboardingLayout>
     );
   }
 
-  if (loadingQ || !question) return <Spinner />;
+  if (loadingQ || !question) return <Loading />;
 
   const roleName = role ? roleLabel(role, party, lang) : '';
+  const answered = questions.slice(0, safeStep).filter((q) => answers[q.id]);
 
   return (
-    <Shell>
-      {/* Progress bar */}
-      <div className="mt-8 w-full max-w-[760px]">
-        <div className="h-[3px] w-full overflow-hidden rounded-full bg-[#1a2c55]">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-[#3f9fff] to-[#7b5cff]"
-            style={{
-              width: `${Math.max(progress, 3)}%`,
-              transition: 'width 500ms cubic-bezier(0.4,0,0.2,1)',
-              boxShadow: '0 0 10px rgba(63,159,255,0.55)',
-            }}
-          />
-        </div>
-        <div className="mt-2.5 flex items-center justify-between font-count text-[12px] text-[#5a6e9a]">
-          <span>{t('quest.progress', { n: safeStep + 1, total })}</span>
-          <span>{t('quest.percent', { pct: progress })}</span>
-        </div>
-      </div>
+    <OnboardingLayout
+      step={safeStep + 1}
+      total={total}
+      label={t('np.q.progress', { n: safeStep + 1, total })}
+      onFinishLater={mustAnswer ? undefined : saveAndContinue}
+    >
+      <div className="np-q">
+        <div key={safeStep} className="np-step np-q-main" data-dir={direction}>
+          <p className="np-q-kind">
+            <Tag tone={question.kind === 'party' ? 'party' : 'general'}>
+              {question.kind === 'party'
+                ? t('quest.sectionParty')
+                : `${levelLabel(group, lang)}${roleName ? ` · ${roleName}` : ''}`}
+            </Tag>
+            {question.compulsory && (
+              <Tag tone="top">{t('quest.compulsory')}</Tag>
+            )}
+          </p>
 
-      {/* Animated question + options */}
-      <div
-        className="w-full max-w-[760px]"
-        style={{
-          ...ANIM_STYLES[animate],
-          transition: 'opacity 350ms ease, transform 350ms cubic-bezier(0.4,0,0.2,1)',
-        }}
-      >
-        <p className="mt-7 flex flex-wrap items-center gap-2 text-[11.5px] font-semibold uppercase tracking-[0.12em] text-[#5f8fd8]">
-          <span>
-            {question.kind === 'party'
-              ? t('quest.sectionParty')
-              : `${levelLabel(group, lang)}${roleName ? ` · ${roleName}` : ''}`}
-          </span>
+          <h1 className="np-display np-q-text">
+            {lang === 'hi' && question.textHi ? question.textHi : question.text}
+          </h1>
+
           {question.compulsory && (
-            <span className="rounded-full border border-[#f0a04b]/45 bg-[#f0a04b]/10 px-2 py-[3px] text-[10px] tracking-[0.08em] text-[#f0b877]">
-              {t('quest.compulsory')}
-            </span>
+            <p className="np-q-note">{t('quest.compulsoryNote')}</p>
           )}
-        </p>
-        <h2 className="font-display mt-2 text-[24px] font-semibold leading-snug text-white md:text-[28px]">
-          {lang === 'hi' && question.textHi ? question.textHi : question.text}
-        </h2>
-        {question.compulsory && (
-          <p className="mt-2 text-[12.5px] leading-relaxed text-[#7c8fb5]">{t('quest.compulsoryNote')}</p>
-        )}
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          {question.options.map((opt) => {
-            const isSelected = selected === opt.value;
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => select(opt.value)}
-                aria-pressed={isSelected}
-                className="font-count rounded-xl border px-5 py-4 text-left text-[13.5px] font-medium leading-snug transition-all duration-200"
-                style={{
-                  backgroundColor: isSelected ? 'rgba(20,50,110,0.6)'   : 'rgba(255,255,255,0.03)',
-                  borderColor:     isSelected ? 'rgba(63,159,255,0.65)' : 'rgba(40,65,120,0.55)',
-                  color:           isSelected ? '#d6eaff'               : '#8fa5cc',
-                  boxShadow:       isSelected ? '0 0 14px rgba(63,159,255,0.18)' : 'none',
-                }}
-                onMouseEnter={(e) => {
-                  if (!isSelected) {
-                    e.currentTarget.style.borderColor = 'rgba(63,159,255,0.35)';
-                    e.currentTarget.style.color = '#b0c5e8';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isSelected) {
-                    e.currentTarget.style.borderColor = 'rgba(40,65,120,0.55)';
-                    e.currentTarget.style.color = '#8fa5cc';
-                  }
-                }}
-              >
-                {lang === 'hi' && opt.hi ? opt.hi : opt.value}
-              </button>
-            );
-          })}
+          <div className="np-q-options">
+            {question.options.map((opt, i) => {
+              const isSelected = selected === opt.value;
+              const odd = question.options.length % 2 === 1
+                && i === question.options.length - 1;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => select(opt.value)}
+                  aria-pressed={isSelected}
+                  className="np-q-option"
+                  style={odd ? { gridColumn: '1 / -1' } : undefined}
+                >
+                  <span className="np-mono np-q-key" aria-hidden="true">{i + 1}</span>
+                  <span>{lang === 'hi' && opt.hi ? opt.hi : opt.value}</span>
+                  {isSelected && (
+                    <span className="np-q-check" aria-hidden="true">
+                      <Check size={14} strokeWidth={3} />
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="np-q-nav">
+            <Button
+              variant="secondary"
+              onClick={goBack}
+              disabled={safeStep === 0}
+              iconLeft={ArrowLeft}
+            >
+              {t('common.back')}
+            </Button>
+            <Button
+              onClick={goNext}
+              disabled={!selected}
+              iconRight={ArrowRight}
+              style={{ marginInlineStart: 'auto' }}
+            >
+              {isLast ? t('quest.finish') : t('common.next')}
+            </Button>
+          </div>
         </div>
+
+        {/* What the answers are building. No request behind it - the point is
+            to show that the questions go somewhere, and a sheet of paper with
+            the reader's own choices on it says that better than a progress
+            percentage does. Hidden below 1024px, where the question needs the
+            whole screen. */}
+        <aside className="np-q-aside">
+          <Paper tilt={-1}>
+            <p className="np-q-aside-title">{t('np.q.voiceSoFar')}</p>
+            {answered.length === 0 ? (
+              <p className="np-q-aside-empty">{t('quest.compulsoryNote')}</p>
+            ) : (
+              <ul className="np-q-aside-list">
+                {answered.map((q, i) => (
+                  <li key={q.id} className={i === answered.length - 1 ? 'is-latest' : ''}>
+                    {answers[q.id]}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Paper>
+        </aside>
       </div>
-
-      {/* Bottom navigation */}
-      <div className="mt-10 flex w-full max-w-[760px] flex-wrap items-center justify-between gap-4">
-        <button
-          type="button"
-          onClick={goBack}
-          disabled={safeStep === 0 || animating}
-          className="inline-flex h-10 items-center gap-2 rounded-full border border-[#1e3260]/70 px-5 text-[13px] font-medium text-[#6b80a8] transition-all hover:border-[#3a6bc4]/60 hover:text-white disabled:pointer-events-none disabled:opacity-25"
-        >
-          <ArrowLeft size={14} strokeWidth={2} />
-          {t('common.back')}
-        </button>
-
-        {/* Next already refuses to advance without an answer, so this button is
-            the only way past a question. On the compulsory one it is not
-            offered until the answer is given. */}
-        {!mustAnswer && (
-          <button
-            type="button"
-            onClick={saveAndContinue}
-            className="inline-flex h-10 items-center gap-2 rounded-full border border-[#1e3260]/60 px-5 text-[13px] font-medium text-[#6b80a8] transition-all hover:border-[#3a6bc4]/50 hover:text-[#a0bade]"
-          >
-            <BookmarkCheck size={14} strokeWidth={1.8} />
-            {t('quest.saveLater')}
-          </button>
-        )}
-
-        <button
-          type="button"
-          onClick={goNext}
-          disabled={!selected || animating}
-          className="inline-flex h-10 items-center gap-2 rounded-full px-6 text-[13px] font-semibold text-white transition-all duration-200 hover:brightness-110 disabled:pointer-events-none disabled:opacity-35"
-          style={{
-            background: selected ? 'linear-gradient(90deg,#0a7dff,#3a9fff)' : 'rgba(30,50,100,0.4)',
-            boxShadow:  selected ? '0 4px 20px rgba(17,122,255,0.35)'       : 'none',
-          }}
-        >
-          {isLast ? t('quest.finish') : t('common.next')}
-          <ArrowRight size={14} strokeWidth={2} />
-        </button>
-      </div>
-    </Shell>
+    </OnboardingLayout>
   );
 }

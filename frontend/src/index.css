@@ -2671,3 +2671,233 @@ html { scroll-behavior: smooth; }
 .np-phone .PhoneInputInput::placeholder { color: var(--color-np-faint); letter-spacing: normal; }
 .np-phone .PhoneInputCountry { border-right: 1px solid var(--color-np-track); padding: 0 10px; }
 .np-phone .PhoneInputCountrySelectArrow { color: var(--color-np-muted); opacity: 1; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Onboarding
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.np-onboard {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+.np-onboard-top {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px clamp(20px, 4vw, 48px);
+  border-bottom: 1px solid var(--color-np-edge);
+}
+.np-onboard-progress {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-inline: auto;
+}
+.np-onboard-segs { display: flex; gap: 4px; }
+.np-onboard-segs > span {
+  width: 34px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-np-track);
+  transition: background-color var(--np-dur-3) var(--np-ease-out);
+}
+.np-onboard-segs > span.is-filled { background: var(--color-np-neela-300); }
+.np-onboard-count { font-size: 13px; color: var(--color-np-muted); white-space: nowrap; }
+.np-onboard-later { height: 40px; padding-inline: 14px; border-radius: 10px; font-size: 14px; }
+
+.np-onboard-body {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding: clamp(28px, 5vw, 56px) clamp(20px, 4vw, 48px) 64px;
+}
+
+@media (max-width: 767px) {
+  .np-onboard-progress { margin-inline: 0 auto; }
+  .np-onboard-segs > span { width: 22px; }
+  .np-onboard-count { display: none; }
+}
+
+/* ── The question ─────────────────────────────────────────────────────────*/
+.np-q {
+  display: grid;
+  gap: 40px;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  align-items: start;
+}
+/* The question needs the whole screen before the paper does. */
+@media (max-width: 1023px) {
+  .np-q { grid-template-columns: minmax(0, 1fr); }
+  .np-q-aside { display: none; }
+}
+
+.np-q-kind { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 14px; }
+.np-q-text { margin: 0; font-size: 40px; }
+:root[lang="hi"] .np-q-text { font-size: 34px; }
+@media (max-width: 767px) { .np-q-text { font-size: 28px; } }
+.np-q-note { margin: 12px 0 0; font-size: 15px; color: var(--color-np-muted); }
+
+.np-q-options {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 26px;
+}
+@media (max-width: 639px) { .np-q-options { grid-template-columns: minmax(0, 1fr); } }
+
+.np-q-option {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px;
+  border-radius: 14px;
+  border: 1.5px solid var(--color-np-edge);
+  background: var(--color-np-desk);
+  color: var(--color-np-text-2);
+  font-size: 17px;
+  line-height: 1.45;
+  text-align: start;
+  cursor: pointer;
+  transition: background-color var(--np-dur-2) var(--np-ease-out),
+              border-color var(--np-dur-2) var(--np-ease-out),
+              transform var(--np-dur-2) var(--np-ease-out);
+}
+.np-q-option:hover { background: var(--color-np-raised); transform: translateY(-1px); }
+.np-q-option[aria-pressed="true"] {
+  border-color: var(--color-np-neela-300);
+  background: var(--color-np-raised);
+  color: var(--color-np-text);
+}
+/* Shown, not hidden in a help page: five options and five keys under the
+   fingers is the difference between a questionnaire and a form. */
+.np-q-key {
+  flex: none;
+  width: 24px; height: 24px;
+  display: grid; place-items: center;
+  border-radius: 6px;
+  background: var(--color-np-track);
+  color: var(--color-np-faint);
+  font-size: 12px;
+}
+.np-q-option[aria-pressed="true"] .np-q-key {
+  background: var(--color-np-neela);
+  color: #fff;
+}
+.np-q-check {
+  position: absolute;
+  top: 10px; inset-inline-end: 10px;
+  width: 22px; height: 22px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--color-np-neela);
+  color: #fff;
+}
+
+.np-q-nav { display: flex; gap: 10px; margin-top: 32px; flex-wrap: wrap; }
+
+/* ── The paper beside it ──────────────────────────────────────────────────*/
+.np-q-aside { position: sticky; top: 24px; }
+.np-q-aside-title {
+  margin: 0 0 12px;
+  font-family: var(--font-np-ui);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: var(--color-np-paper-muted);
+}
+.np-q-aside-empty { margin: 0; font-size: 15px; color: var(--color-np-paper-muted); }
+.np-q-aside-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.np-q-aside-list li {
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--color-np-paper-ink);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-np-paper-rule);
+}
+.np-q-aside-list li:last-child { border-bottom: none; padding-bottom: 0; }
+/* The line that just changed, underlined in brass as it draws in. */
+.np-q-aside-list li.is-latest {
+  background-image: linear-gradient(var(--color-np-brass), var(--color-np-brass));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 100% 2px;
+  animation: npUnderline 480ms var(--np-ease-out) both;
+}
+@keyframes npUnderline {
+  from { background-size: 0 2px; }
+  to   { background-size: 100% 2px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .np-q-aside-list li.is-latest { animation: none; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Screens still on the old markup
+   ══════════════════════════════════════════════════════════════════════════
+
+   The redesign lands one phase at a time, and in between there are screens
+   inside a `.np` shell that are still built from `.input-field`,
+   `.btn-gradient` and `GlassCard`. Left alone they sit in the new frame
+   wearing the old palette, which looks less like work in progress and more
+   like two products.
+
+   These rules re-point the old class names at the np tokens, and only inside
+   `.np`. The landing page and the post generator render outside it and keep
+   every pixel they have - which is the whole reason the scope exists.
+
+   Each of these can be deleted as its screen is converted.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.np .input-field,
+.np textarea.input-field,
+.np select.input-field {
+  background-color: var(--color-np-desk);
+  border-color: var(--color-np-track);
+  color: var(--color-np-text);
+  border-radius: 10px;
+}
+.np .input-field::placeholder { color: var(--color-np-faint); }
+.np .input-field:focus {
+  border-color: var(--color-np-neela-300);
+  /* The old focus was a 3px coloured halo. One border, like every other
+     control in the redesign; the focus ring itself comes from `.np
+     :focus-visible`. */
+  box-shadow: none;
+}
+.np .input-field.error { border-color: var(--color-np-critical); box-shadow: none; }
+
+/* No gradient and no glow - those are two of the seven tells in the audit. */
+.np .btn-gradient {
+  background: var(--color-np-neela);
+  border-radius: 10px;
+}
+.np .btn-gradient:hover { background: var(--color-np-neela-600); filter: none; box-shadow: none; }
+.np .btn-gradient:active { background: var(--color-np-neela-700); }
+
+.np .btn-outline-blue {
+  border-color: var(--color-np-rule-strong);
+  border-radius: 10px;
+}
+.np .btn-outline-blue:hover {
+  border-color: var(--color-np-muted);
+  box-shadow: none;
+  transform: none;
+}
+
+/* The wordmark's shimmer is a moving gradient on text, running on every
+   signed-in screen. Inside the shell it is a flat colour. */
+.np .gradient-text,
+.np .gradient-text-blue,
+.np .gradient-text-cyan {
+  background: none;
+  -webkit-text-fill-color: currentColor;
+  color: var(--color-np-neela-300);
+  animation: none;
+}

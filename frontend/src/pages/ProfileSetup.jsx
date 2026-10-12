@@ -9,6 +9,7 @@ import { ROLE_GROUPS, roleLabel, groupForId, rolesInGroup } from '../utils/party
 import { INDIAN_STATES, CITIES_BY_STATE } from '../utils/indianStatesCities';
 import PhoneField  from '../components/PhoneField';
 import DashboardShell from '../layouts/DashboardShell';
+import OnboardingLayout from '../layouts/OnboardingLayout';
 import DrawerButton from '../components/dashboard/DrawerButton';
 import logoSrc     from '../assets/images/logo-animation.webp';
 import ambedkarSrc from '../assets/images/qna-ambedkar.webp';
@@ -630,5 +631,10 @@ export default function ProfileSetup() {
   // Editing, reached from the sidebar, keeps the sidebar. Onboarding does not:
   // a new account has nowhere to navigate to yet, and an exit there would
   // strand the sign-up half done.
-  return isOnboarding ? page : <DashboardShell active="profile">{page}</DashboardShell>;
+  // Onboarding gets the shared onboarding frame - no rail, a count, and a
+  // way out that does not strand the sign-up. Edit mode stays in the shell
+  // until phase 7 folds it into /settings.
+  return isOnboarding
+    ? <OnboardingLayout>{page}</OnboardingLayout>
+    : <DashboardShell>{page}</DashboardShell>;
 }
