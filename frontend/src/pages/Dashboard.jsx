@@ -1,370 +1,398 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Send, SlidersHorizontal, Bot, Sparkles, Music, ChevronRight, ChevronDown, Calendar, LayoutGrid } from 'lucide-react';
+import { ArrowRight, MessageCircle, PenLine } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
 import { getPosts, getDailyQuota } from '../api/posts';
-import { getProfileAnswers } from '../api/profile';
-import MilestoneBanner from '../components/MilestoneBanner';
-import DailyQuotaWidget from '../components/dashboard/DailyQuotaWidget';
-import RevealOnScroll from '../components/ui/RevealOnScroll';
-
-import Topbar               from '../components/dashboard/Topbar';
-import TopStoryCarousel     from '../components/dashboard/TopStoryCarousel';
-import { SectionHeading }   from '../components/dashboard/Card';
-import StatCard             from '../components/dashboard/StatCard';
-import SearchActivityChart  from '../components/dashboard/SearchActivityChart';
-import DailyActivityChart   from '../components/dashboard/DailyActivityChart';
-import CategoriesPieChart   from '../components/dashboard/CategoriesPieChart';
-import ImageGenerationCard  from '../components/dashboard/ImageGenerationCard';
-import ProfileCard          from '../components/dashboard/ProfileCard';
-import PreferencesCard      from '../components/dashboard/PreferencesCard';
-import RecentSearchesTable  from '../components/dashboard/RecentSearchesTable';
-import SavedPromptsGrid     from '../components/dashboard/SavedPromptsGrid';
-import AchievementsGrid     from '../components/dashboard/AchievementsGrid';
-import DashboardFooter      from '../components/dashboard/DashboardFooter';
-import { partyLogo }        from '../utils/politicalParties';
-import { useI18n }         from '../i18n/index.jsx';
+import useDashboardNews from '../hooks/useDashboardNews';
+import { partySymbol } from '../utils/politicalParties';
+import { useI18n } from '../i18n/index.jsx';
 import {
-  formatFullDate, fromInputValue, sameDay, startOfDay, toInputValue, weekdayShort,
-} from '../utils/dashboardDates';
+  Button, Card, Chakra, EmptyState, Paper, PageHeader, Segmented,
+  SectionHeader, Skeleton, Stamp, Tag,
+} from '../components/np';
 
-// The three ways into generation, in the order they are worth trying.
-const QUICK_ACTIONS = [
-  { labelKey: 'dash.socialPost',  descKey: 'dash.socialPostDesc',  Icon: Sparkles, route: '/generate/social-media', accent: '#3f9fff' },
-  { labelKey: 'dash.musicStudio', descKey: 'dash.musicStudioDesc', Icon: Music,    route: '/generate/music',        accent: '#7b5cff' },
-  { labelKey: 'dash.bheembot',    descKey: 'dash.bheembotDesc',    Icon: Bot,      route: '/bhimbot',              accent: '#22c55e' },
-];
+/**
+ * Today.
+ *
+ * Phase 5 of docs/redesign/neela-press.md. The data sources are the ones that
+ * were here - news, posts, quota - and the route into the generator is the
+ * same router state the carousel used.
+ *
+ * What changed is the order. This screen opened on four stat tiles reading
+ * zero, then two empty charts, then a pie, then the news. Someone arriving to
+ * write a post had to scroll past their own analytics to find a story. Now
+ * the story is first, the quota and the milestone sit beside it, and the rest
+ * of the feed is a list under it.
+ *
+ * The charts, the pie, the stat row and the "Preferences set" tile are gone.
+ * None of them answered a question anyone had on the way in; if analytics are
+ * wanted they are their own page, not the first thing between a writer and
+ * the news.
+ */
+
+const MILESTONE = 200;
+const MILESTONE_PER_DAY = 5;
+
+function greetingKey(hour) {
+  if (hour < 12) return 'np.greet.morning';
+  if (hour < 17) return 'np.greet.afternoon';
+  return 'np.greet.evening';
+}
+
+function timeOf(value, lang) {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  return new Intl.DateTimeFormat(lang === 'hi' ? 'hi-IN' : 'en-IN', {
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  }).format(d);
+}
+
+/** The story the day leads on, with the party's own symbol behind it. */
+function TopStory({ story, symbol, onWrite, onAsk, t, lang }) {
+  return (
+    <Card style={{ position: 'relative', overflow: 'hidden', padding: 28 }}>
+      {symbol && (
+        <img
+          className="np-top-watermark"
+          src={symbol}
+          alt=""
+          aria-hidden="true"
+        />
+      )}
+      <div style={{ position: 'relative' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center', marginBottom: 14 }}>
+          <Tag tone="top">{t('np.dash.topStory')}</Tag>
+          <Tag tone={story.kind}>{t(`np.filter.${story.kind}`)}</Tag>
+          {(story.source || story.date) && (
+            <span className="np-mono" style={{ fontSize: 13, color: 'var(--color-np-faint)' }}>
+              {[story.source, timeOf(story.date, lang)].filter(Boolean).join(' · ')}
+            </span>
+          )}
+        </div>
+
+        <h2 className="np-serif np-top-headline">{story.title}</h2>
+
+        {story.summary && (
+          <p className="np-top-summary">{story.summary}</p>
+        )}
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 22 }}>
+          <Button onClick={onWrite} iconLeft={PenLine}>{t('np.dash.write')}</Button>
+          <Button variant="secondary" onClick={onAsk} iconLeft={MessageCircle}>
+            {t('np.dash.askBot')}
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+/** How much of today is left, as a ring rather than a sentence. */
+function QuotaCard({ quota, t }) {
+  const limit = Number(quota?.daily_limit) || 0;
+  const used = Math.min(Number(quota?.daily_used) || 0, limit);
+  const left = Math.max(limit - used, 0);
+
+  return (
+    <Card style={{ display: 'grid', gap: 14, justifyItems: 'center', textAlign: 'center' }}>
+      <div style={{ position: 'relative', display: 'grid', placeItems: 'center' }}>
+        <Chakra size={104} mode="progress" value={limit ? used / limit : 0} className="np-kit-neela" />
+        <span className="np-mono np-quota-ring-n">{left}</span>
+      </div>
+      <div>
+        <p style={{ margin: 0, fontSize: 16, color: 'var(--color-np-text)' }}>
+          {t('np.quota.left', { n: left })}
+        </p>
+        <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--color-np-muted)' }}>
+          {t('np.quota.used', { used, limit })}
+        </p>
+      </div>
+    </Card>
+  );
+}
+
+/**
+ * The milestone, in brass rather than in an orange strip across the top of
+ * the page. The old banner shouted the same number on every screen; this
+ * says the same thing once, where the other numbers are.
+ */
+function MilestoneCard({ total, t }) {
+  const done = Math.min(total, MILESTONE);
+  const togo = Math.max(MILESTONE - done, 0);
+  const days = Math.max(Math.ceil(togo / MILESTONE_PER_DAY), 0);
+
+  return (
+    <Card style={{ borderColor: 'var(--color-np-brass)', display: 'grid', gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+        <p className="np-display" style={{ margin: 0, fontSize: 20, color: 'var(--color-np-brass)' }}>
+          {t('np.milestone.title')}
+        </p>
+        <span className="np-mono" style={{ fontSize: 16, color: 'var(--color-np-text)' }}>
+          {done}/{MILESTONE}
+        </span>
+      </div>
+      <span className="np-milestone-track" aria-hidden="true">
+        <span className="np-milestone-fill" style={{ width: `${(done / MILESTONE) * 100}%` }} />
+      </span>
+      <p style={{ margin: 0, fontSize: 13, color: 'var(--color-np-muted)' }}>
+        {t('np.milestone.togo', { n: togo, perDay: MILESTONE_PER_DAY, days })}
+      </p>
+    </Card>
+  );
+}
+
+/** Seven bars. Today is the one in the action colour. */
+function WeekChart({ posts, t, lang }) {
+  const days = useMemo(() => {
+    const out = [];
+    const now = new Date();
+    for (let i = 6; i >= 0; i -= 1) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      d.setHours(0, 0, 0, 0);
+      const next = new Date(d);
+      next.setDate(d.getDate() + 1);
+      const n = posts.filter((p) => {
+        const at = new Date(p.created_at || p.createdAt || 0);
+        return at >= d && at < next;
+      }).length;
+      out.push({ d, n, today: i === 0 });
+    }
+    return out;
+  }, [posts]);
+
+  const max = Math.max(1, ...days.map((x) => x.n));
+  const streak = days.filter((x) => x.n > 0).length;
+  const fmt = new Intl.DateTimeFormat(lang === 'hi' ? 'hi-IN' : 'en-IN', { weekday: 'narrow' });
+
+  return (
+    <Card style={{ display: 'grid', gap: 16 }}>
+      <div className="np-week">
+        {days.map(({ d, n, today }, i) => (
+          <span key={d.toISOString()} className="np-week-col">
+            <span
+              className={`np-week-bar ${today ? 'is-today' : ''}`}
+              // Grown from zero on mount, staggered, so the week assembles
+              // rather than appearing.
+              style={{ '--h': `${(n / max) * 100}%`, animationDelay: `${i * 30}ms` }}
+              title={String(n)}
+            />
+            <span className="np-week-label">{fmt.format(d)}</span>
+          </span>
+        ))}
+      </div>
+      <p style={{ margin: 0, fontSize: 14, color: 'var(--color-np-muted)' }}>
+        <span className="np-mono" style={{ color: 'var(--color-np-brass)', fontSize: 18, fontWeight: 600 }}>
+          {streak}
+        </span>{' '}
+        {t('np.dash.streak')}
+      </p>
+    </Card>
+  );
+}
 
 export default function Dashboard() {
   const { currentUser } = useAuth();
   const { t, lang } = useI18n();
   const navigate = useNavigate();
 
-  const [posts,            setPosts]           = useState([]);
-  const [profileAnswers,   setProfileAnswers]  = useState([]);
-  const [dataLoading,      setDataLoading]     = useState(true);
-  const [quota,            setQuota]           = useState(null);
-  const [quotaLoading,     setQuotaLoading]    = useState(true);
+  // One piece of state for the answer, carrying the id it answers. `loading`
+  // is then derived rather than set at the top of the effect - that extra
+  // render bought nothing and is what React's set-state-in-effect rule is
+  // about.
+  const [data, setData] = useState(null);
+  const [filter, setFilter] = useState('all');
 
-  // The day both charts end on. Today by default; the date pill changes it.
-  const [anchorDate, setAnchorDate] = useState(() => startOfDay(new Date()));
-  const dateInputRef = useRef(null);
+  const { stories, status } = useDashboardNews(currentUser?.political_party, lang);
 
+  const userId = currentUser?.id;
   useEffect(() => {
-    if (!currentUser?.id) return;
-    // Reset loading states on every mount so re-login always shows fresh data
-    setDataLoading(true);
-    setQuotaLoading(true);
+    if (!userId) return undefined;
+    let cancelled = false;
     Promise.all([
       getPosts({ limit: 100 }).catch(() => []),
-      getProfileAnswers(currentUser.id).catch(() => []),
-    ]).then(([p, a]) => {
-      setPosts(p ?? []);
-      setProfileAnswers(a ?? []);
-    }).finally(() => setDataLoading(false));
+      getDailyQuota().catch(() => null),
+    ]).then(([p, q]) => {
+      if (!cancelled) setData({ userId, posts: p ?? [], quota: q });
+    });
+    return () => { cancelled = true; };
+  }, [userId]);
 
-    getDailyQuota().then(setQuota).catch(() => {}).finally(() => setQuotaLoading(false));
-  }, [currentUser?.id]);
+  const fresh = data?.userId === userId ? data : null;
+  const posts = fresh?.posts ?? [];
+  const quota = fresh?.quota ?? null;
+  const loading = !fresh;
 
-  // The native picker, opened from the pill. showPicker() is missing in older
-  // browsers and throws without a user gesture; focusing the input is the
-  // fallback there.
-  function openDatePicker() {
-    const el = dateInputRef.current;
-    if (!el) return;
-    try {
-      el.showPicker();
-    } catch {
-      el.focus();
-      el.click();
-    }
-  }
-
-  const dateLabel = `${
-    sameDay(anchorDate, new Date()) ? t('dash.today') : weekdayShort(anchorDate, lang)
-  }, ${formatFullDate(anchorDate, lang)}`;
-
-  // Resolved from the full party list, not the offered one, so an account
-  // carrying a party we no longer offer still shows its own mark.
-  const welcomeLogo  = partyLogo(currentUser?.political_party);
-  const displayName  = currentUser?.username ?? '—';
-  const displayEmail = currentUser?.email ?? currentUser?.phone ?? '—';
-  const joinedLabel  = (() => {
-    // Not `t`: that is the translate function in this scope now.
-    const created = currentUser?.created_at;
-    if (!created) return '';
-    const d = new Date(created);
-    return `Joined ${d.toLocaleString('en-US', { month: 'long', year: 'numeric' })}`;
-  })();
-
-  const totalPosts     = posts.length;
-  const publishedPosts = posts.filter((p) => p.status === 'published').length;
-  const draftPosts     = posts.filter((p) => p.status === 'draft').length;
-  const prefsAnswered  = profileAnswers.length;
-
-  const topbarUser  = {
-    name: displayName,
-    email: displayEmail,
-    party: currentUser?.political_party ?? '',
-  };
-  const profileUser = { name: displayName, email: displayEmail, joined: joinedLabel, postCount: totalPosts };
-
-  const first = displayName.split('_')[0];
-
-  // The date pill. It belongs to the activity numbers and the charts under
-  // them, so it rides in that section's heading; below sm the heading wraps and
-  // it takes its own line rather than squeezing the label.
-  const datePill = (
-    <div className="relative shrink-0">
-      <button
-        type="button"
-        onClick={openDatePicker}
-        aria-label={t('dash.pickDate')}
-        className="dash-icon-btn inline-flex items-center gap-2 rounded-lg border border-[#1e3260]/70 bg-[#0d1531]/70 px-3 py-2 text-[12.5px] font-medium text-white/90"
-      >
-        <Calendar size={14} strokeWidth={2} className="text-[#6f8fce]" />
-        {dateLabel}
-        <ChevronDown size={13} strokeWidth={2} className="text-[#6b78a0]" />
-      </button>
-      <input
-        ref={dateInputRef}
-        type="date"
-        tabIndex={-1}
-        aria-hidden="true"
-        max={toInputValue(new Date())}
-        value={toInputValue(anchorDate)}
-        onChange={(e) => {
-          const picked = fromInputValue(e.target.value);
-          if (picked) setAnchorDate(picked);
-        }}
-        className="pointer-events-none absolute inset-0 h-full w-full opacity-0"
-        style={{ colorScheme: 'dark' }}
-      />
-    </div>
+  const top = stories[0];
+  const wire = useMemo(
+    () => stories.slice(1).filter((s) => filter === 'all' || s.kind === filter),
+    [stories, filter],
+  );
+  const drafts = useMemo(
+    () => posts.filter((p) => (p.status || '').toLowerCase() === 'draft').slice(0, 3),
+    [posts],
   );
 
+  // The same router state the carousel sent, so the generator opens on this
+  // story exactly as it did before.
+  function writeAbout(story) {
+    navigate('/generate/social-media', {
+      state: { topStory: { newsId: story._backendId, section: story.kind } },
+    });
+  }
+
+  function askAbout(story) {
+    navigate('/bhimbot', { state: { prefill: story.title } });
+  }
+
+  const now = new Date();
+  const dateLabel = new Intl.DateTimeFormat(lang === 'hi' ? 'hi-IN' : 'en-IN', {
+    weekday: 'long', day: 'numeric', month: 'long',
+  }).format(now);
+  const name = (currentUser?.full_name || currentUser?.username || '').split(' ')[0];
+
   return (
-    <>
-      <MilestoneBanner totalPosts={quota?.total_streak_posts} />
+    <div className="np-page">
+      <PageHeader eyebrow={dateLabel} title={t(greetingKey(now.getHours()), { name })} />
 
-      <div className="relative px-4 sm:px-6 md:px-10">
-        {/* totalPosts comes from the same source the milestone banner counts
-            from, so the bell and the banner cannot disagree. */}
-        <Topbar
-          user={topbarUser}
-          totalPosts={quota?.total_streak_posts ?? totalPosts}
-          title={t('nav.dashboard')}
-          icon={<LayoutGrid size={16} strokeWidth={2} className="hidden shrink-0 text-[#4f7fd4] lg:block" />}
-        />
-
-        {/* ── Welcome ── The party mark leads, then the greeting on one line.
-            The disc stays 52px and the logo fills it to 48px: these symbols are
-            drawn on their own coloured circle, so a wide white ring around them
-            just makes the mark smaller for no gain. */}
-        <div className="mb-7 flex items-center gap-4">
-          {welcomeLogo && (
-            <span
-              className="relative inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-white shadow-[0_0_0_2px_rgba(63,159,255,0.45),0_0_26px_rgba(63,159,255,0.28)]"
-              title={currentUser?.political_party || ''}
-            >
-              <img
-                src={welcomeLogo}
-                alt={currentUser?.political_party || 'Party'}
-                className="h-[48px] w-[48px] object-contain"
-                onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
-              />
-              <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-[2.5px] border-[#070b1c] bg-[#22c55e]" />
-            </span>
+      {/* ── the day's lead, and the two numbers that matter ── */}
+      <div className="np-hero">
+        <div className="np-hero-main">
+          {status === 'loading' && (
+            <Card style={{ display: 'grid', gap: 14 }}>
+              <Skeleton width={140} height={14} />
+              <Skeleton height={34} />
+              <Skeleton height={34} width="80%" />
+              <Skeleton height={16} />
+            </Card>
           )}
-          <div className="min-w-0">
-            <h1 className="font-display text-[26px] font-bold leading-tight tracking-tight sm:text-[28px] md:text-[32px]">
-              <span className="text-white">{t('dash.welcomeBack')} </span>
-              <span className="gradient-text-blue">{first}</span>
-            </h1>
-            <p className="mt-1.5 text-[15px] leading-snug text-[#9aa5c4] md:text-[16.5px]">
-              {t('dash.subtitle')}
-            </p>
-          </div>
+          {status !== 'loading' && top && (
+            <TopStory
+              story={top}
+              symbol={partySymbol(currentUser?.political_party)}
+              onWrite={() => writeAbout(top)}
+              onAsk={() => askAbout(top)}
+              t={t}
+              lang={lang}
+            />
+          )}
+          {status !== 'loading' && !top && (
+            <Card>
+              <EmptyState title={t('dash.noNews')}>{t('dash.noNewsSub')}</EmptyState>
+            </Card>
+          )}
         </div>
 
-        {/* ── Today's top story ── The primary action: the latest party,
-            opposition and general story in turn, with Generate Post. */}
-        <TopStoryCarousel />
+        <div className="np-hero-side">
+          {quota && <QuotaCard quota={quota} t={t} />}
+          <MilestoneCard total={quota?.total_streak_posts ?? 0} t={t} />
+        </div>
+      </div>
 
-        {/* ── Activity ── The four numbers, and the date they are counted to. */}
-        <RevealOnScroll delayMs={40} yOffset={15}>
-          <section className="mt-8">
-            <SectionHeading label={t('dash.activity')} right={datePill} />
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-              <StatCard
-                label={t('dash.postsGenerated')}
-                value={dataLoading ? '…' : String(totalPosts)}
-                icon={<FileText size={15} strokeWidth={2} />}
-                accent="#3f9fff"
-              />
-              <StatCard
-                label={t('dash.publishedPosts')}
-                value={dataLoading ? '…' : String(publishedPosts)}
-                icon={<Send size={15} strokeWidth={2} />}
-                accent="#a855f7"
-              />
-              <StatCard
-                label={t('dash.draftPosts')}
-                value={dataLoading ? '…' : String(draftPosts)}
-                icon={<FileText size={15} strokeWidth={2} />}
-                accent="#22c55e"
-              />
-              <StatCard
-                label={t('dash.preferencesSet')}
-                value={dataLoading ? '…' : String(prefsAnswered)}
-                icon={<SlidersHorizontal size={15} strokeWidth={2} />}
-                accent="#ffb056"
-              />
-            </div>
-          </section>
-        </RevealOnScroll>
+      {/* ── the rest of the feed ── */}
+      <section className="np-block">
+        <SectionHeader
+          right={(
+            <Segmented
+              size="sm"
+              ariaLabel={t('np.dash.wire')}
+              value={filter}
+              onChange={setFilter}
+              options={['all', 'party', 'opposition', 'general'].map((k) => ({
+                value: k, label: t(`np.filter.${k}`),
+              }))}
+            />
+          )}
+        >
+          {t('np.dash.wire')}
+        </SectionHeader>
 
-        {/* ── Analytics ── */}
-        <RevealOnScroll delayMs={40} yOffset={15}>
-          <section className="mt-8">
-            <SectionHeading label={t('dash.secAnalytics')} />
-            <div className="grid gap-4 lg:grid-cols-2">
-              <SearchActivityChart posts={posts} anchor={anchorDate} />
-              <DailyActivityChart posts={posts} anchor={anchorDate} />
-            </div>
-            <div className="mt-4 grid gap-4 lg:grid-cols-2">
-              <CategoriesPieChart posts={posts} />
-              <ImageGenerationCard postCount={totalPosts} />
-            </div>
-          </section>
-        </RevealOnScroll>
+        <ul className="np-wire">
+          {wire.slice(0, 5).map((s) => (
+            <li key={s.id} className="np-wire-row">
+              <span className="np-mono np-wire-time">{timeOf(s.date, lang)}</span>
+              {/* A symbol only where one means something: the lotus for the
+                  opposition, the reader's own party's mark for theirs. A
+                  general story belongs to nobody and gets none. */}
+              <Tag
+                tone={s.kind}
+                symbol={s.kind === 'opposition' ? '/party-symbols/bjp.png'
+                  : s.kind === 'party' ? partySymbol(currentUser?.political_party)
+                    : undefined}
+              >
+                {t(`np.filter.${s.kind}`)}
+              </Tag>
+              <span className="np-serif np-wire-headline">{s.title}</span>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => writeAbout(s)}
+                iconRight={ArrowRight}
+                className="np-wire-write"
+              >
+                {t('np.dash.write')}
+              </Button>
+            </li>
+          ))}
+        </ul>
 
-        {/* ── Quick actions ──
-            The header's Generate button used to be the only way in. These
-            surface the destinations directly, below the analytics: the top
-            story card is the dashboard's main way into post generation. */}
-        <RevealOnScroll delayMs={40} yOffset={15}>
-          <section className="mt-8">
-            <SectionHeading label={t('dash.secQuickActions')} />
-            <div className="grid gap-3 sm:gap-4 sm:grid-cols-3">
-              {QUICK_ACTIONS.map(({ labelKey, descKey, Icon, route, accent }) => (
-                <button
-                  key={labelKey}
-                  type="button"
-                  onClick={() => navigate(route)}
-                  className="dash-tile dash-hover group flex items-center gap-3.5 p-4 text-left"
+        {wire.length > 5 && (
+          <p style={{ margin: '14px 0 0' }}>
+            <button
+              type="button"
+              onClick={() => navigate('/generate')}
+              className="np-link"
+            >
+              {t('np.dash.seeAll', { n: wire.length })} <ArrowRight size={14} strokeWidth={2} />
+            </button>
+          </p>
+        )}
+      </section>
+
+      {/* ── what is unfinished, and how the week went ── */}
+      <div className="np-bottom">
+        <section className="np-block">
+          <SectionHeader>{t('np.dash.drafts')}</SectionHeader>
+          {loading && <Skeleton height={120} />}
+          {!loading && drafts.length === 0 && (
+            <Card>
+              <EmptyState
+                title={t('np.dash.drafts')}
+                action={<Button onClick={() => navigate('/generate')} iconRight={ArrowRight}>{t('np.dash.write')}</Button>}
+              >
+                {t('posts.emptyDesc')}
+              </EmptyState>
+            </Card>
+          )}
+          {!loading && drafts.length > 0 && (
+            <div className="np-drafts">
+              {drafts.map((p, i) => (
+                <Paper
+                  key={p.id || i}
+                  tilt={[-1, 0.8, -0.5][i] ?? 0}
+                  onClick={() => navigate('/posts')}
+                  style={{ cursor: 'pointer' }}
                 >
-                  <span
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: `${accent}1f`, color: accent, boxShadow: `inset 0 0 0 1px ${accent}2e` }}
-                  >
-                    <Icon size={18} strokeWidth={2} />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block font-display text-[14.5px] font-semibold text-white">{t(labelKey)}</span>
-                    <span className="mt-0.5 block text-[12px] leading-snug text-[#8b94b8]">{t(descKey)}</span>
-                  </span>
-                  <ChevronRight
-                    size={16}
-                    strokeWidth={2}
-                    className="cta-arrow ml-auto shrink-0"
-                    style={{ color: accent }}
-                  />
-                </button>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
+                    <span style={{ fontFamily: 'var(--font-np-ui)', fontSize: 13, fontWeight: 600, color: 'var(--color-np-paper-muted)' }}>
+                      {p.platform || t('posts.post')}
+                    </span>
+                    <Stamp variant="draft">{t('np.stamp.draft')}</Stamp>
+                  </div>
+                  <p className="np-draft-excerpt">{p.content || p.caption || ''}</p>
+                </Paper>
               ))}
             </div>
-          </section>
-        </RevealOnScroll>
+          )}
+        </section>
 
-        {/* ── Account ── Who you are, what you are allowed today, and the
-            preferences every generated post is written against. */}
-        <RevealOnScroll delayMs={40} yOffset={15}>
-          <section id="profile-section" className="mt-8 scroll-mt-24">
-            <SectionHeading label={t('dash.secAccount')} />
-            <div className="grid gap-4 lg:grid-cols-3">
-              <div className="flex flex-col gap-4">
-                <ProfileCard user={profileUser} />
-                <DailyQuotaWidget quota={quota} loading={quotaLoading} />
-              </div>
-              <div className="lg:col-span-2">
-                <PreferencesCard answers={profileAnswers} />
-              </div>
-            </div>
-          </section>
-        </RevealOnScroll>
-
-        {/* ── Recent content ── */}
-        <RevealOnScroll delayMs={40} yOffset={15}>
-          <section className="mt-8">
-            <SectionHeading label={t('dash.secRecent')} />
-            <div className="grid gap-4">
-              <RecentSearchesTable posts={posts} loading={dataLoading} />
-              <SavedPromptsGrid posts={posts.filter((p) => p.status === 'published')} />
-            </div>
-          </section>
-        </RevealOnScroll>
-
-        {/* ── BheemBot + Achievements ── Both carry their own titles, so this
-            row is left without a section marker. */}
-        <RevealOnScroll delayMs={40} yOffset={15}>
-          <section className="mt-8 grid gap-4 lg:grid-cols-3">
-            <div className="dash-panel relative flex flex-col overflow-hidden p-4 sm:p-5">
-              <div className="pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full bg-[#2d6fff]/18 blur-2xl" />
-              <div className="pointer-events-none absolute -bottom-10 -left-10 h-24 w-24 rounded-full bg-[#22c55e]/10 blur-2xl" />
-
-              {/* flex-1 + mt-auto on the button: beside the achievements grid
-                  this card is stretched to the row's height, and without it
-                  the bottom half was empty. */}
-              <div className="relative flex flex-1 flex-col">
-                <div className="mb-3 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#2d6fff] to-[#7b5cff] shadow-[0_0_18px_rgba(79,107,255,0.4)]">
-                    <Bot size={18} strokeWidth={2} className="text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-display text-[15px] font-semibold text-white">{t('bot.title')}</h3>
-                    <div className="flex items-center gap-2">
-                      <span className="dot-online relative h-1.5 w-1.5 rounded-full bg-[#22c55e]" />
-                      <span className="text-[11px] text-[#22c55e]">{t('dash.online')}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <p className="mb-4 text-[12.5px] leading-relaxed text-[#8b94b8]">
-                  {t('dash.bheembotDesc')}
-                </p>
-
-                <div className="mb-4 flex flex-wrap gap-1.5">
-                  {['bot.tagConstitution', 'bot.tagJustice', 'bot.tagWritings'].map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-full border border-[#1e3260]/60 bg-[#0a1428]/70 px-2.5 py-1 text-[10.5px] text-[#7f92b8]"
-                    >
-                      {t(tag)}
-                    </span>
-                  ))}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => navigate('/bhimbot')}
-                  className="group mt-auto inline-flex w-fit items-center gap-2 rounded-xl btn-gradient px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_8px_22px_rgba(45,111,255,0.32)]"
-                >
-                  <Sparkles size={13} strokeWidth={2} />
-                  {t('dash.openChat')}
-                </button>
-              </div>
-            </div>
-
-            {/* Achievements — takes remaining 2 cols */}
-            <div className="lg:col-span-2">
-              <AchievementsGrid totalPosts={totalPosts} prefsAnswered={prefsAnswered} />
-            </div>
-          </section>
-        </RevealOnScroll>
-
-        <DashboardFooter />
-      </div>{/* end px wrapper */}
-    </>
+        <section className="np-block">
+          <SectionHeader>{t('np.dash.week')}</SectionHeader>
+          <WeekChart posts={posts} t={t} lang={lang} />
+        </section>
+      </div>
+    </div>
   );
 }

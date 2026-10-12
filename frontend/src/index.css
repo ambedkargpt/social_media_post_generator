@@ -2901,3 +2901,188 @@ html { scroll-behavior: smooth; }
   color: var(--color-np-neela-300);
   animation: none;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Today
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* One measure for every page inside the shell. The header sticks to the top
+   of this column, so the padding has to be here rather than on main. */
+.np-page {
+  max-width: 1280px;
+  margin-inline: auto;
+  padding: 0 clamp(16px, 3vw, 40px) 64px;
+}
+.np-block { margin-top: 44px; display: grid; gap: 18px; }
+
+.np-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-np-neela-300);
+  cursor: pointer;
+}
+.np-link:hover { color: var(--color-np-neela-100); }
+
+/* ── Hero ─────────────────────────────────────────────────────────────────*/
+.np-hero {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 26px;
+}
+.np-hero-main { flex: 2 1 520px; min-width: 0; }
+.np-hero-side { flex: 1 1 300px; min-width: 0; display: grid; gap: 18px; align-content: start; }
+
+/* The party's own symbol, large and nearly invisible. Texture, not
+   decoration - at 7% it reads as the paper this was printed on. */
+.np-top-watermark {
+  position: absolute;
+  right: -30px;
+  bottom: -40px;
+  height: 230px;
+  opacity: .07;
+  pointer-events: none;
+}
+.np-top-headline {
+  margin: 0;
+  font-size: 42px;
+  line-height: 1.18;
+  text-wrap: balance;
+  color: var(--color-np-text);
+}
+:root[lang="hi"] .np-top-headline { font-size: 34px; line-height: 1.35; }
+@media (max-width: 767px) {
+  .np-top-headline { font-size: 28px; }
+  :root[lang="hi"] .np-top-headline { font-size: 26px; }
+}
+.np-top-summary {
+  margin: 14px 0 0;
+  max-width: 640px;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--color-np-text-2);
+}
+
+/* The number in the middle of the ring is the one that is asked for - how
+   many are left - not how many are gone. */
+.np-quota-ring-n {
+  position: absolute;
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--color-np-text);
+}
+
+.np-milestone-track {
+  display: block;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--color-np-track);
+  overflow: hidden;
+}
+.np-milestone-fill {
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+  background: var(--color-np-brass);
+  animation: npGrowX var(--np-dur-4) var(--np-ease-out) both;
+  transform-origin: left center;
+}
+@keyframes npGrowX { from { transform: scaleX(0); } to { transform: none; } }
+
+/* ── The wire ─────────────────────────────────────────────────────────────*/
+.np-wire { margin: 0; padding: 0; list-style: none; }
+.np-wire-row {
+  display: grid;
+  grid-template-columns: 64px 128px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 10px;
+  border-bottom: 1px solid var(--color-np-rule);
+  transition: background-color var(--np-dur-1) var(--np-ease-out);
+}
+.np-wire-row:hover { background: var(--color-np-raised); }
+.np-wire-row:hover .np-wire-write svg { transform: translateX(4px); }
+.np-wire-write svg { transition: transform var(--np-dur-1) var(--np-ease-out); }
+.np-wire-time { font-size: 14px; color: var(--color-np-muted); }
+.np-wire-headline {
+  font-size: 20px;
+  line-height: 1.4;
+  color: var(--color-np-text);
+}
+:root[lang="hi"] .np-wire-headline { line-height: 1.5; }
+
+/* On a phone the tag goes above the headline and the button becomes a square
+   - a 128px column for a one-word tag is most of a 360px screen. */
+@media (max-width: 767px) {
+  .np-wire-row {
+    grid-template-columns: minmax(0, 1fr) 44px;
+    grid-template-areas:
+      "meta  write"
+      "head  write";
+    gap: 6px 12px;
+  }
+  .np-wire-time { grid-area: meta; }
+  .np-wire-row > .np-tag { grid-area: meta; justify-self: start; margin-inline-start: 56px; }
+  .np-wire-headline { grid-area: head; font-size: 18px; }
+  .np-wire-write {
+    grid-area: write;
+    align-self: center;
+    width: 44px;
+    padding: 0 !important;
+    justify-content: center;
+  }
+  .np-wire-write > span,
+  .np-wire-write { font-size: 0; }
+  .np-wire-write svg { font-size: 16px; }
+}
+
+/* ── Bottom row ───────────────────────────────────────────────────────────*/
+.np-bottom {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  align-items: start;
+}
+@media (max-width: 1023px) { .np-bottom { grid-template-columns: minmax(0, 1fr); } }
+
+.np-drafts {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+/* Three lines and then the edge of the sheet. A draft is a thing to pick up,
+   not a thing to read here. */
+.np-draft-excerpt {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Week ─────────────────────────────────────────────────────────────────*/
+.np-week { display: flex; align-items: flex-end; gap: 8px; height: 120px; }
+.np-week-col { flex: 1; display: grid; justify-items: center; gap: 8px; align-content: end; height: 100%; }
+.np-week-bar {
+  width: 100%;
+  min-height: 3px;
+  height: var(--h, 0%);
+  border-radius: 4px 4px 0 0;
+  background: var(--color-np-rule-strong);
+  transform-origin: bottom;
+  animation: npGrowY var(--np-dur-4) var(--np-ease-out) both;
+}
+.np-week-bar.is-today { background: var(--color-np-neela-300); }
+.np-week-label { font-size: 12px; color: var(--color-np-faint); }
+@keyframes npGrowY { from { transform: scaleY(0); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .np-week-bar, .np-milestone-fill { animation: none; }
+}

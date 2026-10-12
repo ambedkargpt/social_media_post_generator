@@ -1070,4 +1070,8 @@ export default {
   'auth.googleAccountNote': 'This account signs in with Google, so there is no password to reset.',
   "auth.emailInvalid": "Please enter a valid email address.",
   "auth.termsRequired": "Please accept the terms to continue.",
+  "dash.noNews": "News is being gathered",
+  "dash.noNewsSub": "Today's stories will appear here shortly.",
+  "posts.emptyDesc": "Posts you start and do not finish will wait here.",
+  "posts.post": "Post",
 };
