@@ -39,12 +39,25 @@ def _citations() -> dict:
 
 
 def citation(chunk_id: Optional[str], volume=None) -> dict:
-    """{'volume', 'work', 'pages', 'pdf_page'} for a chunk; falls back to the volume alone."""
+    """{'volume', 'work', 'pages', 'pdf_page', 'page'} for a chunk; falls back to the volume alone.
+
+    `pages` is the printed range ("156–157"). `pdf_page` and `page` are the one page to point a
+    reader at - the page holding most of the passage, which for a passage starting on the last
+    lines of a page is the next one. Rows are [volume, work, pages, pdf_page, page]; older maps
+    with 3 or 4 elements still load.
+    """
     row = _citations().get(str(chunk_id or ""))
-    if row:
-        vol, work, pages, *rest = row
-        return {"volume": vol, "work": work, "pages": pages, "pdf_page": rest[0] if rest else None}
-    return {"volume": volume, "work": None, "pages": None, "pdf_page": None}
+    if not row:
+        return {"volume": volume, "work": None, "pages": None, "pdf_page": None, "page": None}
+    vol, work, pages, *rest = row
+    pdf_page = rest[0] if rest else None
+    first = (pages or "").split("–")[0]
+    page = rest[1] if len(rest) > 1 else (int(first) if first.isdigit() else None)
+    if pages and pages.startswith("-"):  # front matter, before printed page 1: no page number
+        pages = None
+    if page is not None and page < 1:
+        page = None
+    return {"volume": vol, "work": work, "pages": pages, "pdf_page": pdf_page, "page": page}
 
 
 def book_link(chunk_id: Optional[str], volume=None) -> Optional[str]:
@@ -59,7 +72,7 @@ def book_link(chunk_id: Optional[str], volume=None) -> Optional[str]:
     c = citation(chunk_id, volume)
     if not (c["volume"] and c["pdf_page"]):
         return None
-    query = {"p": (c["pages"] or "").split("–")[0]} if c["pages"] else {}
+    query = {"p": c["page"]} if c["page"] else {}
     if c["work"]:
         query["t"] = c["work"]
     return f"/book/{c['volume']}/{c['pdf_page']}" + (f"?{urlencode(query)}" if query else "")
@@ -85,13 +98,12 @@ def reference(chunk_id: Optional[str], volume=None) -> str:
 def pill_label(chunk_id: Optional[str], volume=None) -> str:
     """Short label that fits the 40-character source pill, keeping volume and page visible.
 
-    Only the first page is shown here so the title keeps its room; the full page range is in
-    the pill's hover text (the snippet).
+    Only one page is shown so the title keeps its room - the page the pill opens, which holds
+    most of the passage.
     """
     c = citation(chunk_id, volume)
-    first_page = (c["pages"] or "").split("–")[0]
     suffix = " ".join(x for x in (f"Vol {c['volume']}" if c["volume"] else "",
-                                  f"p. {first_page}" if first_page else "") if x)
+                                  f"p. {c['page']}" if c["page"] else "") if x)
     title = c["work"] or SERIES
     room = PILL_MAX - len(suffix) - 3  # " · "
     if len(title) > room:

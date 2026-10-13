@@ -127,7 +127,23 @@ def test_without_a_sources_line_a_grounded_answer_shows_all_pills():
 def test_book_link_opens_the_right_pdf_page_and_labels_it_like_the_book():
     from backend.semrag.presentation import book_link
     assert book_link("v1_chunk_0215") == "/book/1/82?p=67&t=Annihilation+of+Caste"   # printed p. 67 = PDF page 82
-    assert book_link("v2_chunk_0268").startswith("/book/2/189?p=170&")                 # Vol. 2 offset is 19
+    assert book_link("v2_chunk_0268").startswith("/book/2/190?p=171&")   # pp. 170–171, mostly 171; offset 19
+
+
+def test_a_passage_over_a_page_break_opens_the_page_holding_most_of_it():
+    from backend.semrag.presentation import book_link
+    # Starts on the last lines of p. 156 (about Bombay); the sentence on fundamental rights and
+    # writs is on p. 157. Reported from a live answer that opened the wrong page.
+    assert book_link("v1_chunk_0459").startswith("/book/1/172?p=157&")
+    assert pill_label("v1_chunk_0459").endswith("Vol 1 p. 157")
+    assert reference("v1_chunk_0459") == "Thoughts on Linguistic States, Vol. 1, pp. 156–157"
+    # Round Table: the 'sanctions for the enforcement of fundamental rights' sentence is on p. 555.
+    assert book_link("v2_chunk_0889").startswith("/book/2/576?p=555&")
+
+
+def test_front_matter_gets_no_negative_page_number():
+    from backend.semrag.presentation import book_link
+    assert "p. -" not in pill_label("v1_chunk_0000") and "p=-" not in (book_link("v1_chunk_0000") or "")
 
 
 def test_unknown_passage_gets_no_link_rather_than_a_wrong_one():
