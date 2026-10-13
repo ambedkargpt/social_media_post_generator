@@ -20,6 +20,5 @@ Disallow: /generate
 Disallow: /posts
 Disallow: /preferences
 Disallow: /bhimbot
-Disallow: /bhimradio
 
 Sitemap: https://www.ambedkargpt.in/sitemap.xml

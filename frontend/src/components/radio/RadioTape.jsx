@@ -1,3 +1,4 @@
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { useI18n } from '../../i18n/index.jsx';
 import {
   Label, SignalMeter, StatusLine, Transcript, TuneButton, VolumeControl,
@@ -18,7 +19,11 @@ import { ACCENT, ACCENT_HOVER, DEEP, INK, MUTED, RULE, SURFACE, istClock } from 
 // tape cannot drift out of step with itself.
 const PX_PER_SEC = 11;
 const NEEDLE_X = 300;
-const TAPE_H = 240;
+// Tall enough for three lines of a 20px headline and the ruler under it, and
+// no taller. At 240 a one-line headline sat on top of a block that was
+// mostly empty.
+const TAPE_H = 184;
+const RULER_H = 34;
 
 // How much of the bulletin to draw. The rest is off-screen and costs nothing
 // to leave out; a full day of loops would be tens of thousands of pixels.
@@ -28,9 +33,40 @@ const AFTER = 6;
 export default function RadioTape({
   now, story, storyIndex, total, offsetInStory, storyDuration, cycleLength,
   elapsed, tracks, listening, onTune, canTune, nextInSec, progress,
-  volume, onVolume, reduced,
+  volume, onVolume, reduced, className = '',
 }) {
   const { t } = useI18n();
+
+  // Smooth motion between clock ticks.
+  //
+  // `elapsed` arrives four times a second, and every segment is placed from it
+  // - so on its own the tape moved in 2.75px jumps at 4 fps, which reads as
+  // stuttering rather than as a tape running. The segments are still laid out
+  // from `elapsed` on each render, but they sit inside one strip that a
+  // requestAnimationFrame loop slides left by however much time has passed
+  // since that render. Each new tick lays everything out where the strip had
+  // just slid it and the slide starts again from zero, so the two meet with
+  // no visible seam. One transform on one element per frame, no re-render.
+  const stripRef = useRef(null);
+  const base = useRef(0);
+  useLayoutEffect(() => {
+    base.current = performance.now();
+    if (stripRef.current) stripRef.current.style.transform = 'translateX(0px)';
+  }, [elapsed]);
+  useEffect(() => {
+    if (reduced) return undefined;
+    let frame;
+    const step = () => {
+      // Capped at half a second: if the next tick is late - a busy main thread,
+      // an audio stall in the demo - the strip waits rather than running on
+      // ahead and then snapping back.
+      const dt = Math.min((performance.now() - base.current) / 1000, 0.5);
+      if (stripRef.current) stripRef.current.style.transform = `translateX(${-dt * PX_PER_SEC}px)`;
+      frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [reduced]);
 
   // `elapsed` is seconds into the loop, handed down rather than derived from
   // the current story: during the opening music there is no current story, and
@@ -64,7 +100,7 @@ export default function RadioTape({
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
+    <div className={className} style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
 
       {/* ── masthead ── */}
       <header
@@ -161,6 +197,11 @@ export default function RadioTape({
           }}
         />
 
+        <div
+          ref={stripRef}
+          aria-hidden="true"
+          style={{ position: 'absolute', inset: 0, willChange: 'transform' }}
+        >
         {visible.map((seg) => {
           const x = (seg.start - elapsed) * PX_PER_SEC + NEEDLE_X;
           const live = seg.index === storyIndex && seg.start <= elapsed
@@ -172,10 +213,10 @@ export default function RadioTape({
               style={{
                 position: 'absolute', top: 0, left: 0,
                 width: seg.duration * PX_PER_SEC,
-                height: TAPE_H - 34,
+                height: TAPE_H - RULER_H,
                 transform: `translateX(${x}px)`,
                 borderLeft: `2px solid ${live ? ACCENT : RULE}`,
-                padding: '14px 12px',
+                padding: '12px 14px',
                 boxSizing: 'border-box',
                 color: past ? MUTED : INK,
                 // Stepped rather than continuous when motion is reduced; the
@@ -192,7 +233,9 @@ export default function RadioTape({
               <p
                 lang="hi"
                 style={{
-                  margin: 0, fontSize: 14, lineHeight: 1.4,
+                  // 20px: at 14 a headline was something to squint at while it
+                  // slid past, which is the one thing a tape has to avoid.
+                  margin: 0, fontSize: 20, lineHeight: 1.4, fontWeight: 600,
                   fontFamily: 'var(--font-hindi)',
                   display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical',
                   overflow: 'hidden',
@@ -205,7 +248,7 @@ export default function RadioTape({
         })}
 
         {/* the ruler */}
-        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 34 }}>
+        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: RULER_H }}>
           {ticks.map(({ s, major }) => {
             const x = (s - elapsed) * PX_PER_SEC + NEEDLE_X;
             if (x < -60 || x > 2400) return null;
@@ -233,6 +276,7 @@ export default function RadioTape({
               </div>
             );
           })}
+        </div>
         </div>
 
         {/* the needle */}

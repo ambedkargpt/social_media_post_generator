@@ -96,7 +96,13 @@ test.describe('the broadcast desk', () => {
     await signedInAs(page, 'someone.else@example.com');
     await page.goto('/bhimradio');
 
+    await expect(page.getByText(/now on air|अभी ऑन एयर/i).first()).toBeVisible();
     await expect(page.getByRole('button', { name: /walk-through|पूरी सैर/i })).toHaveCount(0);
+    // The controls themselves, not just the button that opens them. The panel
+    // can be open from the start (the local-demo flag does that), and then the
+    // toggle reads "hide" - so checking only for the "walk-through" label
+    // passed while the seek slider was on screen for everyone.
+    await expect(page.getByRole('slider', { name: /seek|आगे-पीछे/i })).toHaveCount(0);
   });
   test('the story sits left of the running order, both on screen', async ({ page }) => {
     // The first build put a generated element in the middle grid column. It
@@ -182,7 +188,10 @@ test.describe('the broadcast desk', () => {
       });
       await page.goto('/bhimradio');
 
-      const segment = page.locator('[role="img"] > div').nth(1);
+      // A segment inside the sliding strip. The strip itself is the second
+      // child of the tape now, and it resets to zero on every clock tick, so
+      // measuring it would read the frame-rate slide rather than the tape.
+      const segment = page.locator('[role="img"] > div[aria-hidden="true"] > div').nth(1);
       await expect(segment).toBeVisible();
       const before = (await segment.boundingBox()).x;
       await page.waitForTimeout(2200);

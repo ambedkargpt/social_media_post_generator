@@ -5,6 +5,7 @@ import logoSrc from '../assets/images/logo-animation.webp';
 import { useAuth } from '../context/AuthContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useI18n } from '../i18n/index.jsx';
+import { RADIO_REQUIRES_LOGIN } from '../data/radioAccess';
 
 // action: 'scroll' (default) | 'bheembot' | 'dashboard' | 'radio' | 'section:<id>'
 const navItems = [
@@ -15,6 +16,15 @@ const navItems = [
   { key: 'nav.radioCaps',    sectionId: 'radio',   action: 'radio' },
   { key: 'nav.contactCaps',  sectionId: 'contact' },
 ];
+
+// Off the landing page there are no sections to scroll-track, so the item to
+// light is the page itself. Anything not listed lights nothing: /about is not
+// "home", and claiming it is told the reader they were somewhere they were not.
+const ITEM_FOR_PATH = {
+  '/bhimradio': 'radio',
+  '/bhimbot': 'bheem',
+  '/contact': 'contact',
+};
 
 export default function Navbar() {
   const { t } = useI18n();
@@ -64,6 +74,13 @@ export default function Navbar() {
     };
   }, [menuOpen]);
 
+  // On the landing page the scroll position decides; anywhere else the path
+  // does. `active` used to be the only source, and it starts as 'home', so
+  // every other page - the radio included - showed HOME as the current one.
+  const current = location.pathname === '/'
+    ? active
+    : (ITEM_FOR_PATH[location.pathname] ?? null);
+
   // Close dropdown on route change
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
@@ -82,12 +99,12 @@ export default function Navbar() {
     setActive(item.sectionId);
     setMenuOpen(false);
 
-    // The radio lives behind the dashboard shell, so a listener has to be
-    // signed in. Opening the floating player straight from the landing page
-    // let a visitor hear a bulletin without ever having an account, which is
-    // the one thing the station is not for.
+    // The radio is a standalone page now - anyone can listen, signed in or
+    // not. The login handshake below is the wall coming back: it is only
+    // taken when VITE_RADIO_REQUIRES_LOGIN is set, which is how to put it
+    // back once there are enough users to want an account behind it.
     if (item.action === 'radio') {
-      if (currentUser) {
+      if (currentUser || !RADIO_REQUIRES_LOGIN) {
         navigate('/bhimradio');
       } else {
         sessionStorage.setItem('auth_redirect', '/bhimradio');
@@ -153,12 +170,13 @@ export default function Navbar() {
         {/* ── Desktop nav ──────────────────────── */}
         <nav className="hidden items-center gap-7 font-count text-[13px] font-medium tracking-[0.1em] lg:flex">
           {navItems.map((item) => {
-            const isActive = active === item.sectionId;
+            const isActive = current === item.sectionId;
             return (
               <button
                 key={item.sectionId}
                 type="button"
                 onClick={() => handleNav(item)}
+                aria-current={isActive ? (location.pathname === '/' ? 'location' : 'page') : undefined}
                 className={`relative rounded-md px-3 py-1.5 transition-all duration-200 ${
                   isActive
                     ? 'bg-[#0d1a3a] border border-[#3f6bd4]/60 text-[#3f9fff] shadow-[0_0_12px_rgba(63,159,255,0.18)]'
@@ -213,12 +231,13 @@ export default function Navbar() {
         >
           <nav className="mx-auto w-full max-w-[1440px] px-4 py-2">
             {navItems.map((item) => {
-              const isActive = active === item.sectionId;
+              const isActive = current === item.sectionId;
               return (
                 <button
                   key={item.sectionId}
                   type="button"
                   onClick={() => handleNav(item)}
+                  aria-current={isActive ? (location.pathname === '/' ? 'location' : 'page') : undefined}
                   className={[
                     'flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left font-count text-[11.5px] font-medium tracking-[0.14em] transition-all duration-150',
                     isActive
