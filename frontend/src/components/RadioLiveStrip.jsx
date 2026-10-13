@@ -3,6 +3,7 @@ import { X, Radio } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n/index.jsx';
+import { RADIO_REQUIRES_LOGIN } from '../data/radioAccess';
 
 /**
  * "Bhim Radio is live" strip for the public pages.
@@ -29,8 +30,13 @@ export default function RadioLiveStrip({ className = '', onHide }) {
   }
 
   function goListen() {
-    // Same handshake the navbar and hero use, so the listener lands on the
-    // player itself after signing in rather than on a generic dashboard.
+    // Straight to the station: it needs no account. With the wall up this is
+    // the same handshake the navbar uses, so the listener lands on the player
+    // itself after signing in rather than on a generic dashboard.
+    if (!RADIO_REQUIRES_LOGIN) {
+      navigate('/bhimradio');
+      return;
+    }
     sessionStorage.setItem('auth_redirect', '/bhimradio');
     navigate('/login');
   }
@@ -73,7 +79,7 @@ export default function RadioLiveStrip({ className = '', onHide }) {
             onClick={goListen}
             className="ml-2 inline-flex items-center rounded-full bg-white/95 px-3 py-[3px] text-[11px] font-bold text-[#0b2a5c] align-middle transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#15418c] md:text-[12px]"
           >
-            {t('radioStrip.cta')}
+            {t(RADIO_REQUIRES_LOGIN ? 'radioStrip.cta' : 'radioStrip.ctaOpen')}
           </button>
         </p>
 

@@ -5,6 +5,8 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { CurtainProvider } from './context/CurtainContext';
 import { RadioProvider } from './context/RadioContext';
 import RadioNowPlayingBar from './components/radio/RadioNowPlayingBar';
+import MainLayout from './layouts/MainLayout';
+import { RADIO_REQUIRES_LOGIN } from './data/radioAccess';
 import { usePageViews } from './analytics/usePageViews';
 import ProtectedRoute   from './components/ProtectedRoute';
 
@@ -50,7 +52,13 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 // pageEnter animation replays on each navigation.
 // Screens that share the signed-in frame. Moving between them must not look
 // like arriving somewhere new, because the rail does not go anywhere.
-const APP_PATHS = ['/dashboard', '/generate', '/preferences', '/posts', '/bhimradio'];
+// Which paths are the signed-in app, for the page transition's key. The radio
+// is one of them only while it sits inside the dashboard shell; as a public
+// page it is an ordinary route with its own frame, like /about.
+const APP_PATHS = [
+  '/dashboard', '/generate', '/preferences', '/posts',
+  ...(RADIO_REQUIRES_LOGIN ? ['/bhimradio'] : []),
+];
 
 function PageTransition({ children }) {
   const location = useLocation();
@@ -153,6 +161,17 @@ export default function App() {
             <Route path="/otp"              element={<Otp />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
 
+            {/* Standalone: no account needed, so a link to it works for anyone.
+                It gets the public frame - navbar and footer - rather than the
+                dashboard rail, because a visitor who has just arrived from a
+                shared link has no dashboard to be in. `bare` drops the two
+                promotional strips, which on this page would be a milestone
+                bar and an announcement of the thing they are already
+                looking at. */}
+            {!RADIO_REQUIRES_LOGIN && (
+              <Route path="/bhimradio" element={<MainLayout bare><BhimRadio /></MainLayout>} />
+            )}
+
             {/* protected */}
             <Route path="/profile-setup" element={
               <ProtectedRoute><ProfileSetup /></ProtectedRoute>
@@ -169,7 +188,7 @@ export default function App() {
               <Route path="/generate" element={<ServiceSelection />} />
               <Route path="/preferences" element={<Preferences />} />
               <Route path="/posts" element={<PostHistory />} />
-              <Route path="/bhimradio" element={<BhimRadio />} />
+              {RADIO_REQUIRES_LOGIN && <Route path="/bhimradio" element={<BhimRadio />} />}
             </Route>
             <Route path="/generate/social-media" element={
               <ProtectedRoute><SocialMediaPostGenerator /></ProtectedRoute>

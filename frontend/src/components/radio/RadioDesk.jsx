@@ -15,12 +15,12 @@ import { ACCENT, INK, MUTED, RULE, SURFACE, airTime, istClock } from './radioTok
 export default function RadioDesk({
   now, story, storyIndex, total, offsetInStory, storyDuration,
   upcoming, listening, onTune, canTune, nextInSec, progress,
-  volume, onVolume, clockLabel, cycleLength,
+  volume, onVolume, clockLabel, cycleLength, className = '',
 }) {
   const { t } = useI18n();
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
+    <div className={className} style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
 
       {/* ── header ── */}
       <header

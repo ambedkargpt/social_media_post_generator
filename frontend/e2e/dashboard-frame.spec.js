@@ -66,7 +66,7 @@ test.describe('the dashboard frame', () => {
     const rail = page.locator(RAIL).first();
     await rail.evaluate((el) => { el.dataset.e2eMark = 'kept'; });
 
-    for (const name of [/preferences|प्राथमिकता/i, /bhim radio|भीम रेडियो/i, /dashboard|डैशबोर्ड/i]) {
+    for (const name of [/preferences|प्राथमिकता/i, /generate|पोस्ट बनाएँ/i, /dashboard|डैशबोर्ड/i]) {
       await page.getByRole('button', { name }).first().click();
       await page.waitForTimeout(400);
       await expect(page.locator(RAIL).first()).toHaveAttribute('data-e2e-mark', 'kept');
@@ -86,7 +86,9 @@ test.describe('the dashboard frame', () => {
       await route.continue();
     });
 
-    await page.getByRole('button', { name: /bhim radio|भीम रेडियो/i }).first().click();
+    // Any lazy screen inside the frame will do. The radio used to be the one
+    // here, until it became a public page with a frame of its own.
+    await page.getByRole('button', { name: /generate|पोस्ट बनाएँ/i }).first().click();
     await expect(page.locator(RAIL).first()).toHaveAttribute('data-e2e-mark', 'kept');
   });
 });

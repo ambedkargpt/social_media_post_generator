@@ -7,6 +7,7 @@ import RadioDesk from '../components/radio/RadioDesk';
 import RadioTape from '../components/radio/RadioTape';
 import { INK, MUTED, RULE, SURFACE, mmss } from '../components/radio/radioTokens';
 import { useI18n } from '../i18n/index.jsx';
+import { RADIO_REQUIRES_LOGIN } from '../data/radioAccess';
 
 /* ── the station ──────────────────────────────────────────────────────────
    Two layouts over one broadcast. Both are fed from the same derived state
@@ -16,10 +17,27 @@ import { useI18n } from '../i18n/index.jsx';
 
 const LAYOUT_KEY = 'bhim-radio-layout';
 
+// On the standalone page the way to start listening goes straight under the
+// title instead of at the foot of the desk. As a dashboard screen the desk
+// filled the viewport and the foot was on screen; in the public frame the
+// navbar and the news crawl take 118px and the story below is taller than
+// the window, which put the one control that matters at y=1044 on a laptop
+// and past 2000 on a phone. Sticky and fixed are both unavailable here - the
+// public layout's overflow-x clips sticky and the page transition's transform
+// re-anchors fixed - so the order of the page is what changes.
+const STANDALONE = !RADIO_REQUIRES_LOGIN;
+const TUNER_FIRST = STANDALONE;
+
 // Accounts that may hold the tape still: play/pause, a scrub that stays put,
 // and the segment walk-through. Hard-coded because it is for one demonstration
 // and is meant to be deleted after it, which a settings flag quietly would not.
 const DEMO_ACCOUNTS = ['krishprakash1232@gmail.com'];
+
+// The same controls for whoever is running the app on their own machine,
+// signed in or not. Gated on DEV as well as the variable, so a stray value in
+// a production environment cannot switch it on: DEV is false in a build.
+// Set VITE_RADIO_DEMO_CONTROLS=true in frontend/.env.local (gitignored).
+const LOCAL_DEMO = import.meta.env.DEV && import.meta.env.VITE_RADIO_DEMO_CONTROLS === 'true';
 
 function readLayout() {
   // Per-viewer convenience. Blocked site data throws rather than returning
@@ -45,7 +63,8 @@ export default function BhimRadioPage() {
   } = useRadio();
 
   const [layout, setLayout] = useState(readLayout);
-  const [showDemo, setShowDemo] = useState(false);
+  // Open from the start locally: the panel is what the flag is for.
+  const [showDemo, setShowDemo] = useState(LOCAL_DEMO);
   const [now, setNow] = useState(() => new Date());
 
   // Fetch the manifest. Nothing is torn down on unmount - the listener may
@@ -53,7 +72,8 @@ export default function BhimRadioPage() {
   // of the context living above <Routes>.
   useEffect(() => { primeStation(); }, [primeStation]);
 
-  const isDemo = DEMO_ACCOUNTS.includes(String(currentUser?.email || '').toLowerCase());
+  const isDemo = LOCAL_DEMO
+    || DEMO_ACCOUNTS.includes(String(currentUser?.email || '').toLowerCase());
 
   // The demo account holds the tape rather than riding the broadcast. Set on
   // the context, not here, because the audio outlives this page.
@@ -142,6 +162,10 @@ export default function BhimRadioPage() {
 
   return (
     <>
+      {/* The ground. Inside the dashboard the shell already paints one; as a
+          standalone page the station sat on the public layout's flat navy,
+          which read as an empty room. Full-bleed, static, behind the desk. */}
+      <div className={STANDALONE ? 'bhim-ground' : undefined}>
       <div className="bhim-station">
 
         {/* ── layout toggle ──
@@ -212,12 +236,13 @@ export default function BhimRadioPage() {
           </div>
         ) : layout === 'tape' ? (
           <RadioTape
+            className={TUNER_FIRST ? 'bhim-tuner-first' : ''}
             {...shared}
             tracks={tracks}
             reduced={window.matchMedia?.('(prefers-reduced-motion: reduce)').matches}
           />
         ) : (
-          <RadioDesk {...shared} upcoming={upcoming} clockLabel={
+          <RadioDesk {...shared} className={TUNER_FIRST ? 'bhim-tuner-first' : ''} upcoming={upcoming} clockLabel={
             new Intl.DateTimeFormat('en-IN', {
               timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false,
             }).format(now)
@@ -278,8 +303,23 @@ export default function BhimRadioPage() {
           </div>
         )}
       </div>
+      </div>
 
       <style>{`
+        /* Light sources rather than a wash: a wide blue pool from the top-left
+           where the title is, a fainter one at the right edge, and a low warm
+           glow at the foot like an on-air lamp. No animation - a moving
+           gradient repaints the whole page on every frame, on a page whose
+           tape is already moving. */
+        .bhim-ground {
+          position: relative;
+          min-height: 100vh;
+          background:
+            radial-gradient(1100px 560px at 12% -6%, rgba(29, 122, 252, 0.22), transparent 62%),
+            radial-gradient(800px 600px at 100% 30%, rgba(63, 110, 255, 0.10), transparent 60%),
+            radial-gradient(900px 420px at 78% 108%, rgba(255, 107, 90, 0.07), transparent 65%),
+            linear-gradient(180deg, #08113a 0%, #05081a 48%, #040617 100%);
+        }
         .bhim-station {
           max-width: 1280px;
           margin-inline: auto;
@@ -293,6 +333,25 @@ export default function BhimRadioPage() {
         .bhim-station-switch {
           display: flex; gap: 8px; align-items: center;
           margin-bottom: 20px; flex-wrap: wrap;
+        }
+        /* Header, then the tuner, then everything else. CSS order rather than
+           moving the JSX, so the two layouts and their footers stay as they
+           are for the dashboard version. marginTop:auto on the footer is an
+           inline style, hence !important: left alone it would push the
+           tuner to the bottom of any spare height and away from the title. */
+        .bhim-tuner-first > header { order: 0; }
+        .bhim-tuner-first > footer {
+          order: 1; margin-top: 0 !important;
+          border-top: 0 !important; border-bottom: 2px solid ${RULE};
+        }
+        .bhim-tuner-first > :not(header):not(footer) { order: 2; }
+        /* On a phone the strip is the first thing under the title, so it is laid
+           out for a thumb: the button across the full width, and the status
+           line on a row of its own instead of a column a few characters wide. */
+        @media (max-width: 639px) {
+          .bhim-tuner-first > footer > :nth-child(1) { flex: 1 1 100% !important; width: 100% !important; }
+          .bhim-tuner-first > footer > :nth-child(3) { flex: 1 1 100% !important; order: 4; }
+          .bhim-tuner-first > footer > :nth-child(4) { flex: 1 1 100% !important; order: 5; }
         }
         .bhim-station input[type="range"] { accent-color: #1d7afc; }
         .bhim-station :focus-visible { outline: 2px solid #1d7afc; outline-offset: 2px; }

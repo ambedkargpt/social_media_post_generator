@@ -33,22 +33,26 @@ test.describe('radio live strip', () => {
     expect(box.height).toBeGreaterThan(24);
     expect(box.width).toBeGreaterThan(200);
 
-    await expect(strip.getByRole('button', { name: /log in to listen|लॉग इन/i })).toBeVisible();
+    await expect(strip.getByRole('button', { name: /listen now|अभी सुनिए/i })).toBeVisible();
   });
 
-  test('it sends the visitor to login, and remembers where they were going',
+  test('it takes the visitor straight to the station, with no login in between',
     async ({ page }) => {
+      // The radio is a standalone page: nobody needs an account to hear it,
+      // and a visitor sent to a login form to reach a thing described as
+      // "live now" is a visitor who leaves.
       await page.goto('/');
-      await page.locator(STRIP).getByRole('button', { name: /log in to listen|लॉग इन/i }).click();
+      await page.locator(STRIP).getByRole('button', { name: /listen now|अभी सुनिए/i }).click();
 
-      await expect(page).toHaveURL(/\/login/);
+      await expect(page).toHaveURL(/\/bhimradio/);
+      // No login handshake left behind either: a stale auth_redirect would
+      // send them to the radio again after some later, unrelated sign-in.
       const intended = await page.evaluate(() => sessionStorage.getItem('auth_redirect'));
-      expect(intended).toBe('/bhimradio');
+      expect(intended).toBeNull();
     });
-
   test('it is not shown to someone already signed in', async ({ page }) => {
-    // The strip's whole message is "log in to listen", so for a signed-in
-    // reader it is an advert for a page already in their sidebar.
+    // Signed in, the navbar already carries the radio, and the strip would
+    // push the whole landing page down 48px to say what it says.
     await page.addInitScript(() => {
       sessionStorage.setItem('user', JSON.stringify({ id: 'u1', username: 'tester' }));
     });

@@ -1,6 +1,8 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
 /**
  * Open the connection to the API while the JavaScript is still downloading.
@@ -35,11 +37,100 @@ function preconnectApi(mode) {
   }
 }
 
+/**
+ * Link previews for pages that are shared as links.
+ *
+ * The app is a single-page shell: every URL is answered with the same
+ * index.html, and the page's real title and content are filled in by
+ * JavaScript. WhatsApp, Facebook, X, Telegram and LinkedIn do not run
+ * JavaScript when they fetch a link to build its preview - they read the tags
+ * in the HTML they are served. So a link to /bhimradio, answered with the
+ * generic shell, previews as a bare URL with no image.
+ *
+ * This writes one extra file per shared page, dist/<name>.html: index.html
+ * with that page's title, description and image swapped in. vercel.json
+ * rewrites the path to it. The page is otherwise identical - same script
+ * tags, same root - so a person who opens it gets the normal app and the
+ * router takes over exactly as it does from index.html.
+ *
+ * In dev the same tags are injected into index.html when the URL matches, so
+ * a preview can be checked before a build.
+ *
+ * VITE_SITE_URL overrides the origin; the default is the production host,
+ * because a preview image must be an absolute URL and the build has no other
+ * way to know where it will be served from.
+ */
+const SHARE_PAGES = [
+  {
+    path: '/bhimradio',
+    file: 'bhimradio.html',
+    title: 'भीम रेडियो · Bhim Radio - AmbedkarGPT',
+    description: 'आज का राजनीतिक बुलेटिन, हिंदी में - बिना लॉगिन के सुनिए। '
+      + "Today's political bulletin in Hindi. No login needed.",
+    image: '/og/bhimradio.jpg',
+    imageAlt: 'भीम रेडियो - Bhim Radio, AmbedkarGPT का हिंदी राजनीतिक बुलेटिन',
+  },
+]
+
+const esc = (v) => String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
+
+function shareTags(page, site) {
+  const url = site + page.path
+  const image = site + page.image
+  return [
+    `<meta name="description" content="${esc(page.description)}" />`,
+    `<link rel="canonical" href="${esc(url)}" />`,
+    '<meta property="og:type" content="website" />',
+    '<meta property="og:site_name" content="AmbedkarGPT" />',
+    '<meta property="og:locale" content="hi_IN" />',
+    `<meta property="og:title" content="${esc(page.title)}" />`,
+    `<meta property="og:description" content="${esc(page.description)}" />`,
+    `<meta property="og:url" content="${esc(url)}" />`,
+    `<meta property="og:image" content="${esc(image)}" />`,
+    '<meta property="og:image:type" content="image/jpeg" />',
+    '<meta property="og:image:width" content="1200" />',
+    '<meta property="og:image:height" content="630" />',
+    `<meta property="og:image:alt" content="${esc(page.imageAlt)}" />`,
+    '<meta name="twitter:card" content="summary_large_image" />',
+    `<meta name="twitter:title" content="${esc(page.title)}" />`,
+    `<meta name="twitter:description" content="${esc(page.description)}" />`,
+    `<meta name="twitter:image" content="${esc(image)}" />`,
+  ].join('\n    ')
+}
+
+function withShareTags(html, page, site) {
+  const titled = html.replace(/<title>[^<]*<\/title>/, `<title>${esc(page.title)}</title>`)
+  return titled.replace('</head>', `    ${shareTags(page, site)}\n  </head>`)
+}
+
+function sharePages(mode) {
+  const site = (loadEnv(mode, '.', '').VITE_SITE_URL || 'https://www.ambedkargpt.in').replace(/\/+$/, '')
+  let outDir = 'dist'
+  return {
+    name: 'share-pages',
+    configResolved(config) { outDir = config.build.outDir },
+    transformIndexHtml(html, ctx) {
+      // Dev only: during a build the pages are written by closeBundle below.
+      const page = SHARE_PAGES.find((p) => ctx.originalUrl?.split('?')[0] === p.path)
+      return page ? withShareTags(html, page, site) : html
+    },
+    closeBundle() {
+      const index = resolve(outDir, 'index.html')
+      if (!existsSync(index)) return
+      const base = readFileSync(index, 'utf8')
+      for (const page of SHARE_PAGES) {
+        writeFileSync(resolve(outDir, page.file), withShareTags(base, page, site))
+      }
+    },
+  }
+}
+
 export default defineConfig(({ mode }) => ({
   plugins: [
     tailwindcss(),
     react(),
     preconnectApi(mode),
+    sharePages(mode),
   ],
   server: {
     headers: {

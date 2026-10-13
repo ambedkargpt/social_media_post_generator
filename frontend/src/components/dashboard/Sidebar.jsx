@@ -19,6 +19,7 @@ import {
 import logoSrc from '../../assets/images/logo-animation.webp';
 import { useI18n } from '../../i18n/index.jsx';
 import { useRadio } from '../../context/RadioContext';
+import { RADIO_REQUIRES_LOGIN } from '../../data/radioAccess';
 
 // Generating a post is the product's primary action, so it leads the nav and is
 // styled as a call to action rather than another list item.
@@ -26,7 +27,7 @@ const PRIMARY = { id: 'generate', labelKey: 'nav.generate', Icon: Sparkles, rout
 
 // `soon: true` marks a destination that does not exist yet. Rendering these as
 // plain items made them look broken: clicking did nothing and gave no feedback.
-const NAV = [
+const ALL_NAV = [
   { id: 'dashboard',  labelKey: 'nav.dashboard',        Icon: LayoutGrid },
   { id: 'bheembot',   labelKey: 'dash.bheembot',         Icon: Bot, route: '/bhimbot' },
   { id: 'radio',      labelKey: 'radio.title',            Icon: Radio, route: '/bhimradio' },
@@ -37,6 +38,11 @@ const NAV = [
   { id: 'profile',    labelKey: 'nav.profile',          Icon: User, route: '/profile-setup' },
   { id: 'settings',   labelKey: 'nav.settings',         Icon: Settings, soon: true },
 ];
+
+// The radio is a standalone public page for now, reached from the navbar or a
+// shared link, so it has no row in the rail. It comes back with the login wall
+// (see data/radioAccess.js), which is when it is a signed-in feature again.
+const NAV = ALL_NAV.filter((item) => item.id !== 'radio' || RADIO_REQUIRES_LOGIN);
 
 // The rail remembers whether it was collapsed. It frames every signed-in
 // screen, so a state that reset on navigation would be a state nobody could

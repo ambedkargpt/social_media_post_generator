@@ -10,13 +10,20 @@ import NewsTicker from '../components/NewsTicker';
 // so they are a lookup rather than a computed `md:pt-${n}`.
 const PINNED_PAD = ['md:pt-20', 'md:pt-[122px]', 'md:pt-[170px]', 'md:pt-[204px]'];
 
-export default function MainLayout({ children }) {
+/**
+ * `bare` leaves out the two promotional strips. A page that is itself the
+ * thing being promoted - the radio - has no use for a bar announcing it, and
+ * a milestone offer is noise to someone who followed a shared link to listen.
+ * The news crawl stays: it is content, not promotion.
+ */
+export default function MainLayout({ children, bare = false }) {
   const [bannerVisible, setBannerVisible] = useState(true);
   const [radioStripVisible, setRadioStripVisible] = useState(true);
   const { pathname, hash } = useLocation();
   // Not on the landing page: a visitor being told what the product is should
   // not be reading today's politics crawl past the pitch.
   const showTicker = pathname !== '/';
+  const showStrips = !bare;
 
   // Scroll to #section after a route change. Nothing did this, so a link from
   // another page to "/#contact" landed at the top of the home page and the
@@ -55,7 +62,7 @@ export default function MainLayout({ children }) {
           rather than hard-coded: with both hard-coded, dismissing the top one
           left a 48px gap under the navbar. */}
       <main
-        className={`relative min-h-screen overflow-x-hidden bg-[#05081a] pt-[72px] text-white transition-all duration-300 ${PINNED_PAD[Number(bannerVisible) + Number(radioStripVisible) + Number(showTicker)]}`}
+        className={`relative min-h-screen overflow-x-hidden bg-[#05081a] pt-[72px] text-white transition-all duration-300 ${PINNED_PAD[Number(showStrips && bannerVisible) + Number(showStrips && radioStripVisible) + Number(showTicker)]}`}
       >
         {/* In the flow on a phone, pinned from md.
             The banner's sentence needs three lines at 360px, and pinned under
@@ -72,14 +79,18 @@ export default function MainLayout({ children }) {
               a promotion sitting above it would read as the more urgent of
               the two. */}
           {showTicker && <NewsTicker />}
-          <MilestoneBanner
-            className="relative"
-            onHide={() => setBannerVisible(false)}
-          />
-          <RadioLiveStrip
-            className="relative"
-            onHide={() => setRadioStripVisible(false)}
-          />
+          {showStrips && (
+            <>
+              <MilestoneBanner
+                className="relative"
+                onHide={() => setBannerVisible(false)}
+              />
+              <RadioLiveStrip
+                className="relative"
+                onHide={() => setRadioStripVisible(false)}
+              />
+            </>
+          )}
         </div>
         <div className="relative z-10">{children}</div>
         <Footer />
