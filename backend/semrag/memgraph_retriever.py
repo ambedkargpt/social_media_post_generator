@@ -218,59 +218,55 @@ def retrieve_semrag_context(query: str, top_k: int = 5) -> Tuple[str, List[Dict[
     High-level entry point for BheemBot.
     Returns:
       (context_string_for_prompt, list_of_sources_for_ui)
+
+    Both are reader-facing: passages are labelled by book, volume and printed page, never by
+    internal chunk id, so neither the model nor the source pills can show one to a user.
+    Knowledge-graph triples are not passed to the model: they are internal, sometimes noisy,
+    and invite answers that talk about "the knowledge graph" instead of Dr. Ambedkar's words.
     """
+    from backend.semrag.presentation import citation, clean_passage, excerpt, pill_label, reference
+
     try:
         data = query_semrag(query, top_chunks=top_k)
     except Exception as exc:
         logger.warning("SemRAG retrieval encountered error: %s", exc)
         return "", []
 
-    chunks = data.get("chunks", [])
-    triples = data.get("triples", [])
+    chunks = [c for c in data.get("chunks", []) if clean_passage(c.get("text") or "")]
     communities = data.get("communities", [])
 
-    if not chunks and not triples and not communities:
+    if not chunks:
         return "", []
 
     parts: List[str] = []
-
-    if triples:
-        triple_lines = [
-            f"- ({t['source']}) ──[{t['relation']}]──> ({t['target']})" + (f": {t['description']}" if t.get('description') else "")
-            for t in triples[:8]
-        ]
-        parts.append("=== AMBEDKAR KNOWLEDGE GRAPH RELATIONSHIPS ===\n" + "\n".join(triple_lines))
+    for c in chunks:
+        ref = reference(c.get("chunk_id"), c.get("volume"))
+        parts.append(f"From {ref}:\n{clean_passage(c.get('text') or '')}")
 
     if communities:
-        comm_lines = [
-            f"- [Thematic Cluster Vol {c.get('volume')}]: {c.get('summary')}"
-            for c in communities
-        ]
-        parts.append("=== MACRO THEMATIC CONTEXT ===\n" + "\n".join(comm_lines))
-
-    if chunks:
-        chunk_lines = [
-            f"--- [Dr. Babasaheb Ambedkar: Writings and Speeches, Volume {c.get('volume')}, Chunk {c.get('chunk_id')}] ---\n{c.get('text')}"
-            for c in chunks
-        ]
-        parts.append("=== VERBATIM SOURCE PASSAGES (DR. B.R. AMBEDKAR) ===\n" + "\n\n".join(chunk_lines))
+        notes = [c.get("summary") for c in communities if c.get("summary")]
+        if notes:
+            parts.append(
+                "Background notes (editorial summaries, NOT Dr. Ambedkar's words - use only to "
+                "understand the topic, never quote or cite them):\n" + "\n".join(f"- {n}" for n in notes)
+            )
 
     context_str = "\n\n".join(parts)
 
     sources: List[Dict[str, str]] = []
     seen_sources = set()
     for c in chunks:
-        vol = c.get("volume") or 1
-        cid = c.get("chunk_id") or "chunk"
-        title = f"Dr. Ambedkar: Writings & Speeches (Vol. {vol}, {cid})"
-        if title not in seen_sources:
-            seen_sources.add(title)
-            snippet = (c.get("text") or "")[:200].rstrip() + "…"
-            sources.append({
-                "video_title": title,  # Frontend renders 'video_title' in BookOpen pill
-                "snippet": snippet,
-                "volume": str(vol),
-                "chunk_id": str(cid),
-            })
+        title = pill_label(c.get("chunk_id"), c.get("volume"))
+        if title in seen_sources:
+            continue
+        seen_sources.add(title)
+        cite = citation(c.get("chunk_id"), c.get("volume"))
+        sources.append({
+            "video_title": title,  # the frontend renders 'video_title' in the BookOpen pill
+            "snippet": f"{reference(c.get('chunk_id'), c.get('volume'))}: \u201c{excerpt(c.get('text') or '')}\u201d",
+            # internal: lets the endpoint keep only the pills the reply cites; never sent to the UI
+            "_ref": {"work": cite["work"], "volume": cite["volume"],
+                     "first_page": (cite["pages"] or "").split("\u2013")[0] or None},
+        })
 
     return context_str, sources

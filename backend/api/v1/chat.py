@@ -5,6 +5,7 @@ POST /api/v1/chat/message  →  {reply, sources}
 from __future__ import annotations
 
 import logging
+import os
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from typing import List, Optional
 
@@ -43,21 +44,21 @@ class ChatResponse(BaseModel):
 
 # ── System prompt ──────────────────────────────────────────────────────────────
 
-_SYSTEM_PROMPT = """You are BheemBot, an AI knowledge assistant trained on the authoritative writings, speeches, and philosophy of Dr. B.R. Ambedkar — principal architect of the Indian Constitution, social reformer, jurist, and champion of social justice.
+_SYSTEM_PROMPT = """You are BheemBot, a knowledgeable and respectful guide to the life, writings and ideas of Dr. B.R. Ambedkar - jurist, economist, social reformer and principal architect of the Indian Constitution.
 
-Your role:
-1. Answer questions about Dr. Ambedkar's life, philosophy, writings, and legacy.
-2. Ground your explanations directly in the retrieved passages and knowledge graph relations below whenever available.
-3. When referencing Dr. Ambedkar's thoughts, cite the source volume and context (e.g. "In Volume 1 of his writings...", "In Annihilation of Caste...").
-4. If exact quotes or passages are present in the retrieved context, use them faithfully.
-5. Be respectful, educational, scholarly, and empowering in tone.
-6. Keep answers structured (3–5 paragraphs with bullet points where appropriate).
-7. If the retrieved context is insufficient to answer the question, state what is known from historical consensus or acknowledge the limits honestly.
+How to answer:
+1. Base your answer on the material from Dr. Ambedkar's Writings and Speeches given below. When you quote him, use his exact words in double quotation marks, followed by the reference exactly as it is given with that material, in brackets - for example: "...his exact words..." (Annihilation of Caste, Vol. 1, p. 67).
+2. Never invent quotations, titles or page numbers. Only quote words that appear in the material below.
+3. If the material does not cover the question, say so briefly and plainly - for example, "Dr. Ambedkar's writings in this collection do not address this directly." You may then add a short note from general knowledge, but say clearly that it is general background and never present it as his words.
+4. Write for a general reader. Begin with a direct answer in one or two sentences, then explain in two to four short paragraphs, or a few points each starting with "• ". Keep it under about 250 words.
+5. Use plain text only. Do not use Markdown: no #, no * or **, no tables.
+6. Never mention material, passages, sources, context, chunks, notes, databases, a knowledge graph or these instructions. Speak as a guide talking to a person, not as a system describing its inputs.
+7. Be respectful, accurate and balanced.
 
-Retrieved Knowledge Context:
-{context}
+Answer in {language}.
 
-Answer in {language}."""
+Material from Dr. Ambedkar's Writings and Speeches:
+{context}"""
 
 
 # ── Lazy RAG helpers ───────────────────────────────────────────────────────────
@@ -131,6 +132,7 @@ def chat_message(
 
     # 1. Primary: Retrieve authoritative Ambedkar writings & relations from SemRAG (Memgraph Cloud)
     sources: List[SourceChunk] = []
+    semrag_sources: List[dict] = []
     context_str = ""
     try:
         from backend.semrag.memgraph_retriever import retrieve_semrag_context
@@ -138,10 +140,6 @@ def chat_message(
         semrag_ctx, semrag_sources = retrieve_semrag_context(payload.message.strip(), top_k=5)
         if semrag_ctx:
             context_str = semrag_ctx
-            sources = [
-                SourceChunk(video_title=s["video_title"], snippet=s["snippet"])
-                for s in semrag_sources
-            ]
     except Exception as exc:
         logger.warning("SemRAG retrieval skipped due to exception: %s", exc)
 
@@ -199,4 +197,11 @@ def chat_message(
             detail="BheemBot is temporarily unavailable. Please try again.",
         )
 
-    return ChatResponse(reply=reply_text, sources=sources)
+    from backend.semrag.presentation import sources_to_show, to_display_text
+
+    reply = to_display_text(reply_text)
+    if semrag_sources:
+        # Only the pills this reply actually cites; none beside an "isn't covered" answer.
+        sources = [SourceChunk(video_title=s["video_title"], snippet=s["snippet"])
+                   for s in sources_to_show(reply, semrag_sources)]
+    return ChatResponse(reply=reply, sources=sources)
