@@ -224,7 +224,7 @@ def retrieve_semrag_context(query: str, top_k: int = 5) -> Tuple[str, List[Dict[
     Knowledge-graph triples are not passed to the model: they are internal, sometimes noisy,
     and invite answers that talk about "the knowledge graph" instead of Dr. Ambedkar's words.
     """
-    from backend.semrag.presentation import clean_passage, excerpt, pill_label, reference
+    from backend.semrag.presentation import book_link, clean_passage, excerpt, pill_label, reference
 
     try:
         data = query_semrag(query, top_chunks=top_k)
@@ -265,6 +265,7 @@ def retrieve_semrag_context(query: str, top_k: int = 5) -> Tuple[str, List[Dict[
         by_title[title] = {
             "video_title": title,  # the frontend renders 'video_title' in the BookOpen pill
             "snippet": f"{reference(c.get('chunk_id'), c.get('volume'))}: \u201c{excerpt(c.get('text') or '')}\u201d",
+            "url": book_link(c.get("chunk_id"), c.get("volume")),  # opens the scanned page
             "_passages": [n],      # internal: which numbered material this pill stands for
         }
         sources.append(by_title[title])

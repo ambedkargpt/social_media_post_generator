@@ -39,12 +39,30 @@ def _citations() -> dict:
 
 
 def citation(chunk_id: Optional[str], volume=None) -> dict:
-    """{'volume', 'work', 'pages'} for a chunk; falls back to the volume alone."""
+    """{'volume', 'work', 'pages', 'pdf_page'} for a chunk; falls back to the volume alone."""
     row = _citations().get(str(chunk_id or ""))
     if row:
-        vol, work, pages = row
-        return {"volume": vol, "work": work, "pages": pages}
-    return {"volume": volume, "work": None, "pages": None}
+        vol, work, pages, *rest = row
+        return {"volume": vol, "work": work, "pages": pages, "pdf_page": rest[0] if rest else None}
+    return {"volume": volume, "work": None, "pages": None, "pdf_page": None}
+
+
+def book_link(chunk_id: Optional[str], volume=None) -> Optional[str]:
+    """Frontend path of the page viewer for this passage, e.g. '/book/1/82?p=67&t=Annihilation+of+Caste'.
+
+    The path carries the PDF page index (what the viewer opens); the printed page and title ride
+    along only so the viewer can label the page the way the book does. None when the page is not
+    known - the pill then stays a plain label rather than linking somewhere wrong.
+    """
+    from urllib.parse import urlencode
+
+    c = citation(chunk_id, volume)
+    if not (c["volume"] and c["pdf_page"]):
+        return None
+    query = {"p": (c["pages"] or "").split("–")[0]} if c["pages"] else {}
+    if c["work"]:
+        query["t"] = c["work"]
+    return f"/book/{c['volume']}/{c['pdf_page']}" + (f"?{urlencode(query)}" if query else "")
 
 
 def _pages_text(pages: Optional[str]) -> str:

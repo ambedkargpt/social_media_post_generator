@@ -4,7 +4,7 @@ import {
   Scale, BookOpen, Heart, HelpCircle,
   Search, Send, Mic, Paperclip,
   Sparkles, LayoutDashboard, Menu, X,
-  ChevronRight, Bot,
+  ChevronRight, Bot, ExternalLink,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { sendChatMessage } from '../api/chat';
@@ -124,16 +124,30 @@ function MessageBubble({ msg }) {
 
         {!isUser && !msg.typing && msg.sources?.length > 0 && (
           <div className="mt-1.5 flex flex-wrap gap-1.5">
-            {msg.sources.map((s, i) => (
-              <span
-                key={i}
-                title={s.snippet}
-                className="inline-flex items-center gap-1 rounded-full border border-[#1a3060]/60 bg-[#0a1428] px-2.5 py-0.5 text-[10.5px] text-[#5a80b8]"
-              >
-                <BookOpen size={9} strokeWidth={1.8} />
-                {s.video_title.length > 40 ? s.video_title.slice(0, 40) + '…' : s.video_title}
-              </span>
-            ))}
+            {msg.sources.map((s, i) => {
+              const label = s.video_title.length > 40 ? s.video_title.slice(0, 40) + '…' : s.video_title;
+              const pill = 'inline-flex items-center gap-1 rounded-full border border-[#1a3060]/60 bg-[#0a1428] px-2.5 py-0.5 text-[10.5px] text-[#5a80b8]';
+              // A book source opens its scanned page in a new tab; other sources stay plain labels.
+              return s.url ? (
+                <a
+                  key={i}
+                  href={s.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={`${s.snippet}\n\nOpen this page of the book in a new tab`}
+                  className={`${pill} transition-colors hover:border-[#4d94ff] hover:text-[#9cc3ff] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[#4d94ff]`}
+                >
+                  <BookOpen size={9} strokeWidth={1.8} />
+                  {label}
+                  <ExternalLink size={8} strokeWidth={2} className="opacity-70" aria-hidden="true" />
+                </a>
+              ) : (
+                <span key={i} title={s.snippet} className={pill}>
+                  <BookOpen size={9} strokeWidth={1.8} />
+                  {label}
+                </span>
+              );
+            })}
           </div>
         )}
       </div>

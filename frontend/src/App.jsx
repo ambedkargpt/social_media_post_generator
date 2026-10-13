@@ -33,6 +33,8 @@ const MusicGenerationStudio = lazy(() => import('./pages/MusicGenerationStudio')
 const Preferences = lazy(() => import('./pages/Preferences'));
 const PostHistory = lazy(() => import('./pages/PostHistory'));
 const BheemBot = lazy(() => import('./pages/BheemBot'));
+// Opened in a new tab from a BheemBot source pill; carries pdf.js, so it is its own chunk.
+const BookPage = lazy(() => import('./pages/BookPage'));
 import CustomCursor        from './components/CustomCursor';
 import ScrollProgress      from './components/ScrollProgress';
 import OpeningSplash       from './components/OpeningSplash';
@@ -85,6 +87,9 @@ function AnalyticsPageViews() {
 export default function App() {
   // stage: 'splash' -> 'language' -> 'done'
   const [stage, setStage] = useState(() => {
+    // A book page opens in a new tab from a BheemBot citation, and sessionStorage is per tab,
+    // so without this every citation would replay the splash and language prompt first.
+    if (window.location.pathname.startsWith('/book/')) return 'done';
     const skip = sessionStorage.getItem('skip-splash') === '1';
     if (skip) sessionStorage.removeItem('skip-splash');
     return skip ? 'done' : 'splash';
@@ -137,6 +142,7 @@ export default function App() {
             <Route path="/solutions" element={<Solutions />} />
             <Route path="/resources" element={<Resources />} />
             <Route path="/contact"   element={<Contact />} />
+            <Route path="/book/:volume/:page" element={<BookPage />} />
             <Route path="/login"     element={<Login />} />
             <Route path="/signup"    element={<Signup />} />
             <Route path="/otp"              element={<Otp />} />

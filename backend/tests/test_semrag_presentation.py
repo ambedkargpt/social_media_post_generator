@@ -120,3 +120,16 @@ def test_without_a_sources_line_a_not_covered_answer_shows_no_pills():
 def test_without_a_sources_line_a_grounded_answer_shows_all_pills():
     a, b = _pill("A", [1]), _pill("B", [2])
     assert sources_to_show("He held that inter-marriage is the real remedy.", [a, b]) == [a, b]
+
+
+# ── Links to the scanned page ──────────────────────────────────────────────────
+
+def test_book_link_opens_the_right_pdf_page_and_labels_it_like_the_book():
+    from backend.semrag.presentation import book_link
+    assert book_link("v1_chunk_0215") == "/book/1/82?p=67&t=Annihilation+of+Caste"   # printed p. 67 = PDF page 82
+    assert book_link("v2_chunk_0268").startswith("/book/2/189?p=170&")                 # Vol. 2 offset is 19
+
+
+def test_unknown_passage_gets_no_link_rather_than_a_wrong_one():
+    from backend.semrag.presentation import book_link
+    assert book_link("not_a_real_chunk", 1) is None

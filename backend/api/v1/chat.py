@@ -35,6 +35,7 @@ class ChatRequest(BaseModel):
 class SourceChunk(BaseModel):
     video_title: str
     snippet: str
+    url: Optional[str] = None   # book page viewer link for SemRAG sources; absent for video sources
 
 
 class ChatResponse(BaseModel):
@@ -240,6 +241,6 @@ def chat_message(
     reply = to_display_text(reply_text)
     if semrag_sources:
         # Pills for exactly the material the answer drew on; none for an "isn't covered" answer.
-        sources = [SourceChunk(video_title=s["video_title"], snippet=s["snippet"])
+        sources = [SourceChunk(video_title=s["video_title"], snippet=s["snippet"], url=s.get("url"))
                    for s in sources_to_show(reply, semrag_sources, used)]
     return ChatResponse(reply=reply, sources=sources)
