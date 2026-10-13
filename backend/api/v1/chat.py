@@ -120,6 +120,53 @@ def _optional_user_id(authorization: str = Header(default="")) -> str:
         return "guest"
 
 
+# ── LLM providers ──────────────────────────────────────────────────────────────
+# Tried in order; the first non-empty reply wins. Before this, a failed OpenAI call (an outage,
+# or a local OPENAI_BASE_URL proxy that is not running) returned 503 to every user even with a
+# Gemini key configured - the documented "multi-provider fallback" never actually fell back.
+
+_OPENAI_TIMEOUT_S = 30.0
+
+
+def _ask_openai(messages: List[dict]) -> str:
+    client = OpenAI(api_key=settings.openai_api_key, timeout=_OPENAI_TIMEOUT_S, max_retries=0)
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+        max_tokens=700,
+        temperature=0.5,
+    )
+    return (response.choices[0].message.content or "").strip()
+
+
+def _ask_gemini(messages: List[dict]) -> str:
+    from google import genai
+
+    key = getattr(settings, "gemini_api_key", None) or os.getenv("GOOGLE_API_KEY")
+    if not key:
+        raise ValueError("no Gemini key configured")
+    gclient = genai.Client(api_key=key)  # keep a reference: an inline client is closed mid-request
+    turns = "\n\n".join(f"{m['role'].capitalize()}: {m['content']}" for m in messages[1:])
+    response = gclient.models.generate_content(
+        model="models/gemini-2.5-flash",
+        contents=turns,
+        config={
+            "system_instruction": messages[0]["content"],
+            "temperature": 0.5,
+            "max_output_tokens": 1024,
+            "thinking_config": {"thinking_budget": 0},  # a chat reply, not a reasoning task
+        },
+    )
+    return (response.text or "").strip()
+
+
+def _providers():
+    if getattr(settings, "openai_api_key", None):
+        yield "openai", _ask_openai
+    if getattr(settings, "gemini_api_key", None) or os.getenv("GOOGLE_API_KEY"):
+        yield "gemini", _ask_gemini
+
+
 # ── Endpoint ───────────────────────────────────────────────────────────────────
 
 @router.post("/message", response_model=ChatResponse)
@@ -164,34 +211,20 @@ def chat_message(
         messages.append({"role": h.role, "content": h.content})
     messages.append({"role": "user", "content": payload.message.strip()})
 
-    # 3. Call LLM (supports OpenAI or Google Gemini fallback)
+    # 3. Call the LLM: OpenAI first, Gemini if OpenAI fails or returns nothing.
     reply_text = ""
-    try:
-        openai_key = getattr(settings, "openai_api_key", None)
-        if openai_key:
-            client = OpenAI(api_key=openai_key)
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=messages,
-                max_tokens=700,
-                temperature=0.5,
-            )
-            reply_text = response.choices[0].message.content.strip()
-        else:
-            gemini_key = getattr(settings, "gemini_api_key", None) or os.getenv("GOOGLE_API_KEY")
-            if gemini_key:
-                from google import genai
-                gclient = genai.Client(api_key=gemini_key)
-                combined_prompt = f"{system_content}\n\nUser Question: {payload.message.strip()}"
-                gresp = gclient.models.generate_content(
-                    model="models/gemini-2.5-flash",
-                    contents=combined_prompt,
-                )
-                reply_text = gresp.text.strip()
-            else:
-                raise ValueError("Neither OPENAI_API_KEY nor GEMINI_API_KEY is configured")
-    except Exception as exc:
-        logger.error("LLM call failed in BheemBot: %s", exc)
+    failures = []
+    for name, ask in _providers():
+        try:
+            reply_text = ask(messages)
+            if reply_text:
+                break
+            failures.append(f"{name}: empty reply")
+        except Exception as exc:  # try the next provider rather than failing the user
+            failures.append(f"{name}: {type(exc).__name__}: {exc}")
+            logger.warning("BheemBot %s call failed, trying the next provider: %s", name, exc)
+    if not reply_text:
+        logger.error("All BheemBot LLM providers failed: %s", " | ".join(failures) or "none configured")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="BheemBot is temporarily unavailable. Please try again.",
