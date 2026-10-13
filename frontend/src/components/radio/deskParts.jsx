@@ -1,4 +1,4 @@
-import { Radio } from 'lucide-react';
+import { Play } from 'lucide-react';
 
 import { useI18n } from '../../i18n/index.jsx';
 import { ACCENT, ACCENT_HOVER, INK, MUTED, RULE, mmss } from './radioTokens';
@@ -148,7 +148,7 @@ export function TuneButton({ listening, onClick, disabled, width = 220, height =
     >
       {listening
         ? <span style={{ width: 10, height: 10, background: ACCENT_HOVER, flex: 'none' }} />
-        : <Radio size={18} strokeWidth={2.2} style={{ flex: 'none' }} />}
+        : <Play size={18} strokeWidth={2.2} fill="currentColor" style={{ flex: 'none' }} />}
       <span style={{ textAlign: 'left' }}>
         {listening ? t('radio.tuneOff') : t('radio.tuneIn')}
       </span>
