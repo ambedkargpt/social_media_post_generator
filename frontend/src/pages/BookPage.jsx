@@ -61,7 +61,11 @@ export default function BookPage() {
         docRef.current = doc;
         setNumPages(doc.numPages);
       })
-      .catch(() => !cancelled && setStatus('error'));
+      .catch((err) => {
+        if (cancelled) return;
+        console.error(`Could not open ${pdfUrl}:`, err);   // the reader only sees "could not be opened"
+        setStatus('error');
+      });
     return () => {
       cancelled = true;
       task.destroy();
@@ -103,7 +107,9 @@ export default function BookPage() {
         return renderTask.promise.then(() => !cancelled && setStatus('ready'));
       })
       .catch((err) => {
-        if (!cancelled && err?.name !== 'RenderingCancelledException') setStatus('error');
+        if (cancelled || err?.name === 'RenderingCancelledException') return;
+        console.error(`Could not render page ${pdfPage} of ${pdfUrl}:`, err);
+        setStatus('error');
       });
     return () => {
       cancelled = true;
