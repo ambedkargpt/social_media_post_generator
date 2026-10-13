@@ -1,12 +1,16 @@
-"""Reader-facing presentation of SemRAG answers: no internal ids, no Markdown, clean citations.
+"""Reader-facing presentation of SemRAG answers: no internal ids, no inline references, a small
+fixed markup the chat bubble renders, and source pills for exactly the material used.
 
     pytest backend/tests/test_semrag_presentation.py
 """
 
 from backend.semrag.presentation import (
-    PILL_MAX, _citations, clean_passage, excerpt, pill_label, reference, sources_to_show, to_display_text,
+    PILL_MAX, _citations, clean_passage, excerpt, pill_label, reference,
+    sources_to_show, split_sources_line, to_display_text,
 )
 
+
+# ── Citations and pills ────────────────────────────────────────────────────────
 
 def test_every_pill_label_fits_the_pill():
     labels = [pill_label(cid) for cid in _citations()]
@@ -29,8 +33,10 @@ def test_no_label_ever_shows_an_internal_id():
         assert "chunk" not in reference(cid).lower()
 
 
+# ── Passage text ───────────────────────────────────────────────────────────────
+
 def test_passage_debris_is_removed():
-    raw = ("it was certainly the cinema and the 23 ON BUDGET 23 theatre. z:\\\\ ambedkar\\\\vol-02\\\\vol2-02.indd "
+    raw = ("it was certainly the cinema and the 23 ON BUDGET 23 theatre. z:\\ ambedkar\\vol-02\\vol2-02.indd "
            "MK SJ+YS 21-9-2013/YS-8-11-2013 More text __ABBR_21__ here.")
     out = clean_passage(raw)
     assert "cinema and the theatre" in out
@@ -45,52 +51,72 @@ def test_excerpt_starts_on_a_sentence_and_never_cuts_a_word():
     assert out.endswith(".") or out.endswith("…")
 
 
-def test_reply_markdown_becomes_plain_text_and_paragraphs_survive():
+# ── Reply markup ───────────────────────────────────────────────────────────────
+
+def test_reply_keeps_only_the_renderers_markup():
     md = ("Based on the provided context, Ambedkar argued **caste is a state of mind**.\n\n"
-          "### Key points\n- He said *inter-marriage* is the remedy.\n- Second point.\n\n---\n1. Numbered stays.")
+          "### Key points\n* He said *inter-marriage* is the remedy.\n1. Second point.\n\n---\n"
+          ">  \"The real remedy for breaking Caste is inter-marriage.\"")
     out = to_display_text(md)
-    assert "**" not in out and "#" not in out and "---" not in out
-    assert out.startswith("Ambedkar argued caste is a state of mind.")
-    assert "\n\nKey points\n• He said inter-marriage is the remedy.\n• Second point." in out
-    assert "1. Numbered stays." in out
+    assert out.startswith("Ambedkar argued **caste is a state of mind**.")      # opener dropped, bold kept
+    assert "\n\n**Key points**\n- He said inter-marriage is the remedy.\n- Second point." in out
+    assert '> "The real remedy for breaking Caste is inter-marriage."' in out
+    assert "#" not in out and "---" not in out and "*inter" not in out
 
 
-def test_reply_internal_ids_are_removed_without_leaving_debris():
-    out = to_display_text('Caste "prevents common activity" (v1_chunk_0150). See [Chunk v2_chunk_0012] and (Source 3).')
-    assert "chunk" not in out.lower() and "source 3" not in out.lower()
-    assert "()" not in out and "[]" not in out
+def test_inline_references_are_removed_but_ordinary_brackets_stay():
+    text = ('He wrote "inter-marriage is the remedy" (Annihilation of Caste, Vol. 1, p. 67). '
+            "Dyarchy failed (With the Simon Commission, Vol. 2, pp. 324-325) and (Vol. 2, p. 326). "
+            "Article 17 (abolition of untouchability) followed.")
+    out = to_display_text(text)
+    assert "Vol." not in out and "p. 67" not in out
+    assert '"inter-marriage is the remedy".' in out and "Dyarchy failed and." in out
+    assert "(abolition of untouchability)" in out
+
+
+def test_hindi_inline_references_are_removed():
+    out = to_display_text("जाति एक धारणा है। (जाति का विनाश, खंड 1, पृष्ठ 68)")
+    assert "खंड" not in out and "पृष्ठ" not in out and out.startswith("जाति एक धारणा है।")
+
+
+def test_internal_ids_and_material_numbers_are_removed_without_debris():
+    out = to_display_text('Caste "prevents common activity" (v1_chunk_0150) [2]. See [Chunk v2_chunk_0012] and (Source 3).')
     assert out == 'Caste "prevents common activity". See and.'
     assert to_display_text("He argued this in 1936 (v1_chunk_0215, v1_chunk_0216).") == "He argued this in 1936."
 
 
-def test_real_citations_and_ordinary_brackets_are_kept():
-    text = ('"The real remedy for breaking Caste is inter-marriage." (Annihilation of Caste, Vol. 1, p. 67) '
-            "Article 17 (abolition of untouchability) followed.")
-    assert to_display_text(text) == text
+# ── Hidden SOURCES line ────────────────────────────────────────────────────────
+
+def test_sources_line_is_split_off_and_parsed():
+    text, used = split_sources_line("Answer text.\n\nSOURCES: 1, 3")
+    assert text == "Answer text." and used == [1, 3]
+    assert split_sources_line("Not covered.\nSOURCES: none") == ("Not covered.", [])
+    assert split_sources_line("No line here.") == ("No line here.", None)
+    assert split_sources_line("Answer.\n**Sources:** 2")[1] == [2]
 
 
-def _src(work, vol, page):
-    return {"video_title": f"{work} · Vol {vol} p. {page}", "snippet": "…",
-            "_ref": {"work": work, "volume": vol, "first_page": str(page)}}
+def test_sources_line_never_reaches_the_reader():
+    assert "SOURCES" not in to_display_text("An answer.\nSOURCES: 1, 2")
 
 
-def test_only_cited_sources_are_shown():
-    a, b = _src("With the Simon Commission", 2, 324), _src("With the Simon Commission", 2, 327)
-    reply = 'He said "the Executive cannot act as a unified body" (With the Simon Commission, Vol. 2, p. 324).'
-    assert sources_to_show(reply, [a, b]) == [a]
+# ── Which pills to show ────────────────────────────────────────────────────────
+
+def _pill(name, passages):
+    return {"video_title": name, "snippet": "…", "_passages": passages}
 
 
-def test_a_page_range_citation_still_matches():
-    a = _src("States and Minorities", 1, 428)
-    assert sources_to_show("(States and Minorities, Vol. 1, pp. 428–429)", [a]) == [a]
+def test_pills_follow_the_material_the_answer_used():
+    a, b, c = _pill("A", [1]), _pill("B", [2, 4]), _pill("C", [3])
+    assert sources_to_show("…", [a, b, c], used=[4]) == [b]       # a pill covering two passages
+    assert sources_to_show("…", [a, b, c], used=[1, 3]) == [a, c]
+    assert sources_to_show("…", [a, b, c], used=[]) == []
 
 
-def test_no_sources_beside_a_not_covered_answer():
-    a = _src("Thoughts on Linguistic States", 1, 170)
-    reply = "Dr. Ambedkar's writings in this collection do not address this directly."
-    assert sources_to_show(reply, [a]) == []
+def test_without_a_sources_line_a_not_covered_answer_shows_no_pills():
+    a = _pill("A", [1])
+    assert sources_to_show("Dr. Ambedkar's writings in this collection do not address this directly.", [a]) == []
 
 
-def test_grounded_reply_without_inline_citations_keeps_all_sources():
-    a, b = _src("Annihilation of Caste", 1, 67), _src("Annihilation of Caste", 1, 68)
+def test_without_a_sources_line_a_grounded_answer_shows_all_pills():
+    a, b = _pill("A", [1]), _pill("B", [2])
     assert sources_to_show("He held that inter-marriage is the real remedy.", [a, b]) == [a, b]

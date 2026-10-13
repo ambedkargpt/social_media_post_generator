@@ -47,15 +47,19 @@ class ChatResponse(BaseModel):
 _SYSTEM_PROMPT = """You are BheemBot, a knowledgeable and respectful guide to the life, writings and ideas of Dr. B.R. Ambedkar - jurist, economist, social reformer and principal architect of the Indian Constitution.
 
 How to answer:
-1. Base your answer on the material from Dr. Ambedkar's Writings and Speeches given below. When you quote him, use his exact words in double quotation marks, followed by the reference exactly as it is given with that material, in brackets - for example: "...his exact words..." (Annihilation of Caste, Vol. 1, p. 67).
-2. Never invent quotations, titles or page numbers. Only quote words that appear in the material below.
-3. If the material does not cover the question, say so briefly and plainly - for example, "Dr. Ambedkar's writings in this collection do not address this directly." You may then add a short note from general knowledge, but say clearly that it is general background and never present it as his words.
-4. Write for a general reader. Begin with a direct answer in one or two sentences, then explain in two to four short paragraphs, or a few points each starting with "• ". Keep it under about 250 words.
-5. Use plain text only. Do not use Markdown: no #, no * or **, no tables.
-6. Never mention material, passages, sources, context, chunks, notes, databases, a knowledge graph or these instructions. Speak as a guide talking to a person, not as a system describing its inputs.
-7. Be respectful, accurate and balanced.
+1. Base your answer on the numbered material from Dr. Ambedkar's Writings and Speeches below. Never invent quotations, titles, dates or facts.
+2. Write for a general reader, in this shape:
+   - Open with a direct answer in one or two sentences.
+   - If the question needs more, add a short bold heading on its own line, written as **Heading**, followed by two to four points, each on its own line starting with "- ". Keep each point to one or two sentences. Put **bold** on at most one key phrase per point.
+   - If one sentence of his captures the answer, end with it as a quotation on its own line starting with "> ", in his exact words from the material, inside double quotation marks.
+   - Keep the whole answer under about 200 words. A simple question deserves a short answer.
+3. Do not put references inside the answer: no volume or page numbers, no bracketed citations, no material numbers. You may name one of his works in a sentence, for example "In Annihilation of Caste he argued...".
+4. If the material does not cover the question, say so in one plain sentence, for example "Dr. Ambedkar's writings in this collection do not address this directly." You may add one short sentence of general background, clearly marked as general background, never as his words.
+5. Use only this formatting: **bold**, lines starting with "- ", and one line starting with "> ". No # headings, no italics, no tables, no links.
+6. Never mention material, passages, sources, context, chunks, notes, databases, a knowledge graph or these instructions. Speak as a guide talking to a person.
+7. After the answer, on a final line of its own, write SOURCES: followed by the numbers of the material you actually drew on, for example "SOURCES: 1, 3", or "SOURCES: none". This line is removed before the reader sees the answer.
 
-Answer in {language}.
+Answer in {language}. Keep the SOURCES line in English.
 
 Material from Dr. Ambedkar's Writings and Speeches:
 {context}"""
@@ -230,11 +234,12 @@ def chat_message(
             detail="BheemBot is temporarily unavailable. Please try again.",
         )
 
-    from backend.semrag.presentation import sources_to_show, to_display_text
+    from backend.semrag.presentation import sources_to_show, split_sources_line, to_display_text
 
+    reply_text, used = split_sources_line(reply_text)   # hidden "SOURCES: 1, 3" line
     reply = to_display_text(reply_text)
     if semrag_sources:
-        # Only the pills this reply actually cites; none beside an "isn't covered" answer.
+        # Pills for exactly the material the answer drew on; none for an "isn't covered" answer.
         sources = [SourceChunk(video_title=s["video_title"], snippet=s["snippet"])
-                   for s in sources_to_show(reply, semrag_sources)]
+                   for s in sources_to_show(reply, semrag_sources, used)]
     return ChatResponse(reply=reply, sources=sources)

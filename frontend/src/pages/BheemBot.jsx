@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import { sendChatMessage } from '../api/chat';
 import logoSrc from '../assets/images/logo-animation.webp';
 import { useI18n } from '../i18n/index.jsx';
+import FormattedReply, { parseReply, visibleBlockCount } from '../components/FormattedReply';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -76,8 +77,11 @@ function MessageBubble({ msg }) {
   const isUser = msg.role === 'user';
   const [expanded, setExpanded] = useState(false);
 
-  const isLong = !isUser && msg.content.length > 480;
-  const displayContent = isLong && !expanded ? msg.content.slice(0, 480) + '…' : msg.content;
+  // Replies are rendered from their markup; a long one collapses at a block boundary,
+  // never mid-sentence.
+  const blocks = isUser ? null : parseReply(msg.content);
+  const collapsedCount = blocks ? visibleBlockCount(blocks) : 0;
+  const isLong = !isUser && blocks.length > collapsedCount;
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
@@ -100,12 +104,16 @@ function MessageBubble({ msg }) {
             <TypingDots />
           ) : (
             <>
-              <span style={{ whiteSpace: 'pre-wrap' }}>{displayContent}</span>
+              {isUser ? (
+                <span style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</span>
+              ) : (
+                <FormattedReply blocks={blocks} maxBlocks={isLong && !expanded ? collapsedCount : undefined} />
+              )}
               {isLong && (
                 <button
                   type="button"
                   onClick={() => setExpanded((v) => !v)}
-                  className="ml-1.5 text-[#4d94ff] underline underline-offset-2 hover:text-[#7ab4ff]"
+                  className="mt-2 block text-[12.5px] text-[#4d94ff] underline underline-offset-2 hover:text-[#7ab4ff]"
                 >
                   {expanded ? 'Show less' : 'Show more'}
                 </button>

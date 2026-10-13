@@ -23,7 +23,7 @@ import json
 import re
 from functools import lru_cache
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional, Tuple
 
 CITATIONS_FILE = Path(__file__).resolve().parent / "data" / "citations.json"
 SERIES = "Writings and Speeches"
@@ -116,36 +116,73 @@ def excerpt(text: str, limit: int = 220) -> str:
 
 
 # ── Cleaning the reply ────────────────────────────────────────────────────────
+#
+# The reply uses a small, fixed markup that the chat bubble renders (FormattedReply.jsx):
+#   **Heading**   on its own line        -> a short bold heading
+#   **phrase**    inside a sentence      -> bold
+#   - point                              -> a bullet
+#   > "his words"                        -> a highlighted quotation
+# Anything else a model produces (# headings, *italics*, tables, links, inline citations,
+# leaked ids) is normalised or removed here, so the renderer only ever sees those four forms.
 
 _LEAKS = [
-    re.compile(r"[ \t]*[\[(]\s*(?:chunk|source|passage)\s*[:#]?\s*[\w\-]*\d[\w\-]*\s*[\])]", re.I),
+    re.compile(r"[ \t]*[\[(]\s*(?:chunk|source|passage|material)\s*[:#]?\s*[\w\-]*\d[\w\-]*\s*[\])]", re.I),
     re.compile(r"[ \t]*[\[(]\s*v\d+_chunk_\d+(?:\s*[,;]\s*v\d+_chunk_\d+)*\s*[\])]", re.I),
     re.compile(r"\bv\d+_chunk_\d+\b", re.I),
     re.compile(r"\bchunk[_ ]\d+\b", re.I),
+    re.compile(r"[ \t]*\[\d{1,2}(?:\s*[,\u2013\-]\s*\d{1,2})*\]"),  # material numbers: [1], [2, 3]
 ]
-_META_OPENERS = re.compile(
-    r"^(?:based on|according to|from|as per|drawing on)\s+(?:the\s+)?(?:provided|retrieved|given|above)?\s*"
-    r"(?:context|passages?|sources?|information|knowledge graph|excerpts?)\s*(?:provided|given|above)?\s*[,:]\s*",
+# Inline references are not shown in the text - the source pills carry them. Matches
+# "(Annihilation of Caste, Vol. 1, p. 67)", "(Vol. 2, pp. 324-325)" and the Hindi form
+# "(जाति का विनाश, खंड 1, पृष्ठ 48-49)", but not ordinary brackets such as "(abolition of untouchability)".
+_INLINE_REFERENCE = re.compile(
+    r"[ \t]*\((?:[^()\n]{0,90}?,\s*)?(?:Vol\.?|Volume|खंड)\s*\d+\s*(?:,\s*(?:pp?\.|pages?|पृष्ठ)\s*[\d\u2013\-, ]+)?\s*\)",
     re.I,
 )
+_META_OPENERS = re.compile(
+    r"^(?:based on|according to|from|as per|drawing on)\s+(?:the\s+)?(?:provided|retrieved|given|above)?\s*"
+    r"(?:context|passages?|sources?|information|material|knowledge graph|excerpts?)\s*(?:provided|given|above)?\s*[,:]\s*",
+    re.I,
+)
+_SOURCES_LINE = re.compile(r"^[ \t]*\**\s*SOURCES?\s*\**\s*:\s*(.*?)\s*$", re.I | re.M)
+
+
+def split_sources_line(reply: str) -> Tuple[str, Optional[List[int]]]:
+    """Remove the model's final 'SOURCES: 1, 3' line; return (text, material numbers used).
+
+    The numbers are None when the line is missing (the caller then falls back), [] for
+    'SOURCES: none'. The line is an instruction to the model, never shown to a reader.
+    """
+    matches = list(_SOURCES_LINE.finditer(reply or ""))
+    if not matches:
+        return reply, None
+    last = matches[-1]
+    used = [int(n) for n in re.findall(r"\d{1,2}", last.group(1))]
+    text = (reply[: last.start()] + reply[last.end():]).rstrip()
+    return text, used
 
 
 def to_display_text(reply: str) -> str:
-    """Plain, readable text for the chat bubble, with no internal identifiers."""
+    """Reader-facing reply in the renderer's markup, with no ids and no inline references."""
     t = (reply or "").replace("\r\n", "\n")
+    t, _ = split_sources_line(t)
     for pat in _LEAKS:
         t = pat.sub("", t)
-    t = re.sub(r"\[([^\]]+)\]\((?:https?://)[^)]+\)", r"\1", t)          # [text](url) -> text
+    t = _INLINE_REFERENCE.sub("", t)
+    t = re.sub(r"\[([^\]]+)\]\((?:https?://)[^)]+\)", r"\1", t)                # [text](url) -> text
+    t = re.sub(r"`([^`]+)`", r"\1", t)                                            # inline code
     # Line-start patterns use [ \t], not \s: \s matches newlines and would merge paragraphs.
-    t = re.sub(r"^[ \t]{0,3}#{1,6}[ \t]*", "", t, flags=re.M)               # headings
-    t = re.sub(r"^[ \t]*(?:[-*+•])[ \t]+", "• ", t, flags=re.M)             # bullets
-    t = re.sub(r"(\*\*|__)(.+?)\1", r"\2", t)                               # bold
-    t = re.sub(r"(?<![\w*])\*(?!\s)([^*\n]+?)(?<!\s)\*(?![\w*])", r"\1", t)  # italic *x*
-    t = re.sub(r"`([^`]+)`", r"\1", t)                                      # inline code
-    t = re.sub(r"^[ \t]*(?:-{3,}|\*{3,}|_{3,})[ \t]*$", "", t, flags=re.M)  # horizontal rules
-    t = re.sub(r"[ \t]*(?:\(\s*\)|\[\s*\])", "", t)                         # brackets emptied above
+    t = re.sub(r"^[ \t]*(?:-{3,}|\*{3,}|_{3,})[ \t]*$", "", t, flags=re.M)       # horizontal rules
+    t = re.sub(r"^[ \t]{0,3}#{1,6}[ \t]*(.+?)[ \t]*#*[ \t]*$",                  # # Heading -> **Heading**
+               lambda m: "**" + m.group(1).strip("* ") + "**", t, flags=re.M)
+    t = re.sub(r"__(.+?)__", r"**\1**", t)                                       # __bold__ -> **bold**
+    t = re.sub(r"^[ \t]*(?:[*+•\-]|\d{1,2}[.)])[ \t]+", "- ", t, flags=re.M)    # any bullet -> "- "
+    t = re.sub(r"(?<![\w*])\*(?!\s|\*)([^*\n]+?)(?<!\s)\*(?![\w*])", r"\1", t)  # *italic* -> plain
+    t = re.sub(r"^[ \t]*>[ \t]*", "> ", t, flags=re.M)                            # quotation marker
+    t = re.sub(r"[ \t]*(?:\(\s*\)|\[\s*\])", "", t)                              # brackets emptied above
     t = _META_OPENERS.sub("", t.lstrip())
     t = t[:1].upper() + t[1:] if t else t
+    t = re.sub(r"[ \t]+([.,;:!?])", r"\1", t)                                    # space left before punctuation
     t = re.sub(r"[ \t]+\n", "\n", t)
     t = re.sub(r"[ \t]{2,}", " ", t)
     t = re.sub(r"\n{3,}", "\n\n", t)
@@ -161,26 +198,17 @@ _NOT_COVERED = re.compile(
 )
 
 
-def _cited(reply: str, ref: dict) -> bool:
-    """Does the reply cite this source - same work, volume and first page?"""
-    work = re.escape(ref.get("work") or SERIES)
-    first = ref.get("first_page")
-    if not first:
-        return False
-    return bool(re.search(rf"{work}\s*,\s*Vol\.?\s*{ref['volume']}\s*,\s*pp?\.\s*{first}\b", reply, re.I))
-
-
-def sources_to_show(reply: str, sources: list) -> list:
+def sources_to_show(reply: str, sources: list, used: Optional[List[int]] = None) -> list:
     """Source pills a reader should see for this reply.
 
-    A pill tells the reader "this answer came from here", so it must not appear beside an answer
-    that says the writings do not cover the question (an off-topic question still retrieves
-    loosely related pages). When the reply cites specific pages, only those are shown. Otherwise
-    every retrieved source is shown, as before.
+    `used` is the material the model reported using on its hidden SOURCES line. When given,
+    exactly those sources are shown ([] shows none). When the line was missing, a reply that
+    says the writings do not cover the question shows none - an off-topic question still
+    retrieves loosely related pages - and any other reply shows every retrieved source.
     """
-    cited = [s for s in sources if s.get("_ref") and _cited(reply, s["_ref"])]
-    if cited:
-        return cited
+    if used is not None:
+        wanted = set(used)
+        return [s for s in sources if wanted & set(s.get("_passages", []))]
     if _NOT_COVERED.search(reply or ""):
         return []
     return sources

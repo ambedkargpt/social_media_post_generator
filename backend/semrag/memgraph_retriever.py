@@ -224,7 +224,7 @@ def retrieve_semrag_context(query: str, top_k: int = 5) -> Tuple[str, List[Dict[
     Knowledge-graph triples are not passed to the model: they are internal, sometimes noisy,
     and invite answers that talk about "the knowledge graph" instead of Dr. Ambedkar's words.
     """
-    from backend.semrag.presentation import citation, clean_passage, excerpt, pill_label, reference
+    from backend.semrag.presentation import clean_passage, excerpt, pill_label, reference
 
     try:
         data = query_semrag(query, top_chunks=top_k)
@@ -238,10 +238,12 @@ def retrieve_semrag_context(query: str, top_k: int = 5) -> Tuple[str, List[Dict[
     if not chunks:
         return "", []
 
+    # Numbered so the model can report, on a hidden last line, which material it used; the
+    # number is never shown to a reader (see presentation.split_sources_line).
     parts: List[str] = []
-    for c in chunks:
+    for n, c in enumerate(chunks, 1):
         ref = reference(c.get("chunk_id"), c.get("volume"))
-        parts.append(f"From {ref}:\n{clean_passage(c.get('text') or '')}")
+        parts.append(f"[{n}] From {ref}:\n{clean_passage(c.get('text') or '')}")
 
     if communities:
         notes = [c.get("summary") for c in communities if c.get("summary")]
@@ -253,20 +255,18 @@ def retrieve_semrag_context(query: str, top_k: int = 5) -> Tuple[str, List[Dict[
 
     context_str = "\n\n".join(parts)
 
-    sources: List[Dict[str, str]] = []
-    seen_sources = set()
-    for c in chunks:
+    sources: List[Dict[str, Any]] = []
+    by_title: Dict[str, Dict[str, Any]] = {}
+    for n, c in enumerate(chunks, 1):
         title = pill_label(c.get("chunk_id"), c.get("volume"))
-        if title in seen_sources:
+        if title in by_title:  # two passages on the same page share one pill
+            by_title[title]["_passages"].append(n)
             continue
-        seen_sources.add(title)
-        cite = citation(c.get("chunk_id"), c.get("volume"))
-        sources.append({
+        by_title[title] = {
             "video_title": title,  # the frontend renders 'video_title' in the BookOpen pill
             "snippet": f"{reference(c.get('chunk_id'), c.get('volume'))}: \u201c{excerpt(c.get('text') or '')}\u201d",
-            # internal: lets the endpoint keep only the pills the reply cites; never sent to the UI
-            "_ref": {"work": cite["work"], "volume": cite["volume"],
-                     "first_page": (cite["pages"] or "").split("\u2013")[0] or None},
-        })
+            "_passages": [n],      # internal: which numbered material this pill stands for
+        }
+        sources.append(by_title[title])
 
     return context_str, sources
