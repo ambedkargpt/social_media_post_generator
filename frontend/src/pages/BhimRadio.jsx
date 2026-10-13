@@ -5,6 +5,7 @@ import { ArrowLeft, Loader2, RotateCw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useRadio } from '../context/RadioContext';
 import RadioDesk from '../components/radio/RadioDesk';
+import RadioMobile from '../components/radio/RadioMobile';
 import RadioTape from '../components/radio/RadioTape';
 import { INK, MUTED, RULE, SURFACE, mmss } from '../components/radio/radioTokens';
 import { useI18n } from '../i18n/index.jsx';
@@ -40,6 +41,23 @@ const DEMO_ACCOUNTS = ['krishprakash1232@gmail.com'];
 // Set VITE_RADIO_DEMO_CONTROLS=true in frontend/.env.local (gitignored).
 const LOCAL_DEMO = import.meta.env.DEV && import.meta.env.VITE_RADIO_DEMO_CONTROLS === 'true';
 
+// Below this the desk is a phone: its two columns stack and its footer of
+// controls lands somewhere down a long scroll, so the news-first layout takes
+// its place. The tape keeps its own arrangement at every width.
+const PHONE_QUERY = '(max-width: 639px)';
+
+function usePhone() {
+  const [phone, setPhone] = useState(() => window.matchMedia?.(PHONE_QUERY).matches ?? false);
+  useEffect(() => {
+    const mq = window.matchMedia?.(PHONE_QUERY);
+    if (!mq) return undefined;
+    const onChange = () => setPhone(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  return phone;
+}
+
 function readLayout() {
   // Per-viewer convenience. Blocked site data throws rather than returning
   // null, and a storage failure must not be why the page will not render.
@@ -64,6 +82,7 @@ export default function BhimRadioPage() {
   } = useRadio();
 
   const [layout, setLayout] = useState(readLayout);
+  const phone = usePhone();
   // Open from the start locally: the panel is what the flag is for.
   const [showDemo, setShowDemo] = useState(LOCAL_DEMO);
   const [now, setNow] = useState(() => new Date());
@@ -251,6 +270,8 @@ export default function BhimRadioPage() {
             tracks={tracks}
             reduced={window.matchMedia?.('(prefers-reduced-motion: reduce)').matches}
           />
+        ) : phone ? (
+          <RadioMobile {...shared} upcoming={upcoming} />
         ) : (
           <RadioDesk {...shared} className={TUNER_FIRST ? 'bhim-tuner-first' : ''} upcoming={upcoming} clockLabel={
             new Intl.DateTimeFormat('en-IN', {

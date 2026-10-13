@@ -32,17 +32,15 @@ export function istClock(date, withSeconds = false) {
 }
 
 /**
- * When a story goes out, as a wall clock.
+ * When the story on air went out, as a wall clock.
  *
- * The bulletin loops from midnight IST, so a story's air time is midnight plus
- * its offset plus however many whole cycles have already run today. Without
- * the cycle count the running order would show tonight's stories as having
- * aired at 00:00.
+ * Counted back from now by how far into the story the broadcast is, so it is
+ * the same clock the broadcast keeps. It used to be worked out from today's
+ * midnight plus whole cycles, but the broadcast loops from midnight of the
+ * bulletin's own date - yesterday's, for most of a day - and a day is not a
+ * whole number of cycles, so the two disagreed by up to a cycle: a story on
+ * air at 17:52 was labelled 18:22.
  */
-export function airTime(startSec, now, cycleLength) {
-  const base = new Date(now);
-  base.setHours(0, 0, 0, 0);
-  const sinceMidnight = (now - base) / 1000;
-  const cycles = cycleLength > 0 ? Math.floor(sinceMidnight / cycleLength) : 0;
-  return new Date(base.getTime() + (cycles * cycleLength + startSec) * 1000);
+export function airTime(now, offsetInStory) {
+  return new Date(now - Math.max(0, offsetInStory || 0) * 1000);
 }

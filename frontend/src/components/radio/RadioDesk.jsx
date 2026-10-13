@@ -15,7 +15,7 @@ import { ACCENT, INK, MUTED, RULE, SURFACE, airTime, istClock } from './radioTok
 export default function RadioDesk({
   now, story, storyIndex, total, offsetInStory, storyDuration,
   upcoming, listening, onTune, canTune, nextInSec, progress,
-  volume, onVolume, clockLabel, cycleLength, className = '',
+  volume, onVolume, clockLabel, className = '',
 }) {
   const { t } = useI18n();
 
@@ -92,7 +92,7 @@ export default function RadioDesk({
               which is the thing a listener is actually looking at. */}
           <p style={{ margin: '16px 0 0', fontSize: 13, color: MUTED }}>
             {t('radio.airedAt', {
-              time: istClock(airTime(story?.startSec ?? 0, now, cycleLength)),
+              time: istClock(airTime(now, offsetInStory)),
             })}
           </p>
 
