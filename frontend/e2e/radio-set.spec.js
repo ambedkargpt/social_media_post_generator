@@ -54,7 +54,7 @@ test.describe('the broadcast desk', () => {
     await signedInAs(page, 'someone.else@example.com');
     await page.goto('/bhimradio');
 
-    await expect(page.getByRole('button', { name: /tune in to bhim radio|भीम रेडियो ट्यून/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /play bhim radio|भीम रेडियो प्ले/i })).toBeVisible();
     // No transport for an ordinary listener - that was the whole point of the
     // brief, and the demo account is the one exception.
     await expect(page.getByRole('button', { name: /^(previous|next) track$/i })).toHaveCount(0);

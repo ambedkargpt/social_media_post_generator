@@ -39,7 +39,7 @@ test.describe('the radio without an account', () => {
     // Not bounced to a login form, which is what the old route did.
     await expect(page).toHaveURL(/\/bhimradio$/);
     await expect(page.getByText(/now on air|अभी ऑन एयर/i).first()).toBeVisible();
-    await expect(page.getByRole('button', { name: /tune in to bhim radio|भीम रेडियो ट्यून/i }))
+    await expect(page.getByRole('button', { name: /play bhim radio|भीम रेडियो प्ले/i }))
       .toBeVisible();
   });
 
@@ -77,6 +77,15 @@ test.describe('the radio without an account', () => {
     await expect(page).toHaveURL(/\/bhimradio$/);
     expect(await page.evaluate(() => sessionStorage.getItem('auth_redirect'))).toBeNull();
   });
+
+  test('the back arrow goes home, even from a link opened cold', async ({ page }) => {
+    // Opened straight from a shared link there is no history; back() would
+    // leave the site, so the arrow is a link home.
+    await page.goto('/bhimradio');
+    await page.getByRole('link', { name: /back to the home page|होम पेज पर वापस/i }).click();
+
+    await expect(page).toHaveURL(/\/$/);
+  });
 });
 
 test.describe('the way in', () => {
@@ -89,10 +98,10 @@ test.describe('the way in', () => {
     ['a laptop', { width: 1280, height: 720 }],
     ['a phone', { width: 390, height: 844 }],
   ]) {
-    test(`Tune In is on screen without scrolling, on ${name}`, async ({ page }) => {
+    test(`Play is on screen without scrolling, on ${name}`, async ({ page }) => {
       await page.setViewportSize(size);
       await page.goto('/bhimradio');
-      const tune = page.getByRole('button', { name: /tune in to bhim radio|भीम रेडियो ट्यून/i });
+      const tune = page.getByRole('button', { name: /play bhim radio|भीम रेडियो प्ले/i });
       await expect(tune).toBeVisible();
 
       const box = await tune.boundingBox();
