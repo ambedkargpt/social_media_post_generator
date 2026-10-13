@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Loader2, RotateCw } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ArrowLeft, Loader2, RotateCw } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
 import { useRadio } from '../context/RadioContext';
@@ -173,6 +174,15 @@ export default function BhimRadioPage() {
             is chosen. It is a view preference, not a setting, so it is kept in
             the browser and never sent anywhere. */}
         <div className="bhim-station-switch">
+          {/* The way out. Standalone, the page is reached from the landing
+              page or a shared link, and a link from WhatsApp opens with no
+              history to go back to - so this goes home, not back(). */}
+          {STANDALONE && (
+            <Link to="/" className="bhim-back" aria-label={t('radio.backHome')}>
+              <ArrowLeft size={16} aria-hidden="true" />
+              <span>{t('radio.home')}</span>
+            </Link>
+          )}
           {['desk', 'tape'].map((id) => (
             <button
               key={id}
@@ -330,6 +340,17 @@ export default function BhimRadioPage() {
           flex-direction: column;
         }
         @media (min-width: 768px) { .bhim-station { padding-inline: 32px; } }
+        .bhim-back {
+          display: inline-flex; align-items: center; gap: 8px;
+          margin-right: 8px; padding: 6px 14px 6px 10px;
+          border: 2px solid ${RULE}; color: ${INK}; text-decoration: none;
+          font: 600 11px/1 Inter, system-ui, sans-serif;
+          letter-spacing: 0.12em; text-transform: uppercase;
+          transition: border-color .15s ease, color .15s ease;
+        }
+        .bhim-back:hover { border-color: #1d7afc; color: #fff; }
+        .bhim-back:focus-visible { outline: 2px solid #1d7afc; outline-offset: 2px; }
+        @media (prefers-reduced-motion: reduce) { .bhim-back { transition: none; } }
         .bhim-station-switch {
           display: flex; gap: 8px; align-items: center;
           margin-bottom: 20px; flex-wrap: wrap;

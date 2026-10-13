@@ -77,6 +77,15 @@ test.describe('the radio without an account', () => {
     await expect(page).toHaveURL(/\/bhimradio$/);
     expect(await page.evaluate(() => sessionStorage.getItem('auth_redirect'))).toBeNull();
   });
+
+  test('the back arrow goes home, even from a link opened cold', async ({ page }) => {
+    // Opened straight from a shared link there is no history; back() would
+    // leave the site, so the arrow is a link home.
+    await page.goto('/bhimradio');
+    await page.getByRole('link', { name: /back to the home page|होम पेज पर वापस/i }).click();
+
+    await expect(page).toHaveURL(/\/$/);
+  });
 });
 
 test.describe('the way in', () => {
