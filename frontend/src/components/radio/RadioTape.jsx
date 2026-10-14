@@ -218,6 +218,7 @@ export default function RadioTape({
                 borderLeft: `2px solid ${live ? ACCENT : RULE}`,
                 padding: '12px 14px',
                 boxSizing: 'border-box',
+                display: 'flex', flexDirection: 'column',
                 color: past ? MUTED : INK,
                 // Stepped rather than continuous when motion is reduced; the
                 // tape still tells the time, it just does not slide.
@@ -237,12 +238,31 @@ export default function RadioTape({
                   // slid past, which is the one thing a tape has to avoid.
                   margin: 0, fontSize: 20, lineHeight: 1.4, fontWeight: 600,
                   fontFamily: 'var(--font-hindi)',
-                  display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
+                  display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden', flex: 'none',
                 }}
               >
                 {seg.track.title}
               </p>
+              {/* The story itself under its headline. A minute of air is a
+                  wide cell, so the headline sat on one line over an empty
+                  block; the opening of the narration fills it with what the
+                  listener is about to hear, as many lines as are left. */}
+              {seg.track.text && (
+                <p
+                  lang="hi"
+                  style={{
+                    margin: '6px 0 0', flex: 1, minHeight: 0,
+                    fontSize: 14, lineHeight: 1.55,
+                    fontFamily: 'var(--font-hindi)',
+                    color: past ? '#5a6789' : MUTED,
+                    display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {seg.track.text}
+                </p>
+              )}
             </div>
           );
         })}
