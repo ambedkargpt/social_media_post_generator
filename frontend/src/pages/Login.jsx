@@ -21,7 +21,7 @@ import { useI18n } from '../i18n/index.jsx';
 // Set VITE_TEST_PASSWORD in frontend/.env locally, or on a staging deployment,
 // and the block appears; leave it unset, as production should, and it does not
 // render at all.
-const TEST_PASSWORD = import.meta.env.VITE_TEST_PASSWORD || 'password123';
+const TEST_PASSWORD = import.meta.env.VITE_TEST_PASSWORD || '';
 const TEST_ACCOUNTS = [
   { email: 'test.cong@ambedkargpt.test', label: 'Congress' },
   { email: 'test.sp@ambedkargpt.test', label: 'Samajwadi' },

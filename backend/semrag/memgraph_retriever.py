@@ -16,8 +16,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
-# Default Memgraph Cloud credentials
-DEFAULT_MEMGRAPH_URI = os.getenv("MEMGRAPH_URI") or os.getenv("NEO4J_URI") or "bolt+s://18.162.109.140:7687"
+# Default Memgraph Cloud credentials from environment
+DEFAULT_MEMGRAPH_URI = os.getenv("MEMGRAPH_URI") or os.getenv("NEO4J_URI") or ""
 DEFAULT_MEMGRAPH_USER = os.getenv("MEMGRAPH_USERNAME") or os.getenv("NEO4J_USERNAME") or ""
 DEFAULT_MEMGRAPH_PASSWORD = os.getenv("MEMGRAPH_PASSWORD") or os.getenv("NEO4J_PASSWORD") or ""
 
@@ -36,6 +36,10 @@ def get_memgraph_driver(uri: Optional[str] = None, user: Optional[str] = None, p
     target_user = user or DEFAULT_MEMGRAPH_USER
     target_pwd = password or DEFAULT_MEMGRAPH_PASSWORD
 
+    if not target_uri:
+        logger.warning("Memgraph URI not configured (set MEMGRAPH_URI in environment)")
+        return None
+
     auth = (target_user, target_pwd) if (target_user or target_pwd) else None
 
     # Try standard URI first, fallback to self-signed cert handling if needed on macOS
@@ -52,10 +56,14 @@ def get_memgraph_driver(uri: Optional[str] = None, user: Optional[str] = None, p
         elif "neo4j+s://" in target_uri:
             fallback_uri = target_uri.replace("neo4j+s://", "neo4j+ssc://")
 
-        driver = GraphDatabase.driver(fallback_uri, auth=auth)
-        driver.verify_connectivity()
-        _DRIVER = driver
-        return _DRIVER
+        try:
+            driver = GraphDatabase.driver(fallback_uri, auth=auth)
+            driver.verify_connectivity()
+            _DRIVER = driver
+            return _DRIVER
+        except Exception as fallback_exc:
+            logger.warning("Failed to connect to Memgraph instance: %s", fallback_exc)
+            return None
 
 
 STOP_WORDS = {
@@ -92,6 +100,16 @@ def query_semrag(
     Search Memgraph for entities, relationships, verbatim chunks, and community summaries.
     """
     driver = get_memgraph_driver()
+    if driver is None:
+        return {
+            "entities": [],
+            "relationships": [],
+            "chunks": [],
+            "community_summaries": [],
+            "formatted_context": "",
+            "sources": [],
+        }
+
     keywords = extract_keywords(query)
     q_lower = query.lower()
     explicit_ambedkar = any(k in q_lower for k in ["ambedkar", "babasaheb", "bhimrao"])
