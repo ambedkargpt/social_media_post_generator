@@ -42,11 +42,21 @@ export default function ProtectedRoute({ children }) {
   // Not from the questionnaire itself, which this also wraps, and not from
   // profile-setup, where the party and position these questions depend on are
   // still being chosen.
-  const isSetupRoute =
-    location.pathname === '/questionnaire' || location.pathname === '/profile-setup';
-  const needsQuestionnaire =
-    checked && (pending.party || pending.position) && !alreadyPrompted();
-  const willRedirect = needsQuestionnaire && !isSetupRoute;
+  const onProfile = location.pathname === '/profile-setup';
+  const onQuestionnaire = location.pathname === '/questionnaire';
+  const isSetupRoute = onProfile || onQuestionnaire;
+
+  // Required, every time, until done: a party (and a position, where the
+  // party's questions are written per position), then the preference
+  // questions. No post is written without them - the backend refuses too - so
+  // there is nothing on the other side of this worth reaching first.
+  const mustSetProfile = checked && pending.profile && !onProfile;
+  const mustAnswer = checked && !pending.profile && pending.position && !isSetupRoute;
+
+  // The party set for accounts older than it stays the one-time prompt it was:
+  // those accounts answered their preferences at sign-up.
+  const needsQuestionnaire = checked && pending.party && !alreadyPrompted();
+  const willRedirect = !mustSetProfile && !mustAnswer && needsQuestionnaire && !isSetupRoute;
 
   // Marked only when the redirect actually happens. Marking it whenever
   // something is outstanding would burn the one prompt on someone who opened
@@ -63,6 +73,13 @@ export default function ProtectedRoute({ children }) {
     </div>
   );
   if (!currentUser) return <Navigate to="/" replace />;
+
+  if (mustSetProfile || mustAnswer) {
+    try {
+      if (!isSetupRoute) sessionStorage.setItem('auth_redirect', location.pathname + location.search);
+    } catch { /* ignore */ }
+    return <Navigate to={mustSetProfile ? '/profile-setup' : '/questionnaire'} replace />;
+  }
 
   if (willRedirect) {
     // Where they were headed, so finishing lands them there instead of on a

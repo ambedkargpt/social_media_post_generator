@@ -37,6 +37,13 @@ export default function DashboardShell({ children, background, active: activePro
   const active = activeProp ?? ACTIVE_BY_PATH[pathname] ?? '';
   const ctx = useMemo(() => ({ openMenu: () => setMobileOpen(true) }), []);
 
+  // The ON AIR strip opens the public station and signs out on the way: the
+  // radio is for anyone, and this is the way from the app to it.
+  async function openRadio() {
+    try { await logout(); } catch { /* still go to the station */ }
+    navigate('/bhimradio', { replace: true });
+  }
+
   async function handleLogout() {
     await logout();
     // The landing page, not the login form: signing out is leaving, and being
@@ -71,7 +78,7 @@ export default function DashboardShell({ children, background, active: activePro
             Inside it would have to be sticky, and the Topbar already holds
             sticky top-0 - two of them would land on each other. */}
         <div className="flex min-w-0 flex-1 flex-col">
-        <NewsTicker className="shrink-0" />
+        <NewsTicker className="shrink-0" onOpen={openRadio} />
 
         {/* While the drawer is open the page behind it must not scroll. This
             is the scrolling element, so the lock goes here rather than on

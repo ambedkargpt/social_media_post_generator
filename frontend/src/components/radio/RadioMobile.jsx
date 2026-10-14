@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { AudioLines, Clock, Pause, Play, Share2 } from 'lucide-react';
+import { AudioLines, Clock, Pause, Play } from 'lucide-react';
 
 import { useI18n } from '../../i18n/index.jsx';
+import ShareMenu from './ShareMenu.jsx';
 import { Label, SignalMeter, Transcript } from './deskParts.jsx';
 import { ACCENT, ACCENT_HOVER, INK, MUTED, RULE, SURFACE, airTime, istClock, mmss } from './radioTokens';
 
@@ -30,26 +31,9 @@ export default function RadioMobile({
 }) {
   const { t } = useI18n();
   const [showAll, setShowAll] = useState(false);
-  const [copied, setCopied] = useState(false);
 
   const next = upcoming.filter((row) => row.state === 'next');
   const cards = next.slice(0, UP_NEXT_CARDS);
-
-  async function share() {
-    const url = `${window.location.origin}/bhimradio`;
-    const title = story?.title ? `${story.title} · ${t('radio.title')}` : t('radio.title');
-    try {
-      if (navigator.share) {
-        await navigator.share({ title, url });
-        return;
-      }
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Dismissing the share sheet rejects; nothing to report.
-    }
-  }
 
   return (
     <div className="bhim-m">
@@ -118,10 +102,7 @@ export default function RadioMobile({
             <Clock size={16} aria-hidden="true" />
             {t('radio.listenFor', { n: minutes(storyDuration) })}
           </span>
-          <button type="button" className="bhim-m-share" onClick={share}>
-            <Share2 size={16} aria-hidden="true" />
-            {copied ? t('radio.linkCopied') : t('radio.share')}
-          </button>
+          <ShareMenu headline={story?.title} className="bhim-m-share" align="right" />
         </div>
 
         <Transcript

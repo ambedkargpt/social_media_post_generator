@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { User, AtSign, Mail, ArrowRight, ArrowLeft, ChevronDown, AlertTriangle } from 'lucide-react';
 import { isValidPhoneNumber } from 'react-phone-number-input';
 import { useAuth } from '../context/AuthContext';
+import { clearPendingQuestions } from '../hooks/usePendingQuestions';
+import { partyHasQuestions } from '../utils/partyQuestions';
 import { useCurtain } from '../context/CurtainContext';
 import { POLITICAL_PARTIES } from '../utils/politicalParties';
 import { ROLE_GROUPS, roleLabel, groupForId, rolesInGroup } from '../utils/partyRoles';
@@ -63,7 +65,13 @@ export default function ProfileSetup() {
   // Onboarding sends the user on to the questionnaire; someone editing an
   // existing profile from the sidebar should land back on the dashboard
   // instead of being pushed through onboarding again.
-  const isOnboarding = !currentUser?.full_name;
+  // Onboarding until the account has what a post is written from: a party,
+  // and a position where the party's questions depend on one. A Google sign-up
+  // arrives with a name and nothing else, and used to be shown the edit form -
+  // with a way back to a dashboard it could not use.
+  const profileMissing = !currentUser?.political_party
+    || (partyHasQuestions(currentUser?.political_party) && !currentUser?.party_position);
+  const isOnboarding = !currentUser?.full_name || profileMissing;
   const nextRoute = isOnboarding ? '/questionnaire' : '/dashboard';
   const [username, setUsername]   = useState(currentUser?.username || '');
   // Whichever of the two a signup didn't collect — phone signup has no email
@@ -127,6 +135,7 @@ export default function ProfileSetup() {
     else if (username.trim().length < 3) e.username = 'Username must be at least 3 characters.';
     else if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) e.username = t('profile.usernameRule');
     if (!politicalParty) e.politicalParty = 'Please select a political party.';
+    else if (partyHasQuestions(politicalParty) && !partyPosition) e.partyPosition = t('profile.positionRequired');
     if (needsEmail && fillEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fillEmail.trim()))
       e.fillEmail = 'Please enter a valid email address.';
     if (needsPhone && fillPhone && !isValidPhoneNumber(fillPhone))
@@ -160,6 +169,9 @@ export default function ProfileSetup() {
         ...(city ? { city: city === 'Other' ? customCity.trim() : city } : {}),
         ...(dob ? { date_of_birth: dob } : {}),
       });
+      // What is outstanding just changed; the next route must not act on the
+      // answer from before the party was chosen.
+      clearPendingQuestions();
       curtainGo(nextRoute, { replace: true });
     } catch (err) {
       const detail = (err?.response?.data?.detail || err?.message || '').toLowerCase();
@@ -210,14 +222,16 @@ export default function ProfileSetup() {
                 behind this screen, signup is already done. It sits up here
                 because the only other exit is under the form, and the level
                 and position selects pushed that below the fold. */}
-            <button
-              type="button"
-              onClick={handleSkip}
-              className="ml-auto inline-flex h-10 items-center gap-2 rounded-full border border-[#1e3260]/70 px-4 text-[13px] font-medium text-[#8b9dc4] transition hover:border-[#3a6bc4]/70 hover:text-white"
-            >
-              {t('profile.skip')}
-              <ArrowRight size={15} strokeWidth={2} />
-            </button>
+            {!profileMissing && (
+              <button
+                type="button"
+                onClick={handleSkip}
+                className="ml-auto inline-flex h-10 items-center gap-2 rounded-full border border-[#1e3260]/70 px-4 text-[13px] font-medium text-[#8b9dc4] transition hover:border-[#3a6bc4]/70 hover:text-white"
+              >
+                {t('profile.skip')}
+                <ArrowRight size={15} strokeWidth={2} />
+              </button>
+            )}
           </>
         ) : (
           <>
@@ -567,9 +581,13 @@ export default function ProfileSetup() {
                 </div>
               </div>
 
-              <p className="mt-1.5 text-[12px]" style={{ color: positionLocked ? '#8b94b8' : '#5a6e9a' }}>
-                {positionLocked ? t('profile.roleLocked') : t('profile.positionHint')}
-              </p>
+              {errors.partyPosition
+                ? <p className="mt-1.5 text-[12px]" style={{ color: '#ef4444' }}>{errors.partyPosition}</p>
+                : (
+                  <p className="mt-1.5 text-[12px]" style={{ color: positionLocked ? '#8b94b8' : '#5a6e9a' }}>
+                    {positionLocked ? t('profile.roleLocked') : t('profile.positionHint')}
+                  </p>
+                )}
             </div>
 
             <button
@@ -595,14 +613,16 @@ export default function ProfileSetup() {
             </button>
           </form>
 
-          <button
-            type="button"
-            onClick={handleSkip}
-            className="mt-4 w-full py-2 text-center text-[13px] transition-opacity hover:opacity-100"
-            style={{ color: '#4a5e8a', opacity: 0.7 }}
-          >
-            {isOnboarding ? t('profile.skip') : t('common.cancel')}
-          </button>
+          {!profileMissing && (
+            <button
+              type="button"
+              onClick={handleSkip}
+              className="mt-4 w-full py-2 text-center text-[13px] transition-opacity hover:opacity-100"
+              style={{ color: '#4a5e8a', opacity: 0.7 }}
+            >
+              {isOnboarding ? t('profile.skip') : t('common.cancel')}
+            </button>
+          )}
         </div>
 
         {/* Step indicators */}

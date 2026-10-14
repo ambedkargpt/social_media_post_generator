@@ -33,6 +33,9 @@ class PendingSetsResponse(BaseModel):
 
     party: bool = False
     position: bool = False
+    # No party chosen yet. Every question set hangs off the party, so until
+    # this is false there is nothing else to ask - and nothing to write with.
+    profile: bool = False
 
 
 class QuestionResponse(BaseModel):
