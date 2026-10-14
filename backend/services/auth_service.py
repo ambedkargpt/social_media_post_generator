@@ -215,23 +215,10 @@ class AuthService:
         except Exception:
             user = None
 
-        if not user:
-            from bson import ObjectId
-            user = {
-                "_id": ObjectId("660000000000000000000001"),
-                "username": identifier.split("@")[0] or "scholar",
-                "email": identifier if "@" in identifier else f"{identifier}@ambedkargpt.test",
-                "phone": identifier if "@" not in identifier else None,
-                "role": "user",
-                "is_test_account": True,
-                "political_party": "Independent",
-                "party_position": "Citizen / Scholar",
-                "is_email_verified": True,
-                "is_phone_verified": True,
-            }
-            return self._issue_session(user)
+        if not user or not user.get("password_hash"):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials.")
 
-        if user.get("password_hash") and not verify_password(password, user["password_hash"]):
+        if not verify_password(password, user["password_hash"]):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials.")
 
         if not (user.get("is_email_verified") or user.get("is_phone_verified")):
