@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Radio } from 'lucide-react';
 
 import { useRadio } from '../context/RadioContext';
@@ -22,7 +23,9 @@ import { useI18n } from '../i18n/index.jsx';
 // sentence, quick enough that the strip never looks frozen.
 const SPEED_PX_PER_SEC = 58;
 
-export default function NewsTicker({ className = '' }) {
+// The whole strip is the way into the station. `onOpen`, when given, runs
+// instead of the plain link - the dashboard passes one that signs out first.
+export default function NewsTicker({ className = '', onOpen }) {
   const { t } = useI18n();
   const { station, track, playing, primeStation } = useRadio();
 
@@ -80,7 +83,12 @@ export default function NewsTicker({ className = '' }) {
       role="region"
       aria-label={t('ticker.aria')}
     >
-      <div className="flex min-h-[38px] items-center">
+      <Link
+        to="/bhimradio"
+        onClick={(e) => { if (onOpen) { e.preventDefault(); onOpen(); } }}
+        aria-label={t('ticker.open')}
+        className="news-ticker-link flex min-h-[38px] items-center"
+      >
 
         {/* The label sits still while the headline moves past it, the way a
             channel's bug does. Opaque, so the crawl slides under it cleanly. */}
@@ -131,9 +139,11 @@ export default function NewsTicker({ className = '' }) {
             ))}
           </div>
         </div>
-      </div>
+      </Link>
 
       <style>{`
+        .news-ticker-link { cursor: pointer; text-decoration: none; }
+        .news-ticker-link:focus-visible { outline: 2px solid #3f9fff; outline-offset: -2px; }
         @keyframes news-ticker-scroll {
           from { transform: translateX(0); }
           to   { transform: translateX(-50%); }

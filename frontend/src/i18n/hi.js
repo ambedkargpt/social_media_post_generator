@@ -403,6 +403,7 @@ export default {
   "nowPlaying.aria": "भीम रेडियो, अभी चल रहा है",
   "ticker.label": "ऑन एयर",
   "ticker.aria": "भीम रेडियो सुर्खियाँ",
+  "ticker.open": "भीम रेडियो खोलें",
   "radio.emptyStation": "आज इस स्टेशन का बुलेटिन नहीं है। दूसरा सुनिए, या सुबह के बाद देखिए।",
   "radio.title": "भीम रेडियो",
   "radio.tagline": "लिखते हुए सुनिए",

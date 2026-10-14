@@ -399,6 +399,7 @@ export default {
   "nowPlaying.aria": "Bhim Radio, now playing",
   "ticker.label": "On Air",
   "ticker.aria": "Bhim Radio headline ticker",
+  "ticker.open": "Open Bhim Radio",
   "radio.emptyStation": "No bulletin for this station today. Try another, or come back after the morning build.",
   "radio.title": "Bhim Radio",
   "radio.tagline": "Listen while you write",

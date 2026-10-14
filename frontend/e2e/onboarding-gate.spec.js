@@ -62,3 +62,15 @@ test('an account that has done both gets in', async ({ page }) => {
   await page.goto('/dashboard');
   await expect(page).toHaveURL(/\/dashboard$/);
 });
+
+test('the ON AIR strip on the dashboard opens the station and signs out', async ({ page }) => {
+  await signedIn(page, { political_party: INC, party_position: 'national_vice_president' },
+    { party: false, position: false, profile: false });
+  await page.goto('/dashboard');
+  const strip = page.getByRole('link', { name: /open bhim radio|भीम रेडियो खोलें/i });
+  await expect(strip).toBeVisible({ timeout: 15000 });
+  await strip.click();
+
+  await expect(page).toHaveURL(/\/bhimradio$/);
+  expect(await page.evaluate(() => sessionStorage.getItem('user'))).toBeNull();
+});
