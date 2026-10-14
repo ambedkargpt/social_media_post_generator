@@ -1,3 +1,4 @@
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { Play } from 'lucide-react';
 
 import { useI18n } from '../../i18n/index.jsx';
@@ -39,31 +40,67 @@ export function Label({ children, tone = MUTED, className = '' }) {
 export function Transcript({ text, offsetSec, durationSec, listening, size = 23 }) {
   const { t } = useI18n();
   const words = String(text || '').split(/\s+/).filter(Boolean);
+  const paraRef = useRef(null);
+  // The last position the page reported, and when. The clock arrives four
+  // times a second; between those the position is carried forward here, every
+  // frame, so the highlight moves the way the voice does instead of in jumps.
+  const base = useRef({ offset: offsetSec, at: 0 });
+
+  useLayoutEffect(() => {
+    base.current = { offset: offsetSec, at: performance.now() };
+  }, [offsetSec, text]);
+
+  useEffect(() => {
+    const para = paraRef.current;
+    if (!para || !words.length) return undefined;
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    // Spoken time runs with the length of a word, not one slot per word: a long
+    // compound takes several times as long to say as "का". So the position is
+    // laid over the letters and mapped back to the word they belong to, with
+    // how far through that word it is. Before the words start nothing is lit;
+    // after they end, all of them are.
+    const weights = words.map((w) => w.length + 1);
+    const total = weights.reduce((x, y) => x + y, 0);
+    const spans = para.children;
+    let frame = 0;
+
+    function paint() {
+      const since = Math.min((performance.now() - base.current.at) / 1000, 0.5);
+      const offset = base.current.offset + (reduced ? 0 : since);
+      const ratio = durationSec > 0 ? Math.min(offset / durationSec, 1) : 0;
+      let current = -1;
+      let within = 0;
+      if (ratio >= 1) {
+        current = words.length;
+      } else if (ratio >= 0) {
+        const target = ratio * total;
+        let run = 0;
+        for (let i = 0; i < weights.length; i += 1) {
+          if (run + weights[i] > target) { current = i; within = (target - run) / weights[i]; break; }
+          run += weights[i];
+        }
+      }
+      for (let i = 0; i < spans.length; i += 1) {
+        const state = i < current ? 'done' : i === current ? 'now' : 'next';
+        if (spans[i].dataset.s !== state) spans[i].dataset.s = state;
+      }
+      if (current >= 0 && current < spans.length) {
+        spans[current].style.setProperty('--p', `${reduced ? 100 : Math.round(within * 100)}%`);
+      }
+      frame = requestAnimationFrame(paint);
+    }
+    paint();
+    return () => cancelAnimationFrame(frame);
+  }, [text, durationSec]);   // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!words.length) return null;
-
-  // Spoken time runs with the length of a word, not one slot per word: a long
-  // compound takes several times as long to say as "का". So the position is
-  // laid over the letters and then mapped back to the word they belong to.
-  // Before the words start nothing is lit; after they end, all of them are.
-  const ratio = durationSec > 0 ? Math.min(offsetSec / durationSec, 1) : 0;
-  const weights = words.map((w) => w.length + 1);
-  const total = weights.reduce((a, b) => a + b, 0);
-  let current = -1;
-  if (ratio >= 0) {
-    const target = ratio * total;
-    let run = 0;
-    current = words.length - 1;
-    for (let i = 0; i < words.length; i += 1) {
-      run += weights[i];
-      if (run > target) { current = i; break; }
-    }
-  }
 
   return (
     <div style={{ opacity: listening ? 1 : 0.55 }}>
       <p
+        ref={paraRef}
         lang="hi"
+        className="bhim-transcript"
         style={{
           fontFamily: 'var(--font-hindi)',
           fontSize: size,
@@ -73,18 +110,7 @@ export function Transcript({ text, offsetSec, durationSec, listening, size = 23 
         }}
       >
         {words.map((word, i) => (
-          <span
-            key={`${i}-${word}`}
-            style={
-              i === current
-                ? { background: '#1a3a80', color: '#fff', padding: '0 2px' }
-                : i < current
-                  ? { color: INK }
-                  : { color: '#5a6789' }
-            }
-          >
-            {word}{' '}
-          </span>
+          <span key={`${i}-${word}`}>{word}{' '}</span>
         ))}
       </p>
       {!listening && (
@@ -92,6 +118,22 @@ export function Transcript({ text, offsetSec, durationSec, listening, size = 23 
           {t('radio.tuneInToHear')}
         </p>
       )}
+      <style>{`
+        /* Upcoming words are dim, spoken ones full ink, and the word being said
+           fills from left to right as it is said. The colour change is eased so
+           a word settles into "spoken" rather than snapping. */
+        .bhim-transcript > span { color: #5a6789; transition: color .35s ease; }
+        .bhim-transcript > span[data-s="done"] { color: ${INK}; }
+        .bhim-transcript > span[data-s="now"] {
+          color: #fff;
+          border-radius: 4px;
+          background-image: linear-gradient(90deg, #1a3a80 var(--p, 0%), rgba(26, 58, 128, 0.35) var(--p, 0%));
+          -webkit-box-decoration-break: clone; box-decoration-break: clone;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .bhim-transcript > span { transition: none; }
+        }
+      `}</style>
     </div>
   );
 }
