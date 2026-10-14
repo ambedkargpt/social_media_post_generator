@@ -42,8 +42,23 @@ export function Transcript({ text, offsetSec, durationSec, listening, size = 23 
 
   if (!words.length) return null;
 
-  const ratio = durationSec > 0 ? Math.min(Math.max(offsetSec / durationSec, 0), 1) : 0;
-  const current = Math.min(words.length - 1, Math.floor(ratio * words.length));
+  // Spoken time runs with the length of a word, not one slot per word: a long
+  // compound takes several times as long to say as "का". So the position is
+  // laid over the letters and then mapped back to the word they belong to.
+  // Before the words start nothing is lit; after they end, all of them are.
+  const ratio = durationSec > 0 ? Math.min(offsetSec / durationSec, 1) : 0;
+  const weights = words.map((w) => w.length + 1);
+  const total = weights.reduce((a, b) => a + b, 0);
+  let current = -1;
+  if (ratio >= 0) {
+    const target = ratio * total;
+    let run = 0;
+    current = words.length - 1;
+    for (let i = 0; i < words.length; i += 1) {
+      run += weights[i];
+      if (run > target) { current = i; break; }
+    }
+  }
 
   return (
     <div style={{ opacity: listening ? 1 : 0.55 }}>

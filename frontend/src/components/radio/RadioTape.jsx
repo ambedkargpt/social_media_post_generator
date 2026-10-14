@@ -31,7 +31,7 @@ const BEFORE = 3;
 const AFTER = 6;
 
 export default function RadioTape({
-  now, story, storyIndex, total, offsetInStory, storyDuration, cycleLength,
+  now, story, storyIndex, total, textOffset, textDuration, cycleLength,
   elapsed, tracks, listening, onTune, canTune, nextInSec, progress,
   volume, onVolume, reduced, className = '',
 }) {
@@ -170,8 +170,8 @@ export default function RadioTape({
         <div style={{ minWidth: 0, borderLeft: `2px solid ${RULE}`, paddingLeft: 24 }}>
           <Transcript
             text={story?.text}
-            offsetSec={offsetInStory}
-            durationSec={storyDuration}
+            offsetSec={textOffset}
+            durationSec={textDuration}
             listening={listening}
             size={20}
           />

@@ -26,7 +26,7 @@ function minutes(seconds) {
 }
 
 export default function RadioMobile({
-  now, story, storyIndex, total, offsetInStory, storyDuration,
+  now, story, storyIndex, total, offsetInStory, storyDuration, textOffset, textDuration,
   upcoming, listening, onTune, canTune, nextInSec, progress,
 }) {
   const { t } = useI18n();
@@ -107,8 +107,8 @@ export default function RadioMobile({
 
         <Transcript
           text={story?.text}
-          offsetSec={offsetInStory}
-          durationSec={storyDuration}
+          offsetSec={textOffset}
+          durationSec={textDuration}
           listening={listening}
           size={18}
         />

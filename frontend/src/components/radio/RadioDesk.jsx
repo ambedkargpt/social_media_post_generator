@@ -13,7 +13,7 @@ import { ACCENT, INK, MUTED, RULE, SURFACE, airTime, istClock } from './radioTok
  * row that plainly is not.
  */
 export default function RadioDesk({
-  now, story, storyIndex, total, offsetInStory, storyDuration,
+  now, story, storyIndex, total, offsetInStory, textOffset, textDuration,
   upcoming, listening, onTune, canTune, nextInSec, progress,
   volume, onVolume, clockLabel, className = '',
 }) {
@@ -101,8 +101,8 @@ export default function RadioDesk({
 
           <Transcript
             text={story?.text}
-            offsetSec={offsetInStory}
-            durationSec={storyDuration}
+            offsetSec={textOffset}
+            durationSec={textDuration}
             listening={listening}
           />
         </section>
