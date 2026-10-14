@@ -32,7 +32,6 @@ import { partyLogo } from '../utils/politicalParties';
 import { trackEvent } from '../analytics/metrics';
 
 const TONES = ['Professional', 'Inspirational', 'Creative', 'Casual', 'Motivational'];
-const ALSO_GENERATE = ['Audio', 'Shorts', 'Image'];
 const CATEGORIES = ['All', 'Legacy', 'Policy', 'Education', 'Research', 'Grassroots'];
 
 function useCountdown(resetAt) {
@@ -55,7 +54,6 @@ function useCountdown(resetAt) {
 
 const PLATFORMS = [
   { id: 'twitter',   label: 'Twitter / X',  short: '𝕏',   limit: 280,  color: '#1d9bf0' },
-  { id: 'instagram', label: 'Instagram',     short: 'IG',  limit: 2200, color: '#e1306c' },
   // Reddit's self-post body limit really is 40,000 — the counter says so
   // rather than a rounder number that would be a guess.
   { id: 'reddit',    label: 'Reddit',        short: 'r/',  limit: 40000, color: '#ff4500' },
@@ -2337,23 +2335,6 @@ export default function SocialMediaPostGenerator() {
               </p>
             )}
 
-            {/* You Can Also Generate — card with grid buttons */}
-            <div className="mt-5 overflow-hidden rounded-2xl border border-[#1e3260]/60 bg-[#0a1130]/70 p-5">
-              <p className="mb-4 font-display text-[14px] font-semibold text-white">
-                {t('gen.alsoGenerate')}
-              </p>
-              <div className="grid grid-cols-3 gap-3">
-                {ALSO_GENERATE.map((label) => (
-                  <button
-                    key={label}
-                    type="button"
-                    className="flex items-center justify-center rounded-xl border border-[#1e3a6e]/80 bg-[#0d1840]/80 py-4 text-[13.5px] font-medium text-white transition hover:border-[#3f9fff]/60 hover:bg-[#0f2050]"
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
         )}
       </div>
