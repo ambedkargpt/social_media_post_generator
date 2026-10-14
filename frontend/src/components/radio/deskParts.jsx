@@ -135,8 +135,8 @@ export function TuneButton({ listening, onClick, disabled, width = 220, height =
       className="bhim-tune"
       style={{
         width, height,
-        display: 'flex', alignItems: 'center', gap: 12,
-        padding: '0 20px',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+        padding: '0 20px', borderRadius: 999,
         border: listening ? `2px solid ${ACCENT}` : '2px solid transparent',
         background: listening ? 'transparent' : ACCENT,
         color: listening ? ACCENT_HOVER : '#fff',
