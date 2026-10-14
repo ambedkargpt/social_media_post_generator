@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { saveProfileAnswers } from '../api/profile';
 import { getPartyQuestions, getPositionQuestions } from '../api/questions';
 import usePendingQuestions, { clearPendingQuestions } from '../hooks/usePendingQuestions';
+import { partyHasQuestions } from '../utils/partyQuestions';
 import { groupForId, roleLabel, rolesInGroup } from '../utils/partyRoles';
 import { levelLabel } from '../utils/displayLabel';
 import logoSrc     from '../assets/images/logo-animation.webp';
@@ -29,8 +30,6 @@ import { useI18n } from '../i18n/index.jsx';
 // shorter list it points past the end and leaves the page on its spinner.
 const STORAGE_KEY = 'ambedkargpt_preference_questionnaire';
 
-// Mirrors question_party() in backend/pipeline/position_questions.py.
-const HAS_POSITION_SET = /indian national congress|\(inc\)|bahujan samaj|\(bsp\)/i;
 
 function useSlideAnim(index, direction) {
   const [display, setDisplay]   = useState(index);
@@ -130,7 +129,7 @@ export default function Questionnaire() {
   const party = currentUser?.political_party || '';
   const positionId = currentUser?.party_position || '';
   const group = groupForId(positionId);
-  const partyHasSet = HAS_POSITION_SET.test(party);
+  const partyHasSet = partyHasQuestions(party);
   const role = rolesInGroup(group).find((r) => r.id === positionId);
 
   const leftRef = useRef(false);
@@ -398,8 +397,10 @@ export default function Questionnaire() {
 
         {/* Next already refuses to advance without an answer, so this button is
             the only way past a question. On the compulsory one it is not
-            offered until the answer is given. */}
-        {!mustAnswer && (
+            offered until the answer is given. Nor while the preference
+            questions are outstanding: they are required before any post, and
+            a partial save would count them as done. */}
+        {!mustAnswer && !pending.position && (
           <button
             type="button"
             onClick={saveAndContinue}

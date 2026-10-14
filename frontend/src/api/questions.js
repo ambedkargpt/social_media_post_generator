@@ -41,7 +41,14 @@ export async function getPartyQuestions(party) {
 //
 // The party set is only ever pending for an account older than the questions,
 // which is what keeps a fresh sign-up at five questions instead of fifteen.
+//
+// `profile` is true while the account has no party, or no position for a party
+// whose questions are written per position: nothing else can be asked yet.
 export async function getPendingQuestionSets() {
   const { data } = await client.get('/questions/pending');
-  return { party: Boolean(data?.party), position: Boolean(data?.position) };
+  return {
+    party: Boolean(data?.party),
+    position: Boolean(data?.position),
+    profile: Boolean(data?.profile),
+  };
 }

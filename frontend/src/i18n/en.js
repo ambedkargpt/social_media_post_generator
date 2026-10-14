@@ -287,6 +287,7 @@ export default {
   "profile.feedTailored": "Your news feed is tailored to this choice.",
   "profile.positionInParty": "Your position in the party",
   "profile.positionHint": "Sets how your posts speak: what they claim, and whether they speak for the party.",
+  "profile.positionRequired": "Please choose your level and position.",
   "profile.partyLocked": "Your party is set and cannot be changed. Your saved answers are written for it.",
   "profile.roleLocked": "Your role is set and cannot be changed. Your saved answers are written for it.",
   "profile.lockWarning.title": "Choose carefully",

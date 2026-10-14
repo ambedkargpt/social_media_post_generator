@@ -14,7 +14,7 @@ import { getPendingQuestionSets } from '../api/questions';
  * genuinely nothing to ask, and redirecting on the first is wrong.
  */
 
-const NONE = { party: false, position: false };
+const NONE = { party: false, position: false, profile: false };
 
 let cache = { userId: null, promise: null, value: null };
 

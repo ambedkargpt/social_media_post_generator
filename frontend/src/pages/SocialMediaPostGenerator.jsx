@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { clearPendingQuestions } from '../hooks/usePendingQuestions';
 import {
   ArrowLeft, Search, Filter, Sparkles,
   Copy, Check, RefreshCw, ChevronDown, FileText, Star, Radio,
@@ -251,6 +252,18 @@ function truncateText(text = '', max = 160) {
 
 export default function SocialMediaPostGenerator() {
   const navigate = useNavigate();
+
+  // The server refuses a post until the party and the preference questions
+  // are done. The route guard normally gets there first; this covers a check
+  // that was stale, by sending them to the step the server named.
+  function sendToOnboarding(err) {
+    const detail = err?.response?.data?.detail;
+    if (err?.response?.status !== 403 || detail?.code !== 'onboarding_required') return false;
+    clearPendingQuestions();
+    try { sessionStorage.setItem('auth_redirect', '/generate/social-media'); } catch { /* ignore */ }
+    navigate(detail.step === 'profile' ? '/profile-setup' : '/questionnaire', { replace: true });
+    return true;
+  }
   const { currentUser } = useAuth();
 
   const [articles,        setArticles]        = useState([]);
@@ -723,6 +736,7 @@ export default function SocialMediaPostGenerator() {
       setShowTranslated(false);
     } catch (err) {
       console.error('Generate failed:', err);
+      if (sendToOnboarding(err)) return;
       if (err?.response?.status === 429) {
         const detail = err.response.data?.detail;
         const msg = detail?.message ?? "You've reached your 5 posts/day limit. Come back tomorrow!";
@@ -790,6 +804,7 @@ export default function SocialMediaPostGenerator() {
       setShowTranslated(false);
     } catch (err) {
       console.error('Regenerate failed:', err);
+      if (sendToOnboarding(err)) return;
       const detail = err?.response?.data?.detail;
       const reason = typeof detail === 'string' ? detail : detail?.message;
       setGeneratedPost(reason || t('gen.regenerateFailed'));
