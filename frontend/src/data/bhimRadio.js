@@ -178,6 +178,11 @@ function tracksFrom(manifest) {
       // listener is hearing, not a summary written separately from them.
       text: String(s.text || '').trim(),
       storyType: String(s.story_type || '').trim(),
+      // When the narration itself starts and stops, if the build says. The
+      // story's own span also holds the link into it, its headline and the
+      // music after it, none of which are the words on screen.
+      textStartSec: Number.isFinite(Number(s.text_start_sec)) ? Number(s.text_start_sec) : null,
+      textEndSec: Number.isFinite(Number(s.text_end_sec)) ? Number(s.text_end_sec) : null,
     }));
 }
 

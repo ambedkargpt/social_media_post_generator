@@ -138,6 +138,13 @@ export default function BhimRadioPage() {
   const offsetInStory = Math.min(Math.max(at - storyStart, 0), storyDuration);
   const progress = offsetInStory / storyDuration;
 
+  // Where the transcript is. Measured from when the words start, when the
+  // manifest says so; spreading them over the whole story put the highlight
+  // seconds ahead of the voice while the link and the headline were playing.
+  const hasTextSpan = story?.textStartSec != null && story?.textEndSec > story?.textStartSec;
+  const textOffset = hasTextSpan ? at - story.textStartSec : offsetInStory;
+  const textDuration = hasTextSpan ? story.textEndSec - story.textStartSec : storyDuration;
+
   // Before the first story the clock is in the opening music, so the next
   // thing on air is story one rather than "the rest of this story".
   const nextInSec = storyIndex < 0
@@ -175,6 +182,7 @@ export default function BhimRadioPage() {
     // describe the same thing and have to agree.
     now, story, storyIndex, total: tracks.length,
     offsetInStory, storyDuration, cycleLength, elapsed: at,
+    textOffset, textDuration,
     listening: playing, canTune, nextInSec, progress,
     volume: muted ? 0 : volume,
     onVolume: (v) => { if (muted && v > 0) toggleMute(); setVolume(v); },
