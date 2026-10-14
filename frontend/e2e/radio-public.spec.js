@@ -124,6 +124,32 @@ test.describe('the rail', () => {
 });
 
 test.describe('sharing the link', () => {
+  test('Share opens a menu of apps, each sending the message with the link and emoji', async ({ page }) => {
+    await page.goto('/bhimradio');
+    await page.getByRole('button', { name: /^(share|शेयर)$/i }).first().click();
+    const menu = page.getByRole('menu');
+    for (const app of ['WhatsApp', 'Telegram', 'Instagram', 'X', 'Facebook', 'LinkedIn', 'Email']) {
+      await expect(menu.getByRole('menuitem', { name: new RegExp(`^${app}`) })).toBeVisible();
+    }
+
+    const wa = await menu.getByRole('menuitem', { name: /^WhatsApp/ }).getAttribute('href');
+    // A computer goes to WhatsApp Web: the Windows app mangled emoji from wa.me.
+    expect(wa).toMatch(/^https:\/\/web\.whatsapp\.com\/send\?text=/);
+    const text = decodeURIComponent(wa.split('text=')[1]);
+    expect(text).toContain('https://www.ambedkargpt.in/bhimradio');
+    // One link only: WhatsApp builds the card from the first one it finds.
+    expect(text.match(/https?:\/\//g)).toHaveLength(1);
+    expect(text).toMatch(/\p{Extended_Pictographic}/u);
+
+    const tg = await menu.getByRole('menuitem', { name: /^Telegram/ }).getAttribute('href');
+    expect(decodeURIComponent(tg)).toContain('url=https://www.ambedkargpt.in/bhimradio');
+
+    await page.keyboard.press('Escape');
+    await expect(menu).toHaveCount(0);
+  });
+
+
+
   test('the page carries its own title, description and image in the HTML', async ({ request }) => {
     // Fetched without running any script, the way a link-preview crawler does.
     // WhatsApp, Facebook, X and Telegram read these tags from the response and
@@ -141,11 +167,11 @@ test.describe('sharing the link', () => {
     // Absolute: a preview image given as a relative path is ignored by every
     // platform, because the crawler has no page to resolve it against.
     const image = html.match(/property="og:image" content="([^"]+)"/)?.[1];
-    expect(image).toMatch(/^https:\/\/.+\/og\/bhimradio\.jpg$/);
+    expect(image).toMatch(/^https:\/\/.+\/og\/bhimradio-v2\.jpg$/);
   });
 
   test('and the image it names exists, at the size the card is built for', async ({ request }) => {
-    const res = await request.get('/og/bhimradio.jpg');
+    const res = await request.get('/og/bhimradio-v2.jpg');
     expect(res.ok()).toBe(true);
     expect(res.headers()['content-type']).toMatch(/image\/jpeg/);
 

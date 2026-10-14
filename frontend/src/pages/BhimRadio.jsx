@@ -10,6 +10,7 @@ import RadioTape from '../components/radio/RadioTape';
 import { INK, MUTED, RULE, SURFACE, mmss } from '../components/radio/radioTokens';
 import { useI18n } from '../i18n/index.jsx';
 import { RADIO_REQUIRES_LOGIN } from '../data/radioAccess';
+import ShareMenu from '../components/radio/ShareMenu';
 
 /* ── the station ──────────────────────────────────────────────────────────
    Two layouts over one broadcast. Both are fed from the same derived state
@@ -222,6 +223,9 @@ export default function BhimRadioPage() {
             </button>
           ))}
 
+          {/* The message and the link, to whichever app - see radioShare.js. */}
+          {STANDALONE && <ShareMenu headline={story?.title} className="bhim-share" />}
+
           {isDemo && onAir && (
             <button
               type="button"
@@ -370,6 +374,14 @@ export default function BhimRadioPage() {
           transition: border-color .15s ease, color .15s ease;
         }
         .bhim-back:hover { border-color: #1d7afc; color: #fff; }
+        .bhim-share {
+          display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+          padding: 6px 14px; border: 2px solid ${RULE}; background: transparent; color: ${INK};
+          font: 600 11px/1 Inter, system-ui, sans-serif; letter-spacing: 0.12em; text-transform: uppercase;
+          transition: border-color .15s ease, color .15s ease;
+        }
+        .bhim-share:hover { border-color: #1d7afc; color: #fff; }
+        .bhim-share:focus-visible { outline: 2px solid #1d7afc; outline-offset: 2px; }
         .bhim-back:focus-visible { outline: 2px solid #1d7afc; outline-offset: 2px; }
         @media (prefers-reduced-motion: reduce) { .bhim-back { transition: none; } }
         .bhim-station-switch {

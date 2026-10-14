@@ -3,7 +3,7 @@
  *
  *     node scripts/og-bhimradio.mjs
  *
- * Writes public/og/bhimradio.jpg - 1200x630, the size every platform's
+ * Writes public/og/bhimradio-v2.jpg - 1200x630, the size every platform's
  * large-card preview is built around. It is kept as a script rather than a
  * bare image so the wording can be changed and the card redrawn instead of
  * being re-made in an editor from memory.
@@ -32,79 +32,67 @@ const asDataUri = (rel, mime) =>
 const portrait = asDataUri('src/assets/images/ambedkar-portrait.webp', 'image/webp');
 const logo = asDataUri('public/logo.png', 'image/png');
 
-const BARS = [22, 46, 30, 64, 40, 78, 52, 34, 70, 44, 26, 58, 36, 20];
+// Centred, so the picture still reads when WhatsApp shows it as a small
+// square thumbnail (it crops to the middle) as well as a full-width card.
+const RAYS = Array.from({ length: 24 }, (_, i) => i * 15);
+const BARS = [18, 34, 52, 30, 70, 46, 88, 60, 100, 60, 88, 46, 70, 30, 52, 34, 18];
 
 const html = `<!doctype html>
 <html><head><meta charset="utf-8"><style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { width: 1200px; height: 630px; background: #05081a; overflow: hidden; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
   body {
-    position: relative;
-    font-family: 'Segoe UI', 'Nirmala UI', 'Mangal', 'Noto Sans Devanagari', system-ui, sans-serif;
-    color: #fff;
+    position: relative; color: #fff;
+    font-family: 'Nirmala UI', 'Mangal', 'Noto Sans Devanagari', 'Segoe UI', system-ui, sans-serif;
     background:
-      radial-gradient(900px 520px at 8% 0%, rgba(47, 127, 255, .34), transparent 60%),
-      radial-gradient(700px 500px at 100% 100%, rgba(26, 60, 196, .38), transparent 60%),
-      linear-gradient(160deg, #0a1030 0%, #05081a 60%);
+      radial-gradient(520px 420px at 50% 46%, rgba(46, 110, 255, .45), transparent 70%),
+      linear-gradient(180deg, #0b1442 0%, #060a24 55%, #04061a 100%);
   }
+  /* The chakra, faint, behind everything: twenty-four spokes. */
+  .chakra { position: absolute; left: 50%; top: 46%; width: 760px; height: 760px;
+            transform: translate(-50%, -50%); opacity: .14; }
+  .chakra i { position: absolute; left: 50%; top: 0; width: 2px; height: 50%;
+              background: linear-gradient(#9cc2ff, transparent); transform-origin: 50% 100%; }
+  .chakra::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 3px solid #9cc2ff; }
 
-  /* The portrait: greyscale with the brand blue multiplied into it, so it
-     reads as one plate rather than a photograph pasted beside the text. */
-  .plate { position: absolute; top: 0; right: 0; width: 470px; height: 630px; overflow: hidden; }
-  .plate img {
-    position: absolute; right: -10px; bottom: 0; height: 700px; width: auto;
-    filter: grayscale(1) contrast(1.12) brightness(1.05);
-  }
-  .plate::before {
-    content: ''; position: absolute; inset: 0; z-index: 2;
-    background: #1b3cc4; mix-blend-mode: multiply;
-  }
-  .plate::after {
-    content: ''; position: absolute; inset: 0; z-index: 3;
-    background: linear-gradient(90deg, #05081a 0%, rgba(5, 8, 26, .55) 28%, transparent 62%);
-  }
+  .portrait { position: absolute; right: -40px; bottom: 0; height: 640px; opacity: .22;
+              filter: grayscale(1) brightness(1.2); mix-blend-mode: screen;
+              -webkit-mask-image: linear-gradient(90deg, transparent, #000 45%); }
 
-  .copy { position: absolute; left: 64px; top: 0; bottom: 96px; width: 720px;
-          display: flex; flex-direction: column; justify-content: center; }
+  .center { position: absolute; inset: 0; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; text-align: center; }
+  .live { display: inline-flex; align-items: center; gap: 10px; padding: 7px 18px 7px 14px;
+          border-radius: 999px; background: rgba(255, 70, 60, .16); border: 1.5px solid rgba(255, 110, 95, .7);
+          font: 800 20px/1 'Segoe UI', sans-serif; letter-spacing: .16em; color: #ff9a8c; }
+  .live i { width: 11px; height: 11px; border-radius: 50%; background: #ff4d3d; box-shadow: 0 0 0 5px rgba(255, 77, 61, .25); }
+  h1 { margin-top: 14px; font-size: 150px; line-height: 1.15; font-weight: 800;
+       background: linear-gradient(180deg, #fff6d6 0%, #ffd56b 38%, #e7a326 70%, #b8740f 100%);
+       -webkit-background-clip: text; background-clip: text; color: transparent;
+       filter: drop-shadow(0 6px 18px rgba(255, 190, 60, .35)); }
+  .wave { display: flex; align-items: center; gap: 7px; height: 46px; margin-top: 2px; }
+  .wave b { width: 8px; border-radius: 4px; background: linear-gradient(180deg, #ffd56b, #e7a326); }
+  .tag { margin-top: 14px; font-size: 44px; font-weight: 700; color: #eef3ff; }
+  .en { margin-top: 6px; font: 700 22px/1 'Segoe UI', sans-serif; letter-spacing: .42em; color: #7fb2ff; }
 
-  .live {
-    display: inline-flex; align-items: center; gap: 12px; align-self: flex-start;
-    padding: 9px 20px 9px 16px; border-radius: 999px;
-    background: rgba(255, 90, 70, .14); border: 1.5px solid rgba(255, 107, 90, .65);
-    font-size: 22px; font-weight: 800; letter-spacing: .14em; color: #ff8a7a;
-  }
-  .live i { width: 13px; height: 13px; border-radius: 50%; background: #ff5a46;
-            box-shadow: 0 0 0 6px rgba(255, 90, 70, .25); }
-
-  h1 { margin-top: 22px; font-size: 128px; line-height: 1.12; font-weight: 800; letter-spacing: -.01em; }
-  .en { margin-top: 2px; font-size: 40px; font-weight: 700; letter-spacing: .34em; color: #6aa8ff; }
-  .tag { margin-top: 26px; font-size: 38px; line-height: 1.4; font-weight: 600; color: #e6eeff; max-width: 640px; }
-  .sub { margin-top: 12px; font-size: 24px; color: #8fa5cf; }
-
-  .wave { position: absolute; left: 64px; bottom: 40px; display: flex; align-items: flex-end; gap: 7px; height: 52px; }
-  .wave b { width: 9px; border-radius: 5px; background: linear-gradient(180deg, #5fb0ff, #2f7fff); opacity: .9; }
-
-  .brand { position: absolute; right: 48px; bottom: 40px; z-index: 5; display: flex; align-items: center; gap: 14px;
-           font-size: 28px; font-weight: 700; color: #fff; text-shadow: 0 2px 14px rgba(0,0,0,.7); }
-  .brand img { width: 46px; height: 46px; object-fit: contain; }
+  .brand { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
+           display: flex; align-items: center; gap: 10px; font: 700 24px/1 'Segoe UI', sans-serif; }
+  .brand img { width: 34px; height: 34px; object-fit: contain; }
   .brand span span { color: #5fb0ff; }
 </style></head>
 <body>
-  <div class="plate"><img src="${portrait}" alt=""></div>
-
-  <div class="copy">
+  <div class="chakra">${RAYS.map((d) => `<i style="transform: translateX(-50%) rotate(${d}deg)"></i>`).join('')}</div>
+  <img class="portrait" src="${portrait}" alt="">
+  <div class="center">
     <div class="live"><i></i>ON AIR</div>
     <h1>भीम रेडियो</h1>
-    <div class="en">BHIM RADIO</div>
-    <div class="tag">आज की ख़बरें, हिंदी में — बिना लॉगिन, सीधे सुनिए</div>
-    <div class="sub">Today's political bulletin · No login needed</div>
+    <div class="wave">${BARS.map((h) => `<b style="height:${h}%"></b>`).join('')}</div>
+    <div class="tag">आवाज़ बहुजन की</div>
+    <div class="en">BHIM RADIO · HINDI NEWS</div>
   </div>
-
-  <div class="wave">${BARS.map((h) => `<b style="height:${h}%"></b>`).join('')}</div>
   <div class="brand"><img src="${logo}" alt=""><span>Ambedkar<span>GPT</span></span></div>
 </body></html>`;
 
-const out = resolve(root, 'public/og/bhimradio.jpg');
+const out = resolve(root, 'public/og/bhimradio-v2.jpg');
 mkdirSync(dirname(out), { recursive: true });
 
 const browser = await chromium.launch();
