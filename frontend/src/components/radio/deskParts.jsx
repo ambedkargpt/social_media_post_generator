@@ -18,7 +18,7 @@ export function Label({ children, tone = MUTED, className = '' }) {
   return (
     <span
       className={`dash-eyebrow ${className}`}
-      style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', color: tone }}
+      style={{ fontSize: 13, fontWeight: 600, textTransform: 'uppercase', color: tone }}
     >
       {children}
     </span>
@@ -32,10 +32,10 @@ export function ProgramLine({ align = 'left' }) {
   const { t } = useI18n();
   return (
     <div style={{ textAlign: align }}>
-      <p lang="hi" style={{ margin: 0, font: '700 17px/1.3 var(--font-hindi)', color: '#ffc72c' }}>
+      <p lang="hi" style={{ margin: 0, font: '700 21px/1.3 var(--font-hindi)', color: '#ffc72c' }}>
         {t('radio.program')}
       </p>
-      <p lang="hi" style={{ margin: '2px 0 0', fontSize: 13, color: MUTED, fontFamily: 'var(--font-hindi)' }}>
+      <p lang="hi" style={{ margin: '2px 0 0', fontSize: 15, color: MUTED, fontFamily: 'var(--font-hindi)' }}>
         {t('radio.slogan')}
       </p>
     </div>
@@ -53,14 +53,14 @@ export function AnchorTag() {
       style={{
         display: 'inline-flex', alignItems: 'stretch', overflow: 'hidden',
         borderRadius: 6, border: '1px solid rgba(255, 199, 44, 0.45)',
-        font: '600 13px/1 var(--font-hindi)', whiteSpace: 'nowrap',
+        font: '600 16px/1 var(--font-hindi)', whiteSpace: 'nowrap',
       }}
     >
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 8px', background: '#d4141f', color: '#fff' }}>
-        <Mic size={13} strokeWidth={2.4} aria-hidden="true" />
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 10px', background: '#d4141f', color: '#fff' }}>
+        <Mic size={16} strokeWidth={2.4} aria-hidden="true" />
         {t('radio.anchorLabel')}
       </span>
-      <span style={{ display: 'inline-flex', alignItems: 'center', padding: '6px 10px', background: '#0d1333', color: '#fff' }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', padding: '8px 12px', background: '#0d1333', color: '#fff' }}>
         {t('radio.anchorName')}
       </span>
     </span>
@@ -239,7 +239,7 @@ export function TuneButton({ listening, onClick, disabled, width = 220, height =
         border: listening ? `2px solid ${ACCENT}` : '2px solid transparent',
         background: listening ? 'transparent' : ACCENT,
         color: listening ? ACCENT_HOVER : '#fff',
-        font: '600 15px/1 var(--font-body, Inter), system-ui, sans-serif',
+        font: '700 21px/1 var(--font-body, Inter), system-ui, sans-serif',
         letterSpacing: '0.02em',
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.4 : 1,
@@ -247,7 +247,7 @@ export function TuneButton({ listening, onClick, disabled, width = 220, height =
     >
       {listening
         ? <span style={{ width: 10, height: 10, background: ACCENT_HOVER, flex: 'none' }} />
-        : <Play size={18} strokeWidth={2.2} fill="currentColor" style={{ flex: 'none' }} />}
+        : <Play size={22} strokeWidth={2.2} fill="currentColor" style={{ flex: 'none' }} />}
       <span style={{ textAlign: 'left' }}>
         {listening ? t('radio.tuneOff') : t('radio.tuneIn')}
       </span>
@@ -283,7 +283,7 @@ export function VolumeControl({ volume, onChange, listening, disabled }) {
       />
       <span
         style={{
-          font: '500 12px/1 ui-monospace, monospace',
+          font: '500 14px/1 ui-monospace, monospace',
           color: MUTED, fontVariantNumeric: 'tabular-nums', minWidth: 34,
         }}
       >
@@ -305,12 +305,12 @@ export function StatusLine({ listening, nextInSec, progress }) {
           gap: 16, marginBottom: 8,
         }}
       >
-        <span style={{ fontSize: 13, color: listening ? INK : MUTED }}>
+        <span style={{ fontSize: 15, color: listening ? INK : MUTED }}>
           {listening ? t('radio.listeningLive') : t('radio.runningTuneIn')}
         </span>
         <span
           style={{
-            font: '500 12px/1 ui-monospace, monospace',
+            font: '500 14px/1 ui-monospace, monospace',
             color: MUTED, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
           }}
         >

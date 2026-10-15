@@ -133,11 +133,11 @@ export default function RadioTape({
           }}
         >
           <dt><Label>{t('radio.bulletin')}</Label></dt>
-          <dd style={{ margin: 0, fontSize: 13, color: INK }}>{istClock(now)} IST</dd>
+          <dd style={{ margin: 0, fontSize: 17, color: INK }}>{istClock(now)} IST</dd>
           <dt><Label>{t('radio.stories')}</Label></dt>
-          <dd style={{ margin: 0, fontSize: 13, color: INK }}>{total}</dd>
+          <dd style={{ margin: 0, fontSize: 17, color: INK }}>{total}</dd>
           <dt><Label>{t('radio.you')}</Label></dt>
-          <dd style={{ margin: 0, fontSize: 13, color: listening ? ACCENT_HOVER : MUTED }}>
+          <dd style={{ margin: 0, fontSize: 17, color: listening ? ACCENT_HOVER : MUTED }}>
             <Label tone={listening ? ACCENT_HOVER : MUTED}>
               {listening ? t('radio.tunedIn') : t('radio.notListening')}
             </Label>
