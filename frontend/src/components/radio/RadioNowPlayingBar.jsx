@@ -40,6 +40,8 @@ export default function RadioNowPlayingBar() {
   return createPortal(
     <div
       className="fixed inset-x-0 bottom-0 z-[60] flex justify-center px-3 pb-3 pointer-events-none"
+      // Above the headline crawl, which also lives on the bottom edge.
+      style={{ bottom: 'var(--ticker-h, 0px)' }}
       role="region"
       aria-label={t('nowPlaying.aria')}
     >

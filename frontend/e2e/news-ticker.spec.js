@@ -41,23 +41,22 @@ test.describe('news ticker', () => {
     await expect(page.locator(TICKER)).toHaveCount(0);
   });
 
-  test('sits above whatever else is pinned under the navbar', async ({ page }) => {
+  test('runs along the bottom of the screen and stays there while scrolling', async ({ page }) => {
+    // A channel's crawl lives on the bottom edge. It is fixed there, so it
+    // has to be in the same place before and after the page scrolls.
+    await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/about');
+    const ticker = page.locator(TICKER);
+    await expect(ticker).toBeVisible();
 
-    // The milestone bar and the radio strip are both role=banner and both
-    // carry translated labels, so they are found by role rather than by text.
-    // boundingBox() waits for a locator to exist, so the count has to be
-    // checked first - there may legitimately be nothing else pinned.
-    const banners = page.locator('[role="banner"]');
-    const n = await banners.count();
-    test.skip(n === 0, 'nothing else is pinned on this run');
-
-    const ticker = await page.locator(TICKER).boundingBox();
-    for (let i = 0; i < n; i += 1) {
-      const box = await banners.nth(i).boundingBox();
-      if (box) expect(ticker.y).toBeLessThanOrEqual(box.y);
-    }
+    const before = await ticker.boundingBox();
+    expect(Math.round(before.y + before.height)).toBe(800);
+    await page.mouse.wheel(0, 1500);
+    await page.waitForTimeout(300);
+    const after = await ticker.boundingBox();
+    expect(Math.round(after.y)).toBe(Math.round(before.y));
   });
+
   test('the next headline arrives from the right edge, not from mid-screen',
     async ({ page }) => {
       // Two passes at their natural width both fit on a wide monitor, so the
