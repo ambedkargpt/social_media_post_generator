@@ -147,9 +147,12 @@ export default function BhimRadioPage() {
 
   // Before the first story the clock is in the opening music, so the next
   // thing on air is story one rather than "the rest of this story".
+  // After a story, to when the next one starts - not to when this one ended:
+  // an ad break or the closing recap sits between them, and counting to the
+  // end of the story left "next story in 0:00" frozen through the whole break.
   const nextInSec = storyIndex < 0
     ? Math.max(0, (tracks[0]?.startSec ?? 0) - at)
-    : storyDuration - offsetInStory;
+    : Math.max(0, (tracks[storyIndex + 1]?.startSec ?? cycleLength) - at);
 
   // The running order: what just aired, what is on now, and what is coming.
   // The whole rest of the bulletin, not a window of ten. The column is as
