@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { readSession } from '../api/sessionStore';
 import * as authApi from '../api/auth';
-import { setAnalyticsUser, trackEvent } from '../analytics/ga';
+import { setAnalyticsUser, trackEvent } from '../analytics/metrics';
 
 const AuthContext = createContext(null);
 

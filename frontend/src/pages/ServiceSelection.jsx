@@ -6,7 +6,6 @@ import {
   Headphones, Newspaper, Film, Scale, MonitorPlay, Trophy, Feather,
 } from 'lucide-react';
 
-import DashboardShell from '../layouts/DashboardShell';
 import Topbar from '../components/dashboard/Topbar';
 import PillDropdown from '../components/dashboard/PillDropdown';
 import ScrollRow from '../components/ui/ScrollRow';
@@ -176,7 +175,7 @@ export default function ServiceSelection() {
   const liveCount = SERVICES.filter((s) => !s.disabled).length;
 
   return (
-    <DashboardShell active="generate">
+    <>
       <div className="relative px-4 sm:px-6 md:px-10">
         <Topbar
           title={t('sel.title')}
@@ -305,6 +304,6 @@ export default function ServiceSelection() {
           {t('sel.liveCount', { live: liveCount, total: SERVICES.length })}
         </p>
       </div>
-    </DashboardShell>
+    </>
   );
 }

@@ -9,6 +9,7 @@ import {
   User,
   Settings,
   Bot,
+  Radio,
   X,
   LogOut,
   Sparkles,
@@ -17,6 +18,8 @@ import {
 } from 'lucide-react';
 import logoSrc from '../../assets/images/logo-animation.webp';
 import { useI18n } from '../../i18n/index.jsx';
+import { useRadio } from '../../context/RadioContext';
+import { RADIO_REQUIRES_LOGIN } from '../../data/radioAccess';
 
 // Generating a post is the product's primary action, so it leads the nav and is
 // styled as a call to action rather than another list item.
@@ -24,9 +27,10 @@ const PRIMARY = { id: 'generate', labelKey: 'nav.generate', Icon: Sparkles, rout
 
 // `soon: true` marks a destination that does not exist yet. Rendering these as
 // plain items made them look broken: clicking did nothing and gave no feedback.
-const NAV = [
+const ALL_NAV = [
   { id: 'dashboard',  labelKey: 'nav.dashboard',        Icon: LayoutGrid },
   { id: 'bheembot',   labelKey: 'dash.bheembot',         Icon: Bot, route: '/bhimbot' },
+  { id: 'radio',      labelKey: 'radio.title',            Icon: Radio, route: '/bhimradio' },
   { id: 'searches',   labelKey: 'nav.postHistory',     Icon: Search, route: '/posts' },
   { id: 'prefs',      labelKey: 'nav.preferences',      Icon: SlidersHorizontal, route: '/preferences' },
   { id: 'saved',      labelKey: 'nav.savedPrompts',    Icon: Bookmark, soon: true },
@@ -34,6 +38,11 @@ const NAV = [
   { id: 'profile',    labelKey: 'nav.profile',          Icon: User, route: '/profile-setup' },
   { id: 'settings',   labelKey: 'nav.settings',         Icon: Settings, soon: true },
 ];
+
+// The radio is a standalone public page for now, reached from the navbar or a
+// shared link, so it has no row in the rail. It comes back with the login wall
+// (see data/radioAccess.js), which is when it is a signed-in feature again.
+const NAV = ALL_NAV.filter((item) => item.id !== 'radio' || RADIO_REQUIRES_LOGIN);
 
 // The rail remembers whether it was collapsed. It frames every signed-in
 // screen, so a state that reset on navigation would be a state nobody could
@@ -45,6 +54,12 @@ function readCollapsed() {
 }
 
 function SidebarContent({ active, onSelect, onClose, onLogout, collapsed = false, onToggleCollapse }) {
+  // Read, never controlled: the rail reports the broadcast, it does not drive
+  // it. Both copies of the rail - the desktop column and the mobile drawer -
+  // render through here, so the note cannot appear on one and not the other.
+  const { station, playing } = useRadio();
+  const radioState = playing ? 'tuned' : station ? 'onair' : null;
+
   const { t } = useI18n();
   // Signing out calls the API to revoke the refresh token before it clears the
   // session, so there is a round trip to show. Without a state the button just
@@ -242,6 +257,21 @@ function SidebarContent({ active, onSelect, onClose, onLogout, collapsed = false
               )}
               <IconComp size={17} strokeWidth={1.8} />
               {!collapsed && <span>{t(item.labelKey)}</span>}
+              {/* The station runs whether or not anyone has it open, so the
+                  rail says so: ON AIR when it is broadcasting, TUNED IN when
+                  this listener is the one hearing it. */}
+              {item.id === 'radio' && !collapsed && radioState && (
+                <span
+                  className="ml-auto flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.12em]"
+                  style={{ color: radioState === 'tuned' ? '#3f9fff' : '#ff6b5a' }}
+                >
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${radioState === 'tuned' ? '' : 'motion-safe:animate-pulse'}`}
+                    style={{ background: 'currentColor' }}
+                  />
+                  {radioState === 'tuned' ? t('radio.tunedIn') : t('ticker.label')}
+                </span>
+              )}
             </button>
           );
         })}

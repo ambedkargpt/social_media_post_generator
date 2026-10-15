@@ -46,5 +46,29 @@ logging.getLogger("backend").setLevel(
     getattr(logging, (os.getenv("LOG_LEVEL") or "INFO").upper(), logging.INFO)
 )
 
+_asgi = Mangum(app, lifespan="on")
+
+
 # Lambda handler — the name "handler" is referenced in the Lambda config
-handler = Mangum(app, lifespan="on")
+def handler(event, context):
+    """
+    Mangum, with the request path put back the way it was sent.
+
+    A Lambda function URL normalises `requestContext.http.path` and drops the
+    trailing slash; `rawPath` keeps it. Mangum reads the normalised one. So a
+    request for /api/v1/news/ reaches FastAPI as /api/v1/news, FastAPI redirects
+    to add the slash, the function URL strips it again, and the browser follows
+    that round until it gives up - a 307 loop on every route declared with a
+    trailing slash, which is most of ours.
+
+    API Gateway sends the two in agreement, so this changes nothing there. It
+    exists so the function URL can be used at all, and the function URL is worth
+    having because it has no 30-second ceiling: post generation with inline web
+    research takes about 47 seconds, which the gateway can never deliver.
+    """
+    raw = event.get("rawPath")
+    if raw:
+        http = event.setdefault("requestContext", {}).setdefault("http", {})
+        if http.get("path") != raw:
+            http["path"] = raw
+    return _asgi(event, context)

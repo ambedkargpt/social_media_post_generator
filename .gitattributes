@@ -1,0 +1,5 @@
+# Shell scripts keep LF even on Windows. Git Bash runs them, and a CRLF line
+# ending becomes part of the last token on the line: `set -euo pipefail\r` is
+# not a flag bash knows, and the script dies on line one with a message that
+# names nothing visible.
+*.sh text eol=lf

@@ -9,7 +9,6 @@ import MilestoneBanner from '../components/MilestoneBanner';
 import DailyQuotaWidget from '../components/dashboard/DailyQuotaWidget';
 import RevealOnScroll from '../components/ui/RevealOnScroll';
 
-import DashboardShell       from '../layouts/DashboardShell';
 import Topbar               from '../components/dashboard/Topbar';
 import TopStoryCarousel     from '../components/dashboard/TopStoryCarousel';
 import { SectionHeading }   from '../components/dashboard/Card';
@@ -146,7 +145,7 @@ export default function Dashboard() {
   );
 
   return (
-    <DashboardShell active="dashboard">
+    <>
       <MilestoneBanner totalPosts={quota?.total_streak_posts} />
 
       <div className="relative px-4 sm:px-6 md:px-10">
@@ -366,6 +365,6 @@ export default function Dashboard() {
 
         <DashboardFooter />
       </div>{/* end px wrapper */}
-    </DashboardShell>
+    </>
   );
 }

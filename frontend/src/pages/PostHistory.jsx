@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import SpeakButton from "../components/generate/SpeakButton";
 import PublishSheet from "../components/publish/PublishSheet";
-import DashboardShell from "../layouts/DashboardShell";
 import Topbar from "../components/dashboard/Topbar";
 import { useAuth } from "../context/AuthContext";
 import { getPosts, deletePost, translatePost, togglePostVersion } from "../api/posts";
@@ -483,7 +482,7 @@ export default function PostHistory() {
   };
 
   return (
-    <DashboardShell active="searches">
+    <>
       {/* The brand and the back-to-dashboard button that used to head this page
           are both in the sidebar now, which is always on screen. */}
       <div className="relative px-4 sm:px-6 md:px-10">
@@ -622,6 +621,6 @@ export default function PostHistory() {
           }}
         />
       )}
-    </DashboardShell>
+    </>
   );
 }

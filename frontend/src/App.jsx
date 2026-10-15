@@ -4,7 +4,9 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CurtainProvider } from './context/CurtainContext';
 import { RadioProvider } from './context/RadioContext';
-import BhimRadioPlayer from './components/radio/BhimRadioPlayer';
+import RadioNowPlayingBar from './components/radio/RadioNowPlayingBar';
+import MainLayout from './layouts/MainLayout';
+import { RADIO_REQUIRES_LOGIN } from './data/radioAccess';
 import { usePageViews } from './analytics/usePageViews';
 import ProtectedRoute   from './components/ProtectedRoute';
 
@@ -35,10 +37,12 @@ const PostHistory = lazy(() => import('./pages/PostHistory'));
 const BheemBot = lazy(() => import('./pages/BheemBot'));
 // Opened in a new tab from a BheemBot source pill; carries pdf.js, so it is its own chunk.
 const BookPage = lazy(() => import('./pages/BookPage'));
+const BhimRadio = lazy(() => import('./pages/BhimRadio'));
 import CustomCursor        from './components/CustomCursor';
 import ScrollProgress      from './components/ScrollProgress';
 import OpeningSplash       from './components/OpeningSplash';
 import LanguagePopup       from './components/LanguagePopup';
+import DashboardLayout from './layouts/DashboardLayout';
 import Spinner             from './components/Spinner';
 import { I18nProvider }    from './i18n/index.jsx';
 import TransitionCurtain   from './components/TransitionCurtain';
@@ -48,10 +52,25 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'dummy-client-
 
 // Wraps <Routes> and re-keys on every pathname change so the CSS
 // pageEnter animation replays on each navigation.
+// Screens that share the signed-in frame. Moving between them must not look
+// like arriving somewhere new, because the rail does not go anywhere.
+// Which paths are the signed-in app, for the page transition's key. The radio
+// is one of them only while it sits inside the dashboard shell; as a public
+// page it is an ordinary route with its own frame, like /about.
+const APP_PATHS = [
+  '/dashboard', '/generate', '/preferences', '/posts',
+  ...(RADIO_REQUIRES_LOGIN ? ['/bhimradio'] : []),
+];
+
 function PageTransition({ children }) {
   const location = useLocation();
+  // Keying on the path tells React the tree is a different one, so it throws
+  // the old one away and builds it again - rail, collapsed state, scroll
+  // position and all. The signed-in screens therefore share one key: the
+  // fade belongs to arriving at the app, not to moving around inside it.
+  const inApp = APP_PATHS.some((p) => location.pathname.startsWith(p));
   return (
-    <div key={location.pathname} className="page-enter">
+    <div key={inApp ? 'app' : location.pathname} className="page-enter">
       {children}
     </div>
   );
@@ -148,6 +167,17 @@ export default function App() {
             <Route path="/otp"              element={<Otp />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
 
+            {/* Standalone: no account needed, so a link to it works for anyone.
+                It gets the public frame - navbar and footer - rather than the
+                dashboard rail, because a visitor who has just arrived from a
+                shared link has no dashboard to be in. `bare` drops the two
+                promotional strips, which on this page would be a milestone
+                bar and an announcement of the thing they are already
+                looking at. */}
+            {!RADIO_REQUIRES_LOGIN && (
+              <Route path="/bhimradio" element={<MainLayout bare><BhimRadio /></MainLayout>} />
+            )}
+
             {/* protected */}
             <Route path="/profile-setup" element={
               <ProtectedRoute><ProfileSetup /></ProtectedRoute>
@@ -155,12 +185,17 @@ export default function App() {
             <Route path="/questionnaire" element={
               <ProtectedRoute><Questionnaire /></ProtectedRoute>
             } />
-            <Route path="/dashboard" element={
-              <ProtectedRoute><Dashboard /></ProtectedRoute>
-            } />
-            <Route path="/generate" element={
-              <ProtectedRoute><ServiceSelection /></ProtectedRoute>
-            } />
+            {/* One frame for all of these: the rail is mounted by the layout
+                and outlives the screen inside it, so moving between them
+                changes only the content column. Before this each page
+                rendered its own shell and the whole sidebar was rebuilt. */}
+            <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/generate" element={<ServiceSelection />} />
+              <Route path="/preferences" element={<Preferences />} />
+              <Route path="/posts" element={<PostHistory />} />
+              {RADIO_REQUIRES_LOGIN && <Route path="/bhimradio" element={<BhimRadio />} />}
+            </Route>
             <Route path="/generate/social-media" element={
               <ProtectedRoute><SocialMediaPostGenerator /></ProtectedRoute>
             } />
@@ -169,12 +204,6 @@ export default function App() {
             } />
             <Route path="/generate/music/:type" element={
               <ProtectedRoute><MusicGenerationStudio /></ProtectedRoute>
-            } />
-            <Route path="/preferences" element={
-              <ProtectedRoute><Preferences /></ProtectedRoute>
-            } />
-            <Route path="/posts" element={
-              <ProtectedRoute><PostHistory /></ProtectedRoute>
             } />
             <Route path="/bhimbot" element={
               <BheemBot />
@@ -188,10 +217,9 @@ export default function App() {
           </Routes>
           </Suspense>
           </PageTransition>
-          {/* Last child, so the panel paints over the page. It portals to
-              document.body anyway, but source order still decides which of two
-              portalled layers wins. */}
-          <BhimRadioPlayer />
+          {/* Shown where the panel is not, so sound is never coming out of a
+              page with no visible way to stop it. */}
+          <RadioNowPlayingBar />
         </RadioProvider>
         </AuthProvider>
         </CurtainProvider>

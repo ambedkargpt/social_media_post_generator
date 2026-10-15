@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { getSiteLanguage, setSiteLanguage } from '../utils/siteLanguage';
-import { trackEvent } from '../analytics/ga';
+import { trackEvent } from '../analytics/metrics';
 import en from './en';
 import hi from './hi';
 

@@ -94,9 +94,22 @@ class QuestionsService:
         except Exception:
             return PendingSetsResponse()
 
+        # An account that has never chosen a party - a Google or phone sign-up
+        # that went past the profile screen - has nothing pending by the rules
+        # below, which all start from the party. That read as "done" and let
+        # it straight into the generator. It is the first thing outstanding.
+        if not str(user.get("political_party") or "").strip():
+            return PendingSetsResponse(profile=True)
+
         party = question_party(user.get("political_party"))
         if not party:
             return PendingSetsResponse()
+
+        # The preference questions are written per position, so a party that
+        # has them needs a position before there is anything to ask. Without
+        # one the position set looked empty, which read as answered.
+        if not str(user.get("party_position") or "").strip():
+            return PendingSetsResponse(profile=True)
 
         answers_repo = ProfileAnswersRepository()
 
@@ -123,6 +136,24 @@ class QuestionsService:
                 position_ids(party, group_for_position(user.get("party_position")))
             ),
         )
+
+    def onboarding_gap(self, user_id: str) -> str | None:
+        """
+        What this user still has to do before a post can be written for them:
+        "profile" (no party yet, or no position for a party whose preference
+        questions are written per position), "preferences" (the position questions for
+        their party, none answered), or None.
+
+        The party set for accounts that predate it is not part of this: those
+        accounts answered their preference questions at sign-up, and the party
+        set stays the one-time prompt it was.
+        """
+        pending = self.pending_sets(user_id)
+        if pending.profile:
+            return "profile"
+        if pending.position:
+            return "preferences"
+        return None
 
     def get(self, question_id: str) -> QuestionResponse:
         doc = self.repo.get_by_question_id(question_id)

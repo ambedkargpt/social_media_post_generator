@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
-import { initAnalytics, trackPageView } from './ga';
+import { initAnalytics, trackPageView } from './metrics';
 
 /**
  * A readable name for each route.

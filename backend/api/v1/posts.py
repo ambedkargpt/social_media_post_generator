@@ -16,10 +16,32 @@ from backend.schemas.posts import (
     PostUpdateRequest,
 )
 from backend.services.posts_service import PostsService
+from backend.services.questions_service import QuestionsService
 
 
 router = APIRouter(prefix="/posts", tags=["posts"])
 service = PostsService()
+questions = QuestionsService()
+
+
+def _require_onboarding(user_id: str) -> None:
+    """
+    No post without a party and the preference questions answered.
+
+    The app sends an unfinished account to profile setup and the
+    questionnaire, but the app is only one client of this endpoint; the rule
+    has to hold here, where the post is written.
+    """
+    gap = questions.onboarding_gap(user_id)
+    if gap:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "onboarding_required",
+                "step": gap,
+                "message": "Choose your party and answer the preference questions before generating posts.",
+            },
+        )
 
 
 def _owner_id(post) -> str | None:
@@ -47,6 +69,7 @@ def generate_post(
 ) -> PostGenerateResponse:
     if payload.user_id != current_user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot generate post for another user.")
+    _require_onboarding(current_user_id)
     return service.generate_post_for_news(
         user_id=payload.user_id,
         news_id=payload.news_id,
@@ -85,6 +108,7 @@ def regenerate_post(
     payload: PostRegenerateRequest,
     current_user_id: str = Depends(get_current_user_id),
 ) -> PostGenerateResponse:
+    _require_onboarding(current_user_id)
     return service.regenerate_from_snapshot(
         source_post_id=post_id,
         current_user_id=current_user_id,
