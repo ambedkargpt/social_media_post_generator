@@ -1,6 +1,6 @@
 import { useI18n } from '../../i18n/index.jsx';
 import {
-  Label, SignalMeter, StatusLine, Transcript, TuneButton, VolumeControl,
+  AnchorTag, Label, ProgramLine, SignalMeter, StatusLine, Transcript, TuneButton, VolumeControl,
 } from './deskParts.jsx';
 import { ACCENT, INK, MUTED, RULE, SURFACE, airTime, istClock } from './radioTokens';
 
@@ -39,12 +39,11 @@ export default function RadioDesk({
           >
             {t('radio.title')}
           </h1>
-          <p lang="hi" style={{ margin: '6px 0 0', fontSize: 14, color: MUTED, fontFamily: 'var(--font-hindi)' }}>
-            भीम रेडियो · राजनीतिक बुलेटिन
-          </p>
+          <div style={{ marginTop: 8 }}><ProgramLine /></div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+          <AnchorTag />
           <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ width: 10, height: 10, background: ACCENT, flex: 'none' }} aria-hidden="true" />
             <Label tone={INK}>{t('ticker.label')}</Label>

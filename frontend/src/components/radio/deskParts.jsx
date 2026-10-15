@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
-import { Play } from 'lucide-react';
+import { Mic, Play } from 'lucide-react';
 
 import { useI18n } from '../../i18n/index.jsx';
 import { ACCENT, ACCENT_HOVER, INK, MUTED, RULE, mmss } from './radioTokens';
@@ -21,6 +21,48 @@ export function Label({ children, tone = MUTED, className = '' }) {
       style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', color: tone }}
     >
       {children}
+    </span>
+  );
+}
+
+/* ── programme and anchor ─────────────────────────────────────────────────── */
+
+/** The programme's name with the station's line under it. */
+export function ProgramLine({ align = 'left' }) {
+  const { t } = useI18n();
+  return (
+    <div style={{ textAlign: align }}>
+      <p lang="hi" style={{ margin: 0, font: '700 17px/1.3 var(--font-hindi)', color: '#ffc72c' }}>
+        {t('radio.program')}
+      </p>
+      <p lang="hi" style={{ margin: '2px 0 0', fontSize: 13, color: MUTED, fontFamily: 'var(--font-hindi)' }}>
+        {t('radio.slogan')}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Who is reading - a channel's lower-third: a red block with the role, the
+ * anchor's name beside it.
+ */
+export function AnchorTag() {
+  const { t } = useI18n();
+  return (
+    <span
+      style={{
+        display: 'inline-flex', alignItems: 'stretch', overflow: 'hidden',
+        borderRadius: 6, border: '1px solid rgba(255, 199, 44, 0.45)',
+        font: '600 13px/1 var(--font-hindi)', whiteSpace: 'nowrap',
+      }}
+    >
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 8px', background: '#d4141f', color: '#fff' }}>
+        <Mic size={13} strokeWidth={2.4} aria-hidden="true" />
+        {t('radio.anchorLabel')}
+      </span>
+      <span style={{ display: 'inline-flex', alignItems: 'center', padding: '6px 10px', background: '#0d1333', color: '#fff' }}>
+        {t('radio.anchorName')}
+      </span>
     </span>
   );
 }

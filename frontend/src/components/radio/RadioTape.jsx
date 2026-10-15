@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import { useI18n } from '../../i18n/index.jsx';
 import {
-  Label, SignalMeter, StatusLine, Transcript, TuneButton, VolumeControl,
+  AnchorTag, Label, ProgramLine, SignalMeter, StatusLine, Transcript, TuneButton, VolumeControl,
 } from './deskParts.jsx';
 import { ACCENT, ACCENT_HOVER, DEEP, INK, MUTED, RULE, SURFACE, istClock } from './radioTokens';
 
@@ -120,9 +120,10 @@ export default function RadioTape({
           >
             भीम रेडियो
           </p>
-          <p style={{ margin: '4px 0 0', font: `600 16px/1 var(--font-display)`, color: ACCENT }}>
-            {t('radio.title')}
-          </p>
+          <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+            <ProgramLine />
+            <AnchorTag />
+          </div>
         </div>
 
         <dl

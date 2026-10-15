@@ -3,7 +3,7 @@ import { AudioLines, Clock, Pause, Play } from 'lucide-react';
 
 import { useI18n } from '../../i18n/index.jsx';
 import ShareMenu from './ShareMenu.jsx';
-import { Label, SignalMeter, Transcript } from './deskParts.jsx';
+import { AnchorTag, Label, ProgramLine, SignalMeter, Transcript } from './deskParts.jsx';
 import { ACCENT, ACCENT_HOVER, INK, MUTED, RULE, SURFACE, airTime, istClock, mmss } from './radioTokens';
 
 /**
@@ -79,6 +79,12 @@ export default function RadioMobile({
           <div style={{ width: `${progress * 100}%` }} />
         </div>
       </section>
+
+      {/* The programme and who is reading it, as a channel shows them. */}
+      <div className="bhim-m-program">
+        <ProgramLine />
+        <AnchorTag />
+      </div>
 
       {/* ── the story ── */}
       <article className="bhim-m-story">
@@ -161,6 +167,7 @@ export default function RadioMobile({
 
       <style>{`
         .bhim-m { display: flex; flex-direction: column; gap: 22px; }
+        .bhim-m-program { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 
         .bhim-m-player {
           border: 1px solid ${RULE};
