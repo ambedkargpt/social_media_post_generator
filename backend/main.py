@@ -51,12 +51,13 @@ def _run_startup_once() -> None:
     with _startup_lock:
         if _startup_done:
             return
-        ensure_auth_indexes()
-        ensure_phase2_indexes()
-        ensure_phase3_indexes()
-        # The flag is set after the work, not before, so a failure is retried by
-        # the next caller rather than leaving the container without indexes for
-        # good. Nothing is caught here: this failed loudly before and still does.
+        try:
+            ensure_auth_indexes()
+            ensure_phase2_indexes()
+            ensure_phase3_indexes()
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning("MongoDB index creation skipped: %s", exc)
         _startup_done = True
     # Pre-warm the RAG stack in the background so the first generate request is fast
     threading.Thread(target=_warm_rag_cache, daemon=True).start()

@@ -4,12 +4,13 @@ import {
   Scale, BookOpen, Heart, HelpCircle,
   Search, Send, Mic, Paperclip,
   Sparkles, LayoutDashboard, Menu, X,
-  ChevronRight, Bot,
+  ChevronRight, Bot, ExternalLink,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { sendChatMessage } from '../api/chat';
 import logoSrc from '../assets/images/logo-animation.webp';
 import { useI18n } from '../i18n/index.jsx';
+import FormattedReply, { parseReply, visibleBlockCount } from '../components/FormattedReply';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -76,8 +77,11 @@ function MessageBubble({ msg }) {
   const isUser = msg.role === 'user';
   const [expanded, setExpanded] = useState(false);
 
-  const isLong = !isUser && msg.content.length > 480;
-  const displayContent = isLong && !expanded ? msg.content.slice(0, 480) + '…' : msg.content;
+  // Replies are rendered from their markup; a long one collapses at a block boundary,
+  // never mid-sentence.
+  const blocks = isUser ? null : parseReply(msg.content);
+  const collapsedCount = blocks ? visibleBlockCount(blocks) : 0;
+  const isLong = !isUser && blocks.length > collapsedCount;
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
@@ -100,12 +104,16 @@ function MessageBubble({ msg }) {
             <TypingDots />
           ) : (
             <>
-              <span style={{ whiteSpace: 'pre-wrap' }}>{displayContent}</span>
+              {isUser ? (
+                <span style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</span>
+              ) : (
+                <FormattedReply blocks={blocks} maxBlocks={isLong && !expanded ? collapsedCount : undefined} />
+              )}
               {isLong && (
                 <button
                   type="button"
                   onClick={() => setExpanded((v) => !v)}
-                  className="ml-1.5 text-[#4d94ff] underline underline-offset-2 hover:text-[#7ab4ff]"
+                  className="mt-2 block text-[12.5px] text-[#4d94ff] underline underline-offset-2 hover:text-[#7ab4ff]"
                 >
                   {expanded ? 'Show less' : 'Show more'}
                 </button>
@@ -116,16 +124,30 @@ function MessageBubble({ msg }) {
 
         {!isUser && !msg.typing && msg.sources?.length > 0 && (
           <div className="mt-1.5 flex flex-wrap gap-1.5">
-            {msg.sources.map((s, i) => (
-              <span
-                key={i}
-                title={s.snippet}
-                className="inline-flex items-center gap-1 rounded-full border border-[#1a3060]/60 bg-[#0a1428] px-2.5 py-0.5 text-[10.5px] text-[#5a80b8]"
-              >
-                <BookOpen size={9} strokeWidth={1.8} />
-                {s.video_title.length > 40 ? s.video_title.slice(0, 40) + '…' : s.video_title}
-              </span>
-            ))}
+            {msg.sources.map((s, i) => {
+              const label = s.video_title.length > 40 ? s.video_title.slice(0, 40) + '…' : s.video_title;
+              const pill = 'inline-flex items-center gap-1 rounded-full border border-[#1a3060]/60 bg-[#0a1428] px-2.5 py-0.5 text-[10.5px] text-[#5a80b8]';
+              // A book source opens its scanned page in a new tab; other sources stay plain labels.
+              return s.url ? (
+                <a
+                  key={i}
+                  href={s.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={`${s.snippet}\n\nOpen this page of the book in a new tab`}
+                  className={`${pill} transition-colors hover:border-[#4d94ff] hover:text-[#9cc3ff] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[#4d94ff]`}
+                >
+                  <BookOpen size={9} strokeWidth={1.8} />
+                  {label}
+                  <ExternalLink size={8} strokeWidth={2} className="opacity-70" aria-hidden="true" />
+                </a>
+              ) : (
+                <span key={i} title={s.snippet} className={pill}>
+                  <BookOpen size={9} strokeWidth={1.8} />
+                  {label}
+                </span>
+              );
+            })}
           </div>
         )}
       </div>

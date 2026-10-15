@@ -6,7 +6,7 @@ import {
   Copy, Check, RefreshCw, ChevronDown, FileText, Star, Radio,
   ArrowUpDown, List, LayoutGrid, Users, Globe,
   CalendarDays, Clock, ChevronRight, X as XIcon,
-  MessageCircle, Repeat2, Heart, Share, Flame, AlertTriangle,
+  MessageCircle, Repeat2, Heart, Share, Flame, AlertTriangle, BookOpen,
 } from 'lucide-react';
 
 import PreferencesPanel from '../components/generate/PreferencesPanel';
@@ -290,6 +290,7 @@ export default function SocialMediaPostGenerator() {
   const [postFailed,      setPostFailed]      = useState(false);
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [selectedPostId,  setSelectedPostId]  = useState(null);
+  const [postReferences,  setPostReferences]  = useState([]);
   const [copied,          setCopied]          = useState(false);
   const [panelWidth,      setPanelWidth]      = useState(300);
   const [searchInput,     setSearchInput]     = useState('');
@@ -688,6 +689,7 @@ export default function SocialMediaPostGenerator() {
   function handlePreview(article) {
     setArticleOpen(false);
     setSelectedArticle(article);
+    setPostReferences([]);
     setGeneratedPost('');
     setSelectedPostId(null);
     setRefinementNote('');
@@ -724,6 +726,7 @@ export default function SocialMediaPostGenerator() {
       // is a failure, and counting it would flatter the numbers.
       trackEvent('generate_post', { platform, tone, language: siteLang });
       setGeneratedPost(content);
+      setPostReferences(response?.references || []);
       setPostFailed(false);
       setSelectedPostId(response?.post?.id || null);
       setPostStatus('draft');
@@ -793,6 +796,9 @@ export default function SocialMediaPostGenerator() {
       if (!content.trim()) throw new Error('empty_content');
       trackEvent('refine_post', { language: siteLang });
       setGeneratedPost(content);
+      if (response?.references && response.references.length > 0) {
+        setPostReferences(response.references);
+      }
       setPostFailed(false);
       setSelectedPostId(response?.post?.id || selectedPostId);
       setPostStatus('draft');
@@ -2263,6 +2269,40 @@ export default function SocialMediaPostGenerator() {
                 {refineHint && (
                   <p className="mt-1.5 text-[11.5px] text-[#fbbf24]">{refineHint}</p>
                 )}
+              </div>
+            )}
+
+            {/* Ambedkar SemRAG Knowledge Graph Grounding & Citations */}
+            {!generating && !postFailed && postReferences.length > 0 && (
+              <div className="mt-4 rounded-xl border border-[#2d7dfb]/30 bg-[#0c1427]/90 p-4 shadow-lg backdrop-blur-md">
+                <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <BookOpen size={15} className="text-[#3f9fff]" />
+                    <h4 className="text-[12px] font-semibold uppercase tracking-wider text-[#8ebaff]">
+                      Ambedkar SemRAG Grounding & Knowledge Graph Citations
+                    </h4>
+                  </div>
+                  <span className="rounded-full bg-[#2d7dfb]/20 px-2.5 py-0.5 text-[10.5px] font-medium text-[#6daeff]">
+                    Memgraph Cloud Knowledge Graph
+                  </span>
+                </div>
+                <div className="mt-3 space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
+                  {postReferences.map((ref, idx) => (
+                    <div key={idx} className="rounded-lg border border-white/5 bg-white/[0.03] p-3 transition hover:border-[#3f9fff]/30 hover:bg-white/[0.05]">
+                      <div className="flex items-center justify-between text-[11.5px] font-medium text-[#c7d5ee]">
+                        <span className="text-[#60a5fa]">{ref.video_title || 'Dr. B.R. Ambedkar: Writings & Speeches'}</span>
+                        {ref.chunk_id && (
+                          <span className="text-[10px] text-[#94a3b8] font-mono bg-white/[0.05] px-1.5 py-0.5 rounded">
+                            {ref.chunk_id}
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1.5 text-[11.5px] leading-relaxed text-[#94a3b8] italic">
+                        "{ref.chunk_text}"
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 

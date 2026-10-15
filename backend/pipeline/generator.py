@@ -580,6 +580,25 @@ def generate_post(
     if research_payload:
         system_msg = f"{system_msg}\n\n---\n\n{_RESEARCH_BRIEF_RULES}"
 
+    semrag_grounding = [
+        {
+            "chunk_id": c.get("chunk_id", ""),
+            "volume": c.get("volume", 1),
+            "source": c.get("video_title", "Dr. B.R. Ambedkar: Writings and Speeches"),
+            "matched_entity": c.get("matched_entity", ""),
+            "quote_text": c.get("chunk_text") or c.get("text", ""),
+        }
+        for c in retrieved_chunks if c.get("is_semrag")
+    ]
+    if semrag_grounding:
+        system_msg = (
+            f"{system_msg}\n\n---\n\n"
+            "AMBEDKAR SEMRAG GROUNDING (VERIFIED HISTORICAL AND PHILOSOPHICAL WORKS):\n"
+            "Authentic passages from Dr. B. R. Ambedkar's Writings and Speeches (Volumes 1 & 2) "
+            "have been retrieved from the Ambedkar SemRAG Knowledge Graph and provided in `ambedkar_semrag_grounding`. "
+            "Use these verbatim principles, constitutional morality, and authentic quotes to ground your Ambedkarite critique of this news event."
+        )
+
     # One JSON object carrying research, transcript, video link, preferences and
     # chunks, which is the shape the workflow calls for. Built with json.dumps
     # rather than string assembly so a quote or brace inside a transcript cannot
@@ -610,6 +629,7 @@ def generate_post(
         # facts; the rest are the ideological lens and nothing more.
         "source_video_chunks": [_chunk_json(c) for c in retrieved_chunks if _is_own(c, news)],
         "ideology_chunks": [_chunk_json(c) for c in retrieved_chunks if not _is_own(c, news)],
+        "ambedkar_semrag_grounding": semrag_grounding,
         "video_summaries": _video_summaries_str(full_video_contexts, cache_path),
         "research": research_payload,
     }
