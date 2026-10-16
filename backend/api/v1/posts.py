@@ -141,6 +141,13 @@ def posts_dashboard(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot view dashboard for another user.")
     return service.dashboard(user_id=(user_id or current_user_id), limit=limit)
 
+@router.get("/semrag/grounding")
+def get_semrag_grounding(query: str = Query(..., min_length=2)) -> dict:
+    """Query Memgraph Cloud Knowledge Graph for authentic Ambedkar writings, entities, and citations."""
+    from backend.semrag.memgraph_retriever import query_semrag
+
+    return query_semrag(query, top_chunks=6)
+
 
 @router.get("/{post_id}", response_model=PostResponse)
 def get_post(post_id: str, current_user_id: str = Depends(get_current_user_id)) -> PostResponse:

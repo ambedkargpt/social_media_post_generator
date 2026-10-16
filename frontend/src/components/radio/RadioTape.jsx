@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import { useI18n } from '../../i18n/index.jsx';
 import {
-  Label, SignalMeter, StatusLine, Transcript, TuneButton, VolumeControl,
+  AnchorTag, Label, ProgramLine, SignalMeter, StatusLine, Transcript, TuneButton, VolumeControl,
 } from './deskParts.jsx';
 import { ACCENT, ACCENT_HOVER, DEEP, INK, MUTED, RULE, SURFACE, istClock } from './radioTokens';
 
@@ -120,9 +120,10 @@ export default function RadioTape({
           >
             भीम रेडियो
           </p>
-          <p style={{ margin: '4px 0 0', font: `600 16px/1 var(--font-display)`, color: ACCENT }}>
-            {t('radio.title')}
-          </p>
+          <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+            <ProgramLine />
+            <AnchorTag />
+          </div>
         </div>
 
         <dl
@@ -132,11 +133,11 @@ export default function RadioTape({
           }}
         >
           <dt><Label>{t('radio.bulletin')}</Label></dt>
-          <dd style={{ margin: 0, fontSize: 13, color: INK }}>{istClock(now)} IST</dd>
+          <dd style={{ margin: 0, fontSize: 17, color: INK }}>{istClock(now)} IST</dd>
           <dt><Label>{t('radio.stories')}</Label></dt>
-          <dd style={{ margin: 0, fontSize: 13, color: INK }}>{total}</dd>
+          <dd style={{ margin: 0, fontSize: 17, color: INK }}>{total}</dd>
           <dt><Label>{t('radio.you')}</Label></dt>
-          <dd style={{ margin: 0, fontSize: 13, color: listening ? ACCENT_HOVER : MUTED }}>
+          <dd style={{ margin: 0, fontSize: 17, color: listening ? ACCENT_HOVER : MUTED }}>
             <Label tone={listening ? ACCENT_HOVER : MUTED}>
               {listening ? t('radio.tunedIn') : t('radio.notListening')}
             </Label>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { Radio } from 'lucide-react';
 
@@ -14,6 +15,15 @@ import { useI18n } from '../i18n/index.jsx';
  * a reader who never tuned in and for one who tuned out - which is the point.
  * A site with a radio in it should look like it is on even when it is quiet.
  *
+ * It sits along the bottom of the screen, the way a news channel's crawl does,
+ * in the channel's red with a yellow ON AIR tag, big enough to read while it
+ * moves. On public pages it is `docked`: fixed to the viewport and portalled
+ * to <body>, because a transformed ancestor (the page transition) re-anchors
+ * position: fixed to itself. In the dashboard it is the last row of the
+ * screen-high column, which puts it at the bottom without fixing anything.
+ * Either way it publishes its height as --ticker-h, so the mini player and
+ * the page's own bottom padding can stand clear of it.
+ *
  * Not on the landing page. There the visitor is being told what the product
  * is, and a live crawl of today's politics is a different conversation; the
  * "Bhim Radio is live" strip is what speaks to them instead.
@@ -25,7 +35,7 @@ const SPEED_PX_PER_SEC = 58;
 
 // The whole strip is the way into the station. `onOpen`, when given, runs
 // instead of the plain link - the dashboard passes one that signs out first.
-export default function NewsTicker({ className = '', onOpen }) {
+export default function NewsTicker({ className = '', onOpen, docked = false }) {
   const { t } = useI18n();
   const { station, track, playing, primeStation } = useRadio();
 
@@ -72,14 +82,28 @@ export default function NewsTicker({ className = '', onOpen }) {
     return () => ro.disconnect();
   }, [headline, remeasure]);
 
+  // How much of the screen bottom the strip takes, for whatever else sits
+  // there (the mini player, the page's last lines).
+  const stripRef = useRef(null);
+  useLayoutEffect(() => {
+    const strip = stripRef.current;
+    const root = document.documentElement;
+    if (!strip) return undefined;
+    const publish = () => root.style.setProperty('--ticker-h', `${strip.offsetHeight}px`);
+    publish();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(publish) : null;
+    ro?.observe(strip);
+    return () => { ro?.disconnect(); root.style.removeProperty('--ticker-h'); };
+  }, [headline]);
+
   if (!headline) return null;
 
   const duration = Math.max(10, copyWidth / SPEED_PX_PER_SEC);
 
-  return (
+  const strip = (
     <div
-      className={`w-full overflow-hidden border-b border-[#1b2a52] ${className}`}
-      style={{ background: 'linear-gradient(90deg, #070c20 0%, #0c1536 50%, #070c20 100%)' }}
+      ref={stripRef}
+      className={`news-ticker w-full overflow-hidden ${docked ? 'fixed inset-x-0 bottom-0 z-50' : ''} ${className}`}
       role="region"
       aria-label={t('ticker.aria')}
     >
@@ -87,22 +111,19 @@ export default function NewsTicker({ className = '', onOpen }) {
         to="/bhimradio"
         onClick={(e) => { if (onOpen) { e.preventDefault(); onOpen(); } }}
         aria-label={t('ticker.open')}
-        className="news-ticker-link flex min-h-[38px] items-center"
+        className="news-ticker-link flex min-h-[46px] items-center md:min-h-[54px]"
       >
 
         {/* The label sits still while the headline moves past it, the way a
             channel's bug does. Opaque, so the crawl slides under it cleanly. */}
-        <span
-          className="z-10 flex shrink-0 items-center gap-1.5 px-3.5 py-2 text-[11px] font-bold uppercase tracking-widest text-red-300"
-          style={{ background: '#070c20' }}
-        >
-          <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
+        <span className="news-ticker-tag z-10 flex shrink-0 items-center gap-2 self-stretch px-3 text-[12px] font-extrabold uppercase tracking-widest md:px-4 md:text-[14px]">
+          <span className="relative flex h-2 w-2" aria-hidden="true">
             {playing && (
-              <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 motion-safe:animate-ping" />
+              <span className="absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75 motion-safe:animate-ping" />
             )}
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-red-600" />
           </span>
-          <Radio size={12} strokeWidth={2.4} />
+          <Radio size={15} strokeWidth={2.6} />
           {t('ticker.label')}
         </span>
 
@@ -113,7 +134,7 @@ export default function NewsTicker({ className = '', onOpen }) {
           <span
             ref={measureRef}
             aria-hidden="true"
-            className="pointer-events-none invisible absolute left-0 top-0 whitespace-nowrap px-10 text-[14px] font-semibold"
+            className="news-ticker-text pointer-events-none invisible absolute left-0 top-0 whitespace-nowrap px-10"
           >
             {headline}
           </span>
@@ -131,7 +152,7 @@ export default function NewsTicker({ className = '', onOpen }) {
               <span
                 key={copy}
                 aria-hidden={copy === 1}
-                className="shrink-0 whitespace-nowrap px-10 text-[14px] font-semibold text-[#cfdcf2]"
+                className="news-ticker-text shrink-0 whitespace-nowrap px-10 text-white"
                 style={{ minWidth: copyWidth ? `${copyWidth}px` : undefined }}
               >
                 {headline}
@@ -142,8 +163,18 @@ export default function NewsTicker({ className = '', onOpen }) {
       </Link>
 
       <style>{`
+        /* A channel crawl: a red band with a gold rule along its top, the tag
+           in yellow, the headline in large white type. */
+        .news-ticker {
+          background: linear-gradient(90deg, #a50e16 0%, #d4141f 50%, #a50e16 100%);
+          border-top: 3px solid #ffc72c;
+          box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.35);
+        }
+        .news-ticker-tag { background: #ffc72c; color: #1a0306; }
+        .news-ticker-text { font-size: 17px; font-weight: 700; letter-spacing: 0.01em; }
+        @media (min-width: 768px) { .news-ticker-text { font-size: 20px; } }
         .news-ticker-link { cursor: pointer; text-decoration: none; }
-        .news-ticker-link:focus-visible { outline: 2px solid #3f9fff; outline-offset: -2px; }
+        .news-ticker-link:focus-visible { outline: 3px solid #ffc72c; outline-offset: -3px; }
         @keyframes news-ticker-scroll {
           from { transform: translateX(0); }
           to   { transform: translateX(-50%); }
@@ -163,4 +194,6 @@ export default function NewsTicker({ className = '', onOpen }) {
       `}</style>
     </div>
   );
+
+  return docked ? createPortal(strip, document.body) : strip;
 }

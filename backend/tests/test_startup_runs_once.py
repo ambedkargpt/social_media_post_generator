@@ -80,8 +80,8 @@ def test_a_failure_is_retried_rather_than_latched(main, monkeypatch):
 
     monkeypatch.setattr(m, "ensure_auth_indexes", _first_call_fails)
 
-    with pytest.raises(RuntimeError):
-        m._run_startup_once()
+    m._run_startup_once()          # fails: logged, not raised, and not latched
+    assert m._startup_done is False
 
     m._run_startup_once()          # the retry succeeds
     calls["indexes"] = 0

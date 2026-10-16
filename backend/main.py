@@ -51,12 +51,18 @@ def _run_startup_once() -> None:
     with _startup_lock:
         if _startup_done:
             return
-        ensure_auth_indexes()
-        ensure_phase2_indexes()
-        ensure_phase3_indexes()
-        # The flag is set after the work, not before, so a failure is retried by
-        # the next caller rather than leaving the container without indexes for
-        # good. Nothing is caught here: this failed loudly before and still does.
+        try:
+            ensure_auth_indexes()
+            ensure_phase2_indexes()
+            ensure_phase3_indexes()
+        except Exception as exc:
+            # Tolerated, so a request is not failed by an unreachable database -
+            # but not latched: the flag stays unset and the next request tries
+            # again. Latching it here would leave a container serving every
+            # later request without indexes, with nothing to say so.
+            import logging
+            logging.getLogger(__name__).warning("MongoDB index creation skipped, will retry: %s", exc)
+            return
         _startup_done = True
     # Pre-warm the RAG stack in the background so the first generate request is fast
     threading.Thread(target=_warm_rag_cache, daemon=True).start()

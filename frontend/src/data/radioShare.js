@@ -14,9 +14,9 @@ export const RADIO_SHARE_URL = 'https://www.ambedkargpt.in/bhimradio';
 
 export function radioShareText(headline, { withLink = true } = {}) {
   return [
-    '🎙️ *भीम रेडियो - आवाज़ बहुजन की*',
+    '🎙️ *भीम रेडियो - दैनिक मध्य भारत समाचार*',
     '',
-    '📻 आज की बड़ी राजनीतिक खबरें, हिंदी में - सीधे, बिना लॉगिन के।',
+    '📻 संविधान की बात, जनता के साथ - आज की बड़ी राजनीतिक खबरें, हिंदी में, बिना लॉगिन के।',
     '',
     '✅ हर दिन ताज़ा बुलेटिन',
     '✅ कांग्रेस, सपा, भाजपा और देश-दुनिया की खबरें',
@@ -54,6 +54,6 @@ export function radioShareTargets(headline) {
     { id: 'facebook', label: 'Facebook', href: `https://www.facebook.com/sharer/sharer.php?u=${enc(url)}` },
     { id: 'linkedin', label: 'LinkedIn', href: `https://www.linkedin.com/sharing/share-offsite/?url=${enc(url)}` },
     { id: 'email', label: 'Email',
-      href: `mailto:?subject=${enc('भीम रेडियो - आवाज़ बहुजन की')}&body=${enc(radioShareText(headline).replace(/\*/g, ''))}` },
+      href: `mailto:?subject=${enc('भीम रेडियो - दैनिक मध्य भारत समाचार')}&body=${enc(radioShareText(headline).replace(/\*/g, ''))}` },
   ];
 }

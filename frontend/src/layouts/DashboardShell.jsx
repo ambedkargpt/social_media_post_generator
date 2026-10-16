@@ -78,7 +78,6 @@ export default function DashboardShell({ children, background, active: activePro
             Inside it would have to be sticky, and the Topbar already holds
             sticky top-0 - two of them would land on each other. */}
         <div className="flex min-w-0 flex-1 flex-col">
-        <NewsTicker className="shrink-0" onOpen={openRadio} />
 
         {/* While the drawer is open the page behind it must not scroll. This
             is the scrolling element, so the lock goes here rather than on
@@ -94,6 +93,9 @@ export default function DashboardShell({ children, background, active: activePro
 
           {children}
         </div>
+        {/* The last row of the screen-high column: the bottom of the screen,
+            the way a channel runs its crawl. */}
+        <NewsTicker className="shrink-0" onOpen={openRadio} />
         </div>
       </div>
     </ShellContext.Provider>

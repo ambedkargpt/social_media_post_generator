@@ -8,7 +8,7 @@ import NewsTicker from '../components/NewsTicker';
 
 // Tailwind needs these spellings present in the source to emit the classes,
 // so they are a lookup rather than a computed `md:pt-${n}`.
-const PINNED_PAD = ['md:pt-20', 'md:pt-[122px]', 'md:pt-[170px]', 'md:pt-[204px]'];
+const PINNED_PAD = ['md:pt-20', 'md:pt-[128px]', 'md:pt-[176px]'];
 
 /**
  * `bare` leaves out the two promotional strips. A page that is itself the
@@ -62,7 +62,7 @@ export default function MainLayout({ children, bare = false }) {
           rather than hard-coded: with both hard-coded, dismissing the top one
           left a 48px gap under the navbar. */}
       <main
-        className={`relative min-h-screen overflow-x-hidden bg-[#05081a] pt-[72px] text-white transition-all duration-300 ${PINNED_PAD[Number(showStrips && bannerVisible) + Number(showStrips && radioStripVisible) + Number(showTicker)]}`}
+        className={`relative min-h-screen overflow-x-hidden bg-[#05081a] pt-[72px] text-white transition-all duration-300 ${PINNED_PAD[Number(showStrips && bannerVisible) + Number(showStrips && radioStripVisible)]} ${showTicker ? 'pb-[var(--ticker-h,0px)]' : ''}`}
       >
         {/* In the flow on a phone, pinned from md.
             The banner's sentence needs three lines at 360px, and pinned under
@@ -78,7 +78,6 @@ export default function MainLayout({ children, bare = false }) {
           {/* First in the stack: the crawl is the live thing on the page, and
               a promotion sitting above it would read as the more urgent of
               the two. */}
-          {showTicker && <NewsTicker />}
           {showStrips && (
             <>
               <MilestoneBanner
@@ -93,6 +92,8 @@ export default function MainLayout({ children, bare = false }) {
           )}
         </div>
         <div className="relative z-10">{children}</div>
+        {/* Along the bottom of the screen, like a channel's crawl. */}
+        {showTicker && <NewsTicker docked />}
         <Footer />
       </main>
     </>

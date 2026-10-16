@@ -147,9 +147,12 @@ export default function BhimRadioPage() {
 
   // Before the first story the clock is in the opening music, so the next
   // thing on air is story one rather than "the rest of this story".
+  // After a story, to when the next one starts - not to when this one ended:
+  // an ad break or the closing recap sits between them, and counting to the
+  // end of the story left "next story in 0:00" frozen through the whole break.
   const nextInSec = storyIndex < 0
     ? Math.max(0, (tracks[0]?.startSec ?? 0) - at)
-    : storyDuration - offsetInStory;
+    : Math.max(0, (tracks[storyIndex + 1]?.startSec ?? cycleLength) - at);
 
   // The running order: what just aired, what is on now, and what is coming.
   // The whole rest of the bulletin, not a window of ten. The column is as
@@ -222,7 +225,7 @@ export default function BhimRadioPage() {
                 border: `2px solid ${layout === id ? '#1d7afc' : RULE}`,
                 background: layout === id ? '#1d7afc' : 'transparent',
                 color: layout === id ? '#fff' : MUTED,
-                font: '600 11px/1 Inter, system-ui, sans-serif',
+                font: '600 14px/1 Inter, system-ui, sans-serif',
                 letterSpacing: '0.12em', textTransform: 'uppercase',
                 cursor: 'pointer',
               }}
@@ -241,7 +244,7 @@ export default function BhimRadioPage() {
               style={{
                 marginLeft: 'auto', padding: '6px 14px',
                 border: `2px solid ${RULE}`, background: 'transparent', color: '#6b9fff',
-                font: '600 11px/1 Inter, system-ui, sans-serif',
+                font: '600 14px/1 Inter, system-ui, sans-serif',
                 letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer',
               }}
             >
@@ -377,7 +380,7 @@ export default function BhimRadioPage() {
           display: inline-flex; align-items: center; gap: 8px;
           margin-right: 8px; padding: 6px 14px 6px 10px;
           border: 2px solid ${RULE}; color: ${INK}; text-decoration: none;
-          font: 600 11px/1 Inter, system-ui, sans-serif;
+          font: 600 14px/1 Inter, system-ui, sans-serif;
           letter-spacing: 0.12em; text-transform: uppercase;
           transition: border-color .15s ease, color .15s ease;
         }
@@ -385,7 +388,7 @@ export default function BhimRadioPage() {
         .bhim-share {
           display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
           padding: 6px 14px; border: 2px solid ${RULE}; background: transparent; color: ${INK};
-          font: 600 11px/1 Inter, system-ui, sans-serif; letter-spacing: 0.12em; text-transform: uppercase;
+          font: 600 14px/1 Inter, system-ui, sans-serif; letter-spacing: 0.12em; text-transform: uppercase;
           transition: border-color .15s ease, color .15s ease;
         }
         .bhim-share:hover { border-color: #1d7afc; color: #fff; }

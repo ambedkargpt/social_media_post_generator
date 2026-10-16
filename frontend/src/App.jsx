@@ -35,6 +35,8 @@ const MusicGenerationStudio = lazy(() => import('./pages/MusicGenerationStudio')
 const Preferences = lazy(() => import('./pages/Preferences'));
 const PostHistory = lazy(() => import('./pages/PostHistory'));
 const BheemBot = lazy(() => import('./pages/BheemBot'));
+// Opened in a new tab from a BheemBot source pill; carries pdf.js, so it is its own chunk.
+const BookPage = lazy(() => import('./pages/BookPage'));
 const BhimRadio = lazy(() => import('./pages/BhimRadio'));
 import CustomCursor        from './components/CustomCursor';
 import ScrollProgress      from './components/ScrollProgress';
@@ -46,7 +48,7 @@ import { I18nProvider }    from './i18n/index.jsx';
 import TransitionCurtain   from './components/TransitionCurtain';
 import ErrorBoundary       from './components/ErrorBoundary';
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'dummy-client-id.apps.googleusercontent.com';
 
 // Wraps <Routes> and re-keys on every pathname change so the CSS
 // pageEnter animation replays on each navigation.
@@ -104,6 +106,9 @@ function AnalyticsPageViews() {
 export default function App() {
   // stage: 'splash' -> 'language' -> 'done'
   const [stage, setStage] = useState(() => {
+    // A book page opens in a new tab from a BheemBot citation, and sessionStorage is per tab,
+    // so without this every citation would replay the splash and language prompt first.
+    if (window.location.pathname.startsWith('/book/')) return 'done';
     const skip = sessionStorage.getItem('skip-splash') === '1';
     if (skip) sessionStorage.removeItem('skip-splash');
     return skip ? 'done' : 'splash';
@@ -156,6 +161,7 @@ export default function App() {
             <Route path="/solutions" element={<Solutions />} />
             <Route path="/resources" element={<Resources />} />
             <Route path="/contact"   element={<Contact />} />
+            <Route path="/book/:volume/:page" element={<BookPage />} />
             <Route path="/login"     element={<Login />} />
             <Route path="/signup"    element={<Signup />} />
             <Route path="/otp"              element={<Otp />} />
@@ -200,7 +206,7 @@ export default function App() {
               <ProtectedRoute><MusicGenerationStudio /></ProtectedRoute>
             } />
             <Route path="/bhimbot" element={
-              <ProtectedRoute><BheemBot /></ProtectedRoute>
+              <BheemBot />
             } />
             {/* The page was /bheembot until the spelling was corrected. Anyone
                 holding that link - a bookmark, a shared message - still lands
